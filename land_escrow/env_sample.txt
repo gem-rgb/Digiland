@@ -18,6 +18,29 @@ CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 
-# Paystack (Optional)
+# Paystack Configuration
 PAYSTACK_PUBLIC_KEY=
 PAYSTACK_SECRET_KEY=
+
+# GavaConnect API Configuration
+GAVACONNECT_API_KEY=your-gavaconnect-api-key-here
+GAVACONNECT_BASE_URL=https://api.gavaconnect.co.ke/v1
+
+# Safaricom Daraja API Configuration
+DARAJA_CONSUMER_KEY=your-daraja-consumer-key
+DARAJA_CONSUMER_SECRET=your-daraja-consumer-secret
+DARAJA_SHORTCODE=your-mpesa-paybill-or-till-number
+DARAJA_PASSKEY=your-daraja-passkey
+DARAJA_INITIATOR_NAME=your-daraja-initiator-name
+DARAJA_INITIATOR_PASSWORD=your-daraja-initiator-password
+
+# Daraja Environment (sandbox or production)
+DARAJA_ENVIRONMENT=sandbox
+
+# API Configuration
+API_TIMEOUT_SECONDS=30
+API_RETRY_ATTEMPTS=3
+
+# Logging Configuration
+ENABLE_API_LOGGING=True
+LOG_LEVEL=INFO

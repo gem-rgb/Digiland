@@ -189,6 +189,27 @@ if ADMIN_USER_NAME and ADMIN_USER_EMAIL:
 PAYSTACK_PUBLIC_KEY = config('PAYSTACK_PUBLIC_KEY', default='')
 PAYSTACK_SECRET_KEY = config('PAYSTACK_SECRET_KEY', default='')
 
+# GavaConnect API Configuration
+GAVACONNECT_API_KEY = config('GAVACONNECT_API_KEY', default='')
+GAVACONNECT_BASE_URL = config('GAVACONNECT_BASE_URL', default='https://api.gavaconnect.co.ke/v1')
+
+# Safaricom Daraja API Configuration
+DARAJA_CONSUMER_KEY = config('DARAJA_CONSUMER_KEY', default='')
+DARAJA_CONSUMER_SECRET = config('DARAJA_CONSUMER_SECRET', default='')
+DARAJA_SHORTCODE = config('DARAJA_SHORTCODE', default='')
+DARAJA_PASSKEY = config('DARAJA_PASSKEY', default='')
+DARAJA_INITIATOR_NAME = config('DARAJA_INITIATOR_NAME', default='')
+DARAJA_INITIATOR_PASSWORD = config('DARAJA_INITIATOR_PASSWORD', default='')
+DARAJA_ENVIRONMENT = config('DARAJA_ENVIRONMENT', default='sandbox')
+
+# API Configuration
+API_TIMEOUT_SECONDS = config('API_TIMEOUT_SECONDS', default=30, cast=int)
+API_RETRY_ATTEMPTS = config('API_RETRY_ATTEMPTS', default=3, cast=int)
+
+# Logging Configuration
+ENABLE_API_LOGGING = config('ENABLE_API_LOGGING', default=True, cast=bool)
+LOG_LEVEL = config('LOG_LEVEL', default='INFO')
+
 # Allauth Configuration
 SITE_ID = 1
 AUTHENTICATION_BACKENDS = [
