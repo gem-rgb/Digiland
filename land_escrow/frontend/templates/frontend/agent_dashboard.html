@@ -1,0 +1,628 @@
+{% extends 'frontend/base.html' %}
+{% block title %}{% if user.role == 'Admin' %}Command Centre{% else %}Agent Dashboard{% endif %} — Digiland{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Stat cards ── */
+  .stat-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.4rem 1.5rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: box-shadow .2s, transform .2s;
+  }
+  .stat-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,.1); transform: translateY(-2px); }
+  .stat-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; flex-shrink: 0;
+  }
+  .stat-value { font-size: 2rem; font-weight: 800; line-height: 1; color: var(--primary); }
+  .stat-label { font-size: .8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+
+  /* ── Quick-action cards ── */
+  .action-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.3rem 1.4rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    display: flex; align-items: center; gap: 1rem;
+    text-decoration: none; color: inherit;
+    transition: box-shadow .2s, transform .2s;
+    border: 1.5px solid transparent;
+  }
+  .action-card:hover {
+    box-shadow: 0 6px 18px rgba(0,0,0,.1);
+    transform: translateY(-2px);
+    border-color: var(--border);
+    color: inherit;
+  }
+  .action-icon {
+    width: 46px; height: 46px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem; flex-shrink: 0;
+  }
+
+  /* ── Dashboard section cards ── */
+  .dash-card { border-radius: 16px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+  .dash-card .card-header {
+    padding: .85rem 1.25rem;
+    font-weight: 700; font-size: .95rem;
+    display: flex; align-items: center; justify-content: space-between;
+    border-radius: 0 !important;
+  }
+  .dash-card .table th { font-size: .78rem; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); font-weight: 700; }
+  .dash-card .table td { vertical-align: middle; font-size: .88rem; }
+
+  /* ── Welcome banner ── */
+  .welcome-banner {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    border-radius: 20px;
+    padding: 1.8rem 2rem;
+    color: white;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 1rem;
+  }
+  .welcome-banner .time-badge {
+    background: rgba(255,255,255,.12);
+    border-radius: 999px;
+    padding: .3rem .9rem;
+    font-size: .8rem;
+    font-weight: 600;
+    letter-spacing: .4px;
+  }
+
+  /* ── Badge pill ── */
+  .count-pill {
+    min-width: 22px; height: 22px; border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: .72rem; font-weight: 700; padding: 0 6px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+<div class="mb-4">
+  {% for msg in messages %}
+  <div class="alert alert-{% if msg.tags == 'success' %}success{% elif msg.tags == 'warning' or msg.tags == 'error' %}danger{% else %}info{% endif %} alert-dismissible fade show rounded-3 border-0 d-flex align-items-center gap-2" role="alert">
+    <i class="bi {% if msg.tags == 'success' %}bi-check-circle-fill text-success{% elif msg.tags == 'warning' or msg.tags == 'error' %}bi-exclamation-triangle-fill text-danger{% else %}bi-info-circle-fill text-info{% endif %} flex-shrink-0"></i>
+    <span>{{ msg }}</span>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+{# ADMIN VIEW                                                                  #}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+
+{% if user.role == 'Admin' %}
+
+<div class="welcome-banner mb-4">
+  <div>
+    <h4 class="fw-bold mb-1 text-white" style="letter-spacing:-0.5px;">
+      <i class="bi bi-shield-check me-2" style="color:#10b981;"></i>Command Centre
+    </h4>
+    <p class="mb-0 opacity-75" style="font-size:.9rem;">Physical Escrow Oversight &amp; Documentation Management Portal</p>
+  </div>
+  <span class="time-badge"><i class="bi bi-person-badge me-1"></i>{{ user.email }}</span>
+</div>
+
+<!-- Quick Nav Cards (Admin) -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3 col-sm-6">
+    <a href="{% url 'frontend:task_management' %}" class="action-card h-100">
+      <div class="action-icon" style="background:#0f172a20;">
+        <i class="bi bi-kanban" style="color:#0f172a;"></i>
+      </div>
+      <div>
+        <div class="fw-bold small">Task Management</div>
+        <div class="text-muted" style="font-size:.78rem;">Assign &amp; track parcels</div>
+      </div>
+      <i class="bi bi-arrow-right-circle ms-auto text-muted"></i>
+    </a>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <a href="{% url 'frontend:parcel_list' %}" class="action-card h-100">
+      <div class="action-icon" style="background:#1e3a5f20;">
+        <i class="bi bi-geo-alt" style="color:#1e3a5f;"></i>
+      </div>
+      <div>
+        <div class="fw-bold small">Land Parcels</div>
+        <div class="text-muted" style="font-size:.78rem;">Browse &amp; manage records</div>
+      </div>
+      <i class="bi bi-arrow-right-circle ms-auto text-muted"></i>
+    </a>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <a href="{% url 'frontend:transactions' %}" class="action-card h-100">
+      <div class="action-icon" style="background:#10b98120;">
+        <i class="bi bi-clock-history" style="color:#10b981;"></i>
+      </div>
+      <div>
+        <div class="fw-bold small">Transactions</div>
+        <div class="text-muted" style="font-size:.78rem;">Monitor escrow pipelines</div>
+      </div>
+      <i class="bi bi-arrow-right-circle ms-auto text-muted"></i>
+    </a>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <a href="{% url 'frontend:messages' %}" class="action-card h-100">
+      <div class="action-icon" style="background:#7c3aed20;">
+        <i class="bi bi-chat-dots" style="color:#7c3aed;"></i>
+      </div>
+      <div>
+        <div class="fw-bold small">Messages</div>
+        <div class="text-muted" style="font-size:.78rem;">Platform communications</div>
+      </div>
+      <i class="bi bi-arrow-right-circle ms-auto text-muted"></i>
+    </a>
+  </div>
+</div>
+
+<!-- Agent KYC Approval Queue -->
+{% if pending_agents %}
+<div class="dash-card card mb-4">
+  <div class="card-header" style="background:#92400e;color:white;">
+    <span><i class="bi bi-person-badge me-2"></i>Pending Agent KYC Applications</span>
+    <span class="badge bg-warning text-dark rounded-pill">{{ pending_agents|length }}</span>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="ps-4">Email</th>
+          <th>Phone</th>
+          <th>National ID</th>
+          <th>KYC Docs</th>
+          <th>Applied On</th>
+          <th class="text-end pe-4">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for agent in pending_agents %}
+        {% with kyc_done=agent.kyc_application.kyc_submitted|default:False %}
+        <tr>
+          <td class="ps-4 fw-semibold">{{ agent.email }}</td>
+          <td class="text-muted">{{ agent.phone_number }}</td>
+          <td class="text-muted"><samp>{{ agent.id_number }}</samp></td>
+          <td>
+            {% if agent.kyc_application %}
+              <span class="badge bg-success rounded-1">Submitted</span>
+              <a href="#kyc-{{ agent.id }}" class="ms-1 small" data-bs-toggle="collapse">View docs ↓</a>
+              <div id="kyc-{{ agent.id }}" class="collapse mt-2">
+                <ul class="list-unstyled small text-muted mb-0">
+                  <li><i class="bi bi-file-earmark me-1"></i>KRA PIN: <strong>{{ agent.kyc_application.kra_pin }}</strong></li>
+                  {% if agent.kyc_application.id_photo %}<li><a href="{{ agent.kyc_application.id_photo.url }}" target="_blank"><i class="bi bi-card-image me-1"></i>ID Photo</a></li>{% endif %}
+                  {% if agent.kyc_application.resume %}<li><a href="{{ agent.kyc_application.resume.url }}" target="_blank"><i class="bi bi-file-earmark-person me-1"></i>Resume</a></li>{% endif %}
+                  {% if agent.kyc_application.certificate_of_good_conduct %}<li><a href="{{ agent.kyc_application.certificate_of_good_conduct.url }}" target="_blank"><i class="bi bi-shield-check me-1"></i>Certificate of Good Conduct</a></li>{% endif %}
+                  {% if agent.kyc_application.practicing_certificate %}<li><a href="{{ agent.kyc_application.practicing_certificate.url }}" target="_blank"><i class="bi bi-award me-1"></i>Practicing Certificate</a></li>{% endif %}
+                </ul>
+              </div>
+            {% else %}
+              <span class="badge bg-warning text-dark rounded-1">Not Submitted</span>
+            {% endif %}
+          </td>
+          <td class="text-muted small">{{ agent.date_joined|date:"M d, Y" }}</td>
+          <td class="text-end pe-4">
+            <div class="d-flex gap-2 justify-content-end">
+              {% if kyc_done %}
+              <form method="POST" action="{% url 'frontend:approve_agent' agent.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-dark fw-bold rounded-1 px-3">
+                  <i class="bi bi-check-lg me-1"></i>Approve
+                </button>
+              </form>
+              {% else %}
+              <span data-bs-toggle="tooltip" title="Cannot approve — KYC docs not submitted yet">
+                <button class="btn btn-sm btn-secondary fw-bold rounded-1 px-3" disabled style="opacity:.4;">
+                  <i class="bi bi-check-lg me-1"></i>Approve
+                </button>
+              </span>
+              {% endif %}
+              <form method="POST" action="{% url 'frontend:reject_agent' agent.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger fw-bold rounded-1 px-3"
+                        onclick="return confirm('Reject and deactivate {{ agent.email }}?')">
+                  <i class="bi bi-x-lg me-1"></i>Reject
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endwith %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Pending Transactions (Admin) -->
+{% if pending_transactions %}
+<div class="dash-card card mb-4">
+  <div class="card-header bg-success text-white">
+    <span><i class="bi bi-file-earmark-check me-2"></i>Fully Signed Contracts Awaiting Finalization</span>
+    <span class="badge bg-white text-success rounded-pill">{{ pending_transactions|length }}</span>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="ps-4">Tx ID</th>
+          <th>Property</th>
+          <th>Buyer</th>
+          <th>Price (KES)</th>
+          <th class="text-end pe-4">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tx in pending_transactions %}
+        <tr>
+          <td class="ps-4"><small class="text-muted"><samp>{{ tx.id|stringformat:"s"|slice:":8" }}…</samp></small></td>
+          <td class="fw-bold">{{ tx.land_parcel.parcel_number }}</td>
+          <td class="text-muted small">{{ tx.buyer.email }}</td>
+          <td>{{ tx.agreed_price }}</td>
+          <td class="text-end pe-4">
+            <a href="{% url 'frontend:sign_contract' tx.id %}" class="btn btn-sm btn-success fw-bold rounded-1">
+              <i class="bi bi-check2-circle me-1"></i>Finalize Escrow
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endif %}{# end Admin #}
+
+
+
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+{# AGENT VIEW                                                                  #}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+
+{% if user.role == 'Agent' %}
+
+<!-- Welcome Banner -->
+<div class="welcome-banner mb-4">
+  <div>
+    <p class="mb-1 opacity-75" style="font-size:.85rem; text-transform:uppercase; letter-spacing:.8px;">
+      <i class="bi bi-shield-check me-1" style="color:#10b981;"></i>Agent Portal
+    </p>
+    <h4 class="fw-bold mb-0 text-white" style="letter-spacing:-0.5px;">
+      Welcome back, {{ user.email|truncatechars:30 }}
+    </h4>
+  </div>
+  <div class="d-flex align-items-center gap-2 flex-wrap">
+    {% if unread_count %}
+    <span class="badge bg-danger rounded-pill fs-6 px-3 py-2">
+      <i class="bi bi-bell-fill me-1"></i>{{ unread_count }} unread
+    </span>
+    {% endif %}
+    <span class="time-badge"><i class="bi bi-circle-fill me-1" style="color:#10b981;font-size:.5rem;vertical-align:middle;"></i>Active</span>
+  </div>
+</div>
+
+<!-- Stat Strip -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fef3c7;">
+        <i class="bi bi-hourglass-split" style="color:#d97706;"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ pending_parcels|length }}</div>
+        <div class="stat-label">Pending Tasks</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#d1fae5;">
+        <i class="bi bi-check2-all" style="color:#059669;"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ completed_parcels|length }}</div>
+        <div class="stat-label">Completed</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#ede9fe;">
+        <i class="bi bi-chat-dots" style="color:#7c3aed;"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ unread_count }}</div>
+        <div class="stat-label">Unread Messages</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#e0f2fe;">
+        <i class="bi bi-people" style="color:#0284c7;"></i>
+      </div>
+      <div>
+        <div class="stat-value">{{ pending_users|length|default:"0" }}</div>
+        <div class="stat-label">User Approvals</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <a href="{% url 'frontend:task_management' %}" class="action-card h-100">
+      <div class="action-icon" style="background:#0f172a15;">
+        <i class="bi bi-kanban" style="color:#0f172a;"></i>
+      </div>
+      <div>
+        <div class="fw-bold small">My Task Pipeline</div>
+        <div class="text-muted" style="font-size:.78rem;">Allocated &amp; completed</div>
+      </div>
+      <i class="bi bi-arrow-right-circle ms-auto text-muted"></i>
+    </a>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <a href="{% url 'frontend:transactions' %}" class="action-card h-100">
+      <div class="action-icon" style="background:#10b98115;">
+        <i class="bi bi-clock-history" style="color:#10b981;"></i>
+      </div>
+      <div>
+        <div class="fw-bold small">Transactions</div>
+        <div class="text-muted" style="font-size:.78rem;">Review &amp; finalize escrows</div>
+      </div>
+      <i class="bi bi-arrow-right-circle ms-auto text-muted"></i>
+    </a>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <a href="{% url 'frontend:messages' %}" class="action-card h-100 position-relative">
+      <div class="action-icon" style="background:#7c3aed15;">
+        <i class="bi bi-chat-dots" style="color:#7c3aed;"></i>
+      </div>
+      <div>
+        <div class="fw-bold small">Messages
+          {% if unread_count %}
+          <span class="count-pill bg-danger text-white ms-1">{{ unread_count }}</span>
+          {% endif %}
+        </div>
+        <div class="text-muted" style="font-size:.78rem;">Buyers, sellers &amp; admin</div>
+      </div>
+      <i class="bi bi-arrow-right-circle ms-auto text-muted"></i>
+    </a>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <a href="{% url 'frontend:messages' %}" class="action-card h-100" style="border-color:#f59e0b;">
+      <div class="action-icon" style="background:#fef3c7;">
+        <i class="bi bi-headset" style="color:#d97706;"></i>
+      </div>
+      <div>
+        <div class="fw-bold small">Contact Admin</div>
+        <div class="text-muted" style="font-size:.78rem;">Send a message to admin</div>
+      </div>
+      <i class="bi bi-arrow-right-circle ms-auto text-muted"></i>
+    </a>
+  </div>
+</div>
+
+<!-- User Approval Panel -->
+{% if pending_users %}
+<div class="dash-card card mb-4">
+  <div class="card-header" style="background:#1e40af;color:white;">
+    <span><i class="bi bi-person-check me-2"></i>Pending User Identity Approvals</span>
+    <span class="badge bg-warning text-dark rounded-pill">{{ pending_users|length }}</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4">Email</th>
+            <th>Role</th>
+            <th>Phone</th>
+            <th>ID Number</th>
+            <th>Registered</th>
+            <th class="text-end pe-4">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for usr in pending_users %}
+          <tr>
+            <td class="ps-4 fw-semibold">{{ usr.email }}</td>
+            <td>
+              <span class="badge {% if usr.role == 'Buyer' %}bg-info text-dark{% else %}bg-secondary{% endif %} rounded-1">
+                {{ usr.role }}
+              </span>
+            </td>
+            <td class="text-muted small">{{ usr.phone_number }}</td>
+            <td class="text-muted"><samp class="small">{{ usr.id_number }}</samp></td>
+            <td class="text-muted small">{{ usr.date_joined|date:"M d, Y" }}</td>
+            <td class="text-end pe-4">
+              <form method="POST" action="{% url 'frontend:agent_approve_user' usr.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-dark fw-bold rounded-1 px-3"
+                        onclick="return confirm('Approve {{ usr.email }} as a verified {{ usr.role }}?')">
+                  <i class="bi bi-patch-check me-1"></i>Verify &amp; Approve
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="alert d-flex align-items-center gap-2 mb-4 rounded-3 border-0"
+     style="background:#f0fdf4; color:#166534;">
+  <i class="bi bi-check-circle-fill text-success"></i>
+  <span class="small fw-semibold">No users pending identity approval right now.</span>
+</div>
+{% endif %}
+
+
+<!-- Two-column: Allocated Tasks + Pending Transactions -->
+<div class="row g-4 mb-4">
+
+  <!-- Allocated Parcels -->
+  <div class="col-lg-6">
+    <div class="dash-card card h-100">
+      <div class="card-header bg-dark text-white">
+        <span><i class="bi bi-inbox me-2"></i>My Allocated Parcels</span>
+        <span class="badge bg-warning text-dark rounded-pill">{{ pending_parcels|length }}</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-4">Parcel #</th>
+                <th>Location</th>
+                <th>Size</th>
+                <th class="text-end pe-4">Review</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for parcel in pending_parcels %}
+              <tr>
+                <td class="ps-4 fw-bold"><samp class="small">{{ parcel.parcel_number }}</samp></td>
+                <td class="text-muted small">{{ parcel.ward }}, {{ parcel.county }}</td>
+                <td class="text-muted small">{{ parcel.land_size }} ha</td>
+                <td class="text-end pe-4">
+                  <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}"
+                     class="btn btn-sm btn-dark fw-bold rounded-1">
+                    <i class="bi bi-folder2-open me-1"></i>Open
+                  </a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="text-center py-5 text-muted">
+                  <i class="bi bi-inbox fs-1 d-block mb-3 opacity-40"></i>
+                  <p class="fw-medium mb-0">No parcels assigned to you yet.</p>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Transactions to Finalize -->
+  <div class="col-lg-6">
+    <div class="dash-card card h-100">
+      <div class="card-header text-white" style="background:#059669;">
+        <span><i class="bi bi-file-earmark-check me-2"></i>Contracts Awaiting Finalization</span>
+        <span class="badge bg-white text-dark rounded-pill">{{ pending_transactions|length }}</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-4">Tx ID</th>
+                <th>Parcel</th>
+                <th>Price (KES)</th>
+                <th class="text-end pe-4">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for tx in pending_transactions %}
+              <tr>
+                <td class="ps-4"><samp class="small text-muted">{{ tx.id|stringformat:"s"|slice:":8" }}…</samp></td>
+                <td class="fw-bold small">{{ tx.land_parcel.parcel_number }}</td>
+                <td class="small">{{ tx.agreed_price }}</td>
+                <td class="text-end pe-4">
+                  <a href="{% url 'frontend:sign_contract' tx.id %}"
+                     class="btn btn-sm btn-success fw-bold rounded-1">
+                    <i class="bi bi-check2-circle me-1"></i>Finalize
+                  </a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="text-center py-5 text-muted">
+                  <i class="bi bi-file-check fs-1 d-block mb-3 opacity-40"></i>
+                  <p class="fw-medium mb-0">No contracts pending finalization.</p>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Completed Tasks Row -->
+<div class="dash-card card mb-4">
+  <div class="card-header text-white" style="background:#1e3a5f;">
+    <span><i class="bi bi-check2-all me-2"></i>My Completed Verifications</span>
+    <span class="badge bg-light text-dark rounded-pill">{{ completed_parcels|length }}</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4">Parcel #</th>
+            <th>Seller</th>
+            <th>Location</th>
+            <th>Outcome</th>
+            <th class="text-end pe-4">View</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for parcel in completed_parcels %}
+          <tr>
+            <td class="ps-4 fw-bold"><samp class="small">{{ parcel.parcel_number }}</samp></td>
+            <td class="text-muted small">{{ parcel.listed_by.email }}</td>
+            <td class="text-muted small">{{ parcel.ward }}, {{ parcel.county }}</td>
+            <td>
+              {% if parcel.verification_status == 'Verified' %}
+              <span class="badge bg-success rounded-1"><i class="bi bi-check-lg me-1"></i>Approved</span>
+              {% else %}
+              <span class="badge bg-danger rounded-1"><i class="bi bi-x-lg me-1"></i>Rejected</span>
+              {% endif %}
+            </td>
+            <td class="text-end pe-4">
+              <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}"
+                 class="btn btn-sm btn-outline-secondary fw-bold rounded-1">
+                <i class="bi bi-eye me-1"></i>View
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center py-5 text-muted">
+              <i class="bi bi-journal-check fs-1 d-block mb-3 opacity-40"></i>
+              <p class="fw-medium mb-0">No completed tasks yet.</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endif %}{# end Agent #}
+
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'frontend/base.html' %}
+{% block title %}Agent Approval - Digiland{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            {% if success %}
+            <div class="text-center">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-success mb-4" style="width:72px;height:72px;">
+                    <i class="bi bi-check-circle-fill text-white" style="font-size:2rem;"></i>
+                </div>
+                <h2 class="fw-bold mb-3">Agent Approved Successfully!</h2>
+                <div class="alert alert-success border-0 rounded-3">
+                    <i class="bi bi-person-check-fill me-2"></i>
+                    <strong>{{ agent.email }}</strong> has been approved and can now access the Agent Command Centre.
+                </div>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'frontend:staff_login' %}" class="btn btn-dark fw-bold">
+                        <i class="bi bi-shield-lock me-2"></i>Go to Staff Login
+                    </a>
+                    <a href="{% url 'frontend:home' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-house me-2"></i>Back to Home
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-danger mb-4" style="width:72px;height:72px;">
+                    <i class="bi bi-exclamation-triangle-fill text-white" style="font-size:2rem;"></i>
+                </div>
+                <h2 class="fw-bold mb-3">Approval Failed</h2>
+                <div class="alert alert-danger border-0 rounded-3">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    {{ error }}
+                </div>
+                <a href="{% url 'frontend:home' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-house me-2"></i>Back to Home
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

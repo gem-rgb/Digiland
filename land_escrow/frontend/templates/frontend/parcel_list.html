@@ -1,0 +1,60 @@
+{% extends 'frontend/base.html' %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-9">
+        <h2 class="display-5">Available Land Parcels</h2>
+        <p class="text-muted">Browse secure, government-verified land parcels ready for immediate escrow transfer.</p>
+    </div>
+    <div class="col-md-3 text-end">
+        {% if user.is_authenticated and user.role in "Seller,Agent,Admin" %}
+        <a href="{% url 'frontend:parcel_upload' %}" class="btn btn-primary shadow-sm">+ Register New Parcel</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4">
+    {% for parcel in parcels %}
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header border-0 pb-0 pt-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">{{ parcel.parcel_number }}</h5>
+                <span class="badge bg-light border text-primary rounded-pill">{{ parcel.land_use_type }}</span>
+            </div>
+            {% if parcel.image %}
+                <img src="{{ parcel.image.url }}" class="card-img-top" alt="Land Parcel Image" style="height: 200px; object-fit: cover;">
+            {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <span class="text-muted"><i class="bi bi-image"></i> No Image Provided</span>
+                </div>
+            {% endif %}
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2"><strong>Location:</strong> {{ parcel.county }}, {{ parcel.constituency }}</li>
+                    <li class="mb-2"><strong>Size:</strong> {{ parcel.land_size }} Acres</li>
+                    <li class="mb-2">
+                        <strong>Verification:</strong> 
+                        {% if parcel.verification_status == 'Verified' %}
+                            <span class="text-success"><i class="bi bi-check-circle-fill"></i> Verified</span>
+                        {% elif parcel.verification_status == 'Disputed' %}
+                            <span class="text-danger"><i class="bi bi-x-circle-fill"></i> Disputed</span>
+                        {% else %}
+                            <span class="text-warning"><i class="bi bi-exclamation-circle-fill"></i> Pending</span>
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+            <div class="card-footer bg-transparent border-0 pb-3 pt-0">
+                <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}" class="btn btn-outline-primary w-100 fw-bold rounded-pill">
+                    {% if user == parcel.listed_by or user.role == 'Admin' %}Manage Listing{% else %}View Details &amp; Buy{% endif %}
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <h4 class="text-muted">No land parcels available right now.</h4>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

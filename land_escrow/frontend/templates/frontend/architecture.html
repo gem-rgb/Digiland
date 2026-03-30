@@ -1,0 +1,16 @@
+{% extends 'frontend/base.html' %}
+{% block title %}Architecture - Digiland{% endblock %}
+{% block content %}
+<div class="row pt-4 pb-5">
+    <div class="col-12 text-center mb-5">
+        <h1 class="display-3 fw-bold" style="letter-spacing: -1.5px;">Our Architecture</h1>
+        <p class="lead text-muted max-w-75 mx-auto">Zero-trust atomic execution nodes.</p>
+    </div>
+    <div class="col-md-8 mx-auto bg-white p-5 rounded-4 shadow-sm border">
+        <h3 class="fw-bold mb-3">The Protocol Layer</h3>
+        <p class="fs-5 text-muted mb-4">Our systems execute completely trustless atomic operations. When a property is listed, we pull its unforgeable cryptographic footprint from ArdhiSasa API grids.</p>
+        <h3 class="fw-bold mb-3">Vault Locking</h3>
+        <p class="fs-5 text-muted">Funds deposited via Paystack or M-PESA are held in an inaccessible holding node mapped strictly to the unique UUID hash of the transaction. Neither party can seize it maliciously.</p>
+    </div>
+</div>
+{% endblock %}

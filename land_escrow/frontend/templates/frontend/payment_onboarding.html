@@ -1,0 +1,56 @@
+{% extends 'frontend/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center mt-5 mb-5">
+    <div class="col-lg-7 text-center">
+        <h1 class="display-4 text-warning fw-bold"><i class="bi bi-exclamation-triangle-fill"></i></h1>
+        <h2 class="fw-bold mt-2">Financial Escrow Confirmation</h2>
+        <p class="lead text-muted mt-3">You are about to transition from the legal negotiation phase into the physically binding financial transfer protocol.</p>
+
+        <div class="card shadow border-0 mt-5">
+            <div class="card-body p-4 text-start">
+                <h4 class="fw-bold mb-4 text-primary border-bottom pb-2"><i class="bi bi-info-circle-fill"></i> How Your Funds Are Protected</h4>
+                
+                <div class="d-flex align-items-start mb-4">
+                    <i class="bi bi-1-circle-fill fs-3 text-secondary me-3"></i>
+                    <div>
+                        <h6 class="fw-bold mb-1">We Do Not Pay The Seller Yet</h6>
+                        <p class="text-muted small mb-0">Your funds are deposited directly into our Regulated Government Trust Account, completely walled off from the Seller.</p>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-start mb-4">
+                    <i class="bi bi-2-circle-fill fs-3 text-secondary me-3"></i>
+                    <div>
+                        <h6 class="fw-bold mb-1">Final Authorization is Required</h6>
+                        <p class="text-muted small mb-0">Our sworn Escrow Moderation Agents must formally execute the Title Deed transfer with the Land Registry before those funds are physically released.</p>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-start mb-4">
+                    <i class="bi bi-3-circle-fill fs-3 text-danger me-3"></i>
+                    <div>
+                        <h6 class="fw-bold mb-1">Irreversible Financial Commitment</h6>
+                        <p class="text-muted small mb-0">Warning: Once you inject capital into Escrow, the transaction is locked. If backed out maliciously, your funds may be vulnerable to contractual arbitration penalties under the signed agreement.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-light p-4 text-center">
+                <h5 class="fw-bold mb-3">Are you absolutely certain you wish to proceed?</h5>
+                <form action="{% url 'frontend:payment_checkout' transaction.id %}" method="POST" class="d-grid gap-3">
+                    {% csrf_token %}
+                    <div class="form-check text-start mx-auto mb-3" style="max-width: 400px;">
+                        <input class="form-check-input" type="checkbox" id="consentCheck" required>
+                        <label class="form-check-label text-muted small" for="consentCheck">
+                            I acknowledge the physical locking of these funds and certify my absolute certainty to complete this land purchase.
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success btn-lg fw-bold shadow"><i class="bi bi-lock-fill"></i> Yes, Proceed to Identity Payment Gateway</button>
+                    <a href="{% url 'frontend:sign_contract' transaction.id %}" class="btn btn-outline-secondary">Abort and Return to Contract</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

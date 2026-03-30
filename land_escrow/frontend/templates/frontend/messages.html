@@ -1,0 +1,192 @@
+{% extends 'frontend/base.html' %}
+
+{% block title %}Messages - Digiland{% endblock %}
+
+{% block content %}
+<div class="row align-items-end mb-4">
+    <div class="col">
+        <h2 class="fw-bold mb-1" style="letter-spacing: -1px;"><i class="bi bi-chat-dots me-2"></i>{{ header }}</h2>
+        <p class="text-muted mb-0">All communications are mediated through Digiland agents.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- LEFT: Inbox Threads -->
+    <div class="col-lg-8">
+        {% if mode == 'single' %}
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-dark text-white py-3 px-4 rounded-top-4">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-envelope-open me-2"></i>Active Threads</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for partner, msgs in threads.items %}
+                <div class="list-group-item px-4 py-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="d-flex gap-3 align-items-start">
+                            <span class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center flex-shrink-0 fw-bold" style="width:42px;height:42px;font-size:1rem;">
+                                {{ partner.email|first|upper }}
+                            </span>
+                            <div>
+                                <p class="fw-bold mb-1">{{ partner.email }}</p>
+                                <span class="badge bg-light text-dark border rounded-1 small me-2">{{ partner.role }}</span>
+                                <span class="text-muted small">{{ msgs.0.timestamp|date:"M d, Y" }}</span>
+                                <p class="text-muted small mt-1 mb-0 fst-italic">"{{ msgs.0.content|truncatechars:80 }}"</p>
+                            </div>
+                        </div>
+                        <span class="badge bg-dark rounded-pill">{{ msgs|length }}</span>
+                    </div>
+                    <div class="mt-3 ps-5 d-flex flex-column gap-2">
+                        {% for msg in msgs %}
+                        <div class="d-flex {% if msg.sender == user %}justify-content-end{% endif %}">
+                            <div class="px-3 py-2 rounded-3 small {% if msg.sender == user %}bg-dark text-white{% else %}bg-light text-dark border{% endif %}" style="max-width: 80%;">
+                                <div class="fw-semibold mb-1 {% if msg.sender == user %}text-white-50{% else %}text-muted{% endif %}" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    {% if msg.sender == user %}You{% else %}{{ msg.sender.email }}{% endif %} &middot; {{ msg.timestamp|date:"M d, H:i" }}
+                                </div>
+                                {{ msg.content }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-1 opacity-50 d-block mb-3"></i>
+                    <p class="fw-medium mb-0">No messages in your inbox yet.</p>
+                    <small>Use the compose panel to start a conversation.</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% elif mode == 'dual' %}
+        <div class="row g-3">
+            <!-- Buyers Column -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header py-3 px-4 rounded-top-4" style="background: #1e3a5f; color: white;">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-person-badge me-2"></i>Buyer Threads</h6>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for partner, msgs in buyer_threads.items %}
+                        <div class="list-group-item px-4 py-3 border-bottom">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <p class="fw-bold mb-0 small">{{ partner.email }}</p>
+                                    <small class="text-muted">{{ msgs.0.timestamp|date:"M d, Y" }}</small>
+                                </div>
+                                <span class="badge bg-dark rounded-pill small">{{ msgs|length }}</span>
+                            </div>
+                            {% for msg in msgs %}
+                            <div class="d-flex {% if msg.sender == user %}justify-content-end{% endif %} mb-1">
+                                <div class="px-2 py-1 rounded-3 {% if msg.sender == user %}bg-dark text-white{% else %}bg-light border{% endif %}" style="font-size: 0.8rem; max-width: 85%;">
+                                    {{ msg.content }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-journal-x fs-3 d-block mb-2"></i>
+                            <small>No buyer threads yet.</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <!-- Sellers Column -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header py-3 px-4 rounded-top-4" style="background: #2d3748; color: white;">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-house me-2"></i>Seller Threads</h6>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for partner, msgs in seller_threads.items %}
+                        <div class="list-group-item px-4 py-3 border-bottom">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <p class="fw-bold mb-0 small">{{ partner.email }}</p>
+                                    <small class="text-muted">{{ msgs.0.timestamp|date:"M d, Y" }}</small>
+                                </div>
+                                <span class="badge bg-dark rounded-pill small">{{ msgs|length }}</span>
+                            </div>
+                            {% for msg in msgs %}
+                            <div class="d-flex {% if msg.sender == user %}justify-content-end{% endif %} mb-1">
+                                <div class="px-2 py-1 rounded-3 {% if msg.sender == user %}bg-dark text-white{% else %}bg-light border{% endif %}" style="font-size: 0.8rem; max-width: 85%;">
+                                    {{ msg.content }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-journal-x fs-3 d-block mb-2"></i>
+                            <small>No seller threads yet.</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- RIGHT: Compose Panel -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 sticky-top" style="top: 90px;">
+            <div class="card-header bg-dark text-white py-3 px-4 rounded-top-4">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-pencil-square me-2"></i>Compose Message</h5>
+            </div>
+            <div class="card-body p-4">
+
+                {% if msg_error %}
+                <div class="alert alert-danger border-0 rounded-3 small mb-3">
+                    <i class="bi bi-exclamation-triangle me-1"></i> {{ msg_error }}
+                </div>
+                {% endif %}
+
+                {% if user.role in 'Buyer,Seller' %}
+                <div class="alert alert-info border-0 rounded-3 small mb-4">
+                    <i class="bi bi-info-circle me-1"></i>
+                    All enquiries are mediated by Digiland agents. You can only contact an Admin or Agent directly.
+                </div>
+                {% endif %}
+
+                <form method="POST" action="{% url 'frontend:send_message' %}">
+                    {% csrf_token %}
+
+                    {% if user.role == 'Admin' or user.role == 'Agent' %}
+                    <!-- Staff: email lookup compose -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted text-uppercase" style="letter-spacing:.5px;">Recipient Email</label>
+                        <input type="email" name="receiver_email" class="form-control bg-light border-0"
+                               placeholder="user@example.com" required
+                               title="Enter the registered email of the user you want to message">
+                        <div class="form-text text-muted" style="font-size: 0.75rem;">Type the exact signup email of any platform user.</div>
+                    </div>
+                    {% else %}
+                    <!-- Buyer/Seller: pre-filtered dropdown -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted text-uppercase" style="letter-spacing:.5px;">Send To</label>
+                        <select name="receiver_id" class="form-select form-select-lg bg-light border-0" required>
+                            <option value="" disabled selected>Select a recipient…</option>
+                            {% for recipient in allowed_recipients %}
+                            <option value="{{ recipient.id }}">{{ recipient.email }} ({{ recipient.role }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted text-uppercase" style="letter-spacing:.5px;">Message</label>
+                        <textarea name="content" class="form-control bg-light border-0" rows="5"
+                                  placeholder="Write your message here…" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-dark w-100 fw-bold rounded-1">
+                        <i class="bi bi-send me-2"></i>Send Message
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

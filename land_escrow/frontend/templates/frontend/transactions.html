@@ -1,0 +1,65 @@
+{% extends 'frontend/base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2 class="display-5">My Escrow Transactions</h2>
+        <p class="text-muted">Track the status of your land purchases and sales.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Parcel</th>
+                            <th>Role</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date Initiated</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in transactions %}
+                        <tr>
+                            <td><small class="text-muted">{{ tx.id|stringformat:"s"|slice:":8" }}...</small></td>
+                            <td><strong>{{ tx.land_parcel.parcel_number }}</strong></td>
+                            <td>{% if user == tx.buyer %}Buyer{% elif user == tx.seller %}Seller{% endif %}</td>
+                            <td>KES {{ tx.agreed_price }}</td>
+                            <td>
+                                <span class="badge {% if tx.status == 'Completed' %}bg-success{% elif tx.status == 'Disputed' %}bg-danger{% elif tx.status == 'Deposit_Paid' %}bg-info{% else %}bg-warning text-dark{% endif %} p-2">
+                                    {{ tx.status|title }}
+                                </span>
+                            </td>
+                            <td>{{ tx.created_at|date:"M d, Y" }}</td>
+                            <td class="text-end pe-4">
+                                {% if tx.status != 'Completed' and tx.status != 'Refunded' %}
+                                    {% if user == tx.buyer and not tx.buyer_signature %}
+                                    <a href="{% url 'frontend:sign_contract' tx.id %}" class="btn btn-sm btn-primary fw-bold"><i class="bi bi-pen"></i> Sign Agreement</a>
+                                    {% elif user == tx.seller and not tx.seller_signature %}
+                                    <a href="{% url 'frontend:sign_contract' tx.id %}" class="btn btn-sm btn-primary fw-bold"><i class="bi bi-pen"></i> Sign Agreement</a>
+                                    {% else %}
+                                    <a href="{% url 'frontend:sign_contract' tx.id %}" class="btn btn-sm btn-outline-success"><i class="bi bi-file-earmark-check"></i> View Contract</a>
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{% url 'frontend:sign_contract' tx.id %}" class="btn btn-sm btn-outline-secondary">Archived Contract</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">You have no active or past transactions.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

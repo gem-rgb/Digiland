@@ -1,0 +1,47 @@
+from django.urls import path
+from django.views.generic import TemplateView
+from . import views
+
+app_name = 'frontend'
+
+urlpatterns = [
+    path('', views.home, name='home'),
+    path('staff/login/', views.staff_login, name='staff_login'),
+    path('staff/logout-to-login/', views.logout_to_staff_login, name='logout_to_staff_login'),
+    path('temp-approve/<str:email>/', views.temp_approve_agent, name='temp_approve_agent'),
+    path('parcels/', views.parcel_list, name='parcel_list'),
+    path('agent/onboarding/', views.agent_onboarding, name='agent_onboarding'),
+    path('agent/signup-complete/', views.agent_signup_complete, name='agent_signup_complete'),
+    path('agent/kyc/', views.agent_kyc, name='agent_kyc'),
+    path('agent/dashboard/', views.agent_dashboard, name='agent_dashboard'),
+    path('agent/tasks/', views.task_management, name='task_management'),
+    path('agent/applications/<uuid:user_id>/reject/', views.reject_agent, name='reject_agent'),
+    path('agent/applications/<uuid:user_id>/approve/', views.approve_agent, name='approve_agent'),
+    path('agent/rate/<uuid:agent_id>/', views.rate_agent, name='rate_agent'),
+    path('agent/send-message/', views.send_admin_message, name='send_admin_message'),
+    path('agent/users/<uuid:user_id>/approve/', views.agent_approve_user, name='agent_approve_user'),
+    path('agent/assign-task/', views.assign_task, name='assign_task'),
+    path('agent/unassign-task/<path:parcel_number>/', views.unassign_task, name='unassign_task'),
+    path('agent/parcel/<path:parcel_number>/verify/', views.agent_verify_parcel, name='agent_verify_parcel'),
+    path('agent/transaction/<uuid:transaction_id>/finalize/', views.agent_finalize_transaction, name='agent_finalize_transaction'),
+    path('parcels/upload/', views.parcel_upload, name='parcel_upload'),
+    path('parcels/<path:parcel_number>/edit/', views.parcel_edit, name='parcel_edit'),
+    path('parcels/<path:parcel_number>/delete/', views.parcel_delete, name='parcel_delete'),
+    path('parcels/<path:parcel_number>/initiate-escrow/', views.initiate_escrow, name='initiate_escrow'),
+    path('parcels/<path:parcel_number>/upload-document/', views.upload_parcel_document, name='upload_document'),
+    path('parcels/<path:parcel_number>/', views.parcel_detail, name='parcel_detail'),
+    path('transactions/', views.user_transactions, name='transactions'),
+    path('transactions/<uuid:transaction_id>/sign/', views.sign_contract, name='sign_contract'),
+    path('transactions/<uuid:transaction_id>/payment-onboarding/', views.payment_onboarding, name='payment_onboarding'),
+    path('transactions/<uuid:transaction_id>/checkout/', views.payment_checkout, name='payment_checkout'),
+    path('transactions/<uuid:transaction_id>/process-payment/', views.process_payment, name='process_payment'),
+    path('messages/', views.messages_list, name='messages'),
+    path('messages/send/', views.send_message, name='send_message'),
+    path('support/', views.support_tickets, name='support'),
+    path('about/', TemplateView.as_view(template_name='frontend/about.html'), name='about'),
+    path('architecture/', TemplateView.as_view(template_name='frontend/architecture.html'), name='architecture'),
+    path('investors/', TemplateView.as_view(template_name='frontend/investors.html'), name='investors'),
+    path('terms/', TemplateView.as_view(template_name='frontend/terms.html'), name='terms'),
+    path('privacy/', TemplateView.as_view(template_name='frontend/privacy.html'), name='privacy'),
+    path('escrow-acts/', TemplateView.as_view(template_name='frontend/escrow_acts.html'), name='escrow_acts'),
+]

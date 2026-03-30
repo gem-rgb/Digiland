@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Task Assignment - Digiland</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #0ea5e9;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0f172a;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #0ea5e9;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            margin-top: 30px;
+        }
+        .task-icon {
+            color: #0ea5e9;
+            font-size: 48px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .parcel-info {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .parcel-info h3 {
+            color: #0369a1;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🛡️ Digiland System</div>
+        </div>
+        
+        <div class="content">
+            <div class="task-icon">📋</div>
+            
+            <h2>New Task Assignment</h2>
+            
+            <p>Dear <strong>{{ agent.email }}</strong>,</p>
+            
+            <p>You have been assigned a new land parcel verification task. Please review the details below and proceed with the verification process.</p>
+            
+            <div class="parcel-info">
+                <h3>📍 Parcel Information</h3>
+                <p><strong>Parcel Number:</strong> {{ parcel.parcel_number }}</p>
+                <p><strong>Location:</strong> {{ parcel.ward }}, {{ parcel.county }}</p>
+                <p><strong>Land Size:</strong> {{ parcel.land_size }} hectares</p>
+                <p><strong>Asking Price:</strong> KES {{ parcel.asking_price }}</p>
+                <p><strong>Submitted:</strong> {{ parcel.ardhisasa_last_synced|date:"M d, Y H:i" }}</p>
+            </div>
+            
+            <p><strong>Task Requirements:</strong></p>
+            <ul>
+                <li>Verify land ownership documents</li>
+                <li>Confirm parcel boundaries and measurements</li>
+                <li>Check for any liens or encumbrances</li>
+                <li>Validate seller identity and authority</li>
+                <li>Review Ardhisasa integration data</li>
+            </ul>
+            
+            <p><strong>Priority Level:</strong> <span style="color: #dc2626; font-weight: bold;">High</span></p>
+            <p><strong>Expected Completion:</strong> Within 3 business days</p>
+            
+            <div style="text-align: center;">
+                <a href="http://{{ dashboard_url }}" class="btn">View Task in Dashboard</a>
+            </div>
+            
+            <p><strong>Important:</strong> Please complete this task promptly as buyers are waiting for verification results. If you encounter any issues or need additional time, please contact the admin team.</p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated message from the Digiland Land Escrow System.</p>
+            <p>© 2026 Digiland. All rights reserved.</p>
+            <p>Thank you for your prompt attention to this assignment.</p>
+        </div>
+    </div>
+</body>
+</html>

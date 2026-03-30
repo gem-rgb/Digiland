@@ -1,0 +1,536 @@
+{% extends 'frontend/base.html' %}
+{% block title %}Command Centre — Digiland{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Stat cards ── */
+  .stat-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.4rem 1.5rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: box-shadow .2s, transform .2s;
+  }
+  .stat-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,.1); transform: translateY(-2px); }
+  .stat-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; flex-shrink: 0;
+  }
+  .stat-value { font-size: 2rem; font-weight: 800; line-height: 1; color: var(--primary); }
+  .stat-label { font-size: .8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+
+  /* ── Quick-action cards ── */
+  .action-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.3rem 1.4rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    display: flex; align-items: center; gap: 1rem;
+    text-decoration: none; color: inherit;
+    transition: box-shadow .2s, transform .2s;
+    border: 1.5px solid transparent;
+  }
+  .action-card:hover {
+    box-shadow: 0 6px 18px rgba(0,0,0,.1);
+    transform: translateY(-2px);
+    border-color: var(--border);
+    color: inherit;
+  }
+  .action-icon {
+    width: 46px; height: 46px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem; flex-shrink: 0;
+  }
+
+  /* ── Dashboard section cards ── */
+  .dash-card { border-radius: 16px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+  .dash-card .card-header {
+    padding: .85rem 1.25rem;
+    font-weight: 700; font-size: .95rem;
+    display: flex; align-items: center; justify-content: space-between;
+    border-radius: 0 !important;
+  }
+  .dash-card .table th { font-size: .78rem; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); font-weight: 700; }
+  .dash-card .table td { vertical-align: middle; font-size: .88rem; }
+
+  /* ── Welcome banner ── */
+  .welcome-banner {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    border-radius: 20px;
+    padding: 1.8rem 2rem;
+    color: white;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 1rem;
+  }
+  .welcome-banner .time-badge {
+    background: rgba(255,255,255,.12);
+    border-radius: 999px;
+    padding: .3rem .9rem;
+    font-size: .8rem;
+    font-weight: 600;
+    letter-spacing: .4px;
+  }
+
+  /* ── Admin badge ── */
+  .admin-notice {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    color: white;
+    font-size: .85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+<div class="mb-4">
+  {% for msg in messages %}
+  <div class="alert alert-{% if msg.tags == 'success' %}success{% elif msg.tags == 'warning' or msg.tags == 'error' %}danger{% else %}info{% endif %} alert-dismissible fade show rounded-3 border-0 d-flex align-items-center gap-2" role="alert">
+    <i class="bi {% if msg.tags == 'success' %}bi-check-circle-fill text-success{% elif msg.tags == 'warning' or msg.tags == 'error' %}bi-exclamation-triangle-fill text-danger{% else %}bi-info-circle-fill text-info{% endif %} flex-shrink-0"></i>
+    <span>{{ msg }}</span>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Admin Portal Notice -->
+<div class="admin-notice mb-4">
+  <i class="bi bi-shield-fill-check flex-shrink-0" style="font-size: 1.25rem;"></i>
+  <div>
+    <strong>Administrator Command Centre</strong> — Full system access and oversight capabilities.
+  </div>
+</div>
+
+<div class="welcome-banner mb-4">
+  <div>
+    <h4 class="fw-bold mb-1 text-white" style="letter-spacing:-0.5px;">
+      <i class="bi bi-shield-check me-2" style="color:#10b981;"></i>Command Centre
+    </h4>
+    <p class="mb-0 opacity-75" style="font-size:.9rem;">Physical Escrow Oversight &amp; Documentation Management Portal</p>
+  </div>
+  <span class="time-badge"><i class="bi bi-person-badge me-1"></i>{{ user.email }}</span>
+</div>
+
+<!-- Quick Nav Cards (Admin) -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3 col-sm-6">
+    <a href="{% url 'frontend:task_management' %}" class="action-card h-100">
+      <div class="action-icon" style="background:#0f172a20;">
+        <i class="bi bi-kanban" style="color:#0f172a;"></i>
+      </div>
+      <div>
+        <div class="fw-bold small">Task Management</div>
+        <div class="text-muted" style="font-size:.78rem;">Assign &amp; track parcels</div>
+      </div>
+      <i class="bi bi-arrow-right-circle ms-auto text-muted"></i>
+    </a>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <a href="{% url 'frontend:parcel_list' %}" class="action-card h-100">
+      <div class="action-icon" style="background:#1e3a5f20;">
+        <i class="bi bi-geo-alt" style="color:#1e3a5f;"></i>
+      </div>
+      <div>
+        <div class="fw-bold small">Land Parcels</div>
+        <div class="text-muted" style="font-size:.78rem;">Browse &amp; manage records</div>
+      </div>
+      <i class="bi bi-arrow-right-circle ms-auto text-muted"></i>
+    </a>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <a href="{% url 'frontend:transactions' %}" class="action-card h-100">
+      <div class="action-icon" style="background:#10b98120;">
+        <i class="bi bi-clock-history" style="color:#10b981;"></i>
+      </div>
+      <div>
+        <div class="fw-bold small">Transactions</div>
+        <div class="text-muted" style="font-size:.78rem;">Monitor escrow pipelines</div>
+      </div>
+      <i class="bi bi-arrow-right-circle ms-auto text-muted"></i>
+    </a>
+  </div>
+  <div class="col-md-3 col-sm-6">
+    <a href="{% url 'frontend:messages' %}" class="action-card h-100">
+      <div class="action-icon" style="background:#7c3aed20;">
+        <i class="bi bi-chat-dots" style="color:#7c3aed;"></i>
+      </div>
+      <div>
+        <div class="fw-bold small">Messages</div>
+        <div class="text-muted" style="font-size:.78rem;">Platform communications</div>
+      </div>
+      <i class="bi bi-arrow-right-circle ms-auto text-muted"></i>
+    </a>
+  </div>
+</div>
+
+<!-- Admin Messaging Center -->
+<div class="dash-card card mb-4">
+  <div class="card-header" style="background:#7c3aed;color:white;">
+    <span><i class="bi bi-envelope me-2"></i>Admin Messaging Center</span>
+    <span class="badge bg-white text-purple rounded-pill">Send Notifications</span>
+  </div>
+  <div class="card-body">
+    <form method="POST" action="{% url 'frontend:send_admin_message' %}">
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Recipients</label>
+          <select name="recipient_type" class="form-select" required>
+            <option value="">Select recipient type...</option>
+            <option value="all_agents">All Agents</option>
+            <option value="verified_agents">Verified Agents Only</option>
+            <option value="pending_agents">Pending Agent Applications</option>
+            <option value="all_users">All Users</option>
+            <option value="buyers">All Buyers</option>
+            <option value="sellers">All Sellers</option>
+            <option value="custom">Custom Email(s)</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Custom Emails (if selected)</label>
+          <input type="text" name="custom_emails" class="form-control" 
+                 placeholder="email1@example.com, email2@example.com" 
+                 style="display:none;" id="customEmailsInput">
+        </div>
+        <div class="col-12">
+          <label class="form-label fw-semibold">Subject</label>
+          <input type="text" name="subject" class="form-control" required 
+                 placeholder="Enter message subject...">
+        </div>
+        <div class="col-12">
+          <label class="form-label fw-semibold">Message</label>
+          <textarea name="message" class="form-control" rows="4" required 
+                    placeholder="Enter your message here..."></textarea>
+        </div>
+        <div class="col-12">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="send_html" id="sendHtml" checked>
+            <label class="form-check-label" for="sendHtml">
+              Send as HTML formatted email
+            </label>
+          </div>
+        </div>
+        <div class="col-12">
+          <button type="submit" class="btn btn-purple fw-bold">
+            <i class="bi bi-send me-2"></i>Send Message
+          </button>
+          <button type="button" class="btn btn-outline-secondary ms-2" onclick="clearMessageForm()">
+            <i class="bi bi-x-circle me-2"></i>Clear
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Agent KYC Approval Queue -->
+{% if pending_agents %}
+<div class="dash-card card mb-4">
+  <div class="card-header" style="background:#92400e;color:white;">
+    <span><i class="bi bi-person-badge me-2"></i>Pending Agent KYC Applications</span>
+    <span class="badge bg-warning text-dark rounded-pill">{{ pending_agents|length }}</span>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="ps-4">Email</th>
+          <th>Phone</th>
+          <th>National ID</th>
+          <th>KYC Docs</th>
+          <th>Applied On</th>
+          <th class="text-end pe-4">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for agent in pending_agents %}
+        {% with kyc_done=agent.kyc_application.kyc_submitted|default:False %}
+        <tr>
+          <td class="ps-4 fw-semibold">{{ agent.email }}</td>
+          <td class="text-muted">{{ agent.phone_number }}</td>
+          <td class="text-muted"><samp>{{ agent.id_number }}</samp></td>
+          <td>
+            {% if agent.kyc_application %}
+              <span class="badge bg-success rounded-1">Submitted</span>
+              <a href="#kyc-{{ agent.id }}" class="ms-1 small" data-bs-toggle="collapse">View docs ↓</a>
+              <div id="kyc-{{ agent.id }}" class="collapse mt-2">
+                <ul class="list-unstyled small text-muted mb-0">
+                  <li><i class="bi bi-file-earmark me-1"></i>KRA PIN: <strong>{{ agent.kyc_application.kra_pin }}</strong></li>
+                  {% if agent.kyc_application.id_photo %}<li><a href="{{ agent.kyc_application.id_photo.url }}" target="_blank"><i class="bi bi-card-image me-1"></i>ID Photo</a></li>{% endif %}
+                  {% if agent.kyc_application.resume %}<li><a href="{{ agent.kyc_application.resume.url }}" target="_blank"><i class="bi bi-file-earmark-person me-1"></i>Resume</a></li>{% endif %}
+                  {% if agent.kyc_application.certificate_of_good_conduct %}<li><a href="{{ agent.kyc_application.certificate_of_good_conduct.url }}" target="_blank"><i class="bi bi-shield-check me-1"></i>Certificate of Good Conduct</a></li>{% endif %}
+                  {% if agent.kyc_application.practicing_certificate %}<li><a href="{{ agent.kyc_application.practicing_certificate.url }}" target="_blank"><i class="bi bi-award me-1"></i>Practicing Certificate</a></li>{% endif %}
+                </ul>
+              </div>
+            {% else %}
+              <span class="badge bg-warning text-dark rounded-1">Not Submitted</span>
+            {% endif %}
+          </td>
+          <td class="text-muted small">{{ agent.date_joined|date:"M d, Y" }}</td>
+          <td class="text-end pe-4">
+            <div class="d-flex gap-2 justify-content-end">
+              {% if kyc_done %}
+              <form method="POST" action="{% url 'frontend:approve_agent' agent.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-dark fw-bold rounded-1 px-3">
+                  <i class="bi bi-check-lg me-1"></i>Approve
+                </button>
+              </form>
+              {% else %}
+              <span data-bs-toggle="tooltip" title="Cannot approve — KYC docs not submitted yet">
+                <button class="btn btn-sm btn-secondary fw-bold rounded-1 px-3" disabled style="opacity:.4;">
+                  <i class="bi bi-check-lg me-1"></i>Approve
+                </button>
+              </span>
+              {% endif %}
+              <a href="{% url 'frontend:rate_agent' agent.id %}" 
+                 class="btn btn-sm btn-outline-warning fw-bold rounded-1 px-3"
+                 data-bs-toggle="tooltip" title="Rate agent performance">
+                <i class="bi bi-star me-1"></i>Rate
+              </a>
+              <form method="POST" action="{% url 'frontend:reject_agent' agent.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger fw-bold rounded-1 px-3"
+                        onclick="return confirm('Reject and deactivate {{ agent.email }}?')">
+                  <i class="bi bi-x-lg me-1"></i>Reject
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endwith %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="dash-card card mb-4">
+  <div class="card-body text-center py-5">
+    <i class="bi bi-person-check fs-1 d-block mb-3 text-success"></i>
+    <h5 class="fw-semibold text-success">No Pending Agent Applications</h5>
+    <p class="text-muted mb-0">All agent KYC applications have been processed.</p>
+  </div>
+</div>
+{% endif %}
+
+<!-- Pending Transactions (Admin) -->
+{% if pending_transactions %}
+<div class="dash-card card mb-4">
+  <div class="card-header bg-success text-white">
+    <span><i class="bi bi-file-earmark-check me-2"></i>Fully Signed Contracts Awaiting Finalization</span>
+    <span class="badge bg-white text-success rounded-pill">{{ pending_transactions|length }}</span>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="ps-4">Tx ID</th>
+          <th>Property</th>
+          <th>Buyer</th>
+          <th>Price (KES)</th>
+          <th class="text-end pe-4">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tx in pending_transactions %}
+        <tr>
+          <td class="ps-4"><small class="text-muted"><samp>{{ tx.id|stringformat:"s"|slice:":8" }}…</samp></small></td>
+          <td class="fw-bold">{{ tx.land_parcel.parcel_number }}</td>
+          <td class="text-muted small">{{ tx.buyer.email }}</td>
+          <td>{{ tx.agreed_price }}</td>
+          <td class="text-end pe-4">
+            <a href="{% url 'frontend:sign_contract' tx.id %}" class="btn btn-sm btn-success fw-bold rounded-1">
+              <i class="bi bi-check2-circle me-1"></i>Finalize Escrow
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Admin System Overview -->
+<div class="row g-4 mb-4">
+  <!-- Pending Parcels Overview -->
+  <div class="col-lg-6">
+    <div class="dash-card card h-100">
+      <div class="card-header bg-warning text-dark">
+        <span><i class="bi bi-inbox me-2"></i>All Pending Parcels</span>
+        <span class="badge bg-dark rounded-pill">{{ pending_parcels|length }}</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-4">Parcel #</th>
+                <th>Location</th>
+                <th>Assigned Agent</th>
+                <th class="text-end pe-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for parcel in pending_parcels %}
+              <tr>
+                <td class="ps-4 fw-bold"><samp class="small">{{ parcel.parcel_number }}</samp></td>
+                <td class="text-muted small">{{ parcel.ward }}, {{ parcel.county }}</td>
+                <td>
+                  {% if parcel.assigned_agent %}
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="badge bg-success rounded-1">{{ parcel.assigned_agent.email }}</span>
+                      <small class="text-muted">
+                        {% if parcel.assigned_agent.average_rating %}
+                          <i class="bi bi-star-fill text-warning"></i> {{ parcel.assigned_agent.average_rating }}/5
+                        {% else %}
+                          <span class="text-muted">Not rated</span>
+                        {% endif %}
+                        ({{ parcel.assigned_agent.total_tasks_completed }} tasks)
+                      </small>
+                    </div>
+                  {% else %}
+                    <form method="POST" action="{% url 'frontend:assign_task' %}" class="d-flex align-items-center gap-2">
+                      {% csrf_token %}
+                      <input type="hidden" name="parcel_number" value="{{ parcel.parcel_number }}">
+                      <select name="agent_id" class="form-select form-select-sm" required>
+                        <option value="">Select Agent</option>
+                        {% for agent in verified_agents %}
+                          <option value="{{ agent.id }}">
+                            {{ agent.email }} 
+                            {% if agent.average_rating %}({{ agent.average_rating }}/5 ⭐){% endif %}
+                            ({{ agent.total_tasks_completed }} tasks)
+                          </option>
+                        {% endfor %}
+                      </select>
+                      <button type="submit" class="btn btn-sm btn-primary rounded-1">
+                        <i class="bi bi-person-plus"></i> Assign
+                      </button>
+                    </form>
+                  {% endif %}
+                </td>
+                <td class="text-end pe-4">
+                  <div class="btn-group" role="group">
+                    <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}"
+                       class="btn btn-sm btn-outline-dark rounded-1">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    <a href="{% url 'frontend:task_management' %}"
+                       class="btn btn-sm btn-dark rounded-1">
+                      <i class="bi bi-gear"></i>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="text-center py-5 text-muted">
+                  <i class="bi bi-inbox fs-1 d-block mb-3 opacity-40"></i>
+                  <p class="fw-medium mb-0">No pending parcels.</p>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Completed Tasks Overview -->
+  <div class="col-lg-6">
+    <div class="dash-card card h-100">
+      <div class="card-header bg-info text-white">
+        <span><i class="bi bi-check2-all me-2"></i>Recent Completed Verifications</span>
+        <span class="badge bg-white text-info rounded-pill">{{ completed_parcels|length }}</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-4">Parcel #</th>
+                <th>Agent</th>
+                <th>Location</th>
+                <th>Outcome</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for parcel in completed_parcels %}
+              <tr>
+                <td class="ps-4 fw-bold"><samp class="small">{{ parcel.parcel_number }}</samp></td>
+                <td class="text-muted small">
+                  {% if parcel.assigned_agent %}
+                    {{ parcel.assigned_agent.email|truncatechars:20 }}
+                  {% else %}
+                    <span class="text-muted">Unassigned</span>
+                  {% endif %}
+                </td>
+                <td class="text-muted small">{{ parcel.ward }}, {{ parcel.county }}</td>
+                <td>
+                  {% if parcel.verification_status == 'Verified' %}
+                  <span class="badge bg-success rounded-1"><i class="bi bi-check-lg me-1"></i>Approved</span>
+                  {% else %}
+                  <span class="badge bg-danger rounded-1"><i class="bi bi-x-lg me-1"></i>Rejected</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="text-center py-5 text-muted">
+                  <i class="bi bi-journal-check fs-1 d-block mb-3 opacity-40"></i>
+                  <p class="fw-medium mb-0">No completed tasks yet.</p>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function clearMessageForm() {
+    document.querySelector('select[name="recipient_type"]').value = '';
+    document.querySelector('input[name="subject"]').value = '';
+    document.querySelector('textarea[name="message"]').value = '';
+    document.querySelector('input[name="custom_emails"]').value = '';
+    document.querySelector('input[name="custom_emails"]').style.display = 'none';
+    document.querySelector('input[name="send_html"]').checked = true;
+}
+
+// Show/hide custom emails input based on recipient type
+document.addEventListener('DOMContentLoaded', function() {
+    const recipientSelect = document.querySelector('select[name="recipient_type"]');
+    const customInput = document.querySelector('input[name="custom_emails"]');
+    
+    if (recipientSelect) {
+        recipientSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                customInput.style.display = 'block';
+                customInput.required = true;
+            } else {
+                customInput.style.display = 'none';
+                customInput.required = false;
+                customInput.value = '';
+            }
+        });
+    }
+});
+</script>
+
+{% endblock %}

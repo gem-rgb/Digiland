@@ -1,0 +1,3 @@
+﻿Migrations for 'core':
+  core\migrations\0009_agentkycapplication.py
+    + Create model AgentKYCApplication

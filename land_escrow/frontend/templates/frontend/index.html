@@ -1,0 +1,376 @@
+{% extends 'frontend/base.html' %}
+
+{% block title %}
+  {% if user.is_authenticated %}
+    {% if user.role == 'Admin' %}Admin Dashboard — Digiland
+    {% elif user.role == 'Buyer' %}My Dashboard — Digiland
+    {% elif user.role == 'Seller' %}Seller Hub — Digiland
+    {% else %}Digiland{% endif %}
+  {% else %}
+    Digiland — Secure Land Escrow
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+{% if not user.is_authenticated %}
+</div><!-- close base container for edge-to-edge hero -->
+
+<!-- GUEST: Marketing landing page -->
+<div class="container-fluid text-white position-relative overflow-hidden"
+     style="background:#000;margin-top:-1.5rem;padding-top:8rem;padding-bottom:8rem;">
+    <div class="position-absolute opacity-25"
+         style="top:-50%;right:-10%;width:800px;height:800px;
+                background:radial-gradient(circle,rgba(16,185,129,.4) 0%,rgba(0,0,0,0) 70%);
+                border-radius:50%;pointer-events:none;"></div>
+    <div class="container position-relative">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <h1 class="display-2 fw-bolder mb-4 lh-1" style="color:#fff;letter-spacing:-2px;">
+                    Secure land.<br>Zero friction.
+                </h1>
+                <p class="lead mb-5 fs-4 fw-normal" style="color:#a3a3a3;max-width:560px;">
+                    Buy, sell, and verify property with cryptographic certainty.
+                    Verified by ArdhiSasa. Protected by Escrow.
+                </p>
+                <div class="d-flex flex-column flex-sm-row gap-3">
+                    <a href="{% url 'account_login' %}" class="btn btn-light btn-lg fw-bold rounded-1 px-5 py-3">Log in to Escrow</a>
+                    <a href="{% url 'account_signup' %}" class="btn btn-outline-light btn-lg fw-bold rounded-1 px-5 py-3">Sign up to trade</a>
+                </div>
+            </div>
+            <div class="col-lg-4 offset-lg-1 d-none d-lg-block">
+                <div class="bg-white rounded-4 p-4 p-xl-5 shadow-lg text-dark position-relative"
+                     style="transform:rotate(2deg);transition:transform .3s ease;"
+                     onmouseover="this.style.transform='rotate(0deg)'"
+                     onmouseout="this.style.transform='rotate(2deg)'">
+                    <div class="position-absolute top-0 start-50 translate-middle bg-success text-white px-3 py-1 rounded-pill small fw-bold shadow-sm">
+                        <i class="bi bi-shield-check me-1"></i>GUARANTEED
+                    </div>
+                    <h3 class="fw-bolder mb-3 mt-2 lh-sm" style="letter-spacing:-1px;">The Escrow<br>Advantage</h3>
+                    <p class="mb-0 text-muted" style="font-size:1.05rem;">
+                        Funds are locked in a regulated vault and only released once the title is cryptographically transferred in your name.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How it works -->
+<div class="container-fluid py-5" style="background:#f8fafc;">
+    <div class="container py-5">
+        <h2 class="display-5 fw-bolder mb-5" style="letter-spacing:-1.5px;">How it works</h2>
+        <div class="row g-5">
+            <div class="col-md-4">
+                <i class="bi bi-search fs-1 text-dark mb-3 d-block"></i>
+                <h4 class="fw-bold mb-2">1. Verify Core Title</h4>
+                <p class="text-muted">We pull real-time government registries from ArdhiSasa, ensuring the parcel is conflict-free before you pay.</p>
+            </div>
+            <div class="col-md-4">
+                <i class="bi bi-lock fs-1 text-dark mb-3 d-block"></i>
+                <h4 class="fw-bold mb-2">2. Lock Node Funds</h4>
+                <p class="text-muted">Buyers deposit via M-PESA into a secure vault. Sellers see funds are ready — but can't access them until verified transfer.</p>
+            </div>
+            <div class="col-md-4">
+                <i class="bi bi-key-fill fs-1 text-dark mb-3 d-block"></i>
+                <h4 class="fw-bold mb-2">3. Exchange Keys</h4>
+                <p class="text-muted">Both parties sign electronically. The vault unlocks and atomic settlement executes instantly.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="container-fluid bg-dark text-white pt-5 pb-4 mt-5">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-md-5 mb-4 mb-md-0">
+                <h5 class="fw-bold mb-3"><i class="bi bi-shield-check text-success me-2"></i>Digiland</h5>
+                <p class="text-white-50 pe-4">Cryptographic middleware for executing, verifying, and securing real estate transactions across regional land registries.</p>
+            </div>
+            <div class="col-6 col-md-3 offset-md-1">
+                <h6 class="fw-bold text-uppercase mb-3 text-light" style="letter-spacing:1px;">Legal</h6>
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2"><a href="{% url 'frontend:terms' %}" class="text-white-50 text-decoration-none">Terms</a></li>
+                    <li class="mb-2"><a href="{% url 'frontend:privacy' %}" class="text-white-50 text-decoration-none">Privacy</a></li>
+                    <li class="mb-2"><a href="{% url 'frontend:escrow_acts' %}" class="text-white-50 text-decoration-none">Escrow Acts</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="border-top border-secondary pt-4">
+            <p class="mb-0 text-white-50 small">&copy; 2026 Digiland. All cryptographic rights reserved.</p>
+        </div>
+    </div>
+</footer>
+<div class="d-none"><!-- reopen base container -->
+
+{% elif user.role == 'Admin' %}
+<!-- ADMIN: Management Dashboard -->
+<div class="mb-4 pb-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+        <h2 class="mb-1">Admin Dashboard</h2>
+        <p class="text-muted mb-0">System overview — manage land records, users, and escrow operations.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'frontend:agent_dashboard' %}" class="btn btn-dark fw-semibold rounded-1">
+            <i class="bi bi-speedometer2 me-1"></i>Command Centre
+        </a>
+        <a href="/admin/" target="_blank" class="btn btn-outline-warning fw-semibold rounded-1">
+            <i class="bi bi-sliders me-1"></i>System Admin
+        </a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Land Records -->
+    <div class="col-md-3">
+        <a href="{% url 'frontend:parcel_list' %}" class="text-decoration-none">
+            <div class="card h-100 p-4">
+                <div class="rounded-3 d-flex align-items-center justify-content-center mb-3"
+                     style="width:48px;height:48px;background:#0f172a;">
+                    <i class="bi bi-geo-alt text-white fs-4"></i>
+                </div>
+                <h5 class="mb-1">Land Parcels</h5>
+                <p class="text-muted small mb-0">Browse, edit, and delete land records and listings.</p>
+            </div>
+        </a>
+    </div>
+    <!-- KYC / Users -->
+    <div class="col-md-3">
+        <a href="{% url 'frontend:agent_dashboard' %}" class="text-decoration-none">
+            <div class="card h-100 p-4">
+                <div class="rounded-3 d-flex align-items-center justify-content-center mb-3"
+                     style="width:48px;height:48px;background:#92400e;">
+                    <i class="bi bi-person-badge text-white fs-4"></i>
+                </div>
+                <h5 class="mb-1">Agent KYC Queue</h5>
+                <p class="text-muted small mb-0">Approve or reject pending agent applications.</p>
+            </div>
+        </a>
+    </div>
+    <!-- Transactions -->
+    <div class="col-md-3">
+        <a href="{% url 'frontend:transactions' %}" class="text-decoration-none">
+            <div class="card h-100 p-4">
+                <div class="rounded-3 d-flex align-items-center justify-content-center mb-3"
+                     style="width:48px;height:48px;background:#1e3a5f;">
+                    <i class="bi bi-clock-history text-white fs-4"></i>
+                </div>
+                <h5 class="mb-1">Transactions</h5>
+                <p class="text-muted small mb-0">Monitor active escrow pipelines and signed contracts.</p>
+            </div>
+        </a>
+    </div>
+    <!-- System Admin -->
+    <div class="col-md-3">
+        <a href="/admin/" target="_blank" class="text-decoration-none">
+            <div class="card h-100 p-4" style="border-left:3px solid #f59e0b !important;">
+                <div class="rounded-3 d-flex align-items-center justify-content-center mb-3"
+                     style="width:48px;height:48px;background:#f59e0b;">
+                    <i class="bi bi-sliders text-white fs-4"></i>
+                </div>
+                <h5 class="mb-1">System Admin</h5>
+                <p class="text-muted small mb-0">Manage users, edit records, and troubleshoot via Django admin.</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+{% if transactions %}
+<div class="mt-2">
+    <h5 class="fw-bold mb-3">Recent System Transactions</h5>
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="border-bottom">
+                    <tr>
+                        <th class="ps-4 py-3 text-muted small text-uppercase fw-bold">Parcel</th>
+                        <th class="py-3 text-muted small text-uppercase fw-bold">Buyer</th>
+                        <th class="py-3 text-muted small text-uppercase fw-bold">Amount (KES)</th>
+                        <th class="pe-4 py-3 text-end text-muted small text-uppercase fw-bold">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in transactions %}
+                    <tr>
+                        <td class="ps-4 py-3 fw-bold">{{ tx.land_parcel.parcel_number }}</td>
+                        <td class="py-3 text-muted small">{{ tx.buyer.email }}</td>
+                        <td class="py-3 text-muted">{{ tx.agreed_price }}</td>
+                        <td class="pe-4 py-3 text-end">
+                            <span class="badge {% if tx.status == 'Completed' %}bg-dark{% elif tx.status == 'Disputed' %}bg-danger{% else %}bg-light text-dark border{% endif %}">
+                                {{ tx.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% elif user.role == 'Buyer' %}
+<!-- BUYER: Home Dashboard -->
+<div class="mb-4 pb-3 border-bottom">
+    <h2 class="mb-1">Welcome back 👋</h2>
+    <p class="text-muted mb-0">Browse verified parcels, track your escrow pipeline, or contact support.</p>
+</div>
+<div class="row g-4">
+    <div class="col-md-4">
+        <a href="{% url 'frontend:parcel_list' %}" class="text-decoration-none">
+            <div class="card h-100 p-4">
+                <div class="rounded-3 d-flex align-items-center justify-content-center mb-3"
+                     style="width:48px;height:48px;background:#0f172a;">
+                    <i class="bi bi-grid-3x3-gap text-white fs-4"></i>
+                </div>
+                <h5 class="mb-1">Marketplace</h5>
+                <p class="text-muted small mb-0">Browse all verified land parcels available for purchase.</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'frontend:transactions' %}" class="text-decoration-none">
+            <div class="card h-100 p-4">
+                <div class="rounded-3 d-flex align-items-center justify-content-center mb-3"
+                     style="width:48px;height:48px;background:#0f172a;">
+                    <i class="bi bi-clock-history text-white fs-4"></i>
+                </div>
+                <h5 class="mb-1">My Transactions</h5>
+                <p class="text-muted small mb-0">Track the status of your escrow pipeline and active purchases.</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'frontend:messages' %}" class="text-decoration-none">
+            <div class="card h-100 p-4">
+                <div class="rounded-3 d-flex align-items-center justify-content-center mb-3"
+                     style="width:48px;height:48px;background:#0f172a;">
+                    <i class="bi bi-chat-dots text-white fs-4"></i>
+                </div>
+                <h5 class="mb-1">Messages</h5>
+                <p class="text-muted small mb-0">Communicate with assigned agents and administrators.</p>
+            </div>
+        </a>
+    </div>
+</div>
+{% if transactions %}
+<div class="mt-5">
+    <h5 class="fw-bold mb-3">Recent Pipeline</h5>
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="border-bottom">
+                    <tr>
+                        <th class="ps-4 py-3 text-muted small text-uppercase fw-bold">Parcel</th>
+                        <th class="py-3 text-muted small text-uppercase fw-bold">Amount (KES)</th>
+                        <th class="pe-4 py-3 text-end text-muted small text-uppercase fw-bold">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in transactions %}
+                    <tr>
+                        <td class="ps-4 py-3 fw-bold">{{ tx.land_parcel.parcel_number }}</td>
+                        <td class="py-3 text-muted">{{ tx.agreed_price }}</td>
+                        <td class="pe-4 py-3 text-end">
+                            <span class="badge {% if tx.status == 'Completed' %}bg-dark{% elif tx.status == 'Disputed' %}bg-danger{% else %}bg-light text-dark border{% endif %}">
+                                {{ tx.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% elif user.role == 'Seller' %}
+<!-- SELLER: Hub Dashboard -->
+<div class="mb-4 pb-3 border-bottom">
+    <h2 class="mb-1">Seller Hub</h2>
+    <p class="text-muted mb-0">List parcels, track active escrows, and manage your portfolio.</p>
+</div>
+<div class="row g-4">
+    <div class="col-md-4">
+        <a href="{% url 'frontend:parcel_upload' %}" class="text-decoration-none">
+            <div class="card h-100 p-4">
+                <div class="rounded-3 d-flex align-items-center justify-content-center mb-3"
+                     style="width:48px;height:48px;background:#10b981;">
+                    <i class="bi bi-plus-circle text-white fs-4"></i>
+                </div>
+                <h5 class="mb-1">List a Parcel</h5>
+                <p class="text-muted small mb-0">Submit a new land parcel for verification and listing.</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'frontend:parcel_list' %}" class="text-decoration-none">
+            <div class="card h-100 p-4">
+                <div class="rounded-3 d-flex align-items-center justify-content-center mb-3"
+                     style="width:48px;height:48px;background:#0f172a;">
+                    <i class="bi bi-geo-alt text-white fs-4"></i>
+                </div>
+                <h5 class="mb-1">My Listings</h5>
+                <p class="text-muted small mb-0">View and manage your active property listings.</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'frontend:transactions' %}" class="text-decoration-none">
+            <div class="card h-100 p-4">
+                <div class="rounded-3 d-flex align-items-center justify-content-center mb-3"
+                     style="width:48px;height:48px;background:#0f172a;">
+                    <i class="bi bi-clock-history text-white fs-4"></i>
+                </div>
+                <h5 class="mb-1">Escrow Pipeline</h5>
+                <p class="text-muted small mb-0">Track active escrow transactions for your parcels.</p>
+            </div>
+        </a>
+    </div>
+</div>
+{% if transactions %}
+<div class="mt-5">
+    <h5 class="fw-bold mb-3">Recent Transactions</h5>
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="border-bottom">
+                    <tr>
+                        <th class="ps-4 py-3 text-muted small text-uppercase fw-bold">Parcel</th>
+                        <th class="py-3 text-muted small text-uppercase fw-bold">Amount (KES)</th>
+                        <th class="pe-4 py-3 text-end text-muted small text-uppercase fw-bold">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in transactions %}
+                    <tr>
+                        <td class="ps-4 py-3 fw-bold">{{ tx.land_parcel.parcel_number }}</td>
+                        <td class="py-3 text-muted">{{ tx.agreed_price }}</td>
+                        <td class="pe-4 py-3 text-end">
+                            <span class="badge {% if tx.status == 'Completed' %}bg-dark{% elif tx.status == 'Disputed' %}bg-danger{% else %}bg-light text-dark border{% endif %}">
+                                {{ tx.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<!-- FALLBACK (Agent/Admin already redirected) -->
+<div class="text-center py-5">
+    <i class="bi bi-shield-check display-1 text-muted opacity-25 d-block mb-3"></i>
+    <h4 class="text-muted">Logged in as <strong>{{ user.role }}</strong></h4>
+    <a href="{% url 'frontend:agent_dashboard' %}" class="btn btn-dark mt-3 fw-semibold rounded-1">
+        Go to Command Centre →
+    </a>
+</div>
+{% endif %}
+
+{% endblock %}

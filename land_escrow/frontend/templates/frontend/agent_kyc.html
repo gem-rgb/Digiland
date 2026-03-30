@@ -1,0 +1,165 @@
+{% extends 'frontend/base.html' %}
+{% block title %}KYC Verification — Digiland{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-3">
+    <div class="col-lg-7">
+
+        <!-- Header -->
+        <div class="text-center mb-5">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-dark mb-3" style="width:56px;height:56px;">
+                <i class="bi bi-person-vcard-fill text-white fs-4"></i>
+            </div>
+            <h2 class="fw-bold mb-1" style="letter-spacing:-1px;">Agent KYC Verification</h2>
+            <p class="text-muted">Complete and upload all required documents. Your application will be reviewed by a Digiland administrator within 1–3 business days.</p>
+        </div>
+
+        <!-- Progress indicator -->
+        <div class="d-flex align-items-center gap-0 mb-5">
+            <div class="d-flex flex-column align-items-center">
+                <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center fw-bold" style="width:36px;height:36px;">
+                    <i class="bi bi-check-lg"></i>
+                </div>
+                <small class="text-muted mt-1" style="font-size:.7rem;">Account</small>
+            </div>
+            <div class="flex-grow-1 border-top border-2 mx-2" style="margin-bottom:18px;"></div>
+            <div class="d-flex flex-column align-items-center">
+                <div class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center fw-bold" style="width:36px;height:36px;">2</div>
+                <small class="text-muted mt-1" style="font-size:.7rem;">KYC Docs</small>
+            </div>
+            <div class="flex-grow-1 border-top border-2 mx-2 opacity-25" style="margin-bottom:18px;"></div>
+            <div class="d-flex flex-column align-items-center">
+                <div class="rounded-circle bg-light border text-muted d-flex align-items-center justify-content-center fw-bold" style="width:36px;height:36px;">3</div>
+                <small class="text-muted mt-1" style="font-size:.7rem;">Awaiting Review</small>
+            </div>
+            <div class="flex-grow-1 border-top border-2 mx-2 opacity-25" style="margin-bottom:18px;"></div>
+            <div class="d-flex flex-column align-items-center">
+                <div class="rounded-circle bg-light border text-muted d-flex align-items-center justify-content-center fw-bold" style="width:36px;height:36px;">4</div>
+                <small class="text-muted mt-1" style="font-size:.7rem;">Approved</small>
+            </div>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+
+            <!-- Personal / Tax Details -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-dark text-white py-3 px-4 rounded-top-4">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-person-badge me-2"></i>Identity & Tax Information</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-muted text-uppercase" style="letter-spacing:.5px;">
+                                {{ form.kra_pin.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.kra_pin }}
+                            {% if form.kra_pin.help_text %}
+                            <div class="form-text text-muted">{{ form.kra_pin.help_text }}</div>
+                            {% endif %}
+                            {% for error in form.kra_pin.errors %}
+                            <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-muted text-uppercase" style="letter-spacing:.5px;">
+                                {{ form.id_number.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.id_number }}
+                            {% for error in form.id_number.errors %}
+                            <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Document Uploads -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-dark text-white py-3 px-4 rounded-top-4">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-cloud-upload me-2"></i>Supporting Documents</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info border-0 rounded-3 small mb-4">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Upload clear, shareable scans. Accepted formats: <strong>PDF, JPG, PNG</strong>. Max size per file: 5 MB.
+                    </div>
+
+                    <div class="d-flex flex-column gap-4">
+
+                        <!-- ID Photo -->
+                        <div>
+                            <label class="form-label fw-semibold small text-muted text-uppercase d-flex align-items-center gap-2" style="letter-spacing:.5px;">
+                                <i class="bi bi-card-image text-dark"></i>
+                                {{ form.id_photo.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.id_photo }}
+                            <div class="form-text text-muted">Both sides of your National ID or the photo page of your Passport.</div>
+                            {% for error in form.id_photo.errors %}
+                            <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Resume -->
+                        <div>
+                            <label class="form-label fw-semibold small text-muted text-uppercase d-flex align-items-center gap-2" style="letter-spacing:.5px;">
+                                <i class="bi bi-file-earmark-person text-dark"></i>
+                                {{ form.resume.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.resume }}
+                            <div class="form-text text-muted">Detailing your experience in real estate, law, or related fields (PDF preferred).</div>
+                            {% for error in form.resume.errors %}
+                            <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Certificate of Good Conduct -->
+                        <div>
+                            <label class="form-label fw-semibold small text-muted text-uppercase d-flex align-items-center gap-2" style="letter-spacing:.5px;">
+                                <i class="bi bi-shield-check text-dark"></i>
+                                {{ form.certificate_of_good_conduct.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.certificate_of_good_conduct }}
+                            <div class="form-text text-muted">Issued by the Directorate of Criminal Investigations (DCI Kenya), must be current (within 12 months).</div>
+                            {% for error in form.certificate_of_good_conduct.errors %}
+                            <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Practicing Certificate (optional) -->
+                        <div>
+                            <label class="form-label fw-semibold small text-muted text-uppercase d-flex align-items-center gap-2" style="letter-spacing:.5px;">
+                                <i class="bi bi-award text-dark"></i>
+                                {{ form.practicing_certificate.label }}
+                                <span class="badge bg-light text-dark border rounded-1 fw-normal" style="font-size:.7rem;">Optional</span>
+                            </label>
+                            {{ form.practicing_certificate }}
+                            <div class="form-text text-muted">{{ form.practicing_certificate.help_text }}</div>
+                            {% for error in form.practicing_certificate.errors %}
+                            <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Declaration & Submit -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4" style="border-left: 4px solid #0f172a !important;">
+                <div class="card-body p-4">
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="declaration" required>
+                        <label class="form-check-label small text-muted" for="declaration">
+                            I declare that all information and documents submitted above are genuine, accurate, and belong to me. I understand that providing false information is grounds for immediate disqualification and may result in legal action.
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-dark btn-lg w-100 fw-bold rounded-1">
+                        <i class="bi bi-send-check me-2"></i>Submit KYC Application
+                    </button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+{% endblock %}

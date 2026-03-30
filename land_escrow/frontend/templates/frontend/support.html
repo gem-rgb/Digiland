@@ -1,0 +1,65 @@
+{% extends 'frontend/base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12 d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="display-5">Support Center</h2>
+            <p class="text-muted">Open tickets for disputes, verification failures, or account issues.</p>
+        </div>
+        <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#newTicketModal">
+            + Open New Ticket
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    {% for ticket in tickets %}
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm h-100 {% if ticket.status == 'Resolved' %}border-success{% endif %}">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <strong>{{ ticket.subject }}</strong>
+                <span class="badge {% if ticket.status == 'Resolved' %}bg-success{% elif ticket.status == 'In_Progress' %}bg-info{% else %}bg-secondary{% endif %} rounded-pill">
+                    {{ ticket.status|title }}
+                </span>
+            </div>
+            <div class="card-body">
+                <p class="card-text text-muted">{{ ticket.message|truncatewords:20 }}</p>
+            </div>
+            <div class="card-footer bg-light text-muted small">
+                Submitted on {{ ticket.created_at|date:"F d, Y" }}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <h4 class="text-muted">You have no open support tickets.</h4>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Modal for New Ticket (Mock) -->
+<div class="modal fade" id="newTicketModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Create Support Ticket</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="mb-3">
+            <label class="form-label">Subject</label>
+            <input type="text" class="form-control" placeholder="E.g., Title verification failed">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Message</label>
+            <textarea class="form-control" rows="4" placeholder="Describe your issue..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Submit to Admin</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
