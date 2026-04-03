@@ -30,7 +30,7 @@ ALLOWED_HOSTS = ['pinnaclce']
 
 if DEBUG:
     ALLOWED_HOSTS += ['localhost', '127.0.0.1']
-    CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:58469', 'http://localhost:58469']
+    CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:58469', 'http://localhost:58469', 'http://127.0.0.1:64538']
 
 
 # Application definition
@@ -142,6 +142,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # Cloudinary Setup for entirely Free Media (PDFs, Images) hosting
 CLOUDINARY_STORAGE = {
@@ -173,7 +174,7 @@ EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", cast=str, default=None)
 EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool, default=True)  # Use EMAIL_PORT 587 for TLS
 EMAIL_USE_SSL = config("EMAIL_USE_SSL", cast=bool, default=False)  # Use EMAIL_PORT 465 for SSL
 ADMIN_USER_NAME = config("ADMIN_USER_NAME", default="Digiland Admin")
-ADMIN_USER_EMAIL = config("ADMIN_USER_EMAIL", default="trickytaitumu@gmail.com")
+ADMIN_USER_EMAIL = config("ADMIN_USER_EMAIL", default="")
 
 # All outgoing emails (including Django errors) use the single configured address
 DEFAULT_FROM_EMAIL = config("EMAIL_HOST_USER", default="noreply@digiland.local")

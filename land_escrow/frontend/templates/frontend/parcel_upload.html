@@ -1,22 +1,31 @@
 {% extends 'frontend/base.html' %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card shadow-sm mt-4">
-            <div class="card-header bg-dark text-white">
-                <h4 class="mb-0">Upload & Register Land Parcel</h4>
-            </div>
-            <div class="card-body">
-                <p class="text-muted mb-4">Provide details for the land parcel. Our system will automatically cross-reference these attributes with the ArdhiSasa registry during the "Pending" phase.</p>
-                <form method="POST" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    {{ form.as_p }}
-                    <button type="submit" class="btn btn-primary w-100 mt-3 btn-lg fw-bold">Submit for Verification</button>
-                    <a href="{% url 'frontend:parcel_list' %}" class="btn btn-outline-secondary w-100 mt-2">Cancel</a>
-                </form>
-            </div>
-        </div>
+<section class="page-header">
+    <div>
+        <span class="page-kicker"><i class="bi bi-plus-circle"></i>New Listing</span>
+        <h2 class="page-title">Register a land parcel</h2>
+        <p class="page-subtitle">Provide parcel details for compliance checks and listing verification.</p>
     </div>
-</div>
+    <div class="page-actions">
+        <a href="{% url 'frontend:parcel_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>Back to Marketplace
+        </a>
+    </div>
+</section>
+
+<section class="card form-shell">
+    <div class="card-header bg-dark">
+        <span><i class="bi bi-geo-alt me-2"></i>Parcel information</span>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-4">Our system cross-references submitted details against registry records during review.</p>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary w-100 mt-3 btn-lg">Submit for Verification</button>
+            <a href="{% url 'frontend:parcel_list' %}" class="btn btn-outline-secondary w-100 mt-2">Cancel</a>
+        </form>
+    </div>
+</section>
 {% endblock %}

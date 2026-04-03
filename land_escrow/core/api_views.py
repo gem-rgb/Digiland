@@ -356,3 +356,228 @@ def query_mpesa_status_view(request):
     except Exception as e:
         logger.error(f"Error querying M-PESA status: {str(e)}")
         return JsonResponse({"status": "error", "message": "Internal status query error"})
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def b2b_payment_view(request):
+    """
+    API endpoint to initiate M-PESA B2B payment
+    """
+    try:
+        data = json.loads(request.body)
+        receiver_party = data.get('receiver_party')
+        amount = data.get('amount')
+        command_id = data.get('command_id', 'BusinessPayBill')
+        remarks = data.get('remarks', 'B2B Payment')
+        
+        if not all([receiver_party, amount]):
+            return JsonResponse({
+                "status": "error",
+                "message": "Receiver party and amount are required"
+            })
+        
+        result = DarajaAPI.b2b_payment(
+            receiver_party=receiver_party,
+            amount=amount,
+            command_id=command_id,
+            remarks=remarks
+        )
+        
+        return JsonResponse(result)
+            
+    except json.JSONDecodeError:
+        return JsonResponse({"status": "error", "message": "Invalid JSON"})
+    except Exception as e:
+        logger.error(f"Error initiating B2B payment: {str(e)}")
+        return JsonResponse({"status": "error", "message": "Internal B2B payment error"})
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def reverse_transaction_view(request):
+    """
+    API endpoint to reverse an M-PESA transaction
+    """
+    try:
+        data = json.loads(request.body)
+        transaction_id = data.get('transaction_id')
+        amount = data.get('amount')
+        receiver_party = data.get('receiver_party')
+        remarks = data.get('remarks', 'Transaction Reversal')
+        
+        if not all([transaction_id, amount, receiver_party]):
+            return JsonResponse({
+                "status": "error",
+                "message": "Transaction ID, amount, and receiver party are required"
+            })
+        
+        result = DarajaAPI.reverse_transaction(
+            transaction_id=transaction_id,
+            amount=amount,
+            receiver_party=receiver_party,
+            remarks=remarks
+        )
+        
+        return JsonResponse(result)
+            
+    except json.JSONDecodeError:
+        return JsonResponse({"status": "error", "message": "Invalid JSON"})
+    except Exception as e:
+        logger.error(f"Error reversing transaction: {str(e)}")
+        return JsonResponse({"status": "error", "message": "Internal transaction reversal error"})
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def query_transaction_status_view(request):
+    """
+    API endpoint to query M-PESA transaction status
+    """
+    try:
+        data = json.loads(request.body)
+        transaction_id = data.get('transaction_id')
+        party_a = data.get('party_a')
+        identifier_type = data.get('identifier_type', '4')
+        
+        if not all([transaction_id, party_a]):
+            return JsonResponse({
+                "status": "error",
+                "message": "Transaction ID and party A are required"
+            })
+        
+        result = DarajaAPI.query_transaction_status(
+            transaction_id=transaction_id,
+            party_a=party_a,
+            identifier_type=identifier_type
+        )
+        
+        return JsonResponse(result)
+            
+    except json.JSONDecodeError:
+        return JsonResponse({"status": "error", "message": "Invalid JSON"})
+    except Exception as e:
+        logger.error(f"Error querying transaction status: {str(e)}")
+        return JsonResponse({"status": "error", "message": "Internal transaction status query error"})
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def query_account_balance_view(request):
+    """
+    API endpoint to query M-PESA account balance
+    """
+    try:
+        data = json.loads(request.body)
+        party_a = data.get('party_a')
+        identifier_type = data.get('identifier_type', '4')
+        
+        if not party_a:
+            return JsonResponse({
+                "status": "error",
+                "message": "Party A is required"
+            })
+        
+        result = DarajaAPI.query_account_balance(
+            party_a=party_a,
+            identifier_type=identifier_type
+        )
+        
+        return JsonResponse(result)
+            
+    except json.JSONDecodeError:
+        return JsonResponse({"status": "error", "message": "Invalid JSON"})
+    except Exception as e:
+        logger.error(f"Error querying account balance: {str(e)}")
+        return JsonResponse({"status": "error", "message": "Internal account balance query error"})
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def simulate_c2b_payment_view(request):
+    """
+    API endpoint to simulate C2B payment for testing
+    """
+    try:
+        data = json.loads(request.body)
+        short_code = data.get('short_code')
+        amount = data.get('amount')
+        msisdn = data.get('msisdn')
+        bill_ref_number = data.get('bill_ref_number')
+        
+        if not all([short_code, amount, msisdn, bill_ref_number]):
+            return JsonResponse({
+                "status": "error",
+                "message": "Short code, amount, MSISDN, and bill reference number are required"
+            })
+        
+        result = DarajaAPI.simulate_c2b_payment(
+            short_code=short_code,
+            amount=amount,
+            msisdn=msisdn,
+            bill_ref_number=bill_ref_number
+        )
+        
+        return JsonResponse(result)
+            
+    except json.JSONDecodeError:
+        return JsonResponse({"status": "error", "message": "Invalid JSON"})
+    except Exception as e:
+        logger.error(f"Error simulating C2B payment: {str(e)}")
+        return JsonResponse({"status": "error", "message": "Internal C2B simulation error"})
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def redeem_bonga_points_view(request):
+    """
+    API endpoint to redeem Bonga points for payment
+    """
+    try:
+        data = json.loads(request.body)
+        msisdn = data.get('msisdn')
+        amount = data.get('amount')
+        bonga_points = data.get('bonga_points')
+        conversion_rate = data.get('conversion_rate', 0.2)
+        short_code = data.get('short_code')
+        account_number = data.get('account_number', '')
+        
+        if not all([msisdn, amount, bonga_points]):
+            return JsonResponse({
+                "status": "error",
+                "message": "MSISDN, amount, and bonga points are required"
+            })
+        
+        result = DarajaAPI.redeem_bonga_points(
+            msisdn=msisdn,
+            amount=amount,
+            bonga_points=bonga_points,
+            conversion_rate=conversion_rate,
+            short_code=short_code,
+            account_number=account_number
+        )
+        
+        return JsonResponse(result)
+            
+    except json.JSONDecodeError:
+        return JsonResponse({"status": "error", "message": "Invalid JSON"})
+    except Exception as e:
+        logger.error(f"Error redeeming Bonga points: {str(e)}")
+        return JsonResponse({"status": "error", "message": "Internal Bonga redemption error"})
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def calculate_bonga_points_view(request):
+    """
+    API endpoint to calculate monetary value of Bonga points
+    """
+    try:
+        data = json.loads(request.body)
+        points = data.get('points')
+        
+        if not points:
+            return JsonResponse({"status": "error", "message": "Points are required"})
+        
+        result = DarajaAPI.calculate_bonga_points(points)
+        
+        return JsonResponse(result)
+            
+    except json.JSONDecodeError:
+        return JsonResponse({"status": "error", "message": "Invalid JSON"})
+    except Exception as e:
+        logger.error(f"Error calculating Bonga points: {str(e)}")
+        return JsonResponse({"status": "error", "message": "Internal Bonga calculation error"})

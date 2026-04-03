@@ -1,15 +1,16 @@
 {% extends 'frontend/base.html' %}
 
 {% block content %}
-<div class="row justify-content-center mt-5 mb-5">
-    <div class="col-lg-7 text-center">
-        <h1 class="display-4 text-warning fw-bold"><i class="bi bi-exclamation-triangle-fill"></i></h1>
-        <h2 class="fw-bold mt-2">Financial Escrow Confirmation</h2>
-        <p class="lead text-muted mt-3">You are about to transition from the legal negotiation phase into the physically binding financial transfer protocol.</p>
+<section class="page-section form-shell">
+    <div class="content-hero">
+        <span class="page-kicker justify-content-center"><i class="bi bi-exclamation-triangle"></i>Escrow Confirmation</span>
+        <h2 class="page-title">Financial escrow confirmation</h2>
+        <p class="page-subtitle mx-auto">You are about to move from legal agreement into the payment phase of the escrow workflow.</p>
+    </div>
 
-        <div class="card shadow border-0 mt-5">
+        <div class="card">
             <div class="card-body p-4 text-start">
-                <h4 class="fw-bold mb-4 text-primary border-bottom pb-2"><i class="bi bi-info-circle-fill"></i> How Your Funds Are Protected</h4>
+                <h4 class="fw-bold mb-4 text-info border-bottom pb-2"><i class="bi bi-info-circle-fill"></i> How your funds are protected</h4>
                 
                 <div class="d-flex align-items-start mb-4">
                     <i class="bi bi-1-circle-fill fs-3 text-secondary me-3"></i>
@@ -35,11 +36,11 @@
                     </div>
                 </div>
             </div>
-            <div class="card-footer bg-light p-4 text-center">
+            <div class="card-footer p-4 text-center">
                 <h5 class="fw-bold mb-3">Are you absolutely certain you wish to proceed?</h5>
                 <form action="{% url 'frontend:payment_checkout' transaction.id %}" method="POST" class="d-grid gap-3">
                     {% csrf_token %}
-                    <div class="form-check text-start mx-auto mb-3" style="max-width: 400px;">
+                    <div class="form-check text-start mx-auto mb-3 onboarding-consent">
                         <input class="form-check-input" type="checkbox" id="consentCheck" required>
                         <label class="form-check-label text-muted small" for="consentCheck">
                             I acknowledge the physical locking of these funds and certify my absolute certainty to complete this land purchase.
@@ -51,6 +52,5 @@
                 </form>
             </div>
         </div>
-    </div>
-</div>
+</section>
 {% endblock %}

@@ -1,16 +1,17 @@
 {% extends 'frontend/base.html' %}
 {% block title %}Terms of Service - Digiland{% endblock %}
 {% block content %}
-<div class="row pt-4 pb-5">
-    <div class="col-12 text-center mb-5">
-        <h1 class="display-3 fw-bold" style="letter-spacing: -1.5px;">Terms of Service</h1>
-        <p class="lead text-muted max-w-75 mx-auto">By using Escrow, you agree to these operating standards.</p>
+<section class="content-page">
+    <div class="content-hero">
+        <span class="page-kicker justify-content-center"><i class="bi bi-file-earmark-text"></i>Terms of Service</span>
+        <h1 class="page-title">Operating expectations for Digiland</h1>
+        <p class="page-subtitle mx-auto">Using the platform means working within the documented process, approval checks, and escrow controls provided by the system.</p>
     </div>
-    <div class="col-md-8 mx-auto bg-white p-5 rounded-4 shadow-sm border">
-        <h3 class="fw-bold mb-3">1. Binding Agreements</h3>
-        <p class="fs-5 text-muted mb-4">When executing dual-signatures on the contract page, both parties are cryptographically and legally bound to process the title transfer precisely.</p>
-        <h3 class="fw-bold mb-3">2. Fee Mechanics</h3>
-        <p class="fs-5 text-muted">The system automatically calculates and shaves a standard operational margin prior to releasing the transaction lock.</p>
-    </div>
-</div>
+    <article class="content-card">
+        <h3>Binding Actions</h3>
+        <p>Users are expected to provide accurate information and complete required transaction steps in good faith once they enter a property transfer workflow on the platform.</p>
+        <h3>Operational Fees</h3>
+        <p>Any fees and settlement conditions applied within the escrow flow should be reviewed alongside the transaction details presented to the parties involved.</p>
+    </article>
+</section>
 {% endblock %}

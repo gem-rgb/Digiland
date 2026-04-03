@@ -1,12 +1,21 @@
 {% extends 'frontend/base.html' %}
 {% block content %}
-<div class="container my-5">
+<section class="page-section">
+    <section class="page-header">
+        <div>
+            <span class="page-kicker"><i class="bi bi-file-earmark-text"></i>Contract</span>
+            <h2 class="page-title">Kenyan Land Transfer Agreement</h2>
+            <p class="page-subtitle">Property: {{ transaction.land_parcel.parcel_number }}</p>
+        </div>
+    </section>
+
+<div>
     <div class="row justify-content-center">
         <div class="col-lg-10">
-            <div class="card shadow border-0">
-                <div class="card-header bg-dark text-white py-3">
+            <div class="card">
+                <div class="card-header bg-dark py-3">
                     <h3 class="mb-0 text-center">Kenyan Land Transfer Agreement</h3>
-                    <p class="mb-0 text-center text-light">Property: {{ transaction.land_parcel.parcel_number }}</p>
+                    <p class="mb-0 text-center text-muted">Property: {{ transaction.land_parcel.parcel_number }}</p>
                 </div>
                 <div class="card-body p-5">
                     <h5 class="fw-bold">1. Legal Framework</h5>
@@ -41,9 +50,9 @@
                                         <div class="row">
                                             {% if not transaction.buyer_signature %}
                                             <div class="col-md-6 mb-3">
-                                                <div class="border rounded bg-light p-2 shadow-sm" style="width: 100%;">
+                                                <div class="signature-pad-wrap">
                                                     <label class="form-label fw-bold text-danger mb-1"><i class="bi bi-pen"></i> Sign as Buyer</label>
-                                                    <canvas id="buyer-pad" class="signature-pad bg-white border" style="width: 100%; height: 150px; touch-action: none;"></canvas>
+                                                    <canvas id="buyer-pad" class="signature-pad bg-white border" style="height: 150px; touch-action: none;"></canvas>
                                                     <button type="button" id="clear-buyer" class="btn btn-sm btn-outline-secondary mt-2 w-100">Clear Buyer</button>
                                                 </div>
                                             </div>
@@ -51,9 +60,9 @@
                                             
                                             {% if not transaction.seller_signature %}
                                             <div class="col-md-6 mb-3">
-                                                <div class="border rounded bg-light p-2 shadow-sm" style="width: 100%;">
+                                                <div class="signature-pad-wrap">
                                                     <label class="form-label fw-bold text-danger mb-1"><i class="bi bi-pen"></i> Sign as Seller</label>
-                                                    <canvas id="seller-pad" class="signature-pad bg-white border" style="width: 100%; height: 150px; touch-action: none;"></canvas>
+                                                    <canvas id="seller-pad" class="signature-pad bg-white border" style="height: 150px; touch-action: none;"></canvas>
                                                     <button type="button" id="clear-seller" class="btn btn-sm btn-outline-secondary mt-2 w-100">Clear Seller</button>
                                                 </div>
                                             </div>
@@ -70,8 +79,8 @@
                                 <h4>Draw Your Signature</h4>
                                 <p class="text-muted small">Please authentically draw your signature in the box below using your mouse or touchscreen to legally assent to these terms.</p>
                                 
-                                <div class="border rounded bg-light p-2 mb-3" style="width: 100%; max-width: 400px;">
-                                    <canvas id="signature-pad" class="signature-pad bg-white border shadow-sm" style="width: 100%; height: 200px; touch-action: none;"></canvas>
+                                <div class="signature-pad-wrap mb-3">
+                                    <canvas id="signature-pad" class="signature-pad bg-white border shadow-sm" style="height: 200px; touch-action: none;"></canvas>
                                 </div>
                                 
                                 <form method="POST" id="signature-form">
@@ -84,7 +93,7 @@
                         </div>
                         
                         <div class="col-md-6">
-                            <div class="bg-light p-4 rounded border h-100">
+                            <div class="legacy-subtle-panel h-100">
                                 <h5 class="fw-bold text-center mb-4">Contract Signatories</h5>
                                 
                                 <div class="mb-4">
@@ -141,6 +150,7 @@
         </div>
     </div>
 </div>
+</section>
 
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 <script>

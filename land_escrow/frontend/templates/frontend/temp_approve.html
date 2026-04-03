@@ -2,44 +2,47 @@
 {% block title %}Agent Approval - Digiland{% endblock %}
 
 {% block content %}
-<div class="container my-5">
+<section class="content-page">
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-md-7 col-lg-6">
             {% if success %}
-            <div class="text-center">
-                <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-success mb-4" style="width:72px;height:72px;">
-                    <i class="bi bi-check-circle-fill text-white" style="font-size:2rem;"></i>
-                </div>
-                <h2 class="fw-bold mb-3">Agent Approved Successfully!</h2>
-                <div class="alert alert-success border-0 rounded-3">
-                    <i class="bi bi-person-check-fill me-2"></i>
-                    <strong>{{ agent.email }}</strong> has been approved and can now access the Agent Command Centre.
-                </div>
-                <div class="d-grid gap-2">
-                    <a href="{% url 'frontend:staff_login' %}" class="btn btn-dark fw-bold">
-                        <i class="bi bi-shield-lock me-2"></i>Go to Staff Login
-                    </a>
-                    <a href="{% url 'frontend:home' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-house me-2"></i>Back to Home
-                    </a>
+            <div class="card text-center">
+                <div class="card-body py-5">
+                    <div class="icon-chip icon-chip-lg tone-accent mx-auto mb-4">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <h2 class="mb-3">Agent approved successfully</h2>
+                    <div class="alert alert-success mb-4">
+                        <i class="bi bi-person-check-fill me-2"></i>
+                        <strong>{{ agent.email }}</strong> can now access the Agent Command Centre.
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'frontend:staff_login' %}" class="btn btn-dark">
+                            <i class="bi bi-shield-lock"></i>Go to Staff Login
+                        </a>
+                        <a href="{% url 'frontend:home' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-house"></i>Back to Home
+                        </a>
+                    </div>
                 </div>
             </div>
             {% else %}
-            <div class="text-center">
-                <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-danger mb-4" style="width:72px;height:72px;">
-                    <i class="bi bi-exclamation-triangle-fill text-white" style="font-size:2rem;"></i>
+            <div class="card text-center">
+                <div class="card-body py-5">
+                    <div class="icon-chip icon-chip-lg tone-danger mx-auto mb-4">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <h2 class="mb-3">Approval failed</h2>
+                    <div class="alert alert-danger mb-4">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+                    </div>
+                    <a href="{% url 'frontend:home' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-house"></i>Back to Home
+                    </a>
                 </div>
-                <h2 class="fw-bold mb-3">Approval Failed</h2>
-                <div class="alert alert-danger border-0 rounded-3">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    {{ error }}
-                </div>
-                <a href="{% url 'frontend:home' %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-house me-2"></i>Back to Home
-                </a>
             </div>
             {% endif %}
         </div>
     </div>
-</div>
+</section>
 {% endblock %}

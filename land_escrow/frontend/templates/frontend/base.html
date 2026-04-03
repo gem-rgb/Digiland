@@ -1,5 +1,6 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,112 +10,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
-        :root {
-            --primary: #0f172a;
-            --accent:  #10b981;
-            --muted:   #64748b;
-            --surface: #f8fafc;
-            --border:  #e2e8f0;
-        }
-        body {
-            padding-top: 88px;
-            font-family: 'Inter', sans-serif;
-            background-color: var(--surface);
-            color: #334155;
-        }
-        h1, h2, h3, h4, h5, h6 { font-weight: 700; color: var(--primary); letter-spacing: -0.02em; }
-
-        /* Navbar */
-        .site-nav {
-            background: rgba(255,255,255,0.97);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-        }
-        .site-nav.nav-locked { border-bottom: 2px solid #f59e0b !important; }
-
-        .nav-link {
-            font-weight: 600;
-            color: var(--muted) !important;
-            padding: 0.45rem 0.9rem !important;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            transition: background 0.15s, color 0.15s;
-            display: inline-flex !important;
-            align-items: center;
-            gap: 0.3rem;
-            white-space: nowrap;
-        }
-        .nav-link:hover, .nav-link.active {
-            color: var(--primary) !important;
-            background: rgba(15,23,42,0.05);
-        }
-
-        /* User pill button */
-        .user-pill {
-            background: #fff;
-            border: 1px solid var(--border) !important;
-            border-radius: 999px;
-            padding: 0.35rem 1rem;
-            font-weight: 600;
-            font-size: 0.875rem;
-            color: var(--primary);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            transition: box-shadow 0.2s;
-            cursor: pointer;
-        }
-        .user-pill:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.09); }
-
-        /* Cards */
-        .card {
-            border: none;
-            border-radius: 14px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-            transition: box-shadow 0.25s;
-        }
-        .card:hover { box-shadow: 0 8px 20px rgba(0,0,0,0.09); }
-        .card-header {
-            border-radius: 14px 14px 0 0 !important;
-            border-bottom: 1px solid var(--border);
-            font-weight: 700;
-            padding: 1rem 1.4rem;
-        }
-
-        /* Buttons */
-        .btn { font-weight: 600; border-radius: 8px; padding: 0.55rem 1.2rem; transition: all 0.18s; }
-        .btn-primary { background: var(--primary); border-color: var(--primary); }
-        .btn-primary:hover { background: #1e293b; border-color: #1e293b; transform: translateY(-1px); }
-
-        /* Forms */
-        .form-control, .form-select { border-radius: 8px; border-color: #cbd5e1; padding: 0.65rem 1rem; }
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 0.2rem rgba(15,23,42,0.12);
-        }
-
-        /* Misc */
-        .badge { font-weight: 600; padding: 0.45em 0.75em; border-radius: 6px; }
-        .alert { border-radius: 10px; border: none; }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/main-fixes.css' %}">
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
 
 {% if user.is_authenticated and user.role == 'Agent' and not user.is_identity_verified %}
-<!-- LOCKED HEADER: Pending / unverified agent -->
 <nav class="site-nav nav-locked fixed-top py-2">
-  <div class="container d-flex align-items-center justify-content-between">
-    <span class="d-flex align-items-center gap-2 fw-bold" style="color:var(--primary);user-select:none;">
+  <div class="container nav-shell nav-shell--locked">
+    <span class="brand-lockup brand-lockup--locked">
       <i class="bi bi-shield-check fs-4"></i>
       Digiland System
     </span>
-    <span class="badge d-flex align-items-center gap-2 px-3 py-2 rounded-pill fw-semibold"
-          style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-size:.8rem;">
-      <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"
-            style="color:#d97706;width:.5rem;height:.5rem;flex-shrink:0;"></span>
-      KYC Pending — Awaiting Admin Approval
+    <span class="status-pill status-pill--warning">
+      <span class="status-dot"></span>
+      KYC Pending - Awaiting Admin Approval
     </span>
     <form method="post" action="{% url 'account_logout' %}" class="mb-0">
       {% csrf_token %}
@@ -126,15 +37,12 @@
 </nav>
 
 {% elif user.is_authenticated and user.role == 'Admin' %}
-<!-- STAFF NAVBAR: Admin -->
 <nav class="site-nav fixed-top py-3">
-  <div class="container d-flex align-items-center gap-2">
-    <a class="d-flex align-items-center gap-2 text-decoration-none fw-bold me-3"
-       href="{% url 'frontend:agent_dashboard' %}" style="color:var(--primary);">
-      <i class="bi bi-shield-check fs-4" style="color:var(--accent);"></i>
+  <div class="container nav-shell">
+    <a class="site-brand me-3" href="{% url 'frontend:agent_dashboard' %}">
+      <i class="bi bi-shield-check fs-4 brand-accent"></i>
       Digiland
-      <span class="badge bg-dark text-white rounded-1 fw-semibold ms-1"
-            style="font-size:.68rem;letter-spacing:.5px;vertical-align:middle;">STAFF</span>
+      <span class="staff-badge">STAFF</span>
     </a>
     <ul class="navbar-nav flex-row gap-1 me-auto">
       <li class="nav-item">
@@ -163,21 +71,19 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="/admin/" target="_blank"
-           style="color:#d97706 !important;" title="Django system admin panel">
+        <a class="nav-link nav-link-warning" href="/admin/" target="_blank" title="Django system admin panel">
           <i class="bi bi-sliders"></i>System Admin
         </a>
       </li>
     </ul>
 
     <div class="dropdown">
-      <button class="user-pill dropdown-toggle" type="button"
-              data-bs-toggle="dropdown" aria-expanded="false">
-        <i class="bi bi-person-badge" style="color:var(--accent);"></i>
+      <button class="user-pill dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-person-badge brand-accent"></i>
         {{ user.email }}
       </button>
       <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2 p-2">
-        <li class="px-3 py-1 text-muted small fw-bold text-uppercase" style="letter-spacing:.5px;">Admin</li>
+        <li class="dropdown-label">Admin</li>
         <li><hr class="dropdown-divider my-1"></li>
         <li>
           <form method="post" action="{% url 'account_logout' %}">
@@ -193,15 +99,12 @@
 </nav>
 
 {% elif user.is_authenticated and user.role == 'Agent' %}
-<!-- STAFF NAVBAR: Verified Agent -->
 <nav class="site-nav fixed-top py-3">
-  <div class="container d-flex align-items-center gap-2">
-    <a class="d-flex align-items-center gap-2 text-decoration-none fw-bold me-3"
-       href="{% url 'frontend:agent_dashboard' %}" style="color:var(--primary);">
-      <i class="bi bi-shield-check fs-4" style="color:var(--accent);"></i>
+  <div class="container nav-shell">
+    <a class="site-brand me-3" href="{% url 'frontend:agent_dashboard' %}">
+      <i class="bi bi-shield-check fs-4 brand-accent"></i>
       Digiland
-      <span class="badge bg-dark text-white rounded-1 fw-semibold ms-1"
-            style="font-size:.68rem;letter-spacing:.5px;vertical-align:middle;">STAFF</span>
+      <span class="staff-badge">STAFF</span>
     </a>
     <ul class="navbar-nav flex-row gap-1 me-auto">
       <li class="nav-item">
@@ -221,13 +124,12 @@
       </li>
     </ul>
     <div class="dropdown">
-      <button class="user-pill dropdown-toggle" type="button"
-              data-bs-toggle="dropdown" aria-expanded="false">
-        <i class="bi bi-person-badge" style="color:var(--accent);"></i>
+      <button class="user-pill dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-person-badge brand-accent"></i>
         {{ user.email }}
       </button>
       <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2 p-2">
-        <li class="px-3 py-1 text-muted small fw-bold text-uppercase" style="letter-spacing:.5px;">Agent</li>
+        <li class="dropdown-label">Agent</li>
         <li><hr class="dropdown-divider my-1"></li>
         <li>
           <form method="post" action="{% url 'account_logout' %}">
@@ -243,16 +145,13 @@
 </nav>
 
 {% else %}
-<!-- PUBLIC NAVBAR: Buyer / Seller / Guest -->
 <nav class="site-nav navbar navbar-expand-lg fixed-top py-2">
   <div class="container">
-    <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'frontend:home' %}">
-      <i class="bi bi-shield-check fs-4" style="color:var(--primary);"></i>
-      <span class="fw-bold fs-5">Digiland System</span>
+    <a class="navbar-brand site-brand" href="{% url 'frontend:home' %}">
+      <i class="bi bi-shield-check fs-4 brand-accent"></i>
+      <span>Digiland System</span>
     </a>
-    <button class="navbar-toggler border-0" type="button"
-            data-bs-toggle="collapse" data-bs-target="#publicNav"
-            aria-controls="publicNav" aria-expanded="false">
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#publicNav" aria-controls="publicNav" aria-expanded="false">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="publicNav">
@@ -280,9 +179,8 @@
         </li>
         <li class="nav-item ms-2">
           <div class="dropdown">
-            <button class="user-pill dropdown-toggle" type="button"
-                    data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="bi bi-person-circle" style="color:var(--primary);"></i>
+            <button class="user-pill dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-person-circle brand-accent"></i>
               {{ user.role }}
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2 p-2">
@@ -311,12 +209,10 @@
           <a class="nav-link" href="{% url 'frontend:parcel_list' %}">Marketplace</a>
         </li>
         <li class="nav-item ms-2">
-          <a class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold"
-             href="{% url 'account_login' %}">Log In</a>
+          <a class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" href="{% url 'account_login' %}">Log In</a>
         </li>
         <li class="nav-item ms-1">
-          <a class="btn btn-sm btn-dark rounded-pill px-3 fw-semibold"
-             href="{% url 'account_signup' %}">Sign Up</a>
+          <a class="btn btn-sm btn-dark rounded-pill px-3 fw-semibold" href="{% url 'account_signup' %}">Sign Up</a>
         </li>
         {% endif %}
       </ul>
@@ -325,14 +221,25 @@
 </nav>
 {% endif %}
 
-<div class="container mb-5">
+<div class="container py-4">
+    {% if messages %}
+    <div class="mb-3">
+      {% for msg in messages %}
+      <div class="alert alert-{% if msg.tags == 'success' %}success{% elif msg.tags == 'error' or msg.tags == 'warning' %}danger{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+        <i class="bi {% if msg.tags == 'success' %}bi-check-circle-fill{% elif msg.tags == 'error' or msg.tags == 'warning' %}bi-exclamation-triangle-fill{% else %}bi-info-circle-fill{% endif %} flex-shrink-0"></i>
+        <span>{{ msg }}</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
     {% block content %}
     {% endblock %}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/main.js' %}"></script>
 <script>
-  // Initialise Bootstrap tooltips globally
   document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
     new bootstrap.Tooltip(el);
   });

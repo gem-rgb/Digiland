@@ -1,56 +1,61 @@
 {% extends 'frontend/base.html' %}
+{% load static %}
 {% load i18n %}
 {% load account socialaccount %}
 {% load widget_tweaks %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
 {% block title %}Sign In - Digiland{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-6 col-lg-5">
-        <div class="card shadow border-0">
-            <div class="card-header bg-white text-center py-4 border-0 pb-2">
-                <i class="bi bi-shield-lock text-primary" style="font-size: 3.5rem;"></i>
-                <h3 class="fw-bold mt-2 mb-1">Welcome Back</h3>
-                <p class="text-muted d-block small">Sign in to securely access your Escrow portal.</p>
-            </div>
-            <div class="card-body p-4 pt-0">
-                <form class="login" method="POST" action="{% url 'account_login' %}">
-                    {% csrf_token %}
-                    
-                    {% if form.non_field_errors %}
-                    <div class="alert alert-danger p-3 mb-4 rounded-3 text-center">
-                        <small class="fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> Invalid credentials or unrecognized identity.</small>
-                    </div>
-                    {% endif %}
+<section class="auth-shell">
+    <div class="auth-panel">
+        <div class="auth-panel-header">
+            <span class="auth-icon"><i class="bi bi-shield-lock"></i></span>
+            <h2 class="auth-title">Welcome Back</h2>
+            <p class="auth-subtitle">Sign in to continue into your secure Digiland workspace.</p>
+        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted text-uppercase" style="letter-spacing: 0.5px;">Registered Email</label>
-                        {% render_field form.login class="form-control form-control-lg bg-light" placeholder="admin@example.com" %}
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label class="form-label fw-bold small text-muted text-uppercase d-flex justify-content-between align-items-center" style="letter-spacing: 0.5px;">
-                            <span>Cryptographic Password</span>
-                            <a class="text-decoration-none text-primary" href="{% url 'account_reset_password' %}">Forgot key?</a>
-                        </label>
-                        {% render_field form.password class="form-control form-control-lg bg-light" placeholder="••••••••" %}
-                    </div>
+        <div class="auth-panel-body">
+            <form class="login" method="POST" action="{% url 'account_login' %}">
+                {% csrf_token %}
 
-                    {% if redirect_field_value %}
-                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
-                    {% endif %}
-                    
-                    <button class="btn btn-primary btn-lg w-100 fw-bold mb-3 shadow-sm" type="submit">Unlock Dashboard <i class="bi bi-arrow-right-short ms-1"></i></button>
-                    
-                    <div class="text-center mt-4 pt-3 border-top">
-                        <p class="text-muted small mb-0">
-                            Don't have an authentication node? <a href="{{ signup_url }}" class="fw-bold text-primary text-decoration-none">Register Here</a>
-                        </p>
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger mb-4 text-center">
+                    <small class="fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i>Invalid credentials or unrecognised identity.</small>
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label class="form-label">Registered Email</label>
+                    {% render_field form.login class="form-control form-control-lg" placeholder="admin@example.com" %}
+                </div>
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center gap-3 mb-2">
+                        <label class="form-label mb-0">Password</label>
+                        <a class="auth-link small" href="{% url 'account_reset_password' %}">Forgot key?</a>
                     </div>
-                </form>
-            </div>
+                    {% render_field form.password class="form-control form-control-lg" placeholder="Enter your password" %}
+                </div>
+
+                {% if redirect_field_value %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+                {% endif %}
+
+                <button class="btn btn-primary btn-lg w-100 mb-3" type="submit">
+                    <i class="bi bi-box-arrow-in-right"></i>Unlock Dashboard
+                </button>
+
+                <div class="auth-footer">
+                    Do not have an account yet?
+                    <a href="{{ signup_url }}" class="auth-link">Register Here</a>
+                </div>
+            </form>
         </div>
     </div>
-</div>
+</section>
 {% endblock %}

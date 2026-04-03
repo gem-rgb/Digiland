@@ -1,33 +1,36 @@
 {% extends 'frontend/base.html' %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <h2 class="display-5">My Escrow Transactions</h2>
-        <p class="text-muted">Track the status of your land purchases and sales.</p>
+<section class="page-header">
+    <div>
+        <span class="page-kicker"><i class="bi bi-clock-history"></i>Escrow Activity</span>
+        <h2 class="page-title">My transactions</h2>
+        <p class="page-subtitle">Track every active and completed land purchase or sale in your escrow pipeline.</p>
     </div>
-</div>
+</section>
 
-<div class="row">
-    <div class="col-md-12">
-        <div class="card shadow-sm">
-            <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead class="table-dark">
+<section class="card">
+    <div class="card-header bg-dark">
+        <span><i class="bi bi-receipt me-2"></i>Transaction register</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                    <thead>
                         <tr>
-                            <th>Transaction ID</th>
-                            <th>Parcel</th>
-                            <th>Role</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Date Initiated</th>
+                            <th class="ps-4 py-3">Transaction ID</th>
+                            <th class="py-3">Parcel</th>
+                            <th class="py-3">Role</th>
+                            <th class="py-3">Amount</th>
+                            <th class="py-3">Status</th>
+                            <th class="py-3">Date Initiated</th>
                             <th class="text-end pe-4">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for tx in transactions %}
                         <tr>
-                            <td><small class="text-muted">{{ tx.id|stringformat:"s"|slice:":8" }}...</small></td>
+                            <td class="ps-4"><small class="text-muted">{{ tx.id|stringformat:"s"|slice:":8" }}...</small></td>
                             <td><strong>{{ tx.land_parcel.parcel_number }}</strong></td>
                             <td>{% if user == tx.buyer %}Buyer{% elif user == tx.seller %}Seller{% endif %}</td>
                             <td>KES {{ tx.agreed_price }}</td>
@@ -53,13 +56,15 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">You have no active or past transactions.</td>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                <p class="fw-semibold mb-0">You have no active or past transactions.</p>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
-            </div>
         </div>
     </div>
-</div>
+</section>
 {% endblock %}

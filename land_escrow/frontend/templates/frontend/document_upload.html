@@ -1,21 +1,29 @@
 {% extends 'frontend/base.html' %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-sm mt-4 border-0">
-            <div class="card-header bg-dark text-white py-3">
-                <h4 class="mb-0">Attach Ownership Document</h4>
-            </div>
-            <div class="card-body p-4">
-                <p class="text-muted">Upload Title Deeds, ID Cards, or Sale Agreements for parcel <strong>{{ parcel.parcel_number }}</strong> to get them verified by the fraud-detection engine.</p>
-                <form method="POST" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    {{ form.as_p }}
-                    <button type="submit" class="btn btn-primary w-100 mt-3 btn-lg fw-bold">Upload Document</button>
-                    <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}" class="btn btn-outline-secondary w-100 mt-2">Cancel</a>
-                </form>
-            </div>
-        </div>
+<section class="page-header">
+    <div>
+        <span class="page-kicker"><i class="bi bi-cloud-upload"></i>Compliance Files</span>
+        <h2 class="page-title">Attach ownership document</h2>
+        <p class="page-subtitle">Upload files for parcel <strong>{{ parcel.parcel_number }}</strong> to continue verification review.</p>
     </div>
-</div>
+    <div class="page-actions">
+        <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>Back to Parcel
+        </a>
+    </div>
+</section>
+
+<section class="card form-shell form-shell-narrow">
+    <div class="card-header bg-dark">
+        <span><i class="bi bi-file-earmark-arrow-up me-2"></i>Upload file</span>
+    </div>
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary w-100 mt-3 btn-lg">Upload Document</button>
+            <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}" class="btn btn-outline-secondary w-100 mt-2">Cancel</a>
+        </form>
+    </div>
+</section>
 {% endblock %}

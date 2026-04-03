@@ -1,55 +1,62 @@
 {% extends 'frontend/base.html' %}
+{% load static %}
 {% load i18n %}
 {% load widget_tweaks %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
 
 {% block title %}Register Identity - Digiland{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-4 mb-5">
-    <div class="col-md-7 col-lg-6">
-        <div class="card shadow border-0">
-            <div class="card-header bg-white text-center py-4 border-0 pb-2">
-                <i class="bi bi-person-bounding-box text-primary" style="font-size: 3.5rem;"></i>
-                <h3 class="fw-bold mt-2 mb-1">Create Identity Node</h3>
-                <p class="text-muted d-block small">Register with the governmental Digiland index.</p>
-            </div>
-            <div class="card-body p-4 pt-0">
-                <form class="signup" id="signup_form" method="post" action="{% url 'account_signup' %}">
-                    {% csrf_token %}
-                    
-                    {% if form.non_field_errors %}
-                    <div class="alert alert-danger p-3 mb-4 rounded-3 text-center">
-                        <small class="fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> {{ form.non_field_errors|join:", " }}</small>
-                    </div>
-                    {% endif %}
+<section class="auth-shell">
+    <div class="auth-panel auth-panel-wide">
+        <div class="auth-panel-header">
+            <span class="auth-icon"><i class="bi bi-person-bounding-box"></i></span>
+            <h2 class="auth-title">Create Your Identity</h2>
+            <p class="auth-subtitle">Register an account to buy, sell, or manage property workflows on Digiland.</p>
+        </div>
 
+        <div class="auth-panel-body">
+            <form class="signup" id="signup_form" method="post" action="{% url 'account_signup' %}">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger mb-4 text-center">
+                    <small class="fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ form.non_field_errors|join:", " }}</small>
+                </div>
+                {% endif %}
+
+                <div class="row g-3">
                     {% for field in form %}
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted text-uppercase" style="letter-spacing: 0.5px;">{{ field.label }}</label>
-                        {% render_field field class="form-control form-control-lg bg-light" %}
+                    <div class="{% if field.name == 'password1' or field.name == 'password2' %}col-md-6{% else %}col-12{% endif %}">
+                        <label class="form-label">{{ field.label }}</label>
+                        {% render_field field class="form-control form-control-lg" %}
                         {% if field.help_text %}
-                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                        <div class="form-text">{{ field.help_text }}</div>
                         {% endif %}
                         {% for error in field.errors %}
                         <small class="text-danger fw-bold d-block mt-1"><i class="bi bi-x-circle-fill me-1"></i>{{ error }}</small>
                         {% endfor %}
                     </div>
                     {% endfor %}
+                </div>
 
-                    {% if redirect_field_value %}
-                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
-                    {% endif %}
-                    
-                    <button class="btn btn-primary btn-lg w-100 fw-bold mt-3 mb-3 shadow-sm" type="submit">Establish Cryptographic Identity</button>
-                    
-                    <div class="text-center mt-4 pt-3 border-top">
-                        <p class="text-muted small mb-0">
-                            Already have access? <a href="{{ login_url }}" class="fw-bold text-primary text-decoration-none">Sign In Here</a>
-                        </p>
-                    </div>
-                </form>
-            </div>
+                {% if redirect_field_value %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+                {% endif %}
+
+                <button class="btn btn-primary btn-lg w-100 mt-4 mb-3" type="submit">
+                    <i class="bi bi-person-plus"></i>Create Identity
+                </button>
+
+                <div class="auth-footer">
+                    Already have access?
+                    <a href="{{ login_url }}" class="auth-link">Sign In Here</a>
+                </div>
+            </form>
         </div>
     </div>
-</div>
+</section>
 {% endblock %}

@@ -30,4 +30,13 @@ urlpatterns = [
     path('mpesa/initiate', api_views.initiate_mpesa_payment_view, name='initiate-mpesa'),
     path('mpesa/status', api_views.query_mpesa_status_view, name='query-mpesa-status'),
     path('mpesa/callback', api_views.MpesaCallbackView.as_view(), name='mpesa-callback'),
+    
+    # Additional M-PESA Daraja endpoints
+    path('mpesa/b2b', api_views.b2b_payment_view, name='b2b-payment'),
+    path('mpesa/reverse', api_views.reverse_transaction_view, name='reverse-transaction'),
+    path('mpesa/transaction-status', api_views.query_transaction_status_view, name='query-transaction-status'),
+    path('mpesa/balance', api_views.query_account_balance_view, name='query-account-balance'),
+    path('mpesa/c2b-simulate', api_views.simulate_c2b_payment_view, name='simulate-c2b-payment'),
+    path('mpesa/bonga-redeem', api_views.redeem_bonga_points_view, name='redeem-bonga-points'),
+    path('mpesa/bonga-calculate', api_views.calculate_bonga_points_view, name='calculate-bonga-points'),
 ]

@@ -1,16 +1,17 @@
 {% extends 'frontend/base.html' %}
 {% block title %}About Us - Digiland{% endblock %}
 {% block content %}
-<div class="row pt-4 pb-5">
-    <div class="col-12 text-center mb-5">
-        <h1 class="display-3 fw-bold" style="letter-spacing: -1.5px;">About Us</h1>
-        <p class="lead text-muted max-w-75 mx-auto">Pioneering Cryptographic Real Estate Verification.</p>
+<section class="content-page">
+    <div class="content-hero">
+        <span class="page-kicker justify-content-center"><i class="bi bi-building"></i>About Digiland</span>
+        <h1 class="page-title">Built for safer land transactions</h1>
+        <p class="page-subtitle mx-auto">Digiland brings verification, documentation, and escrow discipline into one professional workflow.</p>
     </div>
-    <div class="col-md-8 mx-auto bg-white p-5 rounded-4 shadow-sm border">
-        <h3 class="fw-bold mb-3">Our Mission</h3>
-        <p class="fs-5 text-muted mb-4">Digiland was founded to completely eliminate systemic fraud from the Kenyan real estate ecosystem by injecting direct API verifications and secure atomic settlement vaults.</p>
-        <h3 class="fw-bold mb-3">How We Started</h3>
-        <p class="fs-5 text-muted">We realized the physical documentation loophole exposed millions of dollars to threat actors. By directly bridging the ArdhiSasa land registry logic with M-PESA structural transaction APIs, we constructed the ultimate Escrow middleware.</p>
-    </div>
-</div>
+    <article class="content-card">
+        <h3>Our Mission</h3>
+        <p>We built Digiland to reduce confusion, inconsistency, and fraud risk in property transactions by structuring each stage of the process around verification and accountability.</p>
+        <h3>How We Started</h3>
+        <p>What began as a response to paperwork gaps and fragmented handoffs grew into a unified platform for reviewing listings, handling documentation, and coordinating secure settlement between all parties.</p>
+    </article>
+</section>
 {% endblock %}

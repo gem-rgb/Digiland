@@ -1,0 +1,244 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+{% load static %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">Home</a>
+&rsaquo; <a href="{% url 'admin:app_list' 'core' %}">Core</a>
+&rsaquo; <a href="{% url 'admin:core_transaction_changelist' %}">Transactions</a>
+&rsaquo; Reverse Payment Confirmation
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <div class="module">
+        <h1>⚠️ Payment Reversal Confirmation</h1>
+        
+        {% if non_reversible %}
+        <div class="alert alert-error">
+            <h3>⚠️ Cannot Reverse These Transactions:</h3>
+            <ul>
+                {% for item in non_reversible %}
+                <li>
+                    <strong>{{ item.transaction.id }}</strong> - 
+                    {{ item.transaction.buyer.email }} → {{ item.transaction.seller.email }} 
+                    ({{ item.transaction.agreed_price }}) - 
+                    <span class="error">{{ item.reason }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        {% if reversible_transactions %}
+        <div class="alert alert-warning">
+            <h3>🔄 Transactions Ready for Reversal:</h3>
+            <p><strong>Total Amount to Reverse:</strong> KES {{ total_amount|floatformat:2 }}</p>
+            <p><strong>Number of Transactions:</strong> {{ reversible_transactions|length }}</p>
+            
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Buyer</th>
+                        <th>Seller</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Land Parcel</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in reversible_transactions %}
+                    <tr>
+                        <td><code>{{ transaction.id|truncatechars:12 }}</code></td>
+                        <td>{{ transaction.buyer.email }}</td>
+                        <td>{{ transaction.seller.email }}</td>
+                        <td>KES {{ transaction.agreed_price|floatformat:2 }}</td>
+                        <td>
+                            <span class="status-{{ transaction.status|lower }}">
+                                {{ transaction.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ transaction.land_parcel.parcel_number }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <form method="post" id="reversal-form">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="reversal_reason"><strong>Reversal Reason:</strong></label>
+                    <textarea name="reversal_reason" id="reversal_reason" class="vLargeTextField" rows="4" required
+                              placeholder="Please provide a detailed reason for this payment reversal...">Payment reversal initiated by administrator due to verification issues/dispute resolution.</textarea>
+                </div>
+            </div>
+            
+            <div class="submit-row">
+                <input type="hidden" name="transaction_ids" value="{{ reversible_transactions|map:'id'|join:',' }}">
+                <button type="submit" class="default btn btn-danger" onclick="return confirmReversal()">
+                    🔄 Confirm Payment Reversal
+                </button>
+                <a href="{% url 'admin:core_transaction_changelist' %}" class="button cancel-link">
+                    Cancel
+                </a>
+            </div>
+        </form>
+        
+        {% else %}
+        <div class="alert alert-info">
+            <h3>ℹ️ No Reversible Transactions</h3>
+            <p>None of the selected transactions can be reversed. Please check the status requirements above.</p>
+        </div>
+        
+        <div class="submit-row">
+            <a href="{% url 'admin:core_transaction_changelist' %}" class="button">
+                ← Back to Transactions
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.alert {
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 4px;
+    border-left: 4px solid;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+}
+
+.table th, .table td {
+    padding: 8px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+.status-deposit_paid { color: #28a745; }
+.status-under_verification { color: #007bff; }
+.status-verification_hiatus { color: #ffc107; }
+
+.error {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.form-row {
+    margin: 20px 0;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.vLargeTextField {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+.submit-row {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.cancel-link {
+    margin-left: 10px;
+    text-decoration: none;
+    color: #6c757d;
+    padding: 10px 20px;
+    border: 1px solid #6c757d;
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.cancel-link:hover {
+    background-color: #6c757d;
+    color: white;
+}
+</style>
+
+<script>
+function confirmReversal() {
+    var reason = document.getElementById('reversal_reason').value;
+    if (!reason.trim()) {
+        alert('Please provide a reason for the payment reversal.');
+        return false;
+    }
+    
+    var count = {{ reversible_transactions|length }};
+    var amount = '{{ total_amount|floatformat:2 }}';
+    
+    return confirm(
+        '⚠️ WARNING: You are about to reverse ' + count + ' payments totaling KES ' + amount + '.\n\n' +
+        'This action will:\n' +
+        '• Initiate payment reversal via M-PESA\n' +
+        '• Mark transactions as "Reversed"\n' +
+        '• Notify buyers and sellers\n' +
+        '• Create audit trail\n\n' +
+        'This action cannot be undone. Are you absolutely sure?'
+    );
+}
+</script>
+{% endblock %}

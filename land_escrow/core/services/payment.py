@@ -409,6 +409,461 @@ class DarajaAPI:
                 "status": "error",
                 "message": "Internal B2C payment error"
             }
+    
+    @classmethod
+    def b2b_payment(cls, receiver_party, amount, command_id="BusinessPayBill", remarks="B2B Payment"):
+        """
+        Initiate M-PESA B2B payment between businesses
+        
+        Args:
+            receiver_party: Receiver shortcode
+            amount: Amount to pay
+            command_id: Payment command type
+            remarks: Payment remarks
+            
+        Returns:
+            dict: B2B payment result
+        """
+        try:
+            url = f"{cls.BASE_URL}/mpesa/b2b/v1/paymentrequest"
+            
+            # Generate security credentials
+            initiator_password = settings.DARAJA_INITIATOR_PASSWORD
+            security_credentials = base64.b64encode(initiator_password.encode()).decode()
+            
+            payload = {
+                "Initiator": settings.DARAJA_INITIATOR_NAME,
+                "SecurityCredential": security_credentials,
+                "CommandID": command_id,
+                "SenderIdentifierType": "4",
+                "RecieverIdentifierType": "4",
+                "Amount": int(float(amount)),
+                "PartyA": settings.DARAJA_SHORTCODE,
+                "PartyB": receiver_party,
+                "AccountReference": f"B2B-{generate_transaction_reference()}",
+                "Remarks": remarks,
+                "QueueTimeOutURL": f"http://127.0.0.1:8000/api/v1/mpesa/b2b/timeout",
+                "ResultURL": f"http://127.0.0.1:8000/api/v1/mpesa/b2b/result"
+            }
+            
+            log_api_call("Daraja B2B Payment", payload)
+            
+            response = requests.post(url, json=payload, headers=cls.get_headers(), timeout=30)
+            response.raise_for_status()
+            
+            result = response.json()
+            
+            if result.get("ResponseCode") == "0":
+                logger.info(f"B2B payment initiated successfully for {receiver_party}")
+                return {
+                    "status": "success",
+                    "message": "B2B payment initiated successfully",
+                    "conversation_id": result.get("ConversationID"),
+                    "originator_conversation_id": result.get("OriginatorConversationID"),
+                    "response_description": result.get("ResponseDescription")
+                }
+            else:
+                logger.error(f"B2B payment failed: {result}")
+                return {
+                    "status": "error",
+                    "message": result.get("ResponseDescription", "B2B payment failed"),
+                    "response_code": result.get("ResponseCode")
+                }
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Daraja B2B payment failed: {str(e)}")
+            return {
+                "status": "error",
+                "message": f"B2B payment service unavailable: {str(e)}"
+            }
+        except Exception as e:
+            logger.error(f"Unexpected error in B2B payment: {str(e)}")
+            return {
+                "status": "error",
+                "message": "Internal B2B payment error"
+            }
+    
+    @classmethod
+    def reverse_transaction(cls, transaction_id, amount, receiver_party, remarks="Transaction Reversal"):
+        """
+        Reverse an M-PESA transaction
+        
+        Args:
+            transaction_id: Original transaction ID to reverse
+            amount: Amount to reverse
+            receiver_party: Receiver of the reversal
+            remarks: Reversal remarks
+            
+        Returns:
+            dict: Reversal result
+        """
+        try:
+            url = f"{cls.BASE_URL}/mpesa/reversal/v1/request"
+            
+            # Generate security credentials
+            initiator_password = settings.DARAJA_INITIATOR_PASSWORD
+            security_credentials = base64.b64encode(initiator_password.encode()).decode()
+            
+            payload = {
+                "Initiator": settings.DARAJA_INITIATOR_NAME,
+                "SecurityCredential": security_credentials,
+                "CommandID": "TransactionReversal",
+                "TransactionID": transaction_id,
+                "Amount": int(float(amount)),
+                "ReceiverParty": receiver_party,
+                "RecieverIdentifierType": "4",
+                "ResultURL": f"http://127.0.0.1:8000/api/v1/mpesa/reversal/result",
+                "QueueTimeOutURL": f"http://127.0.0.1:8000/api/v1/mpesa/reversal/timeout",
+                "Remarks": remarks,
+                "Occasion": "Transaction Reversal"
+            }
+            
+            log_api_call("Daraja Transaction Reversal", payload)
+            
+            response = requests.post(url, json=payload, headers=cls.get_headers(), timeout=30)
+            response.raise_for_status()
+            
+            result = response.json()
+            
+            if result.get("ResponseCode") == "0":
+                logger.info(f"Transaction reversal initiated successfully for {transaction_id}")
+                return {
+                    "status": "success",
+                    "message": "Transaction reversal initiated successfully",
+                    "conversation_id": result.get("ConversationID"),
+                    "originator_conversation_id": result.get("OriginatorConversationID"),
+                    "response_description": result.get("ResponseDescription")
+                }
+            else:
+                logger.error(f"Transaction reversal failed: {result}")
+                return {
+                    "status": "error",
+                    "message": result.get("ResponseDescription", "Transaction reversal failed"),
+                    "response_code": result.get("ResponseCode")
+                }
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Daraja transaction reversal failed: {str(e)}")
+            return {
+                "status": "error",
+                "message": f"Transaction reversal service unavailable: {str(e)}"
+            }
+        except Exception as e:
+            logger.error(f"Unexpected error in transaction reversal: {str(e)}")
+            return {
+                "status": "error",
+                "message": "Internal transaction reversal error"
+            }
+    
+    @classmethod
+    def query_transaction_status(cls, transaction_id, party_a, identifier_type="4"):
+        """
+        Query the status of an M-PESA transaction
+        
+        Args:
+            transaction_id: Transaction ID to query
+            party_a: Party involved in transaction
+            identifier_type: Type of identifier (default: 4 for shortcode)
+            
+        Returns:
+            dict: Transaction status result
+        """
+        try:
+            url = f"{cls.BASE_URL}/mpesa/transactionstatus/v1/query"
+            
+            # Generate security credentials
+            initiator_password = settings.DARAJA_INITIATOR_PASSWORD
+            security_credentials = base64.b64encode(initiator_password.encode()).decode()
+            
+            payload = {
+                "Initiator": settings.DARAJA_INITIATOR_NAME,
+                "SecurityCredential": security_credentials,
+                "CommandID": "TransactionStatusQuery",
+                "TransactionID": transaction_id,
+                "PartyA": party_a,
+                "IdentifierType": identifier_type,
+                "ResultURL": f"http://127.0.0.1:8000/api/v1/mpesa/status/result",
+                "QueueTimeOutURL": f"http://127.0.0.1:8000/api/v1/mpesa/status/timeout",
+                "Remarks": "Transaction status query",
+                "Occasion": "Status Query"
+            }
+            
+            log_api_call("Daraja Transaction Status Query", payload)
+            
+            response = requests.post(url, json=payload, headers=cls.get_headers(), timeout=30)
+            response.raise_for_status()
+            
+            result = response.json()
+            
+            if result.get("ResponseCode") == "0":
+                return {
+                    "status": "success",
+                    "transaction_status": result.get("Result"),
+                    "conversation_id": result.get("ConversationID"),
+                    "originator_conversation_id": result.get("OriginatorConversationID")
+                }
+            else:
+                return {
+                    "status": "error",
+                    "message": result.get("ResponseDescription", "Status query failed"),
+                    "response_code": result.get("ResponseCode")
+                }
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Daraja transaction status query failed: {str(e)}")
+            return {
+                "status": "error",
+                "message": f"Status query service unavailable: {str(e)}"
+            }
+        except Exception as e:
+            logger.error(f"Unexpected error in transaction status query: {str(e)}")
+            return {
+                "status": "error",
+                "message": "Internal status query error"
+            }
+    
+    @classmethod
+    def query_account_balance(cls, party_a, identifier_type="4"):
+        """
+        Query M-PESA account balance
+        
+        Args:
+            party_a: Party whose balance to query
+            identifier_type: Type of identifier (default: 4 for shortcode)
+            
+        Returns:
+            dict: Account balance result
+        """
+        try:
+            url = f"{cls.BASE_URL}/mpesa/accountbalance/v1/query"
+            
+            # Generate security credentials
+            initiator_password = settings.DARAJA_INITIATOR_PASSWORD
+            security_credentials = base64.b64encode(initiator_password.encode()).decode()
+            
+            payload = {
+                "Initiator": settings.DARAJA_INITIATOR_NAME,
+                "SecurityCredential": security_credentials,
+                "CommandID": "AccountBalance",
+                "PartyA": party_a,
+                "IdentifierType": identifier_type,
+                "ResultURL": f"http://127.0.0.1:8000/api/v1/mpesa/balance/result",
+                "QueueTimeOutURL": f"http://127.0.0.1:8000/api/v1/mpesa/balance/timeout",
+                "Remarks": "Account balance query",
+                "Occasion": "Balance Query"
+            }
+            
+            log_api_call("Daraja Account Balance Query", payload)
+            
+            response = requests.post(url, json=payload, headers=cls.get_headers(), timeout=30)
+            response.raise_for_status()
+            
+            result = response.json()
+            
+            if result.get("ResponseCode") == "0":
+                return {
+                    "status": "success",
+                    "balance": result.get("Result"),
+                    "conversation_id": result.get("ConversationID"),
+                    "originator_conversation_id": result.get("OriginatorConversationID")
+                }
+            else:
+                return {
+                    "status": "error",
+                    "message": result.get("ResponseDescription", "Balance query failed"),
+                    "response_code": result.get("ResponseCode")
+                }
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Daraja account balance query failed: {str(e)}")
+            return {
+                "status": "error",
+                "message": f"Balance query service unavailable: {str(e)}"
+            }
+        except Exception as e:
+            logger.error(f"Unexpected error in account balance query: {str(e)}")
+            return {
+                "status": "error",
+                "message": "Internal balance query error"
+            }
+    
+    @classmethod
+    def simulate_c2b_payment(cls, short_code, amount, msisdn, bill_ref_number):
+        """
+        Simulate a C2B payment for testing
+        
+        Args:
+            short_code: Business shortcode
+            amount: Amount to simulate
+            msisdn: Customer phone number
+            bill_ref_number: Bill reference number
+            
+        Returns:
+            dict: Simulation result
+        """
+        try:
+            url = f"{cls.BASE_URL}/mpesa/c2b/v1/simulate"
+            
+            payload = {
+                "ShortCode": short_code,
+                "CommandID": "CustomerPayBillOnline",
+                "Amount": int(float(amount)),
+                "Msisdn": validate_phone_number(msisdn) or msisdn,
+                "BillRefNumber": bill_ref_number
+            }
+            
+            log_api_call("Daraja C2B Simulation", payload)
+            
+            response = requests.post(url, json=payload, headers=cls.get_headers(), timeout=30)
+            response.raise_for_status()
+            
+            result = response.json()
+            
+            if result.get("ResponseCode") == "0":
+                logger.info(f"C2B payment simulation successful")
+                return {
+                    "status": "success",
+                    "message": "C2B payment simulation successful",
+                    "transaction_id": result.get("TransactionID"),
+                    "conversation_id": result.get("ConversationID")
+                }
+            else:
+                logger.error(f"C2B payment simulation failed: {result}")
+                return {
+                    "status": "error",
+                    "message": result.get("ResponseDescription", "C2B simulation failed"),
+                    "response_code": result.get("ResponseCode")
+                }
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Daraja C2B simulation failed: {str(e)}")
+            return {
+                "status": "error",
+                "message": f"C2B simulation service unavailable: {str(e)}"
+            }
+        except Exception as e:
+            logger.error(f"Unexpected error in C2B simulation: {str(e)}")
+            return {
+                "status": "error",
+                "message": "Internal C2B simulation error"
+            }
+    
+    @classmethod
+    def redeem_bonga_points(cls, msisdn, amount, bonga_points, conversion_rate=0.2, short_code=None, account_number=""):
+        """
+        Redeem Bonga points for payment
+        
+        Args:
+            msisdn: Customer phone number
+            amount: Amount to pay
+            bonga_points: Points to redeem
+            conversion_rate: Points to money conversion rate
+            short_code: Business shortcode (optional)
+            account_number: Account number (optional)
+            
+        Returns:
+            dict: Bonga redemption result
+        """
+        try:
+            url = f"{cls.BASE_URL}/v1/lipa/na/bonga/redeem-paybill"
+            
+            payload = {
+                "msisdn": validate_phone_number(msisdn) or msisdn,
+                "amount": int(float(amount)),
+                "bongaPoints": int(bonga_points),
+                "conversionRate": float(conversion_rate),
+                "shortCode": short_code or settings.DARAJA_SHORTCODE,
+                "accountNumber": account_number
+            }
+            
+            log_api_call("Daraja Bonga Points Redemption", payload)
+            
+            response = requests.post(url, json=payload, headers=cls.get_headers(), timeout=30)
+            response.raise_for_status()
+            
+            result = response.json()
+            
+            if result.get("ResponseCode") == "0":
+                logger.info(f"Bonga points redemption successful for {msisdn}")
+                return {
+                    "status": "success",
+                    "message": "Bonga points redeemed successfully",
+                    "transaction_id": result.get("TransactionID"),
+                    "points_used": bonga_points,
+                    "amount_paid": amount
+                }
+            else:
+                logger.error(f"Bonga points redemption failed: {result}")
+                return {
+                    "status": "error",
+                    "message": result.get("ResponseDescription", "Bonga redemption failed"),
+                    "response_code": result.get("ResponseCode")
+                }
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Daraja Bonga redemption failed: {str(e)}")
+            return {
+                "status": "error",
+                "message": f"Bonga redemption service unavailable: {str(e)}"
+            }
+        except Exception as e:
+            logger.error(f"Unexpected error in Bonga redemption: {str(e)}")
+            return {
+                "status": "error",
+                "message": "Internal Bonga redemption error"
+            }
+    
+    @classmethod
+    def calculate_bonga_points(cls, points):
+        """
+        Calculate monetary value of Bonga points
+        
+        Args:
+            points: Number of Bonga points
+            
+        Returns:
+            dict: Points calculation result
+        """
+        try:
+            url = f"{cls.BASE_URL}/v1/lipa/na/bonga/calculator-points"
+            
+            payload = {
+                "points": int(points)
+            }
+            
+            log_api_call("Daraja Bonga Points Calculation", payload)
+            
+            response = requests.post(url, json=payload, headers=cls.get_headers(), timeout=30)
+            response.raise_for_status()
+            
+            result = response.json()
+            
+            if result.get("ResponseCode") == "0":
+                return {
+                    "status": "success",
+                    "points": points,
+                    "amount": result.get("Amount"),
+                    "conversion_rate": result.get("ConversionRate")
+                }
+            else:
+                return {
+                    "status": "error",
+                    "message": result.get("ResponseDescription", "Points calculation failed"),
+                    "response_code": result.get("ResponseCode")
+                }
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Daraja Bonga calculation failed: {str(e)}")
+            return {
+                "status": "error",
+                "message": f"Bonga calculation service unavailable: {str(e)}"
+            }
+        except Exception as e:
+            logger.error(f"Unexpected error in Bonga calculation: {str(e)}")
+            return {
+                "status": "error",
+                "message": "Internal Bonga calculation error"
+            }
 
 # --- Enhanced M-PESA Functions ---
 def mpesa_stk_push(phone, amount, transaction_id):
@@ -474,3 +929,101 @@ def mpesa_b2c_transfer(phone, amount, transaction_id):
     )
     
     return result
+
+def reverse_escrow_payment(transaction, reason="Payment reversal"):
+    """
+    Reverse an escrow payment back to the buyer
+    
+    Args:
+        transaction: Transaction object to reverse
+        reason: Reason for reversal
+        
+    Returns:
+        dict: Reversal result
+    """
+    try:
+        if not all([hasattr(settings, 'DARAJA_CONSUMER_KEY'), 
+                    hasattr(settings, 'DARAJA_CONSUMER_SECRET'),
+                    hasattr(settings, 'DARAJA_INITIATOR_NAME'),
+                    hasattr(settings, 'DARAJA_INITIATOR_PASSWORD')]):
+            logger.warning("Daraja reversal API not fully configured, using mock implementation")
+            return {
+                "status": True,
+                "message": "Mock reversal completed successfully",
+                "reversal_reference": f"MOCK-REV-{uuid.uuid4().hex[:12].upper()}"
+            }
+        
+        # Get the original payment details from transaction
+        # This would typically be stored in a Payment model or similar
+        original_amount = transaction.agreed_price
+        buyer_phone = transaction.buyer.phone_number
+        transaction_ref = transaction.escrow_reference or str(transaction.id)
+        
+        # Initiate reversal via Daraja API
+        result = DarajaAPI.reverse_transaction(
+            transaction_id=transaction_ref,
+            amount=original_amount,
+            receiver_party=buyer_phone,
+            remarks=reason
+        )
+        
+        if result.get("status") == "success":
+            logger.info(f"Payment reversal initiated for transaction {transaction.id}")
+            return {
+                "status": "success",
+                "message": "Payment reversal initiated successfully",
+                "reversal_reference": result.get("conversation_id"),
+                "amount": original_amount,
+                "recipient": buyer_phone
+            }
+        else:
+            logger.error(f"Payment reversal failed for transaction {transaction.id}: {result}")
+            return {
+                "status": "error",
+                "message": result.get("message", "Payment reversal failed"),
+                "error_details": result
+            }
+            
+    except Exception as e:
+        logger.error(f"Unexpected error in payment reversal: {str(e)}")
+        return {
+            "status": "error",
+            "message": f"Internal reversal error: {str(e)}"
+        }
+
+def check_transaction_status(transaction_ref):
+    """
+    Check the status of a transaction via Daraja API
+    
+    Args:
+        transaction_ref: Transaction reference to check
+        
+    Returns:
+        dict: Transaction status
+    """
+    try:
+        if not all([hasattr(settings, 'DARAJA_CONSUMER_KEY'), 
+                    hasattr(settings, 'DARAJA_CONSUMER_SECRET')]):
+            logger.warning("Daraja status API not fully configured, returning mock status")
+            return {
+                "status": "success",
+                "transaction_status": "Completed",
+                "amount": 0,
+                "message": "Mock status check"
+            }
+        
+        # Query transaction status
+        result = DarajaAPI.query_transaction_status(
+            transaction_id=transaction_ref,
+            party_a=getattr(settings, 'DARAJA_SHORTCODE', ''),
+            identifier_type="4"
+        )
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error checking transaction status: {str(e)}")
+        return {
+            "status": "error",
+            "message": f"Status check error: {str(e)}"
+        }

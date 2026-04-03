@@ -1,16 +1,17 @@
 {% extends 'frontend/base.html' %}
 {% block title %}Privacy Policy - Digiland{% endblock %}
 {% block content %}
-<div class="row pt-4 pb-5">
-    <div class="col-12 text-center mb-5">
-        <h1 class="display-3 fw-bold" style="letter-spacing: -1.5px;">Privacy Policy</h1>
-        <p class="lead text-muted max-w-75 mx-auto">We explicitly protect your data grids.</p>
+<section class="content-page">
+    <div class="content-hero">
+        <span class="page-kicker justify-content-center"><i class="bi bi-shield-lock"></i>Privacy</span>
+        <h1 class="page-title">Handled with care and access control</h1>
+        <p class="page-subtitle mx-auto">Sensitive information should be collected, reviewed, and exposed only where it is needed for the workflow.</p>
     </div>
-    <div class="col-md-8 mx-auto bg-white p-5 rounded-4 shadow-sm border">
-        <h3 class="fw-bold mb-3">Zero Compromise</h3>
-        <p class="fs-5 text-muted mb-4">Your physical identity documentation (National IDs, Deeds) are uploaded strictly via encrypted S3 pipelines and immediately purged or locked post-verification.</p>
-        <h3 class="fw-bold mb-3">Data Handover</h3>
-        <p class="fs-5 text-muted">We never distribute your cryptographic transaction logs to third-party analysts.</p>
-    </div>
-</div>
+    <article class="content-card">
+        <h3>Data Protection</h3>
+        <p>Identity records and uploaded documents are intended to be handled within controlled operational steps so verification teams can work without unnecessary exposure of personal information.</p>
+        <h3>Use of Information</h3>
+        <p>Platform data exists to support verification, messaging, approvals, and transaction progress rather than broad distribution beyond the people responsible for each case.</p>
+    </article>
+</section>
 {% endblock %}

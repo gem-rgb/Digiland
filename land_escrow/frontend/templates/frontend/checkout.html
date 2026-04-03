@@ -1,18 +1,19 @@
 {% extends 'frontend/base.html' %}
 
 {% block content %}
-<div class="row justify-content-center mt-4">
-    <div class="col-lg-8">
-        <div class="text-center mb-5">
-            <h1 class="display-5 text-primary fw-bold"><i class="bi bi-lock-fill"></i> Regulated Escrow Deposit</h1>
-            <p class="text-muted lead">Your funds will be held securely in a multi-sig escrow vault until an Agent formally clears the deed transfer.</p>
-        </div>
+<section class="page-header">
+    <div>
+        <span class="page-kicker"><i class="bi bi-shield-lock"></i>Payment Checkout</span>
+        <h2 class="page-title">Regulated escrow deposit</h2>
+        <p class="page-subtitle">Funds remain held in escrow until deed transfer and final agent authorization are complete.</p>
+    </div>
+</section>
 
-        <div class="row">
+<div class="row g-4">
             <!-- Order Summary -->
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header bg-dark text-white py-3">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-dark">
                         <h5 class="mb-0"><i class="bi bi-receipt"></i> Escrow Invoice Summary</h5>
                     </div>
                     <div class="card-body">
@@ -35,7 +36,7 @@
                             </li>
                         </ul>
                         
-                        <div class="p-3 bg-light rounded text-center border mt-4">
+                        <div class="legacy-subtle-panel text-center mt-4">
                             <h6 class="text-muted text-uppercase mb-1">Total Agreed Escrow Deposit</h6>
                             <h2 class="mb-0 text-success fw-bold">KES {{ transaction.agreed_price }}</h2>
                         </div>
@@ -44,9 +45,9 @@
             </div>
 
             <!-- Payment Methods -->
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm border-primary h-100 pb-0">
-                    <div class="card-header bg-primary text-white py-3">
+            <div class="col-md-6">
+                <div class="card h-100 pb-0">
+                    <div class="card-header bg-primary">
                         <h5 class="mb-0"><i class="bi bi-credit-card-2-front"></i> Select Payment Vector</h5>
                     </div>
                     <div class="card-body d-flex flex-column">
@@ -62,7 +63,7 @@
                                     <h6 class="mb-0 fw-bold">M-PESA Express (STK Push)</h6>
                                     <small class="text-muted">Instant deposit via Safaricom</small>
                                 </div>
-                                <i class="bi bi- телефон text-success fs-3"></i>
+                                <i class="bi bi-phone text-success fs-3"></i>
                             </label>
                         </div>
 
@@ -88,7 +89,5 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 </div>
 {% endblock %}

@@ -167,9 +167,11 @@ class Transaction(models.Model):
         ('Initiated', 'Initiated'),
         ('Deposit_Paid', 'Deposit Paid'),
         ('Under_Verification', 'Under Verification'),
+        ('Verification_Hiatus', 'Verification Hiatus'),
         ('Completed', 'Completed'),
         ('Disputed', 'Disputed'),
         ('Refunded', 'Refunded'),
+        ('Reversed', 'Reversed by Admin'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -189,11 +191,123 @@ class Transaction(models.Model):
     buyer_validation_deadline = models.DateTimeField(null=True, blank=True, help_text="Deadline by which buyer must confirm or disputes ownership. Funds are fully refundable until this date.")
     buyer_accepted = models.BooleanField(null=True, blank=True, help_text="True=buyer confirmed legitimacy, False=buyer disputed/requested refund, None=still in validation window")
     
+    # Land Verification Fields
+    land_verification_started = models.DateTimeField(null=True, blank=True, help_text="When land verification process started")
+    land_verified = models.BooleanField(default=False, help_text="Whether land location and details have been verified")
+    land_verification_notes = models.TextField(blank=True, null=True, help_text="Notes from land verification process")
+    verification_agent = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='verified_transactions', help_text="Agent who verified the land details")
+    
+    # Payment Reversal Fields
+    reversal_reason = models.TextField(blank=True, null=True, help_text="Reason for payment reversal")
+    reversal_initiated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reversed_transactions', help_text="Admin who initiated the reversal")
+    reversal_initiated_at = models.DateTimeField(null=True, blank=True, help_text="When reversal was initiated")
+    reversal_reference = models.CharField(max_length=100, blank=True, null=True, help_text="Reference number for the reversal transaction")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.id} - {self.status}"
+    
+    @property
+    def is_in_verification_hiatus(self):
+        """Check if transaction is in the 7-day verification hiatus period"""
+        from django.utils import timezone
+        return (
+            self.status == 'Verification_Hiatus' and 
+            self.land_verification_started and 
+            self.land_verification_started < timezone.now() < self.buyer_validation_deadline
+        )
+    
+    @property
+    def verification_deadline_passed(self):
+        """Check if the 7-day verification deadline has passed"""
+        from django.utils import timezone
+        return self.buyer_validation_deadline and self.buyer_validation_deadline < timezone.now()
+    
+    @property
+    def days_remaining_for_verification(self):
+        """Calculate days remaining in verification period"""
+        from django.utils import timezone
+        if self.buyer_validation_deadline:
+            remaining = self.buyer_validation_deadline - timezone.now()
+            return max(0, remaining.days)
+        return 0
+    
+    def start_verification_hiatus(self):
+        """Start the 7-day verification hiatus period"""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        if not self.land_verification_started:
+            self.land_verification_started = timezone.now()
+            self.buyer_validation_deadline = timezone.now() + timedelta(days=7)
+            self.status = 'Verification_Hiatus'
+            self.save()
+    
+    def complete_verification(self, verification_agent, notes=""):
+        """Complete land verification and end hiatus period"""
+        self.land_verified = True
+        self.verification_agent = verification_agent
+        self.land_verification_notes = notes
+        self.status = 'Under_Verification'
+        self.save()
+    
+    def reverse_payment(self, admin_user, reason=""):
+        """Initiate payment reversal by admin"""
+        from .services.payment import reverse_escrow_payment
+        from django.utils import timezone
+        import uuid
+        
+        # Only allow reversal for transactions with paid deposits
+        if self.status not in ['Deposit_Paid', 'Under_Verification', 'Verification_Hiatus']:
+            raise ValueError("Cannot reverse payment for transaction in status: {}".format(self.status))
+        
+        # Generate reversal reference
+        self.reversal_reference = f"REV-{uuid.uuid4().hex[:12].upper()}"
+        self.reversal_reason = reason
+        self.reversal_initiated_by = admin_user
+        self.reversal_initiated_at = timezone.now()
+        
+        # Initiate actual reversal via payment service
+        reversal_result = reverse_escrow_payment(self, reason)
+        
+        if reversal_result.get("status") == "success":
+            self.status = 'Reversed'
+            self.save()
+            
+            # Log the successful reversal
+            from .models import AuditLog
+            AuditLog.objects.create(
+                user=admin_user,
+                action=f"Payment reversal initiated for transaction {self.id}",
+                metadata={
+                    'reversal_reference': self.reversal_reference,
+                    'amount': float(self.agreed_price),
+                    'reason': reason,
+                    'payment_reversal_id': reversal_result.get('reversal_reference')
+                }
+            )
+            
+            return self.reversal_reference
+        else:
+            # If reversal failed, don't change status but log the attempt
+            self.save()
+            
+            # Log the failed reversal attempt
+            from .models import AuditLog
+            AuditLog.objects.create(
+                user=admin_user,
+                action=f"Failed payment reversal attempt for transaction {self.id}",
+                metadata={
+                    'reversal_reference': self.reversal_reference,
+                    'amount': float(self.agreed_price),
+                    'reason': reason,
+                    'error': reversal_result.get('message', 'Unknown error')
+                }
+            )
+            
+            raise Exception(f"Payment reversal failed: {reversal_result.get('message', 'Unknown error')}")
 
 class Document(models.Model):
     DOC_TYPE_CHOICES = [
