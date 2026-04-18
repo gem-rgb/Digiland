@@ -190,9 +190,19 @@ if ADMIN_USER_NAME and ADMIN_USER_EMAIL:
 PAYSTACK_PUBLIC_KEY = config('PAYSTACK_PUBLIC_KEY', default='')
 PAYSTACK_SECRET_KEY = config('PAYSTACK_SECRET_KEY', default='')
 
-# GavaConnect API Configuration
-GAVACONNECT_API_KEY = config('GAVACONNECT_API_KEY', default='')
-GAVACONNECT_BASE_URL = config('GAVACONNECT_BASE_URL', default='https://api.gavaconnect.co.ke/v1')
+# GavaConnect KRA API Configuration (OAuth2)
+# App: Digiland — PIN Checker BY ID
+GAVACONNECT_CONSUMER_KEY = config('GAVACONNECT_CONSUMER_KEY', default='')
+GAVACONNECT_CONSUMER_SECRET = config('GAVACONNECT_CONSUMER_SECRET', default='')
+# App: DigilandFull — PIN Checker by PIN
+GAVACONNECT_PIN_CONSUMER_KEY = config('GAVACONNECT_PIN_CONSUMER_KEY', default='')
+GAVACONNECT_PIN_CONSUMER_SECRET = config('GAVACONNECT_PIN_CONSUMER_SECRET', default='')
+# App: Digiland Escrow — Tax Compliance Certificate Checker
+GAVACONNECT_TCC_CONSUMER_KEY = config('GAVACONNECT_TCC_CONSUMER_KEY', default='')
+GAVACONNECT_TCC_CONSUMER_SECRET = config('GAVACONNECT_TCC_CONSUMER_SECRET', default='')
+# Shared
+GAVACONNECT_BASE_URL = config('GAVACONNECT_BASE_URL', default='https://sbx.kra.go.ke')
+GAVACONNECT_ENVIRONMENT = config('GAVACONNECT_ENVIRONMENT', default='sandbox')
 
 # Safaricom Daraja API Configuration
 DARAJA_CONSUMER_KEY = config('DARAJA_CONSUMER_KEY', default='')
