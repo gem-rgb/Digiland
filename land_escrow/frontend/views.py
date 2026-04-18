@@ -806,17 +806,78 @@ def payment_checkout(request, transaction_id):
 
 @login_required
 def process_payment(request, transaction_id):
+    from django.http import JsonResponse
+    from core.services.payment import mpesa_stk_push
+    import logging
+    logger = logging.getLogger(__name__)
+    
     transaction = get_object_or_404(Transaction, id=transaction_id)
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     
     if request.method == 'POST' and (request.user == transaction.buyer or request.user.role == 'Admin'):
         if transaction.contract_agreed and transaction.status == 'Under_Verification':
-            # Simulate a successful Paystack / M-PESA API call processing the deposit
-            transaction.status = 'Deposit_Paid'
-            import uuid
-            transaction.escrow_reference = f"ESC-{str(uuid.uuid4())[:8].upper()}"
-            transaction.save()
-            return redirect('frontend:transactions')
+            phone_number = request.POST.get('phone_number', '').strip()
             
+            if not phone_number:
+                # Fallback to user's registered number
+                phone_number = request.user.phone_number
+            
+            if not phone_number:
+                if is_ajax:
+                    return JsonResponse({'status': 'error', 'message': 'No phone number provided.'})
+                return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+            
+            # Initiate real M-PESA STK Push via Daraja API
+            try:
+                amount = int(transaction.agreed_price)
+                # Sandbox has a max limit — cap at 150000 for sandbox testing
+                from django.conf import settings
+                if getattr(settings, 'DARAJA_ENVIRONMENT', 'sandbox') == 'sandbox':
+                    # In sandbox, use a small test amount (1 KES) to avoid errors
+                    amount = min(amount, 1)
+                
+                result = mpesa_stk_push(
+                    phone=phone_number,
+                    amount=amount,
+                    transaction_id=str(transaction.id)
+                )
+                
+                logger.info(f"STK Push result for transaction {transaction.id}: {result}")
+                
+                if result.get('status') == 'success':
+                    # Store the checkout_request_id for status polling
+                    checkout_request_id = result.get('checkout_request_id', '')
+                    
+                    # Store checkout_request_id in the transaction metadata
+                    # We use escrow_reference temporarily to track this
+                    import uuid
+                    transaction.escrow_reference = f"MPESA-{checkout_request_id}" if checkout_request_id else f"ESC-{str(uuid.uuid4())[:8].upper()}"
+                    transaction.save(update_fields=['escrow_reference'])
+                    
+                    if is_ajax:
+                        return JsonResponse({
+                            'status': 'stk_pushed',
+                            'message': 'STK Push sent to your phone. Please authorize the payment.',
+                            'checkout_request_id': checkout_request_id,
+                        })
+                    return redirect('frontend:transactions')
+                
+                else:
+                    error_msg = result.get('message', 'STK Push initiation failed.')
+                    logger.error(f"STK Push failed for transaction {transaction.id}: {error_msg}")
+                    
+                    if is_ajax:
+                        return JsonResponse({'status': 'error', 'message': error_msg})
+                    return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+                    
+            except Exception as e:
+                logger.error(f"Payment processing error for transaction {transaction.id}: {str(e)}")
+                if is_ajax:
+                    return JsonResponse({'status': 'error', 'message': f'Payment processing error: {str(e)}'})
+                return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+    
+    if is_ajax:
+        return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
     return redirect('frontend:payment_checkout', transaction_id=transaction.id)
 
 

@@ -9,6 +9,17 @@ from .utils import log_api_call, validate_phone_number, generate_transaction_ref
 
 logger = logging.getLogger(__name__)
 
+# Callback base URL — in sandbox, Safaricom rejects http://localhost.
+# Use site's configured domain or a placeholder HTTPS URL for sandbox.
+def _get_callback_base():
+    env = getattr(settings, 'DARAJA_ENVIRONMENT', 'sandbox')
+    if env == 'production':
+        hosts = getattr(settings, 'ALLOWED_HOSTS', ['localhost'])
+        domain = hosts[0] if hosts else 'localhost'
+        return f"https://{domain}"
+    # Sandbox: use a valid HTTPS placeholder (Safaricom won't actually call it)
+    return "https://digiland.example.com"
+
 # --- Shared Escrow Logic ---
 def hold_payment(transaction):
     """
@@ -90,7 +101,7 @@ class DarajaAPI:
         Get OAuth access token from Daraja API
         """
         try:
-            url = f"{cls.BASE_URL}/oauth/v1/generate"
+            url = f"{cls.BASE_URL}/oauth/v1/generate?grant_type=client_credentials"
             consumer_key = settings.DARAJA_CONSUMER_KEY
             consumer_secret = settings.DARAJA_CONSUMER_SECRET
             
@@ -212,7 +223,7 @@ class DarajaAPI:
             url = f"{cls.BASE_URL}/mpesa/stkpush/v1/processrequest"
             
             if not callback_url:
-                callback_url = f"http://127.0.0.1:8000/api/v1/mpesa/callback"
+                callback_url = f"{_get_callback_base()}/api/v1/mpesa/callback"
             
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
             password = base64.b64encode(
@@ -368,8 +379,8 @@ class DarajaAPI:
                 "PartyA": settings.DARAJA_SHORTCODE,
                 "PartyB": formatted_phone,
                 "Remarks": remarks,
-                "QueueTimeOutURL": f"http://127.0.0.1:8000/api/v1/mpesa/b2c/timeout",
-                "ResultURL": f"http://127.0.0.1:8000/api/v1/mpesa/b2c/result",
+                "QueueTimeOutURL": f"{_get_callback_base()}/api/v1/mpesa/b2c/timeout",
+                "ResultURL": f"{_get_callback_base()}/api/v1/mpesa/b2c/result",
                 "Occasion": "Escrow Payout"
             }
             
@@ -442,8 +453,8 @@ class DarajaAPI:
                 "PartyB": receiver_party,
                 "AccountReference": f"B2B-{generate_transaction_reference()}",
                 "Remarks": remarks,
-                "QueueTimeOutURL": f"http://127.0.0.1:8000/api/v1/mpesa/b2b/timeout",
-                "ResultURL": f"http://127.0.0.1:8000/api/v1/mpesa/b2b/result"
+                "QueueTimeOutURL": f"{_get_callback_base()}/api/v1/mpesa/b2b/timeout",
+                "ResultURL": f"{_get_callback_base()}/api/v1/mpesa/b2b/result"
             }
             
             log_api_call("Daraja B2B Payment", payload)
@@ -512,8 +523,8 @@ class DarajaAPI:
                 "Amount": int(float(amount)),
                 "ReceiverParty": receiver_party,
                 "RecieverIdentifierType": "4",
-                "ResultURL": f"http://127.0.0.1:8000/api/v1/mpesa/reversal/result",
-                "QueueTimeOutURL": f"http://127.0.0.1:8000/api/v1/mpesa/reversal/timeout",
+                "ResultURL": f"{_get_callback_base()}/api/v1/mpesa/reversal/result",
+                "QueueTimeOutURL": f"{_get_callback_base()}/api/v1/mpesa/reversal/timeout",
                 "Remarks": remarks,
                 "Occasion": "Transaction Reversal"
             }
@@ -582,8 +593,8 @@ class DarajaAPI:
                 "TransactionID": transaction_id,
                 "PartyA": party_a,
                 "IdentifierType": identifier_type,
-                "ResultURL": f"http://127.0.0.1:8000/api/v1/mpesa/status/result",
-                "QueueTimeOutURL": f"http://127.0.0.1:8000/api/v1/mpesa/status/timeout",
+                "ResultURL": f"{_get_callback_base()}/api/v1/mpesa/status/result",
+                "QueueTimeOutURL": f"{_get_callback_base()}/api/v1/mpesa/status/timeout",
                 "Remarks": "Transaction status query",
                 "Occasion": "Status Query"
             }
@@ -647,8 +658,8 @@ class DarajaAPI:
                 "CommandID": "AccountBalance",
                 "PartyA": party_a,
                 "IdentifierType": identifier_type,
-                "ResultURL": f"http://127.0.0.1:8000/api/v1/mpesa/balance/result",
-                "QueueTimeOutURL": f"http://127.0.0.1:8000/api/v1/mpesa/balance/timeout",
+                "ResultURL": f"{_get_callback_base()}/api/v1/mpesa/balance/result",
+                "QueueTimeOutURL": f"{_get_callback_base()}/api/v1/mpesa/balance/timeout",
                 "Remarks": "Account balance query",
                 "Occasion": "Balance Query"
             }

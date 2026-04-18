@@ -79,15 +79,197 @@
                             </label>
                         </div>
 
-                        <div class="mt-auto">
-                            <form method="POST" action="{% url 'frontend:process_payment' transaction.id %}">
+                        <!-- STK Push Form -->
+                        <div class="mt-auto" id="paymentFormSection">
+                            <form id="stkPushForm" method="POST" action="{% url 'frontend:process_payment' transaction.id %}">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-success btn-lg w-100 fw-bold shadow"><i class="bi bi-shield-lock"></i> Authorize Payment Protocol</button>
+                                <div class="mb-3">
+                                    <label for="phone_number" class="form-label fw-bold"><i class="bi bi-telephone-fill text-success"></i> M-PESA Phone Number</label>
+                                    <input type="tel" class="form-control form-control-lg" id="phone_number" name="phone_number" 
+                                           value="{{ request.user.phone_number }}" 
+                                           placeholder="e.g. 0712345678 or 254712345678"
+                                           pattern="^(0[17]\d{8}|254[17]\d{8})$"
+                                           required>
+                                    <div class="form-text">Enter the Safaricom number to receive the STK Push prompt.</div>
+                                </div>
+                                <button type="submit" id="payBtn" class="btn btn-success btn-lg w-100 fw-bold shadow">
+                                    <i class="bi bi-shield-lock"></i> Send M-PESA STK Push
+                                </button>
                             </form>
-                            <p class="text-center text-muted small mt-3"><i class="bi bi-lock"></i> 256-bit AES Encryption</p>
+                            <p class="text-center text-muted small mt-3"><i class="bi bi-lock"></i> 256-bit AES Encryption &bull; Safaricom Daraja API</p>
+                        </div>
+
+                        <!-- STK Push Waiting Section (hidden initially) -->
+                        <div class="mt-auto d-none" id="stkWaitingSection">
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-success mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <h5 class="fw-bold text-success mb-2">STK Push Sent!</h5>
+                                <p class="text-muted mb-1">A payment prompt has been sent to your phone.</p>
+                                <p class="text-muted small mb-3">Please check your phone and enter your M-PESA PIN to authorize the payment.</p>
+                                <div class="alert alert-warning py-2 small">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> 
+                                    Do not close this page. We are waiting for confirmation...
+                                </div>
+                                <div id="stkStatusMessage" class="mt-3"></div>
+                                <div id="stkCountdown" class="text-muted small mt-2">Checking payment status...</div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Success Section (hidden initially) -->
+                        <div class="mt-auto d-none" id="stkSuccessSection">
+                            <div class="text-center py-4">
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                                <h5 class="fw-bold text-success mt-3 mb-2">Payment Confirmed!</h5>
+                                <p class="text-muted mb-3">Your escrow deposit has been securely received.</p>
+                                <div id="paymentDetails" class="mb-3"></div>
+                                <a href="{% url 'frontend:transactions' %}" class="btn btn-primary btn-lg fw-bold">
+                                    <i class="bi bi-list-check"></i> View My Transactions
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Payment Failed Section (hidden initially) -->
+                        <div class="mt-auto d-none" id="stkFailedSection">
+                            <div class="text-center py-4">
+                                <i class="bi bi-x-circle-fill text-danger" style="font-size: 3rem;"></i>
+                                <h5 class="fw-bold text-danger mt-3 mb-2">Payment Failed</h5>
+                                <p id="failureMessage" class="text-muted mb-3">The payment was not completed.</p>
+                                <button onclick="resetPaymentForm()" class="btn btn-outline-success btn-lg fw-bold">
+                                    <i class="bi bi-arrow-clockwise"></i> Try Again
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 </div>
+
+<script>
+const CSRF_TOKEN = '{{ csrf_token }}';
+const TRANSACTION_ID = '{{ transaction.id }}';
+let pollInterval = null;
+let pollCount = 0;
+const MAX_POLLS = 40; // 40 polls at 3 seconds = 2 minutes timeout
+
+document.getElementById('stkPushForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const phone = document.getElementById('phone_number').value.trim();
+    if (!phone) {
+        alert('Please enter your M-PESA phone number.');
+        return;
+    }
+    
+    // Disable button and show loading
+    const btn = document.getElementById('payBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Initiating STK Push...';
+    
+    // Send request to initiate STK Push
+    fetch('{% url "frontend:process_payment" transaction.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': CSRF_TOKEN,
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: new URLSearchParams({
+            'csrfmiddlewaretoken': CSRF_TOKEN,
+            'phone_number': phone
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success' || data.status === 'stk_pushed') {
+            // Show waiting section
+            document.getElementById('paymentFormSection').classList.add('d-none');
+            document.getElementById('stkWaitingSection').classList.remove('d-none');
+            
+            // Start polling for payment status
+            if (data.checkout_request_id) {
+                startPolling(data.checkout_request_id);
+            } else {
+                // If no checkout_request_id (simulated), redirect after brief delay
+                setTimeout(() => {
+                    window.location.href = '{% url "frontend:transactions" %}';
+                }, 2000);
+            }
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-shield-lock"></i> Send M-PESA STK Push';
+            alert(data.message || 'Failed to initiate payment. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Payment error:', error);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-shield-lock"></i> Send M-PESA STK Push';
+        alert('Network error. Please check your connection and try again.');
+    });
+});
+
+function startPolling(checkoutRequestId) {
+    pollCount = 0;
+    pollInterval = setInterval(() => {
+        pollCount++;
+        
+        if (pollCount > MAX_POLLS) {
+            clearInterval(pollInterval);
+            showFailure('Payment timed out. The STK Push prompt may have expired. Please try again.');
+            return;
+        }
+        
+        document.getElementById('stkCountdown').textContent = 
+            `Checking payment status... (${pollCount}/${MAX_POLLS})`;
+        
+        fetch(`/api/v1/mpesa/check-checkout-status/?checkout_request_id=${checkoutRequestId}&transaction_id=${TRANSACTION_ID}`, {
+            headers: { 'X-CSRFToken': CSRF_TOKEN }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.payment_status === 'completed') {
+                clearInterval(pollInterval);
+                showSuccess(data);
+            } else if (data.payment_status === 'failed') {
+                clearInterval(pollInterval);
+                showFailure(data.message || 'Payment was declined or cancelled by the user.');
+            }
+            // 'pending' status - continue polling
+        })
+        .catch(error => {
+            console.error('Poll error:', error);
+        });
+        
+    }, 3000); // Poll every 3 seconds
+}
+
+function showSuccess(data) {
+    document.getElementById('stkWaitingSection').classList.add('d-none');
+    document.getElementById('stkSuccessSection').classList.remove('d-none');
+    
+    if (data.escrow_reference) {
+        document.getElementById('paymentDetails').innerHTML = `
+            <div class="alert alert-success py-2 small">
+                <strong>Escrow Reference:</strong> ${data.escrow_reference}<br>
+                <strong>M-PESA Receipt:</strong> ${data.mpesa_receipt || 'N/A'}
+            </div>
+        `;
+    }
+}
+
+function showFailure(message) {
+    document.getElementById('stkWaitingSection').classList.add('d-none');
+    document.getElementById('stkFailedSection').classList.remove('d-none');
+    document.getElementById('failureMessage').textContent = message;
+}
+
+function resetPaymentForm() {
+    document.getElementById('stkFailedSection').classList.add('d-none');
+    document.getElementById('paymentFormSection').classList.remove('d-none');
+    document.getElementById('payBtn').disabled = false;
+    document.getElementById('payBtn').innerHTML = '<i class="bi bi-shield-lock"></i> Send M-PESA STK Push';
+}
+</script>
 {% endblock %}

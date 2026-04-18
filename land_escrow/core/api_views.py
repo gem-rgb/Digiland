@@ -1,11 +1,12 @@
 import json
+import uuid
 import logging
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
 from django.views import View
-from .models import User, AgentKYCApplication
+from .models import User, AgentKYCApplication, Transaction
 from .services.identity import GavaConnectAPI, verify_user_kra_pin
 from .services.payment import DarajaAPI
 
@@ -43,11 +44,22 @@ class MpesaCallbackView(View):
     
     def handle_stk_callback(self, callback_data):
         """
-        Handle STK Push transaction callback
+        Handle STK Push transaction callback.
+        Updates the Transaction model status based on the M-PESA response.
         """
         try:
             result_code = callback_data.get('ResultCode')
             checkout_request_id = callback_data.get('CheckoutRequestID')
+            
+            # Find the transaction by the stored checkout_request_id
+            transaction = None
+            if checkout_request_id:
+                try:
+                    transaction = Transaction.objects.get(
+                        escrow_reference=f"MPESA-{checkout_request_id}"
+                    )
+                except Transaction.DoesNotExist:
+                    logger.warning(f"No transaction found for CheckoutRequestID: {checkout_request_id}")
             
             if result_code == 0:  # Success
                 # Extract transaction details from metadata
@@ -66,16 +78,23 @@ class MpesaCallbackView(View):
                 
                 logger.info(f"STK Push successful: {mpesa_receipt}, Amount: {amount}, Phone: {phone}")
                 
-                # Here you would typically update your transaction model
-                # For example: Transaction.objects.filter(checkout_request_id=checkout_request_id).update(status='paid')
+                # Update the transaction to Deposit_Paid (escrow held)
+                if transaction:
+                    transaction.status = 'Deposit_Paid'
+                    # Update escrow_reference with the M-PESA receipt
+                    transaction.escrow_reference = f"MPESA-{mpesa_receipt or checkout_request_id}"
+                    transaction.save(update_fields=['status', 'escrow_reference'])
+                    logger.info(f"Transaction {transaction.id} marked as Deposit_Paid")
                 
                 return JsonResponse({"status": "success", "message": "Payment processed successfully"})
             else:
                 result_desc = callback_data.get('ResultDesc', 'Transaction failed')
                 logger.warning(f"STK Push failed: {result_desc}")
                 
-                # Update transaction status to failed
-                # Transaction.objects.filter(checkout_request_id=checkout_request_id).update(status='failed')
+                # Mark the escrow_reference so the frontend polling knows it failed
+                if transaction:
+                    transaction.escrow_reference = f"FAILED-{checkout_request_id}"
+                    transaction.save(update_fields=['escrow_reference'])
                 
                 return JsonResponse({"status": "failed", "message": result_desc})
                 
@@ -581,3 +600,78 @@ def calculate_bonga_points_view(request):
     except Exception as e:
         logger.error(f"Error calculating Bonga points: {str(e)}")
         return JsonResponse({"status": "error", "message": "Internal Bonga calculation error"})
+
+
+@require_http_methods(["GET"])
+def check_checkout_status_view(request):
+    """
+    Frontend polling endpoint to check if an STK Push payment was completed.
+    
+    The frontend calls this with the checkout_request_id and transaction_id.
+    We check the Transaction model's escrow_reference to determine:
+      - MPESA-<receipt> with status=Deposit_Paid → completed (callback confirmed it)
+      - FAILED-<id> → payment was declined/cancelled
+      - MPESA-<checkout_id> with status still Under_Verification → still pending
+    
+    Additionally, we query the Daraja STK status API as a fallback.
+    """
+    checkout_request_id = request.GET.get('checkout_request_id', '')
+    transaction_id = request.GET.get('transaction_id', '')
+    
+    if not transaction_id:
+        return JsonResponse({"payment_status": "error", "message": "Transaction ID required"})
+    
+    try:
+        transaction = Transaction.objects.get(id=transaction_id)
+    except Transaction.DoesNotExist:
+        return JsonResponse({"payment_status": "error", "message": "Transaction not found"})
+    
+    # Check 1: Did the callback already mark it as paid?
+    if transaction.status == 'Deposit_Paid':
+        return JsonResponse({
+            "payment_status": "completed",
+            "message": "Payment confirmed!",
+            "escrow_reference": transaction.escrow_reference,
+            "mpesa_receipt": transaction.escrow_reference.replace("MPESA-", "") if transaction.escrow_reference else "",
+        })
+    
+    # Check 2: Did the callback mark it as failed?
+    if transaction.escrow_reference and transaction.escrow_reference.startswith("FAILED-"):
+        return JsonResponse({
+            "payment_status": "failed",
+            "message": "Payment was declined or cancelled.",
+        })
+    
+    # Check 3: Query Daraja STK status API as a fallback
+    if checkout_request_id:
+        try:
+            result = DarajaAPI.query_stk_status(checkout_request_id)
+            
+            if result.get('status') == 'success' and result.get('result_code') == '0':
+                # Payment was successful but callback hasn't arrived yet
+                # Proactively update the transaction
+                transaction.status = 'Deposit_Paid'
+                transaction.escrow_reference = f"MPESA-{checkout_request_id}"
+                transaction.save(update_fields=['status', 'escrow_reference'])
+                
+                return JsonResponse({
+                    "payment_status": "completed",
+                    "message": "Payment confirmed via status query!",
+                    "escrow_reference": transaction.escrow_reference,
+                })
+            elif result.get('status') == 'error' and 'cancelled' in str(result.get('message', '')).lower():
+                transaction.escrow_reference = f"FAILED-{checkout_request_id}"
+                transaction.save(update_fields=['escrow_reference'])
+                return JsonResponse({
+                    "payment_status": "failed",
+                    "message": result.get('message', 'Payment was cancelled.'),
+                })
+        except Exception as e:
+            logger.error(f"Error querying STK status: {str(e)}")
+    
+    # Still pending
+    return JsonResponse({
+        "payment_status": "pending",
+        "message": "Waiting for payment confirmation...",
+    })
+

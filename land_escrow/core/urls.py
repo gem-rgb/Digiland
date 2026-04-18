@@ -39,4 +39,7 @@ urlpatterns = [
     path('mpesa/c2b-simulate', api_views.simulate_c2b_payment_view, name='simulate-c2b-payment'),
     path('mpesa/bonga-redeem', api_views.redeem_bonga_points_view, name='redeem-bonga-points'),
     path('mpesa/bonga-calculate', api_views.calculate_bonga_points_view, name='calculate-bonga-points'),
+    
+    # STK Push checkout status polling (used by frontend checkout page)
+    path('mpesa/check-checkout-status/', api_views.check_checkout_status_view, name='check-checkout-status'),
 ]
