@@ -167,11 +167,19 @@
     <div class="collapse navbar-collapse" id="publicNav">
       <ul class="navbar-nav ms-auto align-items-center gap-1">
         {% if user.is_authenticated %}
+        {% if user.role == 'Seller' %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'frontend:parcel_list' %}">
+            <i class="bi bi-geo-alt me-1"></i>My Parcels
+          </a>
+        </li>
+        {% else %}
         <li class="nav-item">
           <a class="nav-link" href="{% url 'frontend:parcel_list' %}">
             <i class="bi bi-grid-3x3-gap me-1"></i>Marketplace
           </a>
         </li>
+        {% endif %}
         <li class="nav-item">
           <a class="nav-link" href="{% url 'frontend:transactions' %}">
             <i class="bi bi-clock-history me-1"></i>Transactions

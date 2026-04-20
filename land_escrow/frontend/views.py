@@ -113,15 +113,20 @@ def parcel_list(request):
     from django.db.models import Q
     active_tx_statuses = ['Initiated', 'Deposit_Paid', 'Under_Verification', 'Completed']
     
-    if request.user.is_authenticated and request.user.role in ['Seller', 'Agent', 'Admin']:
-        # Show the Seller's unsold properties PLUS the generic Verified unsold marketplace
+    if request.user.is_authenticated and request.user.role == 'Seller':
+        # Sellers ONLY see their own listed parcels
         parcels = LandParcel.objects.filter(
-            Q(listed_by=request.user) | Q(verification_status='Verified')
+            listed_by=request.user
+        ).order_by('-ardhisasa_last_synced')
+    elif request.user.is_authenticated and request.user.role in ['Agent', 'Admin']:
+        # Agents/Admins see all verified parcels + their own assignments
+        parcels = LandParcel.objects.filter(
+            Q(assigned_agent=request.user) | Q(verification_status='Verified')
         ).exclude(
             transactions__status__in=active_tx_statuses
         ).distinct().order_by('-ardhisasa_last_synced')
     else:
-        # Strict Public Marketplace (Guests & Buyers ONLY see Verified, Available Land)
+        # Buyers & guests see only Verified, available parcels
         parcels = LandParcel.objects.filter(
             verification_status='Verified'
         ).exclude(
@@ -697,6 +702,7 @@ def initiate_escrow(request, parcel_number):
         
     return redirect('frontend:parcel_detail', parcel_number=parcel_number)
 
+@login_required
 def parcel_detail(request, parcel_number):
     parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
     return render(request, 'frontend/parcel_detail.html', {'parcel': parcel})
