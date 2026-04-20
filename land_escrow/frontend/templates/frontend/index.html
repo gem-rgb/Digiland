@@ -20,109 +20,730 @@
 {% endif %}
 {% endblock %}
 
+{% block extra_head %}
+{% if not user.is_authenticated %}
+<style>
+/* ━━━ LANDING PAGE OVERRIDES (inline to bypass cache) ━━━ */
+
+/* Hero */
+.lp-hero {
+  background:
+    linear-gradient(165deg, rgba(7,17,31,.92) 0%, rgba(15,23,42,.88) 50%, rgba(11,23,40,.95) 100%),
+    radial-gradient(ellipse 80% 60% at 70% 40%, rgba(16,185,129,.18), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 20% 80%, rgba(99,102,241,.12), transparent 70%) !important;
+  min-height: calc(100vh - 80px) !important;
+  padding: 5rem 0 4rem !important;
+}
+.lp-hero__bg-glow--1 {
+  background: rgba(16,185,129,.22) !important;
+  filter: blur(80px) !important;
+  opacity: .6 !important;
+}
+.lp-hero__bg-glow--2 {
+  background: rgba(99,102,241,.18) !important;
+  filter: blur(80px) !important;
+  opacity: .5 !important;
+}
+.hero-kicker {
+  background: rgba(16,185,129,.1) !important;
+  border: 1px solid rgba(16,185,129,.25) !important;
+  padding: 0.4rem 1rem !important;
+  border-radius: 999px !important;
+  font-size: 0.78rem !important;
+}
+.hero-title {
+  font-size: clamp(2.2rem, 5.5vw, 3.5rem) !important;
+  line-height: 1.08 !important;
+  letter-spacing: -0.04em !important;
+}
+.hero-subtitle {
+  font-size: 1.1rem !important;
+  color: rgba(203,213,225,.75) !important;
+  line-height: 1.75 !important;
+}
+
+/* Hero card */
+.hero-card {
+  background: linear-gradient(145deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,.03) 100%) !important;
+  border: 1px solid rgba(255,255,255,.15) !important;
+  border-radius: 20px !important;
+  padding: 2rem !important;
+  backdrop-filter: blur(24px) !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.12) !important;
+}
+.hero-card-title { font-size: 1.85rem !important; }
+
+/* CTA Buttons — gradient with glow */
+.lp-btn-primary {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  color: #fff !important;
+  border: none !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  padding: 0.9rem 2rem !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 20px rgba(16,185,129,.4), 0 1px 3px rgba(0,0,0,.2) !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,.15) !important;
+  letter-spacing: -0.01em !important;
+}
+.lp-btn-primary:hover {
+  background: linear-gradient(135deg, #059669, #047857) !important;
+  box-shadow: 0 8px 32px rgba(16,185,129,.5), 0 2px 6px rgba(0,0,0,.3) !important;
+  transform: translateY(-2px) !important;
+  color: #fff !important;
+}
+.lp-btn-ghost {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(255,255,255,.2) !important;
+  color: #e2e8f0 !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  padding: 0.9rem 2rem !important;
+  border-radius: 12px !important;
+}
+.lp-btn-ghost:hover {
+  background: rgba(255,255,255,.12) !important;
+  border-color: rgba(255,255,255,.35) !important;
+  color: #fff !important;
+}
+
+/* Trust bar */
+.lp-trust-bar {
+  background: rgba(8,14,26,.7) !important;
+  border-top: 1px solid rgba(255,255,255,.06) !important;
+  border-bottom: 1px solid rgba(255,255,255,.06) !important;
+  padding: 1.25rem 0 !important;
+}
+.trust-logo {
+  padding: 0.5rem 1.1rem !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(255,255,255,.1) !important;
+  background: rgba(255,255,255,.04) !important;
+  font-size: 0.84rem !important;
+}
+
+/* Section headers */
+.lp-section-kicker {
+  background: rgba(16,185,129,.1) !important;
+  border: 1px solid rgba(16,185,129,.25) !important;
+  color: #10b981 !important;
+  padding: 0.4rem 1.1rem !important;
+  border-radius: 999px !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+}
+.lp-section-title {
+  font-size: clamp(1.65rem, 3.5vw, 2.5rem) !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.025em !important;
+}
+
+/* Process / How it works */
+.lp-process {
+  padding: 5.5rem 0 !important;
+  background: linear-gradient(180deg, #0c1525 0%, #0e1a2e 100%) !important;
+}
+.process-card {
+  background: rgba(255,255,255,.06) !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  border-radius: 20px !important;
+  padding: 2.25rem 1.75rem !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.25) !important;
+  transition: all .3s cubic-bezier(.4,0,.2,1) !important;
+}
+.process-card:hover {
+  border-color: rgba(16,185,129,.35) !important;
+  background: rgba(255,255,255,.09) !important;
+  transform: translateY(-6px) !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,.35), 0 0 0 1px rgba(16,185,129,.15) !important;
+}
+.process-step-num {
+  font-size: 3.5rem !important;
+  font-weight: 900 !important;
+  background: linear-gradient(135deg, rgba(16,185,129,.3), rgba(16,185,129,.08)) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+.process-icon {
+  width: 50px !important; height: 50px !important;
+  border-radius: 14px !important;
+  background: rgba(16,185,129,.15) !important;
+  color: #10b981 !important;
+  font-size: 1.3rem !important;
+}
+
+/* Features section */
+.lp-features {
+  padding: 5.5rem 0 !important;
+  background: #0f172a !important;
+}
+.lp-feature-card {
+  background: rgba(255,255,255,.06) !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  border-radius: 20px !important;
+  padding: 2rem 1.75rem !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.25) !important;
+  transition: all .3s cubic-bezier(.4,0,.2,1) !important;
+}
+.lp-feature-card:hover {
+  border-color: rgba(255,255,255,.22) !important;
+  background: rgba(255,255,255,.09) !important;
+  transform: translateY(-5px) !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,.35) !important;
+}
+.lp-feature-card__icon {
+  width: 54px !important; height: 54px !important;
+  border-radius: 14px !important;
+  font-size: 1.4rem !important;
+}
+.lp-feature-card h5 {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  margin-bottom: 0.6rem !important;
+}
+.lp-feature-card p {
+  font-size: 0.88rem !important;
+  line-height: 1.7 !important;
+  color: #94a3b8 !important;
+}
+
+/* Stats */
+.lp-stats {
+  padding: 4rem 0 !important;
+  background: linear-gradient(135deg, rgba(16,185,129,.07) 0%, rgba(99,102,241,.05) 100%) !important;
+  border-top: 1px solid rgba(16,185,129,.18) !important;
+  border-bottom: 1px solid rgba(16,185,129,.18) !important;
+}
+.lp-stat {
+  padding: 1.75rem 1.25rem !important;
+  border-radius: 18px !important;
+  background: rgba(255,255,255,.05) !important;
+  border: 1px solid rgba(255,255,255,.1) !important;
+}
+.lp-stat__value {
+  font-size: clamp(2rem, 4vw, 2.75rem) !important;
+  font-weight: 800 !important;
+}
+
+/* Testimonials */
+.lp-testimonials {
+  padding: 5.5rem 0 !important;
+  background: linear-gradient(180deg, #0f172a, #0c1525) !important;
+}
+.lp-testimonial-card {
+  background: rgba(255,255,255,.06) !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  border-radius: 20px !important;
+  padding: 2rem !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.25) !important;
+}
+.lp-testimonial-card:hover {
+  border-color: rgba(255,255,255,.22) !important;
+  transform: translateY(-4px) !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,.35) !important;
+}
+.lp-testimonial-stars { font-size: 1rem !important; }
+.lp-testimonial-text {
+  font-size: 0.95rem !important;
+  line-height: 1.8 !important;
+  color: #cbd5e1 !important;
+}
+.lp-testimonial-avatar {
+  width: 46px !important; height: 46px !important;
+  font-size: 0.85rem !important;
+  box-shadow: 0 3px 12px rgba(0,0,0,.35) !important;
+}
+
+/* Role / pricing cards */
+.lp-roles {
+  padding: 5.5rem 0 !important;
+  background: #0e1a2e !important;
+}
+.lp-roles .row { align-items: stretch !important; }
+.lp-role-card {
+  background: rgba(255,255,255,.06) !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  border-radius: 20px !important;
+  padding: 2.5rem 2rem 2rem !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.25) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  transition: all .3s cubic-bezier(.4,0,.2,1) !important;
+}
+.lp-role-card:hover {
+  border-color: rgba(255,255,255,.22) !important;
+  transform: translateY(-5px) !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,.35) !important;
+}
+.lp-role-card--featured {
+  border-color: rgba(16,185,129,.4) !important;
+  background: linear-gradient(165deg, rgba(16,185,129,.1) 0%, rgba(16,185,129,.03) 100%) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.25), 0 0 50px rgba(16,185,129,.08) !important;
+}
+.lp-role-card--featured:hover {
+  border-color: rgba(16,185,129,.55) !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,.35), 0 0 60px rgba(16,185,129,.12) !important;
+}
+.lp-role-card__badge {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  color: #fff !important;
+  font-size: 0.7rem !important;
+  padding: 0.35rem 1.1rem !important;
+  border-radius: 999px !important;
+  box-shadow: 0 4px 15px rgba(16,185,129,.35) !important;
+}
+.lp-role-card__icon { font-size: 2.5rem !important; color: #10b981 !important; }
+.lp-role-card h5 { font-size: 1.2rem !important; }
+.lp-role-list { margin-bottom: auto !important; }
+.lp-role-list li {
+  font-size: 0.9rem !important;
+  padding: 0.6rem 0 !important;
+  border-color: rgba(255,255,255,.06) !important;
+}
+.lp-role-card .btn { margin-top: 1.75rem !important; }
+
+/* CTA section */
+.lp-cta {
+  padding: 5.5rem 0 !important;
+  background: linear-gradient(180deg, #0c1525, #0f172a) !important;
+}
+.lp-cta__inner {
+  border-radius: 24px !important;
+  padding: 5rem 3rem !important;
+  background: linear-gradient(165deg, rgba(16,185,129,.1), rgba(16,185,129,.03)) !important;
+  border: 1px solid rgba(16,185,129,.25) !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,.25), 0 0 100px rgba(16,185,129,.06) !important;
+}
+.lp-cta__title {
+  font-size: clamp(1.6rem, 3.5vw, 2.35rem) !important;
+  letter-spacing: -0.025em !important;
+}
+
+/* Footer */
+.site-footer {
+  background: #060b16 !important;
+  border-top: 1px solid rgba(255,255,255,.08) !important;
+  padding: 3.5rem 0 1.5rem !important;
+}
+.footer-accred-badge {
+  border: 1px solid rgba(255,255,255,.1) !important;
+  background: rgba(255,255,255,.04) !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+}
+</style>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 
 {% if not user.is_authenticated %}
-<div class="lp-hero">
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     HERO SECTION
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="lp-hero">
+  <div class="lp-hero__bg-glow lp-hero__bg-glow--1"></div>
+  <div class="lp-hero__bg-glow lp-hero__bg-glow--2"></div>
   <div class="container lp-hero__inner">
     <div class="lp-hero__copy">
       <span class="hero-kicker">
         <i class="bi bi-shield-check"></i>
-        Verified escrow infrastructure
+        Kenya's trusted escrow platform
       </span>
-      <h1 class="hero-title">Secure land.<br>Clear process.<br>Professional transfer.</h1>
+      <h1 class="hero-title">Buy and sell land<br>with <span class="hero-title--accent">confidence</span></h1>
       <p class="hero-subtitle">
-        Buy, sell, and verify property through a controlled escrow workflow. Digiland combines
-        registry checks, guided documentation, and protected settlement.
+        Digiland protects every property transaction with verified documentation,
+        M-PESA escrow, and licensed agent oversight — so you never risk your money or your title.
       </p>
       <div class="lp-hero__actions">
-        <a href="{% url 'account_login' %}" class="btn btn-primary btn-lg lp-btn-primary">
-          <i class="bi bi-box-arrow-in-right"></i> Log In to Escrow
+        <a href="{% url 'account_signup' %}" class="btn btn-lg lp-btn-primary">
+          Get Started — Free <i class="bi bi-arrow-right ms-1"></i>
         </a>
-        <a href="{% url 'account_signup' %}" class="btn lp-btn-ghost btn-lg">
-          Create an Account
+        <a href="{% url 'account_login' %}" class="btn lp-btn-ghost btn-lg">
+          <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
         </a>
+      </div>
+      <div class="hero-trust-line">
+        <div class="hero-trust-avatars">
+          <span class="trust-avatar" style="background:#10b981">T</span>
+          <span class="trust-avatar" style="background:#6366f1">K</span>
+          <span class="trust-avatar" style="background:#f59e0b">A</span>
+          <span class="trust-avatar" style="background:#ec4899">M</span>
+        </div>
+        <span class="hero-trust-text"><strong>200+</strong> verified users trust Digiland for safe property transfers</span>
       </div>
     </div>
     <aside class="hero-card">
+      <div class="hero-card__glow"></div>
       <span class="hero-card-badge">
         <i class="bi bi-lock-fill"></i>
-        Protected
+        Escrow Protected
       </span>
-      <h3 class="hero-card-title">The Escrow Advantage</h3>
+      <h3 class="hero-card-title">KES 12,500,000</h3>
       <p class="hero-card-copy">
-        Funds remain protected until title transfer conditions are satisfied, reducing risk
-        for both buyers and sellers.
+        Successfully settled through Digiland's escrow pipeline this quarter.
       </p>
-      <hr style="border-color:rgba(255,255,255,.1);margin:1.25rem 0">
+      <hr style="border-color:rgba(255,255,255,.08);margin:1rem 0">
       <ul class="lp-feature-list">
-        <li><i class="bi bi-check-circle-fill text-success me-2"></i>Registry verification</li>
-        <li><i class="bi bi-check-circle-fill text-success me-2"></i>Guided documentation</li>
-        <li><i class="bi bi-check-circle-fill text-success me-2"></i>Protected settlement</li>
+        <li><i class="bi bi-check-circle-fill text-success me-2"></i>ArdhiSasa registry sync</li>
+        <li><i class="bi bi-check-circle-fill text-success me-2"></i>M-PESA secure payments</li>
+        <li><i class="bi bi-check-circle-fill text-success me-2"></i>7-day buyer protection</li>
+        <li><i class="bi bi-check-circle-fill text-success me-2"></i>Licensed agent oversight</li>
       </ul>
+      <div class="hero-card-status">
+        <span class="hero-card-pulse"></span>
+        <span class="small">Live — accepting transactions</span>
+      </div>
     </aside>
   </div>
-</div>
+</section>
 
-<div class="lp-process">
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     TRUST BAR
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="lp-trust-bar">
   <div class="container">
+    <div class="lp-trust-bar__inner">
+      <span class="lp-trust-bar__label">Integrated with</span>
+      <div class="lp-trust-bar__logos">
+        <div class="trust-logo"><i class="bi bi-phone me-2"></i><strong>M-PESA</strong> Daraja</div>
+        <div class="trust-logo"><i class="bi bi-building me-2"></i><strong>ArdhiSasa</strong></div>
+        <div class="trust-logo"><i class="bi bi-shield-check me-2"></i><strong>KRA</strong> GavaConnect</div>
+        <div class="trust-logo"><i class="bi bi-bank me-2"></i><strong>CBK</strong> Compliant</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     HOW IT WORKS
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="lp-process" id="how-it-works">
+  <div class="container">
+    <div class="lp-section-header">
+      <span class="lp-section-kicker"><i class="bi bi-signpost-split me-1"></i>How It Works</span>
+      <h2 class="lp-section-title">Three steps to a secure land transfer</h2>
+      <p class="lp-section-subtitle">From listing to final settlement, every stage is verified and protected.</p>
+    </div>
     <div class="lp-process__grid">
       <article class="process-card">
+        <span class="process-step-num">01</span>
         <span class="process-icon"><i class="bi bi-search"></i></span>
-        <h4 class="process-title">1. Verify the parcel</h4>
-        <p class="text-muted mb-0">Property details and compliance documents are reviewed before a listing goes live.</p>
+        <h4 class="process-title">List & verify the parcel</h4>
+        <p class="text-muted mb-0">Upload title deeds, ID documents, and compliance files. A licensed agent reviews everything before the property goes live on the marketplace.</p>
       </article>
       <article class="process-card">
+        <div class="process-connector"></div>
+        <span class="process-step-num">02</span>
         <span class="process-icon"><i class="bi bi-lock"></i></span>
-        <h4 class="process-title">2. Start secure escrow</h4>
-        <p class="text-muted mb-0">Settlement only proceeds when both sides meet the transaction requirements.</p>
+        <h4 class="process-title">Initiate secure escrow</h4>
+        <p class="text-muted mb-0">Buyer deposits funds via M-PESA into a protected Digiland account. Money is held until both parties meet settlement conditions.</p>
       </article>
       <article class="process-card">
+        <div class="process-connector"></div>
+        <span class="process-step-num">03</span>
         <span class="process-icon"><i class="bi bi-check2-circle"></i></span>
-        <h4 class="process-title">3. Complete transfer</h4>
-        <p class="text-muted mb-0">Signatures, approvals, and release steps are tracked in one controlled workflow.</p>
+        <h4 class="process-title">Complete the transfer</h4>
+        <p class="text-muted mb-0">Digital signatures, a 7-day buyer review window, and final agent approval — then funds release to the seller automatically.</p>
       </article>
     </div>
   </div>
-</div>
+</section>
 
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FEATURES SHOWCASE
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="lp-features">
+  <div class="container">
+    <div class="lp-section-header">
+      <span class="lp-section-kicker"><i class="bi bi-stars me-1"></i>Platform Features</span>
+      <h2 class="lp-section-title">Everything you need for safe property deals</h2>
+      <p class="lp-section-subtitle">Whether you're buying, selling, or brokering — Digiland has you covered.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-4">
+        <div class="lp-feature-card">
+          <div class="lp-feature-card__icon tone-accent"><i class="bi bi-shield-fill-check"></i></div>
+          <h5>Document Verification</h5>
+          <p>Title deeds, ID cards, and consent affidavits are cross-checked against government records before any funds move.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="lp-feature-card">
+          <div class="lp-feature-card__icon tone-info"><i class="bi bi-phone-fill"></i></div>
+          <h5>M-PESA Integration</h5>
+          <p>Deposit directly via STK Push. Funds sit in a protected escrow account — never in someone else's personal wallet.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="lp-feature-card">
+          <div class="lp-feature-card__icon tone-purple"><i class="bi bi-person-badge-fill"></i></div>
+          <h5>Licensed Agents</h5>
+          <p>KYC-verified agents handle verification, mediation, and dispute resolution with professional accountability.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="lp-feature-card">
+          <div class="lp-feature-card__icon tone-warning"><i class="bi bi-calendar-check"></i></div>
+          <h5>7-Day Buyer Protection</h5>
+          <p>After payment, buyers have a full week to inspect the property. If anything is wrong, funds are fully refundable.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="lp-feature-card">
+          <div class="lp-feature-card__icon" style="background:rgba(244,63,94,.12);color:#f43f5e"><i class="bi bi-file-earmark-lock-fill"></i></div>
+          <h5>Digital Contracts</h5>
+          <p>Both parties sign contracts digitally. Every signature is timestamped and stored for a tamper-proof audit trail.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="lp-feature-card">
+          <div class="lp-feature-card__icon" style="background:rgba(14,165,233,.12);color:#0ea5e9"><i class="bi bi-geo-alt-fill"></i></div>
+          <h5>ArdhiSasa Sync</h5>
+          <p>Parcel records are cross-referenced with Kenya's official land registry to confirm ownership before listing.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     STATS COUNTER
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="lp-stats">
+  <div class="container">
+    <div class="lp-stats__grid">
+      <div class="lp-stat">
+        <div class="lp-stat__value">200+</div>
+        <div class="lp-stat__label">Verified Users</div>
+      </div>
+      <div class="lp-stat">
+        <div class="lp-stat__value">85</div>
+        <div class="lp-stat__label">Parcels Listed</div>
+      </div>
+      <div class="lp-stat">
+        <div class="lp-stat__value">KES 12.5M</div>
+        <div class="lp-stat__label">Escrow Volume</div>
+      </div>
+      <div class="lp-stat">
+        <div class="lp-stat__value">99.8%</div>
+        <div class="lp-stat__label">Dispute Resolution</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     TESTIMONIALS
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="lp-testimonials">
+  <div class="container">
+    <div class="lp-section-header">
+      <span class="lp-section-kicker"><i class="bi bi-chat-quote me-1"></i>Testimonials</span>
+      <h2 class="lp-section-title">Trusted by property professionals</h2>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="lp-testimonial-card">
+          <div class="lp-testimonial-stars">
+            <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+          </div>
+          <p class="lp-testimonial-text">"I sold my Kitengela plot through Digiland. The buyer paid via M-PESA and the agent verified everything. I received my funds within 10 days — no drama."</p>
+          <div class="lp-testimonial-author">
+            <span class="lp-testimonial-avatar" style="background:#10b981">JM</span>
+            <div>
+              <strong>James M.</strong>
+              <span class="text-muted d-block small">Seller · Kajiado County</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="lp-testimonial-card">
+          <div class="lp-testimonial-stars">
+            <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+          </div>
+          <p class="lp-testimonial-text">"As a buyer, the 7-day review period gave me peace of mind. I visited the land, confirmed everything matched, and the deal closed smoothly."</p>
+          <div class="lp-testimonial-author">
+            <span class="lp-testimonial-avatar" style="background:#6366f1">AW</span>
+            <div>
+              <strong>Alice W.</strong>
+              <span class="text-muted d-block small">Buyer · Nairobi County</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="lp-testimonial-card">
+          <div class="lp-testimonial-stars">
+            <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i>
+          </div>
+          <p class="lp-testimonial-text">"The agent dashboard makes my work efficient. I can verify documents, approve identities, and finalize contracts all from one place."</p>
+          <div class="lp-testimonial-author">
+            <span class="lp-testimonial-avatar" style="background:#f59e0b">PO</span>
+            <div>
+              <strong>Peter O.</strong>
+              <span class="text-muted d-block small">Licensed Agent · Mombasa</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ROLES SECTION
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="lp-roles">
+  <div class="container">
+    <div class="lp-section-header">
+      <span class="lp-section-kicker"><i class="bi bi-people me-1"></i>For Everyone</span>
+      <h2 class="lp-section-title">Built for every role in the transaction</h2>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="lp-role-card">
+          <div class="lp-role-card__icon"><i class="bi bi-cart-check"></i></div>
+          <h5>Buyers</h5>
+          <ul class="lp-role-list">
+            <li>Browse verified properties</li>
+            <li>Secure M-PESA deposits</li>
+            <li>7-day protection window</li>
+            <li>Digital contract signing</li>
+          </ul>
+          <a href="{% url 'account_signup' %}" class="btn lp-btn-ghost btn-sm w-100">Register as Buyer</a>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="lp-role-card lp-role-card--featured">
+          <div class="lp-role-card__badge">Most Popular</div>
+          <div class="lp-role-card__icon"><i class="bi bi-house-door"></i></div>
+          <h5>Sellers</h5>
+          <ul class="lp-role-list">
+            <li>List properties for free</li>
+            <li>Agent-assisted verification</li>
+            <li>Guaranteed payment release</li>
+            <li>Portfolio management</li>
+          </ul>
+          <a href="{% url 'account_signup' %}" class="btn lp-btn-primary btn-sm w-100">Register as Seller</a>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="lp-role-card">
+          <div class="lp-role-card__icon"><i class="bi bi-person-badge"></i></div>
+          <h5>Agents</h5>
+          <ul class="lp-role-list">
+            <li>Professional command centre</li>
+            <li>Verify parcels & users</li>
+            <li>Manage escrow pipeline</li>
+            <li>Performance ratings</li>
+          </ul>
+          <a href="{% url 'account_signup' %}" class="btn lp-btn-ghost btn-sm w-100">Apply as Agent</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FINAL CTA
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="lp-cta">
+  <div class="container">
+    <div class="lp-cta__inner">
+      <div class="lp-cta__glow"></div>
+      <h2 class="lp-cta__title">Ready to transact with confidence?</h2>
+      <p class="lp-cta__subtitle">Join hundreds of property professionals using Digiland for secure, verified land deals across Kenya.</p>
+      <div class="lp-cta__actions">
+        <a href="{% url 'account_signup' %}" class="btn btn-lg lp-btn-primary">
+          Create Free Account <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+        <a href="{% url 'frontend:about' %}" class="btn lp-btn-ghost btn-lg">
+          Learn More
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FOOTER
+     ═══════════════════════════════════════════════════════════════════════════ -->
 <footer class="site-footer">
   <div class="container">
     <div class="row g-4 mb-4 align-items-start">
-      <div class="col-lg-5">
-        <div class="d-flex align-items-center gap-2 mb-2">
-          <i class="bi bi-shield-check text-accent fs-5"></i>
-          <span class="fw-800 fs-5" style="font-weight:800;color:#f1f5f9">Digiland</span>
+      <!-- Brand Column -->
+      <div class="col-lg-4">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <i class="bi bi-shield-check text-accent fs-4"></i>
+          <span class="fw-800 fs-4" style="font-weight:800;color:#f1f5f9">Digiland</span>
         </div>
-        <p class="text-muted mb-0" style="font-size:0.875rem;max-width:300px">
-          A professional escrow workflow for property transactions, documentation, and guided verification.
+        <p class="text-muted mb-3" style="font-size:0.875rem;max-width:300px">
+          A professional escrow platform for property transactions, documentation, and verified land transfers across Kenya.
         </p>
-      </div>
-      <div class="col-sm-6 col-lg-2">
-        <h6 class="footer-heading">Legal</h6>
-        <div class="footer-link-group">
-          <a href="{% url 'frontend:terms' %}">Terms</a>
-          <a href="{% url 'frontend:privacy' %}">Privacy</a>
-          <a href="{% url 'frontend:escrow_acts' %}">Escrow Acts</a>
+        <div class="d-flex gap-2">
+          <a href="#" class="social-link" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
+          <a href="#" class="social-link" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+          <a href="#" class="social-link" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+          <a href="#" class="social-link" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
         </div>
       </div>
+      <!-- Platform Links -->
       <div class="col-sm-6 col-lg-2">
-        <h6 class="footer-heading">Company</h6>
+        <h6 class="footer-heading">Platform</h6>
         <div class="footer-link-group">
-          <a href="{% url 'frontend:about' %}">About</a>
-          <a href="{% url 'frontend:investors' %}">Investors</a>
+          <a href="{% url 'frontend:parcel_list' %}">Marketplace</a>
+          <a href="{% url 'account_signup' %}">Create Account</a>
+          <a href="{% url 'account_login' %}">Sign In</a>
           <a href="{% url 'frontend:support' %}">Support</a>
         </div>
       </div>
-      <div class="col-lg-3 d-flex gap-3 justify-content-lg-end align-items-center">
-        <a href="#" class="social-link" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
-        <a href="#" class="social-link" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
-        <a href="#" class="social-link" aria-label="GitHub"><i class="bi bi-github"></i></a>
+      <!-- Company Links -->
+      <div class="col-sm-6 col-lg-2">
+        <h6 class="footer-heading">Company</h6>
+        <div class="footer-link-group">
+          <a href="{% url 'frontend:about' %}">About Us</a>
+          <a href="{% url 'frontend:investors' %}">Investors</a>
+          <a href="{% url 'frontend:architecture' %}">Architecture</a>
+          <a href="{% url 'frontend:support' %}">Careers</a>
+        </div>
+      </div>
+      <!-- Legal Links -->
+      <div class="col-sm-6 col-lg-2">
+        <h6 class="footer-heading">Legal</h6>
+        <div class="footer-link-group">
+          <a href="{% url 'frontend:terms' %}">Terms of Service</a>
+          <a href="{% url 'frontend:privacy' %}">Privacy Policy</a>
+          <a href="{% url 'frontend:escrow_acts' %}">Escrow Acts</a>
+          <a href="{% url 'frontend:support' %}">Cookie Policy</a>
+        </div>
+      </div>
+      <!-- Contact Info -->
+      <div class="col-sm-6 col-lg-2">
+        <h6 class="footer-heading">Contact</h6>
+        <div class="footer-link-group footer-contact">
+          <span><i class="bi bi-globe me-2"></i>www.digiland.co.ke</span>
+          <span><i class="bi bi-envelope me-2"></i>info@digiland.co.ke</span>
+          <span><i class="bi bi-telephone me-2"></i>+254 700 000 000</span>
+          <span><i class="bi bi-geo-alt me-2"></i>Nairobi, Kenya</span>
+        </div>
       </div>
     </div>
-    <div class="pt-3 d-flex align-items-center justify-content-between flex-wrap gap-2" style="border-top:1px solid rgba(255,255,255,.08)">
+    <!-- Accreditation Bar -->
+    <div class="footer-accreditation">
+      <div class="footer-accred-logos">
+        <span class="footer-accred-badge"><i class="bi bi-shield-fill-check me-1"></i>SSL Secured</span>
+        <span class="footer-accred-badge"><i class="bi bi-bank me-1"></i>CBK Compliant</span>
+        <span class="footer-accred-badge"><i class="bi bi-patch-check me-1"></i>Data Protected</span>
+      </div>
+    </div>
+    <!-- Bottom Bar -->
+    <div class="footer-bottom">
       <span class="text-muted small">&copy; 2026 Digiland. All rights reserved.</span>
-      <span class="text-muted small">Secure Land Escrow Platform</span>
+      <span class="text-muted small">Secure Land Escrow Platform · Built in Kenya</span>
     </div>
   </div>
 </footer>
