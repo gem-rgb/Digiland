@@ -29,22 +29,74 @@
                 {% endif %}
 
                 <div class="row g-3">
-                    {% for field in form %}
-                    <div class="{% if field.name == 'password1' or field.name == 'password2' %}col-md-6{% else %}col-12{% endif %}">
-                        <label class="form-label">{{ field.label }}</label>
-                        {% if field.field.widget.input_type == 'select' or field.name == 'role' %}
-                            {% render_field field class="form-select form-select-lg" %}
-                        {% else %}
-                            {% render_field field class="form-control form-control-lg" %}
-                        {% endif %}
-                        {% if field.help_text %}
-                        <div class="form-text">{{ field.help_text }}</div>
-                        {% endif %}
-                        {% for error in field.errors %}
+                    {# Email #}
+                    <div class="col-12">
+                        <label class="form-label">{{ form.email.label }}</label>
+                        {% render_field form.email class="form-control form-control-lg" %}
+                        {% if form.email.help_text %}<div class="form-text">{{ form.email.help_text }}</div>{% endif %}
+                        {% for error in form.email.errors %}
                         <small class="text-danger fw-bold d-block mt-1"><i class="bi bi-x-circle-fill me-1"></i>{{ error }}</small>
                         {% endfor %}
                     </div>
-                    {% endfor %}
+
+                    {# Role #}
+                    <div class="col-12">
+                        <label class="form-label">{{ form.role.label }}</label>
+                        {% render_field form.role class="form-select form-select-lg" %}
+                        {% for error in form.role.errors %}
+                        <small class="text-danger fw-bold d-block mt-1"><i class="bi bi-x-circle-fill me-1"></i>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+
+                    {# ID Number #}
+                    <div class="col-md-6">
+                        <label class="form-label">National ID Number</label>
+                        {% render_field form.id_number class="form-control form-control-lg" id="id_id_number" %}
+                        {% if form.id_number.help_text %}<div class="form-text">{{ form.id_number.help_text }}</div>{% endif %}
+                        <div id="id_number_feedback" class="form-text" style="display:none;"></div>
+                        {% for error in form.id_number.errors %}
+                        <small class="text-danger fw-bold d-block mt-1"><i class="bi bi-x-circle-fill me-1"></i>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+
+                    {# Phone Number #}
+                    <div class="col-md-6">
+                        <label class="form-label">Phone Number</label>
+                        {% render_field form.phone_number class="form-control form-control-lg" id="id_phone_number" %}
+                        {% if form.phone_number.help_text %}<div class="form-text">{{ form.phone_number.help_text }}</div>{% endif %}
+                        <div id="phone_feedback" class="form-text" style="display:none;"></div>
+                        {% for error in form.phone_number.errors %}
+                        <small class="text-danger fw-bold d-block mt-1"><i class="bi bi-x-circle-fill me-1"></i>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+
+                    {# KRA PIN #}
+                    <div class="col-12">
+                        <label class="form-label">KRA PIN</label>
+                        {% render_field form.kra_pin class="form-control form-control-lg" id="id_kra_pin" %}
+                        {% if form.kra_pin.help_text %}<div class="form-text">{{ form.kra_pin.help_text }}</div>{% endif %}
+                        <div id="kra_feedback" class="form-text" style="display:none;"></div>
+                        {% for error in form.kra_pin.errors %}
+                        <small class="text-danger fw-bold d-block mt-1"><i class="bi bi-x-circle-fill me-1"></i>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+
+                    {# Passwords #}
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.password1.label }}</label>
+                        {% render_field form.password1 class="form-control form-control-lg" %}
+                        {% if form.password1.help_text %}<div class="form-text">{{ form.password1.help_text }}</div>{% endif %}
+                        {% for error in form.password1.errors %}
+                        <small class="text-danger fw-bold d-block mt-1"><i class="bi bi-x-circle-fill me-1"></i>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.password2.label }}</label>
+                        {% render_field form.password2 class="form-control form-control-lg" %}
+                        {% for error in form.password2.errors %}
+                        <small class="text-danger fw-bold d-block mt-1"><i class="bi bi-x-circle-fill me-1"></i>{{ error }}</small>
+                        {% endfor %}
+                    </div>
                 </div>
 
                 {% if redirect_field_value %}
@@ -63,4 +115,59 @@
         </div>
     </div>
 </section>
+
+<script>
+// Real-time client-side validation hints
+(function() {
+    const idField = document.getElementById('id_id_number');
+    const phoneField = document.getElementById('id_phone_number');
+    const kraField = document.getElementById('id_kra_pin');
+
+    function showFeedback(el, feedbackId, isValid, msg) {
+        const fb = document.getElementById(feedbackId);
+        if (!fb) return;
+        fb.style.display = 'block';
+        fb.innerHTML = isValid
+            ? '<i class="bi bi-check-circle-fill text-success me-1"></i><span class="text-success">' + msg + '</span>'
+            : '<i class="bi bi-exclamation-circle-fill text-warning me-1"></i><span class="text-warning">' + msg + '</span>';
+    }
+
+    if (idField) {
+        idField.addEventListener('input', function() {
+            const v = this.value.replace(/\D/g, '');
+            if (v.length >= 7 && v.length <= 9) {
+                showFeedback(this, 'id_number_feedback', true, 'Valid format (' + v.length + ' digits)');
+            } else if (v.length > 0) {
+                showFeedback(this, 'id_number_feedback', false, 'Must be 7–9 digits (currently ' + v.length + ')');
+            }
+        });
+    }
+
+    if (phoneField) {
+        phoneField.addEventListener('input', function() {
+            const v = this.value.replace(/[\s-]/g, '');
+            const ok = /^(\+254|0)\d{9}$/.test(v) || /^(07|01)\d{8}$/.test(v);
+            if (ok) {
+                showFeedback(this, 'phone_feedback', true, 'Valid phone number');
+            } else if (v.length > 3) {
+                showFeedback(this, 'phone_feedback', false, 'Must start with +254 or 07 (10 digits total)');
+            }
+        });
+    }
+
+    if (kraField) {
+        kraField.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+            const v = this.value;
+            const ok = /^[A-Z]\d{9}[A-Z]$/.test(v);
+            if (ok) {
+                showFeedback(this, 'kra_feedback', true, 'Valid KRA PIN format');
+            } else if (v.length > 2) {
+                showFeedback(this, 'kra_feedback', false, 'Format: Letter + 9 digits + Letter (e.g. A123456789B)');
+            }
+        });
+    }
+})();
+</script>
 {% endblock %}
+

@@ -18,6 +18,9 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault('is_superuser', True)
         return self.create_user(email, password, **extra_fields)
 
+import re
+from django.core.validators import RegexValidator
+
 class User(AbstractUser):
     ROLE_CHOICES = [
         ('Buyer', 'Buyer'),
@@ -27,11 +30,25 @@ class User(AbstractUser):
         ('Admin', 'Admin'),
     ]
 
+    phone_regex = RegexValidator(
+        regex=r'^(\+254|0)\d{9}$',
+        message='Phone number must start with +254 or 0 and have 10 digits total (e.g. +254712345678 or 0712345678).'
+    )
+    id_number_regex = RegexValidator(
+        regex=r'^\d{7,9}$',
+        message='ID number must be 7, 8, or 9 digits.'
+    )
+    kra_pin_regex = RegexValidator(
+        regex=r'^[A-Z]\d{9}[A-Z]$',
+        message='KRA PIN must be 11 characters: Letter + 9 digits + Letter (e.g. A123456789B).'
+    )
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = None
     email = models.EmailField(_('email address'), unique=True)
-    id_number = models.CharField(max_length=50, db_index=True)
-    phone_number = models.CharField(max_length=20)
+    id_number = models.CharField(max_length=50, db_index=True, validators=[id_number_regex])
+    phone_number = models.CharField(max_length=20, validators=[phone_regex])
+    kra_pin = models.CharField(max_length=11, validators=[kra_pin_regex], help_text='KRA PIN e.g. A123456789B')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     is_identity_verified = models.BooleanField(default=False)
     gavakonect_verification_id = models.CharField(max_length=100, blank=True, null=True)

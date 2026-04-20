@@ -1,13 +1,20 @@
 {% extends 'frontend/base.html' %}
 
-{% block title %}Marketplace - Digiland{% endblock %}
+
+{% block title %}{% if user.is_authenticated and user.role == 'Seller' %}My Parcels - Digiland{% else %}Marketplace - Digiland{% endif %}{% endblock %}
 
 {% block content %}
 <section class="page-header">
     <div>
+        {% if user.is_authenticated and user.role == 'Seller' %}
+        <span class="page-kicker"><i class="bi bi-geo-alt"></i>My Parcels</span>
+        <h2 class="page-title">Your registered properties</h2>
+        <p class="page-subtitle">Manage your listed parcels, track verification progress, and monitor escrow activity.</p>
+        {% else %}
         <span class="page-kicker"><i class="bi bi-grid-3x3-gap"></i>Marketplace</span>
         <h2 class="page-title">Available land parcels</h2>
         <p class="page-subtitle">Browse verified property listings and review parcel details before entering escrow.</p>
+        {% endif %}
     </div>
     <div class="page-actions">
         {% if user.is_authenticated %}
