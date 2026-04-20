@@ -191,3 +191,37 @@
   .auth-body    { padding: 1.25rem; }
   .auth-header h1 { font-size: 1.35rem; }
 }
+
+/* ── Select / Dropdown Dark-Mode Fix ───────────────────────────────────────── */
+.auth-panel .form-select,
+.auth-panel-body .form-select,
+.auth-shell .form-select {
+  background-color: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f1f5f9;
+  /* Use a light-coloured SVG arrow so it's visible on dark bg */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23cbd5e1' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px 12px;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.5rem;
+}
+
+.auth-panel .form-select:focus,
+.auth-panel-body .form-select:focus,
+.auth-shell .form-select:focus {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: #10b981;
+  color: #f1f5f9;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.auth-panel .form-select option,
+.auth-panel-body .form-select option,
+.auth-shell .form-select option {
+  background: #1e293b;
+  color: #f1f5f9;
+  padding: 0.5rem;
+}

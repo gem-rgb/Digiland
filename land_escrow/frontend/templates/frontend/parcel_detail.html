@@ -189,6 +189,78 @@
             </div>
         </section>
 
+        {% elif user.is_authenticated and user.role == 'Agent' %}
+        <section class="card sidebar-card">
+            <div class="card-header bg-dark">
+                <span><i class="bi bi-shield-check me-2"></i>Agent review panel</span>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    {% if parcel.assigned_agent == user %}
+                        <div class="icon-chip icon-chip-lg tone-accent mx-auto mb-3">
+                            <i class="bi bi-person-check-fill"></i>
+                        </div>
+                        <h5 class="mb-2 text-success">Assigned to you</h5>
+                        <p class="text-muted small mb-0">This parcel is in your verification queue. Review compliance documents and submit your decision.</p>
+                    {% elif parcel.assigned_agent %}
+                        <div class="icon-chip icon-chip-lg tone-info mx-auto mb-3">
+                            <i class="bi bi-person-badge"></i>
+                        </div>
+                        <h5 class="mb-2 text-info">Assigned to another agent</h5>
+                        <p class="text-muted small mb-0">This parcel is being reviewed by {{ parcel.assigned_agent.email|truncatechars:25 }}.</p>
+                    {% else %}
+                        <div class="icon-chip icon-chip-lg tone-warning mx-auto mb-3">
+                            <i class="bi bi-person-dash"></i>
+                        </div>
+                        <h5 class="mb-2 text-warning">Unassigned</h5>
+                        <p class="text-muted small mb-0">This parcel has not been assigned to an agent for review yet.</p>
+                    {% endif %}
+                </div>
+
+                <div class="summary-box mb-4">
+                    <div class="summary-row">
+                        <span class="text-muted">Status</span>
+                        <span class="badge {% if parcel.verification_status == 'Verified' %}bg-success{% elif parcel.verification_status == 'Fraudulent' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                            {{ parcel.verification_status|title }}
+                        </span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-muted">Asking Price</span>
+                        <strong>KES {{ parcel.displayed_price }}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-muted">Size</span>
+                        <strong>{{ parcel.land_size }} Acres</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-muted">Owner ID</span>
+                        <strong>***{{ parcel.registered_owner_id|slice:"3:" }}</strong>
+                    </div>
+                </div>
+
+                {% if parcel.verification_status == 'Pending' and parcel.assigned_agent == user %}
+                <div class="d-grid gap-2 mb-3">
+                    <form method="POST" action="{% url 'frontend:agent_verify_parcel' parcel.parcel_number %}">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" name="action" value="verify" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i>Approve — Verified
+                            </button>
+                            <button type="submit" name="action" value="reject" class="btn btn-outline-danger"
+                                onclick="return confirm('Flag this parcel as fraudulent? This action cannot be easily undone.')">
+                                <i class="bi bi-x-circle"></i>Reject — Fraudulent
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+
+                <a href="{% url 'frontend:agent_dashboard' %}" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-arrow-left"></i>Back to Command Centre
+                </a>
+            </div>
+        </section>
+
         {% elif user.is_authenticated and user == parcel.listed_by %}
         <section class="card sidebar-card">
             <div class="card-header bg-dark">

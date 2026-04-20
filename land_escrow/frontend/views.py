@@ -426,26 +426,101 @@ def reject_agent(request, user_id):
 
 @login_required
 @user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
+def agent_approvals(request):
+    """Agent/Admin: central approvals hub showing all pending items."""
+    from core.models import User as CoreUser
+    from django.db.models import Q
+
+    context = {}
+
+    # Pending user identity approvals (Buyers/Sellers only — not Admin/Agent)
+    context['pending_users'] = CoreUser.objects.filter(
+        role__in=['Buyer', 'Seller'], is_identity_verified=False, is_active=True
+    ).order_by('date_joined')
+
+    if request.user.role == 'Admin':
+        # Admin sees all pending parcels
+        context['pending_parcels'] = LandParcel.objects.filter(
+            verification_status='Pending'
+        ).select_related('assigned_agent', 'listed_by').order_by('-ardhisasa_last_synced')
+        # Admin sees all pending transactions
+        context['pending_transactions'] = Transaction.objects.filter(
+            contract_agreed=True,
+            status__in=['Deposit_Paid', 'Under_Verification']
+        ).order_by('created_at')
+    else:
+        # Agent sees only their assigned parcels
+        context['pending_parcels'] = LandParcel.objects.filter(
+            assigned_agent=request.user, verification_status='Pending'
+        ).select_related('listed_by').order_by('-ardhisasa_last_synced')
+        # Agent sees transactions for their assigned parcels
+        context['pending_transactions'] = Transaction.objects.filter(
+            contract_agreed=True,
+            status__in=['Deposit_Paid', 'Under_Verification']
+        ).filter(
+            Q(land_parcel__assigned_agent=request.user) |
+            Q(buyer=request.user) |
+            Q(seller=request.user)
+        ).distinct().order_by('created_at')
+
+    return render(request, 'frontend/agent_approvals.html', context)
+
+
+@login_required
+@user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
+def agent_user_review(request, user_id):
+    """Agent/Admin: detailed review page for a specific user's identity."""
+    from core.models import User as CoreUser
+
+    reviewed_user = get_object_or_404(CoreUser, id=user_id)
+
+    # Security: agents can only review Buyers/Sellers
+    if reviewed_user.role in ['Admin', 'Agent']:
+        from django.contrib import messages
+        messages.error(request, 'You cannot review Admin or Agent accounts.')
+        return redirect('frontend:agent_approvals')
+
+    context = {
+        'reviewed_user': reviewed_user,
+    }
+
+    # Fetch user's parcels (if Seller)
+    if reviewed_user.role == 'Seller':
+        context['user_parcels'] = LandParcel.objects.filter(
+            listed_by=reviewed_user
+        ).order_by('-ardhisasa_last_synced')
+
+    # Fetch user's transactions (if Buyer)
+    if reviewed_user.role == 'Buyer':
+        context['user_transactions'] = Transaction.objects.filter(
+            buyer=reviewed_user
+        ).order_by('-created_at')
+
+    return render(request, 'frontend/agent_user_review.html', context)
+
+
+@login_required
+@user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
 def agent_approve_user(request, user_id):
     """Agent/Admin: approve identity of a Buyer or Seller user (NOT Admin / Agent accounts)."""
     from core.models import User as CoreUser
     from django.contrib import messages
 
     if request.method != 'POST':
-        return redirect('frontend:agent_dashboard')
+        return redirect('frontend:agent_approvals')
 
     user = get_object_or_404(CoreUser, id=user_id)
 
     # Hard security fence — agents cannot elevate Admin or other Agent accounts
     if user.role in ['Admin', 'Agent']:
         messages.error(request, 'Permission denied: you cannot approve Admin or Agent accounts through this portal.')
-        return redirect('frontend:agent_dashboard')
+        return redirect('frontend:agent_approvals')
 
     user.is_identity_verified = True
     user.is_active = True
     user.save()
     messages.success(request, f'{user.role} account {user.email} has been verified and approved.')
-    return redirect('frontend:agent_dashboard')
+    return redirect('frontend:agent_approvals')
 
 
 

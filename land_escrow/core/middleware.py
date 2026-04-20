@@ -1,19 +1,55 @@
 from django.shortcuts import redirect
 from django.urls import reverse
 
-# Paths that Agent users (verified or not) can always access without gating
-AGENT_EXEMPT_PATHS = {
+# ── Path prefixes that are ALWAYS accessible to Agent users ──────────────────
+# Phase 1 (unverified): only KYC, onboarding, auth, and static paths
+AGENT_UNVERIFIED_EXEMPT = {
     '/agent/kyc/',
     '/agent/onboarding/',
-    '/agent/dashboard/',
-    '/agent/tasks/',
-    '/transactions/',
-    '/messages/',
     '/staff/login/',
     '/accounts/logout/',
     '/accounts/login/',
     '/accounts/signup/',
     '/admin/',
+}
+
+# Phase 2 (verified): all operational work pages the agent needs
+AGENT_VERIFIED_EXEMPT = {
+    # Auth & onboarding
+    '/agent/kyc/',
+    '/agent/onboarding/',
+    '/staff/login/',
+    '/accounts/logout/',
+    '/accounts/login/',
+    '/accounts/signup/',
+    '/admin/',
+    # Agent command-centre and work views
+    '/agent/dashboard/',
+    '/agent/tasks/',
+    '/agent/applications/',
+    '/agent/users/',
+    '/agent/approvals/',
+    '/agent/send-message/',
+    '/agent/assign-task/',
+    '/agent/unassign-task/',
+    '/agent/rate/',
+    '/agent/parcel/',
+    '/agent/transaction/',
+    '/agent/signup-complete/',
+    # Core operational pages
+    '/parcels/',
+    '/transactions/',
+    '/messages/',
+    '/support/',
+    # Informational pages
+    '/about/',
+    '/architecture/',
+    '/investors/',
+    '/terms/',
+    '/privacy/',
+    '/escrow-acts/',
+    # Home page
+    '/',
 }
 
 
@@ -25,13 +61,13 @@ class AgentKYCGateMiddleware:
       • No KYC submitted yet  → /agent/kyc/
       • KYC submitted, awaiting admin review → /agent/onboarding/
 
-    Phase 2 — Verified (approved) Agent accessing site via public session:
-      • They should be using /staff/login/, not the public auth.
-      • Redirect to /agent/onboarding/ which will show them the
+    Phase 2 — Verified (approved) Agent accessing site via public session
+               without staff authentication:
+      • Redirect to /agent/onboarding/ which shows the
         "You're approved — use Staff Login" message.
-      • Exempt: /staff/login/, /agent/onboarding/, /accounts/logout/
-      • The /agent/dashboard/ is protected by is_verified_agent_or_admin
-        so a verified-but-public-session agent is blocked there anyway.
+      • All agent operational paths (parcels, transactions, approvals,
+        messaging, etc.) are whitelisted so the dashboard is functional
+        once the agent is logged in through the staff portal.
     """
 
     def __init__(self, get_response):
@@ -47,18 +83,18 @@ class AgentKYCGateMiddleware:
             if path.startswith('/static/') or path.startswith('/media/'):
                 return self.get_response(request)
 
-            is_exempt = any(path.startswith(p) for p in AGENT_EXEMPT_PATHS)
-
             if user.is_identity_verified:
-                # Approved agent — must only work through the staff portal.
-                # If they're on an exempt path (staff_login, onboarding,
-                # logout) let them through; otherwise show them the onboarding
-                # page which tells them to use /staff/login/.
+                # Verified agent — allow all operational paths
+                is_exempt = any(path.startswith(p) for p in AGENT_VERIFIED_EXEMPT)
+                # Also allow the exact home path '/'
+                if path == '/':
+                    is_exempt = True
                 if not is_exempt:
                     return redirect(reverse('frontend:agent_onboarding'))
 
             else:
-                # Unverified agent — enforce KYC gate
+                # Unverified agent — strict KYC gate
+                is_exempt = any(path.startswith(p) for p in AGENT_UNVERIFIED_EXEMPT)
                 if not is_exempt:
                     try:
                         from core.models import AgentKYCApplication

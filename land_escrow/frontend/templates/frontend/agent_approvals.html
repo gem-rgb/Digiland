@@ -1,0 +1,200 @@
+{% extends 'frontend/base.html' %}
+{% load static %}
+{% block title %}Approvals Hub - Digiland{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <span class="page-kicker"><i class="bi bi-clipboard-check"></i>Agent Operations</span>
+        <h2 class="page-title">Approvals Hub</h2>
+        <p class="page-subtitle">Review and process all pending approvals — user identities, land parcels, and escrow contracts.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'frontend:agent_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>Dashboard
+        </a>
+    </div>
+</section>
+
+<!-- Summary Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-4">
+        <div class="stat-card">
+            <span class="stat-icon tone-info"><i class="bi bi-people"></i></span>
+            <div>
+                <div class="stat-value">{{ pending_users|length|default:"0" }}</div>
+                <div class="stat-label">User Identities</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="stat-card">
+            <span class="stat-icon tone-warning"><i class="bi bi-geo-alt"></i></span>
+            <div>
+                <div class="stat-value">{{ pending_parcels|length|default:"0" }}</div>
+                <div class="stat-label">Parcel Verifications</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="stat-card">
+            <span class="stat-icon tone-accent"><i class="bi bi-file-earmark-check"></i></span>
+            <div>
+                <div class="stat-value">{{ pending_transactions|length|default:"0" }}</div>
+                <div class="stat-label">Contract Finalisations</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pending User Identity Approvals -->
+<section class="dash-card card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-person-check me-2"></i>Pending User Identity Approvals</span>
+        <span class="badge bg-info rounded-pill">{{ pending_users|length|default:"0" }}</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Email</th>
+                        <th>Role</th>
+                        <th>Phone</th>
+                        <th>ID Number</th>
+                        <th>Registered</th>
+                        <th class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usr in pending_users %}
+                    <tr>
+                        <td class="ps-4 fw-semibold">{{ usr.email }}</td>
+                        <td>
+                            <span class="badge {% if usr.role == 'Buyer' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+                                {{ usr.role }}
+                            </span>
+                        </td>
+                        <td class="text-muted small">{{ usr.phone_number }}</td>
+                        <td class="text-muted"><samp>{{ usr.id_number }}</samp></td>
+                        <td class="text-muted small">{{ usr.date_joined|date:"M d, Y" }}</td>
+                        <td class="text-end pe-4">
+                            <a href="{% url 'frontend:agent_user_review' usr.id %}" class="btn btn-sm btn-dark">
+                                <i class="bi bi-folder2-open"></i>Review
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-check-circle fs-1 d-block mb-3 text-success"></i>
+                            <p class="fw-semibold mb-0">All user identities have been processed.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- Pending Parcel Verifications -->
+<section class="dash-card card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-geo-alt me-2"></i>Pending Parcel Verifications</span>
+        <span class="badge bg-warning text-dark rounded-pill">{{ pending_parcels|length|default:"0" }}</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Parcel #</th>
+                        <th>Seller</th>
+                        <th>Location</th>
+                        <th>Size</th>
+                        <th>Documents</th>
+                        <th class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for parcel in pending_parcels %}
+                    <tr>
+                        <td class="ps-4 fw-semibold"><samp>{{ parcel.parcel_number }}</samp></td>
+                        <td class="text-muted small">{{ parcel.listed_by.email|truncatechars:25 }}</td>
+                        <td class="text-muted small">{{ parcel.ward }}, {{ parcel.county }}</td>
+                        <td class="text-muted small">{{ parcel.land_size }} ha</td>
+                        <td>
+                            {% if parcel.documents.count > 0 %}
+                                <span class="badge bg-success">{{ parcel.documents.count }} docs</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">None</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}" class="btn btn-sm btn-dark">
+                                <i class="bi bi-folder2-open"></i>Review
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-check-circle fs-1 d-block mb-3 text-success"></i>
+                            <p class="fw-semibold mb-0">No parcels pending verification in your queue.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- Contracts Awaiting Finalisation -->
+<section class="dash-card card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-file-earmark-check me-2"></i>Contracts Awaiting Finalisation</span>
+        <span class="badge bg-success rounded-pill">{{ pending_transactions|length|default:"0" }}</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Tx ID</th>
+                        <th>Parcel</th>
+                        <th>Buyer</th>
+                        <th>Seller</th>
+                        <th>Price (KES)</th>
+                        <th class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in pending_transactions %}
+                    <tr>
+                        <td class="ps-4"><samp class="small text-muted">{{ tx.id|stringformat:"s"|slice:":8" }}...</samp></td>
+                        <td class="fw-semibold small">{{ tx.land_parcel.parcel_number }}</td>
+                        <td class="text-muted small">{{ tx.buyer.email|truncatechars:22 }}</td>
+                        <td class="text-muted small">{{ tx.seller.email|truncatechars:22 }}</td>
+                        <td class="small">{{ tx.agreed_price }}</td>
+                        <td class="text-end pe-4">
+                            <a href="{% url 'frontend:sign_contract' tx.id %}" class="btn btn-sm btn-success">
+                                <i class="bi bi-check2-circle"></i>Review
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-check-circle fs-1 d-block mb-3 text-success"></i>
+                            <p class="fw-semibold mb-0">No contracts pending finalisation.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

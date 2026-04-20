@@ -75,11 +75,11 @@
     </a>
   </div>
   <div class="col-sm-6 col-lg-3">
-    <a href="{% url 'frontend:transactions' %}" class="action-card h-100">
-      <span class="action-icon tone-accent"><i class="bi bi-clock-history"></i></span>
+    <a href="{% url 'frontend:agent_approvals' %}" class="action-card h-100">
+      <span class="action-icon tone-warning"><i class="bi bi-clipboard-check"></i></span>
       <div>
-        <div class="fw-bold small">Transactions</div>
-        <div class="text-muted small mb-0">Review escrows</div>
+        <div class="fw-bold small">Approvals Hub</div>
+        <div class="text-muted small mb-0">All pending reviews</div>
       </div>
       <i class="bi bi-arrow-right-circle ms-auto text-muted"></i>
     </a>
@@ -142,12 +142,9 @@
             <td class="text-muted"><samp>{{ usr.id_number }}</samp></td>
             <td class="text-muted small">{{ usr.date_joined|date:"M d, Y" }}</td>
             <td class="text-end pe-4">
-              <form method="POST" action="{% url 'frontend:agent_approve_user' usr.id %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-dark" onclick="return confirm('Approve {{ usr.email }} as a verified {{ usr.role }}?')">
-                  <i class="bi bi-patch-check"></i>Verify and Approve
-                </button>
-              </form>
+              <a href="{% url 'frontend:agent_user_review' usr.id %}" class="btn btn-sm btn-dark">
+                <i class="bi bi-folder2-open"></i>Review
+              </a>
             </td>
           </tr>
           {% endfor %}

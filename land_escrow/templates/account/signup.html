@@ -32,7 +32,11 @@
                     {% for field in form %}
                     <div class="{% if field.name == 'password1' or field.name == 'password2' %}col-md-6{% else %}col-12{% endif %}">
                         <label class="form-label">{{ field.label }}</label>
-                        {% render_field field class="form-control form-control-lg" %}
+                        {% if field.field.widget.input_type == 'select' or field.name == 'role' %}
+                            {% render_field field class="form-select form-select-lg" %}
+                        {% else %}
+                            {% render_field field class="form-control form-control-lg" %}
+                        {% endif %}
                         {% if field.help_text %}
                         <div class="form-text">{{ field.help_text }}</div>
                         {% endif %}
