@@ -225,14 +225,6 @@ This project is licensed under the Apache License 2.0. See the LICENSE file for 
 
 ---
 
-📞 Support
-
-For support and inquiries:
-- Email: trickytaitumu@gmail.com
-- Admin: Digiland Admin
-
----
-
 🔒 Security
 
 - All user passwords are hashed using Django's default password hashing
