@@ -1,9 +1,9 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
-from core.models import LandParcel, Transaction, Message, SupportTicket, Document, User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite
+from core.models import LandParcel, Transaction, Message, SupportTicket, Document, User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite, JointBuyerGroup, JointBuyerMember, JointPaymentContribution
 from .forms import LandParcelUploadForm
-from core.forms import DocumentUploadForm
+from core.forms import DocumentUploadForm, JointBuyerGroupForm, JointBuyerMemberFormSet
 
 def is_seller_or_agent(user):
     if not user.is_authenticated:
@@ -687,6 +687,20 @@ def initiate_escrow(request, parcel_number):
         return redirect('frontend:parcel_detail', parcel_number=parcel_number)
         
     if request.method == 'POST':
+        joint_group_id = (request.POST.get('joint_group_id') or '').strip()
+        purchase_mode = (request.POST.get('purchase_mode') or '').strip()
+
+        joint_group = None
+        if purchase_mode == 'joint' or joint_group_id:
+            if request.user.role != 'Buyer':
+                return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+            if joint_group_id:
+                joint_group = get_object_or_404(JointBuyerGroup, id=joint_group_id, leader=request.user)
+                if not joint_group.is_valid:
+                    from django.contrib import messages
+                    messages.error(request, 'This joint group is not valid. Ensure it has at least 2 members and shares total 100%.')
+                    return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+
         # Safely instantiate or retrieve the explicit Escrow transaction
         tx, created = Transaction.objects.get_or_create(
             land_parcel=parcel,
@@ -697,6 +711,12 @@ def initiate_escrow(request, parcel_number):
                 'status': 'Under_Verification'
             }
         )
+
+        if joint_group:
+            tx.is_joint_purchase = True
+            tx.joint_group = joint_group
+            tx.save(update_fields=['is_joint_purchase', 'joint_group'])
+
         # Redirect Buyer to Payment Onboarding instead of Sign Contract
         return redirect('frontend:payment_onboarding', transaction_id=tx.id)
         
@@ -737,11 +757,16 @@ def parcel_detail(request, parcel_number):
     except Exception:
         pass
 
-    return render(request, 'frontend/parcel_detail.html', {
+    context = {
         'parcel': parcel,
         'is_favorited': is_favorited,
         'ai_price': ai_price,
-    })
+    }
+
+    if request.user.is_authenticated and request.user.role == 'Buyer':
+        context['joint_groups'] = JointBuyerGroup.objects.filter(leader=request.user).prefetch_related('members')
+
+    return render(request, 'frontend/parcel_detail.html', context)
 
 @login_required
 def user_transactions(request):
@@ -870,6 +895,24 @@ def sign_contract(request, transaction_id):
             transaction.save()
             return redirect('frontend:sign_contract', transaction_id=transaction.id)
 
+        # Joint signing (leader captures co-buyer signatures)
+        if transaction.is_joint_purchase and transaction.joint_group:
+            joint_member_id = (request.POST.get('joint_member_id') or '').strip()
+            joint_sig = request.POST.get('joint_signature_data')
+            if joint_member_id and joint_sig:
+                if request.user != transaction.buyer and request.user.role != 'Admin':
+                    return redirect('frontend:sign_contract', transaction_id=transaction.id)
+                member = get_object_or_404(JointBuyerMember, id=joint_member_id, group=transaction.joint_group)
+                member.signature = joint_sig
+                member.has_signed = True
+                member.save(update_fields=['signature', 'has_signed'])
+
+                # Update contract agreed flag if all required signatures exist
+                if transaction.buyer_signature and transaction.seller_signature and transaction.joint_group.all_signed:
+                    transaction.contract_agreed = True
+                    transaction.save(update_fields=['contract_agreed'])
+                return redirect('frontend:sign_contract', transaction_id=transaction.id)
+
         # Regular signing - Agents cannot sign for others
         signature_data = request.POST.get('signature_data')
         signature_role = request.POST.get('signature_role') # Only sent by Admins
@@ -889,12 +932,28 @@ def sign_contract(request, transaction_id):
                 transaction.seller_signature = signature_data
             
             if transaction.buyer_signature and transaction.seller_signature:
-                transaction.contract_agreed = True
+                if transaction.is_joint_purchase and transaction.joint_group:
+                    if transaction.joint_group.all_signed:
+                        transaction.contract_agreed = True
+                else:
+                    transaction.contract_agreed = True
                 
             transaction.save()
             return redirect('frontend:sign_contract', transaction_id=transaction.id)
             
-    return render(request, 'frontend/contract.html', {'transaction': transaction})
+    joint_breakdown = None
+    if transaction.is_joint_purchase and transaction.joint_group:
+        from decimal import Decimal, ROUND_HALF_UP
+        total = transaction.agreed_price
+        joint_breakdown = []
+        for m in transaction.joint_group.members.all().order_by('-is_leader', 'added_at'):
+            amt = (total * (m.share_percentage / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            joint_breakdown.append({'member': m, 'amount': amt})
+
+    return render(request, 'frontend/contract.html', {
+        'transaction': transaction,
+        'joint_breakdown': joint_breakdown,
+    })
 
 @login_required
 def payment_onboarding(request, transaction_id):
@@ -919,7 +978,22 @@ def payment_checkout(request, transaction_id):
     if transaction.status != 'Under_Verification':
         return redirect('frontend:transactions')
         
-    return render(request, 'frontend/checkout.html', {'transaction': transaction})
+    joint_breakdown = None
+    contributions = None
+    if transaction.is_joint_purchase and transaction.joint_group:
+        from decimal import Decimal, ROUND_HALF_UP
+        total = transaction.agreed_price
+        joint_breakdown = []
+        for m in transaction.joint_group.members.all().order_by('-is_leader', 'added_at'):
+            amt = (total * (m.share_percentage / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            joint_breakdown.append({'member': m, 'amount': amt})
+        contributions = JointPaymentContribution.objects.filter(transaction=transaction).select_related('member')
+
+    return render(request, 'frontend/checkout.html', {
+        'transaction': transaction,
+        'joint_breakdown': joint_breakdown,
+        'contributions': contributions,
+    })
 
 @login_required
 def process_payment(request, transaction_id):
@@ -934,6 +1008,8 @@ def process_payment(request, transaction_id):
     if request.method == 'POST' and (request.user == transaction.buyer or request.user.role == 'Admin'):
         if transaction.status == 'Under_Verification':
             phone_number = request.POST.get('phone_number', '').strip()
+            member_id = (request.POST.get('member_id') or '').strip()
+            amount_override = (request.POST.get('amount') or '').strip()
             
             if not phone_number:
                 # Fallback to user's registered number
@@ -946,7 +1022,22 @@ def process_payment(request, transaction_id):
             
             # Initiate real M-PESA STK Push via Daraja API
             try:
-                amount = int(transaction.agreed_price)
+                # Default amount is full transaction, but allow split payments for joint purchases
+                from decimal import Decimal, ROUND_HALF_UP
+                amount_decimal = transaction.agreed_price
+                member = None
+                if transaction.is_joint_purchase and transaction.joint_group and member_id:
+                    member = JointBuyerMember.objects.get(id=member_id, group=transaction.joint_group)
+                    amount_decimal = (transaction.agreed_price * (member.share_percentage / Decimal('100'))).quantize(
+                        Decimal('0.01'), rounding=ROUND_HALF_UP
+                    )
+                if amount_override:
+                    try:
+                        amount_decimal = Decimal(amount_override)
+                    except Exception:
+                        pass
+
+                amount = int(amount_decimal)
                 # Sandbox has a max limit — cap at 150000 for sandbox testing
                 from django.conf import settings
                 if getattr(settings, 'DARAJA_ENVIRONMENT', 'sandbox') == 'sandbox':
@@ -964,6 +1055,17 @@ def process_payment(request, transaction_id):
                 if result.get('status') == 'success':
                     # Store the checkout_request_id for status polling
                     checkout_request_id = result.get('checkout_request_id', '')
+
+                    # Track contribution if joint purchase
+                    if transaction.is_joint_purchase and transaction.joint_group:
+                        JointPaymentContribution.objects.create(
+                            transaction=transaction,
+                            member=member,
+                            amount=amount_decimal,
+                            phone_number=phone_number,
+                            status='STK_Pushed',
+                            checkout_request_id=checkout_request_id or None,
+                        )
                     
                     # Store checkout_request_id in the transaction metadata
                     # We use escrow_reference temporarily to track this
@@ -998,6 +1100,166 @@ def process_payment(request, transaction_id):
     if is_ajax:
         return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
     return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+
+
+@login_required
+def joint_groups(request):
+    if request.user.role != 'Buyer':
+        return redirect('frontend:home')
+    groups = JointBuyerGroup.objects.filter(leader=request.user).prefetch_related('members')
+    return render(request, 'frontend/joint_groups_list.html', {'groups': groups})
+
+
+@login_required
+def create_joint_group(request):
+    if request.user.role != 'Buyer':
+        return redirect('frontend:home')
+
+    if request.method == 'POST':
+        group_form = JointBuyerGroupForm(request.POST)
+        member_formset = JointBuyerMemberFormSet(request.POST, prefix='members')
+        if group_form.is_valid() and member_formset.is_valid():
+            from decimal import Decimal
+            leader_share = group_form.cleaned_data['leader_share_percentage']
+            group = group_form.save(commit=False)
+            group.leader = request.user
+            group.save()
+
+            # Create leader member
+            leader_full_name = (f"{request.user.first_name} {request.user.last_name}").strip() or request.user.email
+            JointBuyerMember.objects.create(
+                group=group,
+                full_name=leader_full_name,
+                id_number=request.user.id_number,
+                kra_pin=request.user.kra_pin,
+                phone_number=request.user.phone_number,
+                email=request.user.email,
+                share_percentage=leader_share,
+                is_leader=True,
+            )
+
+            # Create other members from formset
+            created_members = 0
+            total_other = Decimal('0')
+            for form in member_formset:
+                if member_formset.can_delete and member_formset._should_delete_form(form):
+                    continue
+                if not form.cleaned_data:
+                    continue
+                member = JointBuyerMember(
+                    group=group,
+                    full_name=form.cleaned_data['full_name'],
+                    id_number=form.cleaned_data['id_number'],
+                    kra_pin=form.cleaned_data['kra_pin'],
+                    phone_number=form.cleaned_data['phone_number'],
+                    email=form.cleaned_data.get('email') or None,
+                    share_percentage=form.cleaned_data['share_percentage'],
+                    is_leader=False,
+                )
+                member.save()
+                created_members += 1
+                total_other += member.share_percentage
+
+            # Validate membership rules
+            from django.contrib import messages
+            if group.members.count() < 2:
+                group.delete()
+                messages.error(request, 'A joint group must have at least 2 members (leader + at least 1 co-buyer).')
+                return redirect('frontend:create_joint_group')
+
+            total_share = leader_share + total_other
+            if total_share != Decimal('100'):
+                group.delete()
+                messages.error(request, f'Shares must total 100%. Current total is {total_share}%.')
+                return redirect('frontend:create_joint_group')
+
+            if group.members.count() > 10:
+                group.delete()
+                messages.error(request, 'Maximum group size is 10 members.')
+                return redirect('frontend:create_joint_group')
+
+            messages.success(request, 'Joint buyer group created successfully.')
+            return redirect('frontend:joint_group_detail', group_id=group.id)
+    else:
+        group_form = JointBuyerGroupForm()
+        member_formset = JointBuyerMemberFormSet(prefix='members')
+
+    return render(request, 'frontend/joint_group.html', {
+        'group_form': group_form,
+        'member_formset': member_formset,
+    })
+
+
+@login_required
+def joint_group_detail(request, group_id):
+    if request.user.role != 'Buyer':
+        return redirect('frontend:home')
+    group = get_object_or_404(JointBuyerGroup, id=group_id, leader=request.user)
+    return render(request, 'frontend/joint_group_detail.html', {'group': group})
+
+
+@login_required
+def delete_joint_member(request, member_id):
+    if request.user.role != 'Buyer':
+        return redirect('frontend:home')
+    member = get_object_or_404(JointBuyerMember, id=member_id)
+    group = member.group
+    if group.leader != request.user:
+        return redirect('frontend:home')
+    if request.method == 'POST':
+        if member.is_leader:
+            return redirect('frontend:joint_group_detail', group_id=group.id)
+        member.delete()
+    return redirect('frontend:joint_group_detail', group_id=group.id)
+
+
+@login_required
+def edit_joint_group(request, group_id):
+    """Edit group details (name, type, ownership) and leader share before a transaction is initiated."""
+    from django.contrib import messages as django_messages
+
+    if request.user.role != 'Buyer':
+        return redirect('frontend:home')
+
+    group = get_object_or_404(JointBuyerGroup, id=group_id, leader=request.user)
+
+    # Block editing if the group is already linked to an active transaction
+    if group.transactions.filter(status__in=['Under_Verification', 'Deposit_Paid', 'Completed']).exists():
+        django_messages.error(request, 'Cannot edit a group that is linked to an active or completed transaction.')
+        return redirect('frontend:joint_group_detail', group_id=group.id)
+
+    leader_member = group.members.filter(is_leader=True).first()
+
+    if request.method == 'POST':
+        form = JointBuyerGroupForm(request.POST, instance=group)
+        if form.is_valid():
+            form.save()
+            # Update leader share
+            leader_share = form.cleaned_data.get('leader_share_percentage')
+            if leader_member and leader_share is not None:
+                leader_member.share_percentage = leader_share
+                leader_member.save(update_fields=['share_percentage'])
+
+                # Re-validate total
+                from decimal import Decimal
+                total = sum(m.share_percentage for m in group.members.all())
+                if total != Decimal('100'):
+                    django_messages.warning(request, f'Group saved but shares total {total}% — please adjust co-buyer shares to reach 100%.')
+                else:
+                    django_messages.success(request, 'Group updated successfully.')
+            else:
+                django_messages.success(request, 'Group updated successfully.')
+            return redirect('frontend:joint_group_detail', group_id=group.id)
+    else:
+        initial = {}
+        if leader_member:
+            initial['leader_share_percentage'] = leader_member.share_percentage
+        form = JointBuyerGroupForm(instance=group, initial=initial)
+
+    return render(request, 'frontend/joint_group_edit.html', {
+        'group': group,
+        'group_form': form,
+    })
 
 
 @login_required

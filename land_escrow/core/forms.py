@@ -1,5 +1,6 @@
 from django import forms
-from core.models import LandParcel, Document, User, AgentKYCApplication
+from django.forms import formset_factory
+from core.models import LandParcel, Document, User, AgentKYCApplication, JointBuyerGroup, JointBuyerMember
 import re
 import requests
 import logging
@@ -156,3 +157,119 @@ class AgentKYCForm(forms.ModelForm):
         except requests.RequestException:
             logger.info(f'KRA PIN Checker API unavailable, using format validation for {value[:3]}***')
         return value
+
+
+class JointBuyerGroupForm(forms.ModelForm):
+    """Form for creating/editing a joint buyer group."""
+    leader_share_percentage = forms.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        min_value=1,
+        max_value=100,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'e.g. 50',
+            'min': '1',
+            'max': '100',
+            'step': '0.01',
+        }),
+        help_text="Leader's ownership share. Combined with co-buyers must total 100%.",
+    )
+
+    class Meta:
+        model = JointBuyerGroup
+        fields = ['name', 'group_type', 'ownership_type']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': "e.g. Wanjiku Family Trust, Mwamba Chama",
+            }),
+            'group_type': forms.Select(attrs={'class': 'form-select'}),
+            'ownership_type': forms.RadioSelect(),
+        }
+        labels = {
+            'name': 'Group / Chama Name',
+            'group_type': 'Type of Group',
+            'ownership_type': 'Ownership Structure',
+        }
+        help_texts = {
+            'ownership_type': 'Joint Tenancy: equal shares with right of survivorship. '
+                              'Tenancy in Common: specified shares, independently transferable.',
+        }
+
+
+class JointBuyerMemberForm(forms.ModelForm):
+    """Form for adding a single member to a joint buyer group."""
+    class Meta:
+        model = JointBuyerMember
+        fields = ['full_name', 'id_number', 'kra_pin', 'phone_number', 'email', 'share_percentage']
+        widgets = {
+            'full_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Full legal name as per National ID',
+            }),
+            'id_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. 12345678',
+            }),
+            'kra_pin': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. A123456789B',
+                'style': 'text-transform: uppercase;',
+            }),
+            'phone_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. 0712345678',
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Optional email',
+            }),
+            'share_percentage': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. 50',
+                'min': '1',
+                'max': '100',
+                'step': '0.01',
+            }),
+        }
+        labels = {
+            'full_name': 'Full Legal Name',
+            'id_number': 'National ID Number',
+            'kra_pin': 'KRA PIN',
+            'phone_number': 'Phone Number (M-PESA)',
+            'email': 'Email (Optional)',
+            'share_percentage': 'Ownership Share (%)',
+        }
+
+    def clean_kra_pin(self):
+        value = self.cleaned_data['kra_pin'].strip().upper()
+        if not re.fullmatch(r'[A-Z]\d{9}[A-Z]', value):
+            raise forms.ValidationError('KRA PIN must be 11 characters: Letter + 9 digits + Letter.')
+        return value
+
+    def clean_id_number(self):
+        value = self.cleaned_data['id_number'].strip()
+        if not re.fullmatch(r'\d{7,9}', value):
+            raise forms.ValidationError('ID number must be 7–9 digits.')
+        return value
+
+    def clean_phone_number(self):
+        value = self.cleaned_data['phone_number'].strip().replace(' ', '').replace('-', '')
+        if value.startswith('07') and len(value) == 10:
+            value = '+254' + value[1:]
+        elif value.startswith('01') and len(value) == 10:
+            value = '+254' + value[1:]
+        elif value.startswith('+254') and len(value) == 13:
+            pass
+        elif value.startswith('254') and len(value) == 12:
+            value = '+' + value
+        else:
+            raise forms.ValidationError('Phone number must start with +254 or 07.')
+        if not re.fullmatch(r'\+254\d{9}', value):
+            raise forms.ValidationError('Invalid phone number format.')
+        return value
+
+
+JointBuyerMemberFormSet = formset_factory(JointBuyerMemberForm, extra=2, can_delete=True)
+

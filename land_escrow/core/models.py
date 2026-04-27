@@ -220,6 +220,11 @@ class Transaction(models.Model):
     reversal_initiated_at = models.DateTimeField(null=True, blank=True, help_text="When reversal was initiated")
     reversal_reference = models.CharField(max_length=100, blank=True, null=True, help_text="Reference number for the reversal transaction")
     
+    # Joint Purchase Fields
+    is_joint_purchase = models.BooleanField(default=False, help_text="Whether this is a joint/group purchase")
+    joint_group = models.ForeignKey('JointBuyerGroup', on_delete=models.SET_NULL, null=True, blank=True,
+                                     related_name='transactions', help_text="The joint buyer group for group purchases")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -417,3 +422,97 @@ class UserFavorite(models.Model):
 
     def __str__(self):
         return f"{self.user.email} saved {self.parcel.parcel_number}"
+
+
+class JointBuyerGroup(models.Model):
+    """A group of co-buyers purchasing land jointly (chama, couple, family, etc.)."""
+    GROUP_TYPE_CHOICES = [
+        ('Couple', 'Couple'),
+        ('Chama', 'Chama / Investment Group'),
+        ('Family', 'Family Trust'),
+        ('Investment_Group', 'Investment Group'),
+    ]
+    OWNERSHIP_TYPE_CHOICES = [
+        ('Joint_Tenancy', 'Joint Tenancy (equal shares, right of survivorship)'),
+        ('Tenancy_In_Common', 'Tenancy in Common (specified shares, independently transferable)'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=200, help_text="Group or chama name (e.g. 'Wanjiku Family Trust')")
+    group_type = models.CharField(max_length=20, choices=GROUP_TYPE_CHOICES)
+    ownership_type = models.CharField(max_length=20, choices=OWNERSHIP_TYPE_CHOICES, default='Tenancy_In_Common')
+    leader = models.ForeignKey(User, on_delete=models.CASCADE, related_name='led_joint_groups',
+                               limit_choices_to={'role': 'Buyer'},
+                               help_text="The registered Buyer who manages this group")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.name} ({self.get_group_type_display()})"
+
+    @property
+    def total_share(self):
+        """Sum of all member shares — must equal 100 for a valid group."""
+        return sum(m.share_percentage for m in self.members.all())
+
+    @property
+    def is_valid(self):
+        """Group is valid when shares total 100% and has at least 2 members."""
+        return self.members.count() >= 2 and self.total_share == 100
+
+    @property
+    def all_signed(self):
+        """True when every member has provided their signature."""
+        return self.members.count() > 0 and all(m.has_signed for m in self.members.all())
+
+
+class JointBuyerMember(models.Model):
+    """Individual member within a joint buyer group."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    group = models.ForeignKey(JointBuyerGroup, on_delete=models.CASCADE, related_name='members')
+    full_name = models.CharField(max_length=200, help_text="Full legal name as per National ID")
+    id_number = models.CharField(max_length=20, help_text="National ID number")
+    kra_pin = models.CharField(max_length=11, help_text="KRA PIN (e.g. A123456789B)")
+    phone_number = models.CharField(max_length=20, help_text="Phone number for M-PESA payments")
+    email = models.EmailField(blank=True, null=True, help_text="Optional email for notifications")
+    share_percentage = models.DecimalField(max_digits=5, decimal_places=2, help_text="Ownership share (must total 100% per group)")
+    signature = models.TextField(null=True, blank=True, help_text="Base64 encoded drawn signature")
+    has_signed = models.BooleanField(default=False)
+    is_leader = models.BooleanField(default=False, help_text="Whether this member is the registered group leader")
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-is_leader', 'added_at']
+
+    def __str__(self):
+        return f"{self.full_name} ({self.share_percentage}%)"
+
+
+class JointPaymentContribution(models.Model):
+    """Tracks individual contributions for a joint purchase (split payments)."""
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('STK_Pushed', 'STK Push Sent'),
+        ('Completed', 'Completed'),
+        ('Failed', 'Failed'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    transaction = models.ForeignKey(Transaction, on_delete=models.CASCADE, related_name='joint_contributions')
+    member = models.ForeignKey(JointBuyerMember, on_delete=models.SET_NULL, null=True, blank=True, related_name='contributions')
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    phone_number = models.CharField(max_length=20)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    checkout_request_id = models.CharField(max_length=100, blank=True, null=True)
+    mpesa_receipt = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        member_label = self.member.full_name if self.member else "Leader/Full"
+        return f"{self.transaction_id} {member_label} {self.amount} ({self.status})"
+

@@ -10,6 +10,20 @@
 
         <div class="card">
             <div class="card-body p-4 text-start">
+                {% if transaction.is_joint_purchase and transaction.joint_group %}
+                <div class="alert alert-info mb-4">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="bi bi-people fs-5"></i>
+                        <div>
+                            <div class="fw-semibold">Joint purchase</div>
+                            <div class="small text-muted">
+                                Group: <strong>{{ transaction.joint_group.name }}</strong> •
+                                Ownership: <strong>{{ transaction.joint_group.get_ownership_type_display }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
                 <h4 class="fw-bold mb-4 text-info border-bottom pb-2"><i class="bi bi-info-circle-fill"></i> How your funds are protected</h4>
                 
                 <div class="d-flex align-items-start mb-4">

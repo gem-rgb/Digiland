@@ -36,7 +36,7 @@
   padding-bottom: 0.75rem;
   border-bottom: 1px solid rgba(255,255,255,.1);
   font-size: 1.25rem;
-  color: #f1f5f9;
+  color: #f5f0eb;
 }
 
 /* ── Admin Data Tables ──────────────────────────────────────────────────────── */
@@ -63,12 +63,12 @@
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #94a3b8;
+  color: #a09080;
   font-weight: 700;
   border-bottom: 1px solid rgba(255,255,255,.1);
 }
 
-.data-table td { color: #cbd5e1; }
+.data-table td { color: #c4b8ab; }
 
 .data-table tr:hover td { background: rgba(255,255,255,.03); }
 

@@ -40,6 +40,30 @@
                             <h6 class="text-muted text-uppercase mb-1">Total Agreed Escrow Deposit</h6>
                             <h2 class="mb-0 text-success fw-bold">KES {{ transaction.agreed_price }}</h2>
                         </div>
+
+                        {% if transaction.is_joint_purchase and transaction.joint_group and joint_breakdown %}
+                        <div class="mt-4">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <h6 class="fw-bold mb-0"><i class="bi bi-people"></i> Joint split</h6>
+                                <span class="badge bg-info">{{ transaction.joint_group.get_ownership_type_display }}</span>
+                            </div>
+                            <div class="card border-0" style="background: transparent;">
+                                <div class="card-body p-0">
+                                    <div class="list-group list-group-flush">
+                                        {% for row in joint_breakdown %}
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <div class="fw-semibold">{{ row.member.full_name }} {% if row.member.is_leader %}<span class="badge bg-secondary ms-1">Leader</span>{% endif %}</div>
+                                                <div class="small text-muted">{{ row.member.share_percentage }}%</div>
+                                            </div>
+                                            <strong>KES {{ row.amount }}</strong>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -79,10 +103,40 @@
                             </label>
                         </div>
 
+                        {% if transaction.is_joint_purchase and transaction.joint_group and joint_breakdown %}
+                        <div class="alert alert-warning border-warning py-2 small mb-4">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            Joint purchases can be paid either by the leader (full amount) or by each member (split STK pushes).
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Payment option</label>
+                            <select class="form-select" id="jointPaymentMode">
+                                <option value="leader" selected>Leader pays full amount</option>
+                                <option value="split">Members pay individually (split)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3 d-none" id="splitPaySection">
+                            <label class="form-label fw-bold">Pay as member</label>
+                            <select class="form-select" id="memberSelect">
+                                <option value="">— Select member —</option>
+                                {% for row in joint_breakdown %}
+                                    <option value="{{ row.member.id }}" data-phone="{{ row.member.phone_number }}" data-amount="{{ row.amount }}">
+                                        {{ row.member.full_name }} ({{ row.member.share_percentage }}% → KES {{ row.amount }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">This will send an STK push to the selected member’s phone for their share.</div>
+                        </div>
+                        {% endif %}
+
                         <!-- STK Push Form -->
                         <div class="mt-auto" id="paymentFormSection">
                             <form id="stkPushForm" method="POST" action="{% url 'frontend:process_payment' transaction.id %}">
                                 {% csrf_token %}
+                                <input type="hidden" name="member_id" id="member_id">
+                                <input type="hidden" name="amount" id="amount">
                                 <div class="mb-3">
                                     <label for="phone_number" class="form-label fw-bold"><i class="bi bi-telephone-fill text-success"></i> M-PESA Phone Number</label>
                                     <input type="tel" class="form-control form-control-lg" id="phone_number" name="phone_number" 
@@ -153,6 +207,38 @@ let pollInterval = null;
 let pollCount = 0;
 const MAX_POLLS = 40; // 40 polls at 3 seconds = 2 minutes timeout
 
+(function() {
+  var modeEl = document.getElementById('jointPaymentMode');
+  var splitSection = document.getElementById('splitPaySection');
+  var memberSelect = document.getElementById('memberSelect');
+  var memberIdInput = document.getElementById('member_id');
+  var amountInput = document.getElementById('amount');
+  var phoneInput = document.getElementById('phone_number');
+  if (!modeEl) return;
+
+  function syncMode() {
+    var split = (modeEl.value === 'split');
+    if (splitSection) splitSection.classList.toggle('d-none', !split);
+    if (!split) {
+      if (memberIdInput) memberIdInput.value = '';
+      if (amountInput) amountInput.value = '';
+    }
+  }
+  modeEl.addEventListener('change', syncMode);
+  syncMode();
+
+  if (memberSelect) {
+    memberSelect.addEventListener('change', function() {
+      var opt = memberSelect.options[memberSelect.selectedIndex];
+      if (!opt || !opt.value) return;
+      if (memberIdInput) memberIdInput.value = opt.value;
+      if (amountInput) amountInput.value = opt.getAttribute('data-amount') || '';
+      var phone = opt.getAttribute('data-phone') || '';
+      if (phone && phoneInput) phoneInput.value = phone;
+    });
+  }
+})();
+
 document.getElementById('stkPushForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -177,7 +263,9 @@ document.getElementById('stkPushForm').addEventListener('submit', function(e) {
         },
         body: new URLSearchParams({
             'csrfmiddlewaretoken': CSRF_TOKEN,
-            'phone_number': phone
+            'phone_number': phone,
+            'member_id': (document.getElementById('member_id') || {}).value || '',
+            'amount': (document.getElementById('amount') || {}).value || ''
         })
     })
     .then(response => response.json())

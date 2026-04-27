@@ -8,16 +8,16 @@
    =================================================================== */
 
 :root {
-  --bg: #07111f;
-  --bg-alt: #0b1728;
-  --primary: #0f172a;
-  --primary-soft: rgba(15, 23, 42, 0.24);
-  --surface: rgba(15, 23, 42, 0.84);
-  --surface-soft: rgba(15, 23, 42, 0.68);
-  --surface-strong: #142033;
-  --surface-contrast: #f8fafc;
-  --border: rgba(148, 163, 184, 0.24);
-  --border-strong: rgba(226, 232, 240, 0.16);
+  --bg: #1a1714;
+  --bg-alt: #211e1b;
+  --primary: #1a1714;
+  --primary-soft: rgba(26, 23, 20, 0.24);
+  --surface: rgba(33, 30, 27, 0.84);
+  --surface-soft: rgba(33, 30, 27, 0.68);
+  --surface-strong: #2a2520;
+  --surface-contrast: #f5f0eb;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
   --accent: #10b981;
   --accent-strong: #059669;
   --accent-soft: rgba(16, 185, 129, 0.18);
@@ -31,16 +31,16 @@
   --info-soft: rgba(56, 189, 248, 0.18);
   --purple: #8b5cf6;
   --purple-soft: rgba(139, 92, 246, 0.18);
-  --text: #e7edf7;
-  --text-soft: #cbd5e1;
-  --text-dim: #94a3b8;
-  --shadow-soft: 0 14px 36px rgba(2, 8, 23, 0.22);
-  --shadow-lg: 0 24px 50px rgba(2, 8, 23, 0.28);
+  --text: #f5f0eb;
+  --text-soft: #c4b8ab;
+  --text-dim: #a09080;
+  --shadow-soft: 0 14px 36px rgba(0, 0, 0, 0.22);
+  --shadow-lg: 0 24px 50px rgba(0, 0, 0, 0.28);
   --radius-sm: 12px;
   --radius-md: 18px;
   --radius-lg: 24px;
   --radius-xl: 32px;
-  --content-width: 1320px;
+  --content-width: 1280px;
 }
 
 /* Scrollbar styling (webkit) */
@@ -49,16 +49,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #08111f;
+  background: #151210;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #3d3530;
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #5a4f48;
 }
 
 /* Shared layout and legacy-page normalization */

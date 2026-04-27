@@ -4,7 +4,7 @@
    ============================================================================= */
 
 /* ── Auth Layout ────────────────────────────────────────────────────────────── */
-.auth-page body { background: #0b1120 !important; }
+.auth-page body { background: #1a1714 !important; }
 
 /* Override page padding so auth pages fill the viewport */
 .auth-wrapper {
@@ -34,14 +34,14 @@
 .auth-header {
   text-align: center;
   padding: 2.2rem 2rem 1.5rem;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(26, 23, 20, 0.6);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .auth-logo {
   width: 64px;
   height: 64px;
-  background: linear-gradient(135deg, #0f172a 0%, #1a2f55 100%);
+  background: linear-gradient(135deg, #1a1714 0%, #2a2520 100%);
   border: 1px solid rgba(16,185,129,.35);
   border-radius: 16px;
   display: flex;
@@ -55,12 +55,12 @@
 .auth-header h1 {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #f1f5f9;
+  color: #f5f0eb;
   margin-bottom: 0.35rem;
 }
 
 .auth-header p {
-  color: rgba(241,245,249,.5);
+  color: rgba(245,240,235,.5);
   margin: 0;
   font-size: 0.9rem;
 }
@@ -75,7 +75,7 @@
 
 .auth-form .form-label {
   font-weight: 600;
-  color: rgba(241,245,249,.65);
+  color: rgba(245,240,235,.65);
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -86,7 +86,7 @@
 }
 
 .auth-form .form-label a {
-  color: rgba(241,245,249,.4);
+  color: rgba(245,240,235,.4);
   font-weight: 500;
   text-transform: none;
   letter-spacing: 0;
@@ -117,7 +117,7 @@
   margin-top: 1.5rem;
   padding-top: 1.25rem;
   border-top: 1px solid rgba(255,255,255,.08);
-  color: rgba(241,245,249,.45);
+  color: rgba(245,240,235,.45);
   font-size: 0.875rem;
 }
 
@@ -198,7 +198,7 @@
 .auth-shell .form-select {
   background-color: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #f1f5f9;
+  color: #f5f0eb;
   /* Use a light-coloured SVG arrow so it's visible on dark bg */
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23cbd5e1' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
   background-repeat: no-repeat;
@@ -214,14 +214,14 @@
 .auth-shell .form-select:focus {
   background-color: rgba(255, 255, 255, 0.1);
   border-color: #10b981;
-  color: #f1f5f9;
+  color: #f5f0eb;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 }
 
 .auth-panel .form-select option,
 .auth-panel-body .form-select option,
 .auth-shell .form-select option {
-  background: #1e293b;
-  color: #f1f5f9;
+  background: #211e1b;
+  color: #f5f0eb;
   padding: 0.5rem;
 }

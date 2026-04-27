@@ -1,0 +1,163 @@
+{% extends 'frontend/base.html' %}
+{% block title %}Create Group - Digiland{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <span class="page-kicker"><i class="bi bi-people"></i>Joint ownership</span>
+    <h2 class="page-title">Create a joint buyer group</h2>
+    <p class="page-subtitle">The group leader (your account) manages the setup and captures signatures for all members.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-outline-secondary" href="{% url 'frontend:joint_groups' %}">
+      <i class="bi bi-arrow-left"></i>Back
+    </a>
+  </div>
+</section>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header bg-dark"><i class="bi bi-card-checklist me-2"></i>Group details</div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-bold">{{ group_form.name.label }}</label>
+            {{ group_form.name }}
+            {% if group_form.name.errors %}<div class="invalid-feedback d-block">{{ group_form.name.errors|join:", " }}</div>{% endif %}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">{{ group_form.group_type.label }}</label>
+            {{ group_form.group_type }}
+            {% if group_form.group_type.errors %}<div class="invalid-feedback d-block">{{ group_form.group_type.errors|join:", " }}</div>{% endif %}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">{{ group_form.ownership_type.label }}</label>
+            <div class="d-flex flex-column gap-2">{{ group_form.ownership_type }}</div>
+            {% if group_form.ownership_type.errors %}<div class="invalid-feedback d-block">{{ group_form.ownership_type.errors|join:", " }}</div>{% endif %}
+            {% if group_form.ownership_type.help_text %}<div class="form-text">{{ group_form.ownership_type.help_text }}</div>{% endif %}
+          </div>
+          <div class="mb-0">
+            <label class="form-label fw-bold">{{ group_form.leader_share_percentage.label }}</label>
+            {{ group_form.leader_share_percentage }}
+            {% if group_form.leader_share_percentage.errors %}<div class="invalid-feedback d-block">{{ group_form.leader_share_percentage.errors|join:", " }}</div>{% endif %}
+            {% if group_form.leader_share_percentage.help_text %}<div class="form-text">{{ group_form.leader_share_percentage.help_text }}</div>{% endif %}
+          </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header bg-dark"><i class="bi bi-person-plus me-2"></i>Add co-buyers</div>
+      <div class="card-body">
+        <div class="alert alert-info py-2 small">
+          <i class="bi bi-info-circle"></i>
+          Add at least one co-buyer. Total group shares must equal 100% (leader + co-buyers).
+        </div>
+
+        {{ member_formset.management_form }}
+
+        {% for f in member_formset %}
+        <div class="border rounded-3 p-3 mb-3">
+          {% if f.non_field_errors %}<div class="alert alert-danger py-2 small mb-2">{{ f.non_field_errors }}</div>{% endif %}
+          <div class="row g-2">
+            <div class="col-12">
+              <label class="form-label fw-bold">{{ f.full_name.label }}</label>
+              {{ f.full_name }}
+              {% if f.full_name.errors %}<div class="invalid-feedback d-block">{{ f.full_name.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">{{ f.id_number.label }}</label>
+              {{ f.id_number }}
+              {% if f.id_number.errors %}<div class="invalid-feedback d-block">{{ f.id_number.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">{{ f.kra_pin.label }}</label>
+              {{ f.kra_pin }}
+              {% if f.kra_pin.errors %}<div class="invalid-feedback d-block">{{ f.kra_pin.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">{{ f.phone_number.label }}</label>
+              {{ f.phone_number }}
+              {% if f.phone_number.errors %}<div class="invalid-feedback d-block">{{ f.phone_number.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">{{ f.email.label }}</label>
+              {{ f.email }}
+              {% if f.email.errors %}<div class="invalid-feedback d-block">{{ f.email.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">{{ f.share_percentage.label }}</label>
+              {{ f.share_percentage }}
+              {% if f.share_percentage.errors %}<div class="invalid-feedback d-block">{{ f.share_percentage.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+              {% if f.DELETE %}
+              <div class="form-check">
+                {{ f.DELETE }}
+                <label class="form-check-label">Remove</label>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+
+        <div class="d-grid gap-2">
+          <button type="button" class="btn btn-outline-primary" id="add-member-btn">
+            <i class="bi bi-plus-circle"></i>Add another co-buyer
+          </button>
+          <button class="btn btn-primary btn-lg fw-bold" type="submit">
+            <i class="bi bi-check-circle"></i>Create group
+          </button>
+        </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function() {
+  var formsetPrefix = 'members';
+  var totalForms = document.getElementById('id_' + formsetPrefix + '-TOTAL_FORMS');
+  var container = document.getElementById('add-member-btn').closest('.card-body');
+  var memberBlocks = container.querySelectorAll('.border.rounded-3');
+  var lastBlock = memberBlocks[memberBlocks.length - 1];
+
+  document.getElementById('add-member-btn').addEventListener('click', function() {
+    var count = parseInt(totalForms.value);
+    if (count >= 9) { alert('Maximum 9 co-buyers (10 members total including leader).'); return; }
+
+    var template = lastBlock.cloneNode(true);
+    // Clear values and update indices
+    template.querySelectorAll('input, select').forEach(function(el) {
+      var name = el.getAttribute('name') || '';
+      var id = el.getAttribute('id') || '';
+      var newName = name.replace(/-\d+-/, '-' + count + '-');
+      var newId = id.replace(/-\d+-/, '-' + count + '-');
+      el.setAttribute('name', newName);
+      el.setAttribute('id', newId);
+      if (el.type === 'checkbox') { el.checked = false; }
+      else { el.value = ''; }
+    });
+    template.querySelectorAll('label').forEach(function(el) {
+      var forAttr = el.getAttribute('for') || '';
+      el.setAttribute('for', forAttr.replace(/-\d+-/, '-' + count + '-'));
+    });
+    // Remove any error messages in the clone
+    template.querySelectorAll('.invalid-feedback, .alert').forEach(function(el) { el.remove(); });
+
+    // Insert before the buttons
+    var btnGrid = container.querySelector('.d-grid');
+    btnGrid.parentNode.insertBefore(template, btnGrid);
+
+    totalForms.value = count + 1;
+  });
+})();
+</script>
+{% endblock %}

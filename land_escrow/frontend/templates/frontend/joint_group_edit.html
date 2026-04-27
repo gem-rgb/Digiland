@@ -1,0 +1,63 @@
+{% extends 'frontend/base.html' %}
+{% block title %}Edit Group - Digiland{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <span class="page-kicker"><i class="bi bi-pencil-square"></i>Edit group</span>
+    <h2 class="page-title">{{ group.name }}</h2>
+    <p class="page-subtitle">Update group details. Members can be managed from the group detail page.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-outline-secondary" href="{% url 'frontend:joint_group_detail' group.id %}">
+      <i class="bi bi-arrow-left"></i>Back
+    </a>
+  </div>
+</section>
+
+<div class="row g-4 justify-content-center">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header bg-dark"><i class="bi bi-card-checklist me-2"></i>Group details</div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-bold">{{ group_form.name.label }}</label>
+            {{ group_form.name }}
+            {% if group_form.name.errors %}<div class="invalid-feedback d-block">{{ group_form.name.errors|join:", " }}</div>{% endif %}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">{{ group_form.group_type.label }}</label>
+            {{ group_form.group_type }}
+            {% if group_form.group_type.errors %}<div class="invalid-feedback d-block">{{ group_form.group_type.errors|join:", " }}</div>{% endif %}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">{{ group_form.ownership_type.label }}</label>
+            <div class="d-flex flex-column gap-2">{{ group_form.ownership_type }}</div>
+            {% if group_form.ownership_type.errors %}<div class="invalid-feedback d-block">{{ group_form.ownership_type.errors|join:", " }}</div>{% endif %}
+            {% if group_form.ownership_type.help_text %}<div class="form-text">{{ group_form.ownership_type.help_text }}</div>{% endif %}
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-bold">{{ group_form.leader_share_percentage.label }}</label>
+            {{ group_form.leader_share_percentage }}
+            {% if group_form.leader_share_percentage.errors %}<div class="invalid-feedback d-block">{{ group_form.leader_share_percentage.errors|join:", " }}</div>{% endif %}
+            {% if group_form.leader_share_percentage.help_text %}<div class="form-text">{{ group_form.leader_share_percentage.help_text }}</div>{% endif %}
+          </div>
+
+          <div class="alert alert-info py-2 small mb-3">
+            <i class="bi bi-info-circle"></i>
+            To add/remove members or change co-buyer shares, use the <strong>Manage</strong> page after saving.
+          </div>
+
+          <div class="d-grid">
+            <button class="btn btn-primary btn-lg fw-bold" type="submit">
+              <i class="bi bi-check-circle"></i>Save changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

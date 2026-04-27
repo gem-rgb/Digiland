@@ -1,0 +1,95 @@
+{% extends 'frontend/base.html' %}
+{% block title %}Group Details - Digiland{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <span class="page-kicker"><i class="bi bi-people"></i>Joint ownership</span>
+    <h2 class="page-title">{{ group.name }}</h2>
+    <p class="page-subtitle">
+      {{ group.get_group_type_display }} •
+      {{ group.get_ownership_type_display }} •
+      {{ group.members.count }} members
+    </p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-outline-secondary" href="{% url 'frontend:joint_groups' %}">
+      <i class="bi bi-arrow-left"></i>Back
+    </a>
+  </div>
+</section>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header bg-dark d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-person-lines-fill me-2"></i>Members</span>
+        <span class="badge {% if group.is_valid %}bg-success{% else %}bg-warning text-dark{% endif %}">
+          {% if group.is_valid %}Valid (100%){% else %}Invalid shares{% endif %}
+        </span>
+      </div>
+      <div class="card-body">
+        {% for m in group.members.all %}
+        <div class="member-row">
+          <div class="member-avatar tone-info">
+            {{ m.full_name|slice:":1"|upper }}
+          </div>
+          <div class="flex-grow-1">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="fw-semibold">
+                {{ m.full_name }}
+                {% if m.is_leader %}<span class="badge bg-secondary ms-1">Leader</span>{% endif %}
+              </div>
+              <div class="fw-bold">{{ m.share_percentage }}%</div>
+            </div>
+            <div class="small text-muted">ID: {{ m.id_number }} • KRA: {{ m.kra_pin }}</div>
+            <div class="small text-muted">Phone: {{ m.phone_number }}{% if m.email %} • Email: {{ m.email }}{% endif %}</div>
+            <div class="share-bar">
+              <div class="share-bar-fill" style="width: {{ m.share_percentage }}%"></div>
+            </div>
+          </div>
+          <div class="text-end">
+            {% if not m.is_leader %}
+            <form method="post" action="{% url 'frontend:delete_joint_member' m.id %}" onsubmit="return confirm('Remove this member?');">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card sidebar-card">
+      <div class="card-header bg-info"><i class="bi bi-shield-check me-2"></i>Group status</div>
+      <div class="card-body">
+        <div class="summary-box mb-3">
+          <div class="summary-row">
+            <span class="text-muted">Share total</span>
+            <strong>{{ group.total_share }}%</strong>
+          </div>
+          <div class="summary-row">
+            <span class="text-muted">Ownership</span>
+            <strong>{{ group.get_ownership_type_display }}</strong>
+          </div>
+          <div class="summary-row">
+            <span class="text-muted">Created</span>
+            <strong>{{ group.created_at|date:"M d, Y" }}</strong>
+          </div>
+        </div>
+        <div class="alert alert-info py-2 small mb-3">
+          <i class="bi bi-info-circle"></i>
+          You can initiate escrow as a joint purchase from any verified parcel detail page.
+        </div>
+        <a class="btn btn-outline-secondary w-100" href="{% url 'frontend:edit_joint_group' group.id %}">
+          <i class="bi bi-pencil-square me-1"></i>Edit group details
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

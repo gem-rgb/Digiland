@@ -19,7 +19,95 @@
                 </div>
                 <div class="card-body p-5">
                     <h5 class="fw-bold">1. Legal Framework</h5>
-                    <p>This transaction is governed by the <strong>Land Registration Act (2012)</strong> and the <strong>Land Act (2012)</strong> of the Laws of Kenya. The transfer of the land parcel <code>{{ transaction.land_parcel.parcel_number }}</code> is strictly subject to the completion of all Escrow financial obligations and governmental clearance.</p>
+                    <p>
+                      This transaction is governed by the <strong>Land Registration Act (2012)</strong> and the <strong>Land Act (2012)</strong> of the Laws of Kenya.
+                      The transfer of the land parcel <code>{{ transaction.land_parcel.parcel_number }}</code> is strictly subject to completion of escrow financial obligations and registry clearance.
+                    </p>
+
+                    {% if transaction.is_joint_purchase and transaction.joint_group %}
+                    <div class="contract-block">
+                      <h5>Joint Ownership Structure (Kenya)</h5>
+                      <p class="mb-2">
+                        Pursuant to the <strong>Land Registration Act, 2012 (Section 24)</strong>, the Buyer party elects to acquire the property as:
+                        <strong>{{ transaction.joint_group.get_ownership_type_display }}</strong>.
+                      </p>
+                      <p class="mb-2">
+                        Where applicable, the parties further acknowledge the <strong>Law of Succession Act (Cap. 160)</strong> with respect to survivorship rights for Joint Tenancy, and inheritance/transferability for Tenancy in Common.
+                      </p>
+                      <p class="mb-3">
+                        For group acquisitions (e.g., chama/investment groups), the parties may also be guided by relevant provisions of the <strong>Companies Act</strong> and/or <strong>Partnership Act</strong> where the buying group is a registered legal entity.
+                      </p>
+
+                      <div class="table-responsive">
+                        <table class="table table-sm">
+                          <thead>
+                            <tr>
+                              <th>Co-buyer</th>
+                              <th>National ID</th>
+                              <th class="text-end">Share</th>
+                              <th class="text-end">Amount</th>
+                              <th class="text-end">Signature</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for row in joint_breakdown %}
+                            <tr>
+                              <td>
+                                <strong>{{ row.member.full_name }}</strong>
+                                {% if row.member.is_leader %}<span class="badge bg-secondary ms-1">Leader</span>{% endif %}
+                              </td>
+                              <td><span class="text-muted">{{ row.member.id_number }}</span></td>
+                              <td class="text-end">{{ row.member.share_percentage }}%</td>
+                              <td class="text-end">KES {{ row.amount }}</td>
+                              <td class="text-end">
+                                <span class="badge {% if row.member.has_signed %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                  {% if row.member.has_signed %}Signed{% else %}Pending{% endif %}
+                                </span>
+                              </td>
+                            </tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <h6 class="fw-bold mt-4 mb-2">Co-Ownership Agreement Clauses</h6>
+
+                      <p class="mb-2">
+                        <strong>A. Community / Group Land Provisions:</strong>
+                        Where applicable, the parties acknowledge the <strong>Land Act, 2012 (Section 38)</strong> regarding community and group land provisions governing collective acquisition.
+                      </p>
+
+                      <p class="mb-2">
+                        <strong>B. Decision Making:</strong>
+                        Major decisions affecting the property — including sale, further development, sub-division, or encumbrance — shall require
+                        {% if transaction.joint_group.ownership_type == 'Joint_Tenancy' %}
+                        <strong>unanimous consent</strong> of all co-owners.
+                        {% else %}
+                        <strong>majority consent</strong> (by share percentage) of the co-owners, provided that any single co-owner holding 25% or more retains a veto right on disposal.
+                        {% endif %}
+                      </p>
+
+                      <p class="mb-2">
+                        <strong>C. Financial Obligations:</strong>
+                        All recurring costs — including land rates, county levies, maintenance, insurance, and future development costs — shall be borne by each co-owner <strong>in proportion to their ownership share</strong> as specified above, unless unanimously agreed otherwise in writing.
+                      </p>
+
+                      <p class="mb-2">
+                        <strong>D. Death / Incapacity:</strong>
+                        {% if transaction.joint_group.ownership_type == 'Joint_Tenancy' %}
+                        Under Joint Tenancy, the <strong>right of survivorship</strong> applies: upon the death of any co-owner, their interest automatically vests in the surviving co-owner(s) by operation of law, subject to the <strong>Law of Succession Act (Cap. 160)</strong>.
+                        {% else %}
+                        Under Tenancy in Common, each co-owner's share forms part of their estate upon death and is <strong>inheritable</strong> under the <strong>Law of Succession Act (Cap. 160)</strong>. The deceased's legal representative or successor shall assume their rights and obligations.
+                        {% endif %}
+                      </p>
+
+                      <p class="small text-muted mb-0">
+                        <strong>Dispute Resolution:</strong> internal discussion → mediation → arbitration → courts (Kenya).
+                        <strong>Exit/Transfer:</strong> right of first refusal to remaining co-owners before external transfer (where applicable).
+                        <strong>Spousal Consent:</strong> each married co-owner affirms compliance with the <strong>Matrimonial Property Act, 2013 (Section 12)</strong>.
+                      </p>
+                    </div>
+                    {% endif %}
                     
                     <h5 class="fw-bold">2. Land Control Board (LCB)</h5>
                     <p>Both the Buyer and Seller explicitly agree to appear before the respective local Land Control Board to obtain unequivocal consent for the transfer of the specified agricultural or controlled land, where applicable.</p>
@@ -89,6 +177,40 @@
                                     <button type="button" id="clear-btn" class="btn btn-outline-secondary me-2">Clear Drawing</button>
                                     <button type="submit" id="save-btn" class="btn btn-primary fw-bold">Sign & Accept Legal Terms</button>
                                 </form>
+                            {% endif %}
+
+                            {% if transaction.is_joint_purchase and transaction.joint_group and user == transaction.buyer %}
+                            <hr class="my-4">
+                            <h4>Co-buyer signatures</h4>
+                            <p class="text-muted small mb-3">As group leader, capture each co-buyer’s signature below. Contract finalizes only after all co-buyers and the seller have signed.</p>
+
+                            {% for row in joint_breakdown %}
+                              {% if not row.member.has_signed %}
+                              <div class="signature-pad-wrap mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                  <div class="fw-semibold">
+                                    <i class="bi bi-pen"></i> {{ row.member.full_name }}
+                                    <span class="text-muted small">({{ row.member.id_number }})</span>
+                                  </div>
+                                  <span class="badge bg-info">{{ row.member.share_percentage }}%</span>
+                                </div>
+                                <canvas id="joint-pad-{{ row.member.id }}" class="signature-pad bg-white border shadow-sm" style="height: 160px; touch-action: none;"></canvas>
+                                <div class="d-flex gap-2 mt-2">
+                                  <button type="button" class="btn btn-sm btn-outline-secondary w-50" id="clear-joint-{{ row.member.id }}">
+                                    Clear
+                                  </button>
+                                  <form method="POST" class="w-50" id="joint-form-{{ row.member.id }}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="joint_member_id" value="{{ row.member.id }}">
+                                    <input type="hidden" name="joint_signature_data" id="joint_sig_{{ row.member.id }}">
+                                    <button type="submit" class="btn btn-sm btn-primary fw-bold w-100">
+                                      Save signature
+                                    </button>
+                                  </form>
+                                </div>
+                              </div>
+                              {% endif %}
+                            {% endfor %}
                             {% endif %}
                         </div>
                         
@@ -199,6 +321,28 @@
                 if (sellerPad) document.getElementById('seller_signature_data').value = sellerPad.toDataURL();
             });
         }
+
+        // Joint member pads (leader capture)
+        {% if transaction.is_joint_purchase and transaction.joint_group and joint_breakdown %}
+        var jointPads = {};
+        {% for row in joint_breakdown %}
+          {% if not row.member.has_signed %}
+            jointPads["{{ row.member.id }}"] = initPad('joint-pad-{{ row.member.id }}', 'clear-joint-{{ row.member.id }}');
+            var jf = document.getElementById('joint-form-{{ row.member.id }}');
+            if (jf) {
+              jf.addEventListener('submit', function(e) {
+                var memberId = this.querySelector('input[name="joint_member_id"]').value;
+                var pad = jointPads[memberId];
+                if (!pad || pad.isEmpty()) {
+                  e.preventDefault(); alert("Please capture the co-buyer signature before saving.");
+                } else {
+                  document.getElementById('joint_sig_' + memberId).value = pad.toDataURL();
+                }
+              });
+            }
+          {% endif %}
+        {% endfor %}
+        {% endif %}
     });
 </script>
 {% endblock %}
