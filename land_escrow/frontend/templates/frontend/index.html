@@ -888,6 +888,29 @@
     </div>
 </div>
 
+<div class="row g-4 mt-1">
+    <div class="col-md-6">
+        <a href="{% url 'frontend:recommendations' %}" class="quick-link-card" style="border-color:rgba(16,185,129,.25)">
+            <span class="icon-chip tone-accent"><i class="bi bi-stars"></i></span>
+            <div>
+                <span class="quick-link-eyebrow">AI-Powered</span>
+                <div class="quick-link-title">Recommended for you</div>
+                <p class="quick-link-copy">Personalized parcel picks based on your browsing activity.</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6">
+        <a href="{% url 'frontend:price_prediction' %}" class="quick-link-card" style="border-color:rgba(99,102,241,.25)">
+            <span class="icon-chip tone-info"><i class="bi bi-graph-up-arrow"></i></span>
+            <div>
+                <span class="quick-link-eyebrow">Machine Learning</span>
+                <div class="quick-link-title">Price Estimator</div>
+                <p class="quick-link-copy">AI-predicted land values across all 47 Kenyan counties.</p>
+            </div>
+        </a>
+    </div>
+</div>
+
 {% if transactions %}
 <section class="card mt-5">
     <div class="card-header bg-dark d-flex align-items-center justify-content-between">

@@ -35,13 +35,22 @@
                             <td>{% if user == tx.buyer %}Buyer{% elif user == tx.seller %}Seller{% endif %}</td>
                             <td>KES {{ tx.agreed_price }}</td>
                             <td>
-                                <span class="badge {% if tx.status == 'Completed' %}bg-success{% elif tx.status == 'Disputed' %}bg-danger{% elif tx.status == 'Deposit_Paid' %}bg-info{% else %}bg-warning text-dark{% endif %} p-2">
-                                    {{ tx.status|title }}
+                                <span class="badge
+                                    {% if tx.status == 'Completed' %}bg-success
+                                    {% elif tx.status == 'Disputed' %}bg-danger
+                                    {% elif tx.status == 'Deposit_Paid' %}bg-info
+                                    {% elif tx.status == 'Reversed' %}bg-danger
+                                    {% elif tx.status == 'Refunded' %}bg-warning text-dark
+                                    {% elif tx.status == 'Verification_Hiatus' %}bg-secondary
+                                    {% else %}bg-warning text-dark{% endif %} p-2">
+                                    {{ tx.get_status_display }}
                                 </span>
                             </td>
                             <td>{{ tx.created_at|date:"M d, Y" }}</td>
                             <td class="text-end pe-4">
-                                {% if tx.status != 'Completed' and tx.status != 'Refunded' %}
+                                {% if tx.status == 'Reversed' or tx.status == 'Refunded' or tx.status == 'Disputed' %}
+                                    <a href="{% url 'frontend:transaction_failed' tx.id %}" class="btn btn-sm btn-outline-danger fw-bold"><i class="bi bi-exclamation-triangle"></i> View Details</a>
+                                {% elif tx.status != 'Completed' %}
                                     {% if user == tx.buyer and not tx.buyer_signature %}
                                     <a href="{% url 'frontend:sign_contract' tx.id %}" class="btn btn-sm btn-primary fw-bold"><i class="bi bi-pen"></i> Sign Agreement</a>
                                     {% elif user == tx.seller and not tx.seller_signature %}

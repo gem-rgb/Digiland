@@ -1,0 +1,207 @@
+county,constituency,land_use,size_acres,price_per_acre,distance_to_nairobi_km,has_road_access,has_water,has_electricity
+Nairobi,Westlands,Commercial,0.25,350000000,0,1,1,1
+Nairobi,Westlands,Commercial,0.5,280000000,0,1,1,1
+Nairobi,Westlands,Residential,0.5,200000000,0,1,1,1
+Nairobi,Langata,Residential,0.25,150000000,8,1,1,1
+Nairobi,Langata,Residential,1.0,120000000,10,1,1,1
+Nairobi,Karen,Residential,1.0,80000000,15,1,1,1
+Nairobi,Karen,Residential,2.0,70000000,18,1,1,1
+Nairobi,Karen,Residential,5.0,55000000,20,1,1,1
+Nairobi,Kilimani,Commercial,0.25,400000000,3,1,1,1
+Nairobi,Kilimani,Residential,0.5,250000000,3,1,1,1
+Nairobi,Upper Hill,Commercial,0.5,500000000,2,1,1,1
+Nairobi,Upper Hill,Commercial,0.25,450000000,2,1,1,1
+Nairobi,Dagoretti,Residential,0.5,60000000,12,1,1,1
+Nairobi,Dagoretti,Agricultural,2.0,40000000,15,1,1,1
+Nairobi,Embakasi,Residential,0.25,35000000,14,1,1,1
+Nairobi,Embakasi,Commercial,0.5,50000000,14,1,1,1
+Nairobi,Kasarani,Residential,0.5,30000000,16,1,1,1
+Nairobi,Kasarani,Residential,0.25,35000000,14,1,1,1
+Nairobi,Ruaraka,Residential,0.25,45000000,10,1,1,1
+Nairobi,Roysambu,Residential,0.5,28000000,15,1,1,1
+Kiambu,Ruiru,Residential,0.25,15000000,25,1,1,1
+Kiambu,Ruiru,Residential,0.5,12000000,28,1,1,1
+Kiambu,Ruiru,Commercial,0.5,20000000,25,1,1,1
+Kiambu,Juja,Residential,0.25,8000000,35,1,1,1
+Kiambu,Juja,Residential,0.5,6500000,38,1,1,1
+Kiambu,Juja,Agricultural,5.0,4000000,40,1,1,1
+Kiambu,Thika,Residential,0.5,7000000,42,1,1,1
+Kiambu,Thika,Commercial,0.25,12000000,40,1,1,1
+Kiambu,Thika,Agricultural,2.0,5000000,45,1,1,0
+Kiambu,Limuru,Residential,1.0,10000000,30,1,1,1
+Kiambu,Limuru,Agricultural,5.0,6000000,35,1,1,0
+Kiambu,Kikuyu,Residential,0.5,18000000,20,1,1,1
+Kiambu,Kikuyu,Agricultural,2.0,12000000,22,1,1,1
+Kiambu,Gatundu,Agricultural,2.0,3500000,55,1,0,1
+Kiambu,Gatundu,Residential,0.5,5000000,50,1,1,1
+Kajiado,Kitengela,Residential,0.125,8000000,30,1,1,1
+Kajiado,Kitengela,Residential,0.25,6500000,32,1,1,1
+Kajiado,Kitengela,Commercial,0.5,12000000,28,1,1,1
+Kajiado,Ongata Rongai,Residential,0.25,10000000,22,1,1,1
+Kajiado,Ongata Rongai,Residential,0.5,8000000,25,1,1,1
+Kajiado,Ngong,Residential,0.25,12000000,20,1,1,1
+Kajiado,Ngong,Residential,0.5,9000000,22,1,1,1
+Kajiado,Kiserian,Residential,0.5,5000000,30,1,1,1
+Kajiado,Kiserian,Agricultural,2.0,3500000,35,1,0,0
+Kajiado,Kajiado Town,Agricultural,5.0,1200000,80,1,0,0
+Kajiado,Kajiado Town,Residential,1.0,2000000,75,1,1,0
+Kajiado,Namanga,Agricultural,10.0,500000,160,1,0,0
+Kajiado,Loitokitok,Agricultural,20.0,350000,200,0,0,0
+Machakos,Syokimau,Residential,0.25,10000000,18,1,1,1
+Machakos,Syokimau,Commercial,0.5,15000000,16,1,1,1
+Machakos,Athi River,Residential,0.25,6000000,25,1,1,1
+Machakos,Athi River,Commercial,0.5,10000000,22,1,1,1
+Machakos,Mlolongo,Residential,0.25,5000000,20,1,1,1
+Machakos,Machakos Town,Residential,0.5,3500000,60,1,1,1
+Machakos,Machakos Town,Commercial,0.25,5000000,58,1,1,1
+Machakos,Kangundo,Agricultural,5.0,800000,70,1,0,0
+Machakos,Yatta,Agricultural,10.0,400000,100,0,0,0
+Nakuru,Nakuru Town,Commercial,0.5,15000000,160,1,1,1
+Nakuru,Nakuru Town,Residential,0.25,8000000,155,1,1,1
+Nakuru,Nakuru Town,Residential,0.5,6000000,158,1,1,1
+Nakuru,Naivasha,Residential,0.5,4000000,90,1,1,1
+Nakuru,Naivasha,Agricultural,5.0,2500000,95,1,1,0
+Nakuru,Naivasha,Commercial,0.25,7000000,88,1,1,1
+Nakuru,Gilgil,Residential,1.0,2000000,120,1,1,0
+Nakuru,Gilgil,Agricultural,10.0,1200000,125,1,0,0
+Nakuru,Njoro,Agricultural,5.0,1500000,175,1,0,0
+Nakuru,Subukia,Agricultural,10.0,800000,180,1,0,0
+Nakuru,Molo,Agricultural,5.0,1800000,190,1,1,0
+Mombasa,Nyali,Residential,0.25,40000000,480,1,1,1
+Mombasa,Nyali,Commercial,0.5,55000000,480,1,1,1
+Mombasa,Bamburi,Residential,0.25,25000000,485,1,1,1
+Mombasa,Kisauni,Residential,0.5,15000000,490,1,1,1
+Mombasa,Likoni,Residential,0.5,8000000,485,1,1,1
+Mombasa,Changamwe,Commercial,1.0,20000000,478,1,1,1
+Mombasa,Mvita,Commercial,0.25,60000000,482,1,1,1
+Kilifi,Malindi,Residential,0.5,5000000,560,1,1,1
+Kilifi,Malindi,Commercial,0.25,8000000,558,1,1,1
+Kilifi,Watamu,Residential,1.0,3500000,540,1,1,0
+Kilifi,Kilifi Town,Residential,0.5,4000000,520,1,1,1
+Kilifi,Kilifi Town,Agricultural,5.0,1500000,525,1,0,0
+Kilifi,Mtwapa,Residential,0.25,12000000,500,1,1,1
+Kwale,Diani,Residential,0.5,8000000,510,1,1,1
+Kwale,Diani,Commercial,0.25,15000000,508,1,1,1
+Kwale,Ukunda,Residential,0.5,4000000,515,1,1,0
+Kwale,Kwale Town,Agricultural,5.0,600000,530,1,0,0
+Kisumu,Kisumu Central,Commercial,0.5,15000000,340,1,1,1
+Kisumu,Kisumu Central,Residential,0.25,8000000,338,1,1,1
+Kisumu,Kisumu Central,Residential,0.5,6000000,340,1,1,1
+Kisumu,Nyando,Agricultural,5.0,1200000,350,1,0,0
+Kisumu,Muhoroni,Agricultural,10.0,800000,360,1,0,0
+Uasin Gishu,Eldoret,Commercial,0.5,12000000,310,1,1,1
+Uasin Gishu,Eldoret,Residential,0.25,6000000,308,1,1,1
+Uasin Gishu,Eldoret,Residential,0.5,4500000,312,1,1,1
+Uasin Gishu,Eldoret,Agricultural,5.0,2500000,320,1,1,0
+Uasin Gishu,Kapseret,Residential,1.0,3000000,315,1,1,0
+Uasin Gishu,Moiben,Agricultural,10.0,1500000,340,1,0,0
+Laikipia,Nanyuki,Residential,1.0,3500000,200,1,1,1
+Laikipia,Nanyuki,Commercial,0.5,6000000,198,1,1,1
+Laikipia,Nanyuki,Residential,5.0,2500000,205,1,1,0
+Laikipia,Rumuruti,Agricultural,10.0,800000,240,1,0,0
+Laikipia,Doldol,Agricultural,20.0,300000,260,0,0,0
+Nyandarua,Ol Kalou,Agricultural,5.0,1200000,140,1,0,0
+Nyandarua,Engineer,Agricultural,10.0,900000,150,1,0,0
+Nyandarua,Kinangop,Agricultural,5.0,1500000,130,1,1,0
+Nyeri,Nyeri Town,Residential,0.5,4000000,150,1,1,1
+Nyeri,Nyeri Town,Commercial,0.25,7000000,148,1,1,1
+Nyeri,Othaya,Agricultural,5.0,2000000,165,1,1,0
+Nyeri,Karatina,Residential,0.5,3000000,140,1,1,1
+Murang_a,Murang_a Town,Residential,0.5,3500000,80,1,1,1
+Murang_a,Murang_a Town,Commercial,0.25,5000000,78,1,1,1
+Murang_a,Kenol,Residential,0.5,2500000,75,1,1,1
+Murang_a,Kangema,Agricultural,5.0,1500000,100,1,0,0
+Kirinyaga,Kerugoya,Residential,0.5,2500000,115,1,1,1
+Kirinyaga,Kerugoya,Commercial,0.25,4000000,113,1,1,1
+Kirinyaga,Wanguru,Agricultural,5.0,1200000,130,1,1,0
+Embu,Embu Town,Residential,0.5,3000000,130,1,1,1
+Embu,Embu Town,Commercial,0.25,5000000,128,1,1,1
+Embu,Runyenjes,Agricultural,5.0,1500000,145,1,0,0
+Meru,Meru Town,Residential,0.5,3000000,220,1,1,1
+Meru,Meru Town,Commercial,0.25,5000000,218,1,1,1
+Meru,Nkubu,Residential,1.0,2000000,230,1,1,0
+Meru,Timau,Agricultural,10.0,1200000,250,1,0,0
+Tharaka Nithi,Chuka,Residential,0.5,2000000,195,1,1,1
+Tharaka Nithi,Chuka,Agricultural,5.0,800000,200,1,0,0
+Isiolo,Isiolo Town,Residential,0.5,1500000,270,1,1,1
+Isiolo,Isiolo Town,Commercial,0.25,2500000,268,1,1,1
+Isiolo,Merti,Agricultural,20.0,150000,350,0,0,0
+Marsabit,Marsabit Town,Residential,1.0,800000,560,1,1,0
+Marsabit,Moyale,Commercial,0.5,1200000,780,1,1,0
+Marsabit,Loiyangalani,Agricultural,20.0,100000,600,0,0,0
+Samburu,Maralal,Residential,1.0,700000,350,1,1,0
+Samburu,Maralal,Agricultural,10.0,250000,360,0,0,0
+Turkana,Lodwar,Residential,1.0,500000,750,1,1,0
+Turkana,Lodwar,Commercial,0.5,800000,748,1,1,0
+Turkana,Kakuma,Agricultural,20.0,100000,800,0,0,0
+West Pokot,Kapenguria,Residential,1.0,800000,380,1,1,0
+West Pokot,Kapenguria,Agricultural,10.0,300000,390,1,0,0
+Baringo,Kabarnet,Residential,1.0,1200000,290,1,1,0
+Baringo,Eldama Ravine,Agricultural,5.0,800000,250,1,0,0
+Baringo,Marigat,Agricultural,10.0,400000,300,1,0,0
+Elgeyo Marakwet,Iten,Residential,1.0,1500000,340,1,1,0
+Elgeyo Marakwet,Kapsowar,Agricultural,5.0,600000,360,1,0,0
+Nandi,Kapsabet,Residential,0.5,2000000,330,1,1,1
+Nandi,Kapsabet,Agricultural,5.0,1200000,335,1,0,0
+Trans Nzoia,Kitale,Residential,0.5,3000000,370,1,1,1
+Trans Nzoia,Kitale,Commercial,0.25,5000000,368,1,1,1
+Trans Nzoia,Kitale,Agricultural,5.0,2000000,375,1,1,0
+Bungoma,Bungoma Town,Residential,0.5,2500000,400,1,1,1
+Bungoma,Bungoma Town,Commercial,0.25,4000000,398,1,1,1
+Bungoma,Webuye,Agricultural,5.0,1000000,385,1,0,0
+Kakamega,Kakamega Town,Residential,0.5,2500000,380,1,1,1
+Kakamega,Kakamega Town,Commercial,0.25,4000000,378,1,1,1
+Kakamega,Mumias,Agricultural,5.0,1200000,400,1,0,0
+Vihiga,Mbale,Residential,0.5,2000000,370,1,1,1
+Vihiga,Mbale,Agricultural,2.0,1500000,375,1,0,0
+Busia,Busia Town,Residential,0.5,1800000,440,1,1,1
+Busia,Busia Town,Commercial,0.25,3000000,438,1,1,1
+Busia,Malaba,Commercial,0.5,2500000,450,1,1,0
+Siaya,Siaya Town,Residential,0.5,1500000,370,1,1,1
+Siaya,Bondo,Agricultural,5.0,600000,380,1,0,0
+Homa Bay,Homa Bay Town,Residential,0.5,1800000,380,1,1,1
+Homa Bay,Homa Bay Town,Commercial,0.25,3000000,378,1,1,1
+Migori,Migori Town,Residential,0.5,1500000,400,1,1,1
+Migori,Migori Town,Agricultural,5.0,800000,410,1,0,0
+Nyamira,Nyamira Town,Residential,0.5,2000000,330,1,1,1
+Nyamira,Nyamira Town,Agricultural,5.0,1200000,340,1,0,0
+Kisii,Kisii Town,Residential,0.5,3000000,320,1,1,1
+Kisii,Kisii Town,Commercial,0.25,5000000,318,1,1,1
+Kisii,Ogembo,Agricultural,5.0,1500000,330,1,0,0
+Kericho,Kericho Town,Residential,0.5,2500000,280,1,1,1
+Kericho,Kericho Town,Commercial,0.25,4000000,278,1,1,1
+Kericho,Litein,Agricultural,5.0,1500000,290,1,0,0
+Bomet,Bomet Town,Residential,0.5,2000000,260,1,1,1
+Bomet,Bomet Town,Agricultural,5.0,1000000,270,1,0,0
+Narok,Narok Town,Residential,0.5,2500000,150,1,1,1
+Narok,Narok Town,Commercial,0.25,4000000,148,1,1,1
+Narok,Narok Town,Agricultural,5.0,1200000,155,1,0,0
+Narok,Maasai Mara,Agricultural,20.0,500000,220,0,0,0
+Lamu,Lamu Town,Residential,0.5,3000000,600,1,1,0
+Lamu,Mpeketoni,Agricultural,10.0,400000,580,1,0,0
+Tana River,Hola,Agricultural,10.0,200000,400,1,0,0
+Tana River,Garsen,Agricultural,20.0,150000,430,0,0,0
+Garissa,Garissa Town,Residential,1.0,1500000,370,1,1,0
+Garissa,Garissa Town,Commercial,0.5,2500000,368,1,1,0
+Garissa,Dadaab,Agricultural,20.0,100000,500,0,0,0
+Wajir,Wajir Town,Residential,1.0,800000,640,1,1,0
+Wajir,Wajir Town,Commercial,0.5,1200000,638,1,1,0
+Mandera,Mandera Town,Residential,1.0,600000,900,1,1,0
+Mandera,Mandera Town,Commercial,0.5,1000000,898,1,1,0
+Taita Taveta,Voi,Residential,0.5,2000000,330,1,1,1
+Taita Taveta,Voi,Commercial,0.25,3500000,328,1,1,1
+Taita Taveta,Taveta,Agricultural,10.0,500000,380,1,0,0
+Makueni,Wote,Residential,0.5,1500000,170,1,1,0
+Makueni,Wote,Agricultural,5.0,600000,180,1,0,0
+Makueni,Sultan Hamud,Agricultural,10.0,400000,150,1,0,0
+Kitui,Kitui Town,Residential,0.5,1500000,180,1,1,0
+Kitui,Kitui Town,Commercial,0.25,2500000,178,1,1,0
+Kitui,Mwingi,Agricultural,10.0,300000,220,1,0,0
+Kitui,Mutomo,Agricultural,20.0,150000,260,0,0,0
+Tharaka Nithi,Marimanti,Agricultural,10.0,400000,230,1,0,0
+Nyandarua,Ol Joro Orok,Agricultural,10.0,1000000,120,1,0,0
+Nyeri,Mukurweini,Agricultural,2.0,2500000,155,1,1,0
+Kiambu,Karuri,Residential,0.25,20000000,18,1,1,1
+Kajiado,Isinya,Residential,0.5,3000000,50,1,1,0
+Kajiado,Isinya,Agricultural,5.0,1500000,55,1,0,0
+Nakuru,Rongai,Agricultural,5.0,1000000,200,1,0,0

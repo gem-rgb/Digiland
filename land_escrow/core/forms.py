@@ -74,22 +74,11 @@ class CustomSignupForm(forms.Form):
 
     def clean_kra_pin(self):
         value = self.cleaned_data['kra_pin'].strip().upper()
-        # Rule-based format validation
+        # Format-only validation (Letter + 9 digits + Letter)
         if not re.fullmatch(r'[A-Z]\d{9}[A-Z]', value):
             raise forms.ValidationError(
                 'KRA PIN must be 11 characters: Letter + 9 digits + Letter (e.g. A123456789B).'
             )
-        # Optional: KRA API Pin Checker (graceful fallback to rules-only if API is down)
-        try:
-            resp = requests.get(
-                f'https://itax.kra.go.ke/KRA-Portal/pinChecker.htm?taxPayerPin={value}',
-                timeout=5,
-            )
-            if resp.status_code == 200 and 'Invalid' in resp.text:
-                raise forms.ValidationError('This KRA PIN was not found in the KRA database.')
-        except requests.RequestException:
-            # API unreachable — rely on format validation only
-            logger.info(f'KRA PIN Checker API unavailable, using format validation for {value[:3]}***')
         return value
 
     def signup(self, request, user):
@@ -148,3 +137,22 @@ class AgentKYCForm(forms.ModelForm):
         help_texts = {
             'practicing_certificate': 'Upload only if you hold a current LSK or Real Estate Board certificate.',
         }
+
+    def clean_kra_pin(self):
+        value = self.cleaned_data['kra_pin'].strip().upper()
+        # Format validation
+        if not re.fullmatch(r'[A-Z]\d{9}[A-Z]', value):
+            raise forms.ValidationError(
+                'KRA PIN must be 11 characters: Letter + 9 digits + Letter (e.g. A123456789B).'
+            )
+        # KRA database verification (graceful fallback if API is down)
+        try:
+            resp = requests.get(
+                f'https://itax.kra.go.ke/KRA-Portal/pinChecker.htm?taxPayerPin={value}',
+                timeout=5,
+            )
+            if resp.status_code == 200 and 'Invalid' in resp.text:
+                raise forms.ValidationError('This KRA PIN was not found in the KRA database.')
+        except requests.RequestException:
+            logger.info(f'KRA PIN Checker API unavailable, using format validation for {value[:3]}***')
+        return value

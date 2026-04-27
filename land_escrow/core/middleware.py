@@ -41,6 +41,8 @@ AGENT_VERIFIED_EXEMPT = {
     '/transactions/',
     '/messages/',
     '/support/',
+    '/recommendations/',
+    '/price-prediction/',
     # Informational pages
     '/about/',
     '/architecture/',

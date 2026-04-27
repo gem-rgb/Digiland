@@ -390,3 +390,30 @@ class Message(models.Model):
 
     def __str__(self):
         return f"From {self.sender.email} to {self.receiver.email}"
+
+
+class ParcelView(models.Model):
+    """Tracks parcel detail page views for the recommendation engine."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='parcel_views')
+    parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='views')
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-viewed_at']
+
+    def __str__(self):
+        return f"{self.user.email} viewed {self.parcel.parcel_number}"
+
+
+class UserFavorite(models.Model):
+    """Explicit save/favorite signal for the recommendation engine."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
+    parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='favorited_by')
+    saved_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'parcel')
+        ordering = ['-saved_at']
+
+    def __str__(self):
+        return f"{self.user.email} saved {self.parcel.parcel_number}"

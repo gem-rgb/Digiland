@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
-from core.models import LandParcel, Transaction, Message, SupportTicket, Document, User as CoreUser, AgentKYCApplication, AgentRating
+from core.models import LandParcel, Transaction, Message, SupportTicket, Document, User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite
 from .forms import LandParcelUploadForm
 from core.forms import DocumentUploadForm
 
@@ -349,7 +349,7 @@ def task_management(request):
 def agent_verify_parcel(request, parcel_number):
     parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
     if request.method == 'POST':
-        action = request.POST.get('action')
+        action = request.POST.get('verify_action') or request.POST.get('action')
         if action == 'verify':
             parcel.verification_status = 'Verified'
         elif action == 'reject':
@@ -697,15 +697,51 @@ def initiate_escrow(request, parcel_number):
                 'status': 'Under_Verification'
             }
         )
-        # Instantly slingshot the Buyer into the Cryptographic Signatures terminal
-        return redirect('frontend:sign_contract', transaction_id=tx.id)
+        # Redirect Buyer to Payment Onboarding instead of Sign Contract
+        return redirect('frontend:payment_onboarding', transaction_id=tx.id)
         
     return redirect('frontend:parcel_detail', parcel_number=parcel_number)
 
 @login_required
 def parcel_detail(request, parcel_number):
     parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
-    return render(request, 'frontend/parcel_detail.html', {'parcel': parcel})
+
+    # Track page view for the recommendation engine (Buyers only, max 1 per 5 minutes)
+    if request.user.role == 'Buyer':
+        from django.utils import timezone
+        from datetime import timedelta
+        recent_cutoff = timezone.now() - timedelta(minutes=5)
+        already_viewed = ParcelView.objects.filter(
+            user=request.user, parcel=parcel, viewed_at__gte=recent_cutoff
+        ).exists()
+        if not already_viewed:
+            ParcelView.objects.create(user=request.user, parcel=parcel)
+
+    # Check if user has favorited this parcel
+    is_favorited = False
+    if request.user.is_authenticated:
+        is_favorited = UserFavorite.objects.filter(user=request.user, parcel=parcel).exists()
+
+    # Get AI price estimate
+    ai_price = None
+    try:
+        from core.services.price_prediction import predict_price
+        result = predict_price(
+            county=parcel.county,
+            constituency=parcel.constituency,
+            land_use=parcel.land_use_type,
+            size_acres=float(parcel.land_size),
+        )
+        if 'error' not in result:
+            ai_price = result
+    except Exception:
+        pass
+
+    return render(request, 'frontend/parcel_detail.html', {
+        'parcel': parcel,
+        'is_favorited': is_favorited,
+        'ai_price': ai_price,
+    })
 
 @login_required
 def user_transactions(request):
@@ -864,8 +900,8 @@ def sign_contract(request, transaction_id):
 def payment_onboarding(request, transaction_id):
     transaction = get_object_or_404(Transaction, id=transaction_id)
     
-    # Security: Only the Buyer can pay (or Admin verifying), and only if contract is signed
-    if (request.user != transaction.buyer and request.user.role != 'Admin') or not transaction.contract_agreed:
+    # Security: Only the Buyer can pay (or Admin verifying)
+    if (request.user != transaction.buyer and request.user.role != 'Admin'):
         return redirect('frontend:transactions')
         
     if transaction.status != 'Under_Verification':
@@ -877,7 +913,7 @@ def payment_onboarding(request, transaction_id):
 def payment_checkout(request, transaction_id):
     transaction = get_object_or_404(Transaction, id=transaction_id)
     
-    if (request.user != transaction.buyer and request.user.role != 'Admin') or not transaction.contract_agreed:
+    if (request.user != transaction.buyer and request.user.role != 'Admin'):
         return redirect('frontend:transactions')
         
     if transaction.status != 'Under_Verification':
@@ -896,7 +932,7 @@ def process_payment(request, transaction_id):
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     
     if request.method == 'POST' and (request.user == transaction.buyer or request.user.role == 'Admin'):
-        if transaction.contract_agreed and transaction.status == 'Under_Verification':
+        if transaction.status == 'Under_Verification':
             phone_number = request.POST.get('phone_number', '').strip()
             
             if not phone_number:
@@ -949,13 +985,15 @@ def process_payment(request, transaction_id):
                     
                     if is_ajax:
                         return JsonResponse({'status': 'error', 'message': error_msg})
-                    return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+                    from django.utils.http import urlencode
+                    return redirect(f"{reverse('frontend:transaction_failed', args=[transaction.id])}?reason={urlencode({'': error_msg})[1:]}")
                     
             except Exception as e:
                 logger.error(f"Payment processing error for transaction {transaction.id}: {str(e)}")
                 if is_ajax:
                     return JsonResponse({'status': 'error', 'message': f'Payment processing error: {str(e)}'})
-                return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+                from django.utils.http import urlencode
+                return redirect(f"{reverse('frontend:transaction_failed', args=[transaction.id])}?reason={urlencode({'': str(e)})[1:]}")
     
     if is_ajax:
         return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
@@ -1063,3 +1101,145 @@ def send_admin_message(request):
         messages.error(request, f'Failed to send message: {email_message}')
     
     return redirect('frontend:agent_dashboard')
+
+
+@login_required
+def transaction_failed(request, transaction_id):
+    """Dedicated page showing why a transaction failed/was reversed/refunded/disputed."""
+    transaction = get_object_or_404(Transaction, id=transaction_id)
+
+    # Security: Only involved parties or Admin/Agent can view
+    if request.user not in [transaction.buyer, transaction.seller] and request.user.role not in ['Admin', 'Agent']:
+        return redirect('frontend:transactions')
+
+    # Build human-readable status label
+    STATUS_LABELS = {
+        'Reversed': 'Reversed by Admin',
+        'Refunded': 'Refunded',
+        'Disputed': 'Under Dispute',
+    }
+    status_label = STATUS_LABELS.get(transaction.status, 'Failed')
+
+    # Reason can come from query param (for payment failures) or model fields
+    reason = request.GET.get('reason', '')
+    if not reason and transaction.reversal_reason:
+        reason = transaction.reversal_reason
+
+    context = {
+        'transaction': transaction,
+        'status_label': status_label,
+        'reason': reason,
+    }
+    return render(request, 'frontend/transaction_failed.html', context)
+
+
+@login_required
+def recommendations(request):
+    """Personalized parcel recommendations for Buyers."""
+    from core.services.recommendation import get_recommendations, get_popular_in_county, get_recently_viewed
+
+    recommended = []
+    rec_type = 'popular'
+    popular_parcels = []
+    popular_county = 'Nairobi'
+    recently_viewed = []
+
+    try:
+        recommended, rec_type = get_recommendations(request.user, limit=12)
+        popular_parcels, popular_county = get_popular_in_county(request.user, limit=6)
+        recently_viewed = get_recently_viewed(request.user, limit=6)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Recommendation error: {e}")
+
+    context = {
+        'recommended': recommended,
+        'rec_type': rec_type,
+        'popular_parcels': popular_parcels,
+        'popular_county': popular_county,
+        'recently_viewed': recently_viewed,
+    }
+    return render(request, 'frontend/recommendations.html', context)
+
+
+@login_required
+def price_prediction(request):
+    """Interactive land price prediction tool."""
+    from core.services.price_prediction import (
+        predict_price, KENYA_COUNTIES, LAND_USE_TYPES,
+        get_county_averages, get_model_info
+    )
+
+    prediction = None
+    form_data = {}
+
+    if request.method == 'POST':
+        county = request.POST.get('county', '').strip()
+        constituency = request.POST.get('constituency', '').strip()
+        land_use = request.POST.get('land_use', '').strip()
+        size_acres = request.POST.get('size_acres', '1')
+        has_road = request.POST.get('has_road_access') == 'on'
+        has_water = request.POST.get('has_water') == 'on'
+        has_electricity = request.POST.get('has_electricity') == 'on'
+
+        form_data = {
+            'county': county,
+            'constituency': constituency,
+            'land_use': land_use,
+            'size_acres': size_acres,
+            'has_road_access': has_road,
+            'has_water': has_water,
+            'has_electricity': has_electricity,
+        }
+
+        try:
+            size = float(size_acres)
+            prediction = predict_price(
+                county=county,
+                constituency=constituency if constituency else county,
+                land_use=land_use,
+                size_acres=size,
+                has_road_access=has_road,
+                has_water=has_water,
+                has_electricity=has_electricity,
+            )
+        except (ValueError, TypeError) as e:
+            prediction = {'error': f'Invalid input: {e}'}
+
+    model_info = get_model_info()
+
+    context = {
+        'counties': KENYA_COUNTIES,
+        'land_use_types': LAND_USE_TYPES,
+        'prediction': prediction,
+        'form_data': form_data,
+        'model_info': model_info,
+    }
+    return render(request, 'frontend/price_prediction.html', context)
+
+
+@login_required
+def toggle_favorite(request, parcel_number):
+    """Toggle a parcel as favorite/saved for the current user."""
+    from django.http import JsonResponse
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
+
+    existing = UserFavorite.objects.filter(user=request.user, parcel=parcel)
+    if existing.exists():
+        existing.delete()
+        is_favorited = False
+    else:
+        UserFavorite.objects.create(user=request.user, parcel=parcel)
+        is_favorited = True
+
+    # Support both AJAX and regular form submission
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    if is_ajax:
+        return JsonResponse({'is_favorited': is_favorited})
+
+    return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+

@@ -91,10 +91,10 @@
                     <p class="text-muted mb-4">Review the compliance file and decide whether this listing is ready to move into a verified state.</p>
                     <form method="POST" action="{% url 'frontend:agent_verify_parcel' parcel.parcel_number %}" class="d-flex flex-wrap gap-2">
                         {% csrf_token %}
-                        <button type="submit" name="action" value="verify" class="btn btn-dark">
+                        <button type="submit" name="verify_action" value="verify" class="btn btn-dark">
                             <i class="bi bi-check-circle"></i>Approve Deed and Title
                         </button>
-                        <button type="submit" name="action" value="reject" class="btn btn-outline-danger">
+                        <button type="submit" name="verify_action" value="reject" class="btn btn-outline-danger">
                             <i class="bi bi-x-circle"></i>Flag as Fraudulent
                         </button>
                     </form>
@@ -243,10 +243,10 @@
                     <form method="POST" action="{% url 'frontend:agent_verify_parcel' parcel.parcel_number %}">
                         {% csrf_token %}
                         <div class="d-grid gap-2">
-                            <button type="submit" name="action" value="verify" class="btn btn-success">
+                            <button type="submit" name="verify_action" value="verify" class="btn btn-success">
                                 <i class="bi bi-check-circle"></i>Approve — Verified
                             </button>
-                            <button type="submit" name="action" value="reject" class="btn btn-outline-danger"
+                            <button type="submit" name="verify_action" value="reject" class="btn btn-outline-danger"
                                 onclick="return confirm('Flag this parcel as fraudulent? This action cannot be easily undone.')">
                                 <i class="bi bi-x-circle"></i>Reject — Fraudulent
                             </button>
@@ -334,8 +334,16 @@
 
         {% elif user.is_authenticated and user.role == 'Buyer' %}
         <section class="card sidebar-card">
-            <div class="card-header bg-info">
+            <div class="card-header bg-info d-flex justify-content-between align-items-center">
                 <span><i class="bi bi-shield-lock me-2"></i>Purchase readiness</span>
+                <!-- Favorite Toggle -->
+                <form method="POST" action="{% url 'frontend:toggle_favorite' parcel.parcel_number %}" class="d-inline mb-0">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm {% if is_favorited %}btn-danger{% else %}btn-outline-light{% endif %} rounded-pill px-3" title="{% if is_favorited %}Remove from saved{% else %}Save parcel{% endif %}">
+                        <i class="bi {% if is_favorited %}bi-heart-fill{% else %}bi-heart{% endif %} me-1"></i>
+                        {% if is_favorited %}Saved{% else %}Save{% endif %}
+                    </button>
+                </form>
             </div>
             <div class="card-body">
                 <div class="text-center mb-4">
@@ -360,11 +368,32 @@
                         <span class="text-muted">Asking Price</span>
                         <strong>KES {{ parcel.displayed_price }}</strong>
                     </div>
+                    {% if ai_price %}
+                    <div class="summary-row">
+                        <span class="text-muted"><i class="bi bi-cpu me-1"></i>AI Estimate</span>
+                        <strong class="text-info">KES {{ ai_price.total_value|floatformat:0 }}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-muted">Per Acre</span>
+                        <span class="small text-muted">KES {{ ai_price.price_per_acre|floatformat:0 }}</span>
+                    </div>
+                    {% endif %}
                     <div class="summary-row">
                         <span class="text-muted">Size</span>
                         <strong>{{ parcel.land_size }} Acres</strong>
                     </div>
                 </div>
+
+                {% if ai_price %}
+                <div class="alert py-2 px-3 mb-3" style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:10px">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-graph-up-arrow text-success"></i>
+                        <small class="text-muted">
+                            AI confidence range: <strong class="text-light">KES {{ ai_price.confidence_low|floatformat:0 }} — {{ ai_price.confidence_high|floatformat:0 }}</strong>/acre
+                        </small>
+                    </div>
+                </div>
+                {% endif %}
 
                 <div class="alert alert-info small mb-4">
                     <i class="bi bi-info-circle me-1"></i>

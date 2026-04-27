@@ -217,7 +217,8 @@ function startPolling(checkoutRequestId) {
         
         if (pollCount > MAX_POLLS) {
             clearInterval(pollInterval);
-            showFailure('Payment timed out. The STK Push prompt may have expired. Please try again.');
+            // Redirect to failure page on timeout
+            window.location.href = `{% url 'frontend:transaction_failed' transaction.id %}?reason=Payment+timed+out.+The+STK+Push+prompt+may+have+expired.`;
             return;
         }
         
@@ -234,7 +235,9 @@ function startPolling(checkoutRequestId) {
                 showSuccess(data);
             } else if (data.payment_status === 'failed') {
                 clearInterval(pollInterval);
-                showFailure(data.message || 'Payment was declined or cancelled by the user.');
+                // Redirect to failure page
+                var failMsg = data.message || 'Payment was declined or cancelled by the user.';
+                window.location.href = `{% url 'frontend:transaction_failed' transaction.id %}?reason=${encodeURIComponent(failMsg)}`;
             }
             // 'pending' status - continue polling
         })
