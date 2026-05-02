@@ -223,11 +223,14 @@ function LegalCards(laws: NonNullable<typeof bootstrap.laws>) {
 
 function DashboardPage() {
   const role = bootstrap.user?.role || 'Buyer';
+  const isAdmin = role === 'Admin';
   const subtitle = role === 'Admin' || role === 'Agent'
     ? 'Monitor parcels, approvals, transactions, and messages from one workspace.'
     : role === 'Seller'
       ? 'Manage your listings, review buyer activity, and track escrow status.'
       : 'Browse land, review contracts, and manage joint purchase activity from one clean workspace.';
+
+  const pendingAgents = bootstrap.pending_agent_applications || [];
 
   return (
     <div className="space-y-6">
@@ -240,42 +243,103 @@ function DashboardPage() {
       />
       <StatGrid />
 
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      <Card className="bg-white/92">
+        <CardHeader>
+          <PanelTitle title="Recent transactions" subtitle="Latest escrow movement in your account." action={<a href="/transactions/" className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">Open register</a>} />
+        </CardHeader>
+        <CardContent className="p-0">
+          <TransactionTable />
+        </CardContent>
+      </Card>
+
+      {isAdmin && pendingAgents.length > 0 ? (
         <Card className="bg-white/92">
           <CardHeader>
-            <PanelTitle title="Recent parcels" subtitle="Verified listings and monitored parcels." action={<a href="/parcels/" className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">View all</a>} />
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                <ShieldAlert className="h-4 w-4" />
+              </div>
+              <div>
+                <CardTitle className="text-base">Agent Applications</CardTitle>
+                <CardDescription>{pendingAgents.length} pending KYC review{pendingAgents.length !== 1 ? 's' : ''}</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
-            <ParcelGrid />
+          <CardContent className="space-y-4">
+            {pendingAgents.map((agent: any) => (
+              <div key={agent.id} className="rounded-3xl border border-border bg-muted/30 p-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="font-bold text-foreground">{agent.email}</div>
+                    <div className="mt-1 text-sm text-muted-foreground">
+                      ID: {agent.id_number || '—'} · KRA: {agent.kra_pin || '—'} · Phone: {agent.phone_number || '—'}
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">Joined {agent.joined_at || '—'}</div>
+                  </div>
+                  <Badge tone={agent.kyc?.submitted ? 'warning' : 'danger'}>
+                    {agent.kyc?.status || 'No KYC'}
+                  </Badge>
+                </div>
+
+                {agent.kyc?.submitted ? (
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                    {agent.kyc.id_photo_url ? (
+                      <a href={agent.kyc.id_photo_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-2xl border border-border bg-white px-4 py-3 text-xs font-semibold text-foreground hover:bg-muted">
+                        <FileText className="h-4 w-4 text-emerald-700" /> ID Photo
+                      </a>
+                    ) : null}
+                    {agent.kyc.resume_url ? (
+                      <a href={agent.kyc.resume_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-2xl border border-border bg-white px-4 py-3 text-xs font-semibold text-foreground hover:bg-muted">
+                        <FileText className="h-4 w-4 text-blue-700" /> Resume / CV
+                      </a>
+                    ) : null}
+                    {agent.kyc.certificate_url ? (
+                      <a href={agent.kyc.certificate_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-2xl border border-border bg-white px-4 py-3 text-xs font-semibold text-foreground hover:bg-muted">
+                        <FileText className="h-4 w-4 text-purple-700" /> Good Conduct
+                      </a>
+                    ) : null}
+                    {agent.kyc.practicing_cert_url ? (
+                      <a href={agent.kyc.practicing_cert_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-2xl border border-border bg-white px-4 py-3 text-xs font-semibold text-foreground hover:bg-muted">
+                        <FileText className="h-4 w-4 text-amber-700" /> Practicing Cert
+                      </a>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="mt-3 rounded-2xl bg-rose-50 p-3 text-xs text-rose-700">KYC documents have not been submitted yet.</div>
+                )}
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {agent.kyc?.submitted ? (
+                    <form method="post" action={agent.approve_url}>
+                      <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+                      <Button type="submit" className="rounded-full bg-emerald-700 hover:bg-emerald-800">Approve Agent</Button>
+                    </form>
+                  ) : null}
+                  <form method="post" action={agent.reject_url}>
+                    <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+                    <Button type="submit" variant="outline" className="rounded-full border-rose-300 text-rose-700 hover:bg-rose-50">Reject</Button>
+                  </form>
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
+      ) : null}
 
-        <div className="space-y-6">
-          <Card className="bg-white/92">
-            <CardHeader>
-              <PanelTitle title="Recent transactions" subtitle="Latest escrow movement in your account." action={<a href="/transactions/" className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">Open register</a>} />
-            </CardHeader>
-            <CardContent className="p-0">
-              <TransactionTable />
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/92">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base"><ShieldCheck className="h-4 w-4 text-emerald-700" />Key actions</CardTitle>
-              <CardDescription>Shortcuts to the most common workflows.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-2">
-              {(bootstrap.actions || []).map((action) => (
-                <a key={action.href} href={action.href} className="flex items-center justify-between rounded-2xl border border-border bg-muted/45 px-4 py-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
-                  <span>{action.label}</span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                </a>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <Card className="bg-white/92">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base"><ShieldCheck className="h-4 w-4 text-emerald-700" />Key actions</CardTitle>
+          <CardDescription>Shortcuts to the most common workflows.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2">
+          {(bootstrap.actions || []).map((action) => (
+            <a key={action.href} href={action.href} className="flex items-center justify-between rounded-2xl border border-border bg-muted/45 px-4 py-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
+              <span>{action.label}</span>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            </a>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -322,6 +386,24 @@ function LegalPage() {
           actions={bootstrap.actions}
         />
         {bootstrap.laws ? LegalCards(bootstrap.laws) : null}
+
+        {bootstrap.document_content ? (
+          <Card className="bg-white/92">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base"><FileText className="h-4 w-4 text-emerald-700" />Platform Terms</CardTitle>
+              <CardDescription>Admin-managed terms for this transaction type. Last updated by the platform administrator.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-sm max-w-none text-foreground">
+                {bootstrap.document_content.split('\n\n').map((paragraph: string, index: number) => (
+                  <p key={index} className="mb-4 leading-7 last:mb-0">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
       <div className="space-y-6">
         <Card className="bg-white/92">
@@ -330,7 +412,7 @@ function LegalPage() {
           </CardHeader>
           <CardContent>
             <ul className="space-y-3 text-sm leading-7 text-foreground">
-              {(bootstrap.checklist || []).map((item) => (
+              {(bootstrap.checklist || []).map((item: string) => (
                 <li key={item} className="flex gap-3">
                   <CircleCheckBig className="mt-1 h-4 w-4 shrink-0 text-emerald-700" />
                   <span>{item}</span>
@@ -347,7 +429,7 @@ function LegalPage() {
             </CardHeader>
             <CardContent>
               <ul className="space-y-3 text-sm leading-7 text-foreground">
-                {bootstrap.payment_guidance.map((item) => (
+                {bootstrap.payment_guidance.map((item: string) => (
                   <li key={item} className="flex gap-3">
                     <Banknote className="mt-1 h-4 w-4 shrink-0 text-emerald-700" />
                     <span>{item}</span>
@@ -361,6 +443,7 @@ function LegalPage() {
     </div>
   );
 }
+
 
 function BuyerChoicePage() {
   return (

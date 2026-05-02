@@ -215,6 +215,10 @@ def legal_requirements(request):
 
 def joint_legal_requirements(request):
     """Joint-buyer reference page for co-ownership, group purchase, and payment guidance."""
+    from core.models import PlatformLegalDocument
+    doc = PlatformLegalDocument.objects.filter(title='Joint Purchase Laws').first()
+    document_content = doc.content if doc else None
+    
     return render_react_shell(
         request,
         'joint-laws',
@@ -223,6 +227,7 @@ def joint_legal_requirements(request):
         laws=[serialize_law(law) for law in JOINT_LAND_TRANSACTION_LAWS],
         checklist=JOINT_LAND_TRANSACTION_CHECKLIST,
         payment_guidance=JOINT_PAYMENT_GUIDANCE,
+        document_content=document_content,
         actions=[
             {'label': 'Buyer setup', 'href': reverse('frontend:buyer_account_choice'), 'tone': 'outline'},
             {'label': 'Create joint group', 'href': reverse('frontend:create_joint_group'), 'tone': 'secondary'},
@@ -482,15 +487,32 @@ def render_admin_dashboard(request, context):
         'verified_agents': verified_agents,
         'pending_users': None,  # Admins don't need user approval section
     })
-    recent_parcels = [serialize_parcel(parcel, request.user) for parcel in pending_parcels[:6]]
-    recent_transactions = [serialize_transaction(tx, request.user) for tx in pending_transactions[:6]]
+    recent_transactions = [serialize_transaction(tx, request.user) for tx in pending_transactions[:10]]
+
+    # Serialize pending agents with KYC details for the admin approval section
+    pending_agent_data = []
+    for agent in pending_agents:
+        agent_data = serialize_review_user(agent)
+        kyc = getattr(agent, 'kyc_application', None)
+        agent_data['kyc'] = {
+            'submitted': bool(kyc and kyc.kyc_submitted),
+            'status': kyc.status if kyc else 'Not Submitted',
+            'resume_url': kyc.resume.url if (kyc and kyc.resume) else None,
+            'id_photo_url': kyc.id_photo.url if (kyc and kyc.id_photo) else None,
+            'certificate_url': kyc.certificate_of_good_conduct.url if (kyc and kyc.certificate_of_good_conduct) else None,
+            'practicing_cert_url': kyc.practicing_certificate.url if (kyc and kyc.practicing_certificate) else None,
+        } if kyc else {'submitted': False, 'status': 'Not Submitted'}
+        agent_data['approve_url'] = reverse('frontend:approve_agent', args=[agent.id])
+        agent_data['reject_url'] = reverse('frontend:reject_agent', args=[agent.id])
+        pending_agent_data.append(agent_data)
+
     return render_react_shell(
         request,
         'admin-dashboard',
         'Command Centre',
         'Full system access for approvals, assignments, transactions, and messaging.',
-        parcels=recent_parcels,
         transactions=recent_transactions,
+        pending_agent_applications=pending_agent_data,
         stats=[
             {'label': 'Pending parcels', 'value': str(pending_parcels.count()), 'tone': 'warning'},
             {'label': 'Pending transactions', 'value': str(pending_transactions.count()), 'tone': 'accent'},
@@ -500,6 +522,7 @@ def render_admin_dashboard(request, context):
         actions=[
             {'label': 'Task management', 'href': reverse('frontend:task_management'), 'tone': 'outline'},
             {'label': 'Create joint account', 'href': reverse('frontend:create_joint_group'), 'tone': 'accent'},
+            {'label': 'Agent approvals', 'href': reverse('frontend:agent_approvals'), 'tone': 'outline'},
             {'label': 'System admin', 'href': '/admin/', 'tone': 'secondary', 'external': True},
         ],
     )
@@ -1556,7 +1579,16 @@ def sign_contract(request, transaction_id):
 
     # Admin users see no legal restrictions (override/failover mode)
     # Regular users see legal requirements for their reference
-    contract_laws = [] if request.user.role == 'Admin' else LAND_TRANSACTION_LAWS
+    if request.user.role == 'Admin':
+        contract_laws = []
+    elif transaction.is_joint_purchase:
+        contract_laws = JOINT_LAND_TRANSACTION_LAWS
+    else:
+        contract_laws = LAND_TRANSACTION_LAWS
+
+    # Fetch admin-editable platform terms for the contract page
+    from core.models import PlatformLegalDocument
+    platform_terms_doc = PlatformLegalDocument.objects.filter(title='Joint Purchase Laws').first() if transaction.is_joint_purchase else None
 
     return render_react_shell(
         request,
@@ -1573,6 +1605,8 @@ def sign_contract(request, transaction_id):
             transactions_url=reverse('frontend:transactions'),
             csrf_token=get_token(request),
         ),
+        document_content=platform_terms_doc.content if platform_terms_doc else None,
+        require_signature=True,
     )
 
 @login_required
@@ -1955,7 +1989,7 @@ def create_joint_group(request):
             submit_label='Create joint group',
             cancel_label='Back to groups',
             cancel_href=reverse('frontend:joint_groups'),
-            intro='Enter the group profile first, then add at least one co-buyer in the rows below. Shares must total 100%.',
+            intro='By proceeding to create a joint group, you acknowledge and agree to the <a href="/joint/laws/" class="text-emerald-700 underline">Joint Purchase Laws and Regulations</a>.',
             sections=[
                 {'title': 'Group details', 'fields': ['name', 'group_type']},
                 {'title': 'Ownership and payment', 'fields': ['ownership_type', 'preferred_payment_method', 'leader_share_percentage']},

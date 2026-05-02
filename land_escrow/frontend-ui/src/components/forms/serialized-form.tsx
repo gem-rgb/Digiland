@@ -171,7 +171,7 @@ export function FormRenderer({ form, csrfToken, className, submitVariant = 'defa
           <CardContent className="p-5">
             <div className="flex items-start gap-3">
               <CheckCircle2 className="mt-1 h-5 w-5 text-emerald-700" />
-              <p className="text-sm leading-7 text-foreground">{form.intro}</p>
+              <p className="text-sm leading-7 text-foreground" dangerouslySetInnerHTML={{ __html: form.intro }} />
             </div>
           </CardContent>
         </Card>

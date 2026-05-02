@@ -3,7 +3,13 @@ from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from .models import User, LandParcel, Transaction, Document, AuditLog, SupportTicket, Message
+from .models import User, LandParcel, Transaction, Document, AuditLog, SupportTicket, Message, PlatformLegalDocument
+
+@admin.register(PlatformLegalDocument)
+class PlatformLegalDocumentAdmin(admin.ModelAdmin):
+    list_display = ('title', 'updated_at')
+    search_fields = ('title', 'content')
+    readonly_fields = ('updated_at',)
 
 class CustomUserAdmin(UserAdmin):
     # Specify the fields that should be displayed in the list view

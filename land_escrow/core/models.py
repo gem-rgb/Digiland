@@ -561,3 +561,17 @@ class JointPaymentContribution(models.Model):
         member_label = self.member.full_name if self.member else "Leader/Full"
         channel = "Bank" if self.payment_channel == 'Bank_Transfer' else "M-Pesa"
         return f"{self.transaction_id} {member_label} {self.amount} ({channel}, {self.status})"
+
+class PlatformLegalDocument(models.Model):
+    """Stores platform-wide legal documents (e.g., Joint Laws, Terms of Service) editable by Admin."""
+    title = models.CharField(max_length=255, unique=True)
+    content = models.TextField(help_text="Enter the legal document paragraphs here.")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Legal Document'
+        verbose_name_plural = 'Legal Documents'
+        ordering = ['title']
+
+    def __str__(self):
+        return self.title
