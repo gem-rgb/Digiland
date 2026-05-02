@@ -444,8 +444,8 @@ class JointBuyerGroup(models.Model):
         ('Investment_Group', 'Investment Group'),
     ]
     OWNERSHIP_TYPE_CHOICES = [
-        ('Joint_Tenancy', 'Joint Tenancy (equal shares, right of survivorship)'),
-        ('Tenancy_In_Common', 'Tenancy in Common (specified shares, independently transferable)'),
+        ('Joint_Tenancy', 'Joint Tenancy (spouses only or with court leave)'),
+        ('Tenancy_In_Common', 'Tenancy in Common (recommended for most group purchases)'),
     ]
     PAYMENT_METHOD_CHOICES = [
         ('M_Pesa_Split', 'M-Pesa Split Contributions'),

@@ -10,7 +10,27 @@ from core.legal import (
     JOINT_PAYMENT_GUIDANCE,
 )
 from .forms import LandParcelUploadForm
-from core.forms import DocumentUploadForm, JointBuyerGroupForm, JointBuyerMemberFormSet, JointBuyerMemberForm
+from core.forms import AgentRatingForm, DocumentUploadForm, JointBuyerGroupForm, JointBuyerMemberFormSet, JointBuyerMemberForm, PricePredictionForm
+from .react_data import (
+    build_nav,
+    serialize_checkout,
+    serialize_contract,
+    serialize_document,
+    serialize_form,
+    serialize_formset,
+    serialize_joint_group,
+    serialize_law,
+    serialize_message_thread,
+    serialize_messages,
+    serialize_parcel,
+    serialize_prediction_result,
+    serialize_recommendations_page,
+    serialize_review_user,
+    serialize_status_page,
+    serialize_support_ticket,
+    serialize_transaction,
+    serialize_user,
+)
 
 def is_seller_or_agent(user):
     if not user.is_authenticated:
@@ -30,6 +50,23 @@ def is_verified_agent_or_admin(user):
     return False
 
 STAFF_ROLES = {'Admin', 'Agent'}
+
+
+def render_react_shell(request, page, title, subtitle='', **extra):
+    from django.middleware.csrf import get_token
+    bootstrap = {
+        'page': page,
+        'title': title,
+        'subtitle': subtitle,
+        'user': serialize_user(request.user),
+        'nav': build_nav(request.user, active=page),
+        'messages': serialize_messages(request),
+    }
+    if request.user.is_authenticated:
+        bootstrap['logout_url'] = reverse('account_logout')
+        bootstrap['csrf_token'] = get_token(request)
+    bootstrap.update(extra)
+    return render(request, 'frontend/react_shell.html', {'react_bootstrap': bootstrap})
 
 
 def is_joint_buyer(user):
@@ -54,11 +91,49 @@ def home(request):
         else:
             transactions = Transaction.objects.filter(Q(buyer=request.user) | Q(seller=request.user)).distinct().order_by('-created_at')[:5]
     
+    if request.user.is_authenticated:
+        recent_parcels = [serialize_parcel(parcel, request.user) for parcel in parcels]
+        recent_transactions = [serialize_transaction(tx, request.user) for tx in transactions] if transactions else []
+        return render_react_shell(
+            request,
+            'dashboard',
+            'My Dashboard - Digiland' if request.user.role == 'Buyer' else 'Workspace - Digiland',
+            'Unified workspace for parcels, contracts, and escrow activity.',
+            parcels=recent_parcels,
+            transactions=recent_transactions,
+            stats=[
+                {'label': 'Verified parcels', 'value': str(len(recent_parcels)), 'tone': 'success'},
+                {'label': 'Recent transactions', 'value': str(len(recent_transactions)), 'tone': 'accent'},
+                {'label': 'Account type', 'value': getattr(request.user, 'buyer_account_type', None) or request.user.role, 'tone': 'warning'},
+                {'label': 'Status', 'value': 'Signed in', 'tone': 'default'},
+            ],
+            actions=[
+                {'label': 'Browse parcels', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
+                {'label': 'Open transactions', 'href': reverse('frontend:transactions'), 'tone': 'secondary'},
+            ],
+        )
+
     context = {
         'parcels': parcels,
         'transactions': transactions
     }
-    return render(request, 'frontend/index.html', context)
+    return render_react_shell(
+        request,
+        'landing',
+        'Digiland - Secure Land Escrow',
+        'Secure land listings, verified contracts, and joint purchase support.',
+        parcels=[serialize_parcel(parcel) for parcel in parcels],
+        stats=[
+            {'label': 'Verified parcels', 'value': str(parcels.count()), 'tone': 'success'},
+            {'label': 'Active transactions', 'value': str(transactions.count() if transactions else 0), 'tone': 'accent'},
+            {'label': 'Joint-ready', 'value': 'Yes', 'tone': 'warning'},
+            {'label': 'Status', 'value': 'Live', 'tone': 'default'},
+        ],
+        actions=[
+            {'label': 'Create account', 'href': '/accounts/signup/', 'tone': 'default'},
+            {'label': 'Sign in', 'href': '/accounts/login/', 'tone': 'outline'},
+        ],
+    )
 
 def agent_signup_complete(request):
     """
@@ -77,6 +152,7 @@ def agent_signup_complete(request):
 @login_required
 def buyer_account_choice(request):
     """Buyer onboarding screen for choosing individual versus joint account mode."""
+    from django.middleware.csrf import get_token
     if request.user.role != 'Buyer':
         return redirect('frontend:home')
 
@@ -103,26 +179,51 @@ def buyer_account_choice(request):
         messages.success(request, 'Individual buyer account selected. You can now browse the marketplace.')
         return redirect('frontend:parcel_list')
 
-    return render(request, 'frontend/buyer_account_choice.html', {
-        'laws': LAND_TRANSACTION_LAWS,
-    })
+    return render_react_shell(
+        request,
+        'buyer-choice',
+        'Buyer setup',
+        'Choose the account mode that matches how you want to buy land.',
+        form={'action': reverse('frontend:buyer_account_choice'), 'csrf_token': get_token(request), 'method': 'post'},
+        actions=[
+            {'label': 'Open joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'outline'},
+            {'label': 'View marketplace', 'href': reverse('frontend:parcel_list'), 'tone': 'secondary'},
+        ],
+        laws=LAND_TRANSACTION_LAWS,
+    )
 
 
 def legal_requirements(request):
     """Public reference page for the land sale laws and compliance checklist."""
-    return render(request, 'frontend/escrow_acts.html', {
-        'laws': LAND_TRANSACTION_LAWS,
-        'checklist': LAND_TRANSACTION_CHECKLIST,
-    })
+    return render_react_shell(
+        request,
+        'legal',
+        'Kenyan land laws',
+        'The statutory checklist that applies to a standard land purchase.',
+        laws=[serialize_law(law) for law in LAND_TRANSACTION_LAWS],
+        checklist=LAND_TRANSACTION_CHECKLIST,
+        actions=[
+            {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'outline'},
+            {'label': 'Buyer setup', 'href': reverse('frontend:buyer_account_choice'), 'tone': 'secondary'},
+        ],
+    )
 
 
 def joint_legal_requirements(request):
     """Joint-buyer reference page for co-ownership, group purchase, and payment guidance."""
-    return render(request, 'frontend/joint_laws.html', {
-        'laws': JOINT_LAND_TRANSACTION_LAWS,
-        'checklist': JOINT_LAND_TRANSACTION_CHECKLIST,
-        'payment_guidance': JOINT_PAYMENT_GUIDANCE,
-    })
+    return render_react_shell(
+        request,
+        'joint-laws',
+        'Joint purchase laws',
+        'Kenyan co-ownership rules for group purchases and shared payment setups.',
+        laws=[serialize_law(law) for law in JOINT_LAND_TRANSACTION_LAWS],
+        checklist=JOINT_LAND_TRANSACTION_CHECKLIST,
+        payment_guidance=JOINT_PAYMENT_GUIDANCE,
+        actions=[
+            {'label': 'Buyer setup', 'href': reverse('frontend:buyer_account_choice'), 'tone': 'outline'},
+            {'label': 'Create joint group', 'href': reverse('frontend:create_joint_group'), 'tone': 'secondary'},
+        ],
+    )
 
 
 def logout_to_staff_login(request):
@@ -173,10 +274,44 @@ def staff_login(request):
     # Consume the "just signed up" session flag set by agent_signup_complete
     signup_success = request.session.pop('agent_signup_success', False)
 
-    return render(request, 'frontend/staff_login.html', {
-        'error': error,
-        'signup_success': signup_success,
-    })
+    form = {
+        'action': reverse('frontend:staff_login'),
+        'method': 'post',
+        'enctype': 'application/x-www-form-urlencoded',
+        'submitLabel': 'Authenticate',
+        'intro': 'Restricted to authorised agents and administrators only.',
+        'fields': [
+            {
+                'name': 'email',
+                'label': 'Email address',
+                'type': 'email',
+                'value': '',
+                'placeholder': 'staff@digiland.co.ke',
+                'required': True,
+                'autoFocus': True,
+            },
+            {
+                'name': 'password',
+                'label': 'Password',
+                'type': 'password',
+                'value': '',
+                'placeholder': 'Enter your password',
+                'required': True,
+            },
+        ],
+        'hiddenFields': [],
+        'errors': [error] if error else [],
+    }
+
+    return render_react_shell(
+        request,
+        'staff-login',
+        'Staff Login - Digiland',
+        'Restricted to authorised agents and administrators only.',
+        form=form,
+        notice='Agent sign-up complete' if signup_success else None,
+        actions=[{'label': 'Public login', 'href': reverse('account_login'), 'tone': 'outline'}],
+    )
 
 def parcel_list(request):
     from django.db.models import Q
@@ -202,7 +337,17 @@ def parcel_list(request):
             transactions__status__in=active_tx_statuses
         ).order_by('-ardhisasa_last_synced')
         
-    return render(request, 'frontend/parcel_list.html', {'parcels': parcels})
+    return render_react_shell(
+        request,
+        'parcel-list',
+        'Marketplace',
+        'Verified parcels available for purchase or management.',
+        parcels=[serialize_parcel(parcel, request.user) for parcel in parcels],
+        actions=[
+            {'label': 'Legal checklist', 'href': reverse('frontend:escrow_acts'), 'tone': 'outline'},
+            {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'},
+        ],
+    )
 
 @login_required
 def agent_kyc(request):
@@ -234,7 +379,22 @@ def agent_kyc(request):
     else:
         form = AgentKYCForm(instance=app)
 
-    return render(request, 'frontend/agent_kyc.html', {'form': form})
+    return render_react_shell(
+        request,
+        'agent-kyc',
+        'KYC Verification - Digiland',
+        'Complete your verification file so an administrator can review your application.',
+        form=serialize_form(
+            form,
+            action=reverse('frontend:agent_kyc'),
+            submit_label='Submit KYC Application',
+            intro='Accepted formats include PDF, JPG, and PNG. Keep each file under 5 MB.',
+            sections=[
+                {'title': 'Identity and tax information', 'fields': ['kra_pin', 'id_number']},
+                {'title': 'Supporting documents', 'fields': ['id_photo', 'resume', 'certificate_of_good_conduct', 'practicing_certificate']},
+            ],
+        ),
+    )
 
 
 @login_required
@@ -244,9 +404,34 @@ def agent_onboarding(request):
     # Pass the approval state to the template
     # - approved=True  → shows "Use Staff Login" message
     # - approved=False → shows "Awaiting admin review" spinner
-    return render(request, 'frontend/agent_onboarding.html', {
-        'approved': request.user.is_identity_verified,
-    })
+    return render_react_shell(
+        request,
+        'content',
+        'Agent onboarding - Digiland',
+        'Track your approval status and next steps.',
+        content={
+            'hero': {
+                'kicker': 'Agent onboarding',
+                'title': 'Your verification status',
+                'subtitle': 'Approved agents can continue to the staff portal. Pending applications remain under review.',
+                'badge': 'Workflow status',
+            },
+            'sections': [
+                {
+                    'title': 'Current status',
+                    'body': 'Approved' if request.user.is_identity_verified else 'Pending review',
+                },
+                {
+                    'title': 'Next step',
+                    'body': 'If approved, sign in through the staff portal to continue. If pending, wait for an administrator review.',
+                },
+            ],
+        },
+        actions=[
+            {'label': 'Staff login', 'href': reverse('frontend:staff_login'), 'tone': 'default'},
+            {'label': 'Support', 'href': reverse('frontend:support'), 'tone': 'outline'},
+        ],
+    )
 
 @login_required
 @user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
@@ -293,7 +478,26 @@ def render_admin_dashboard(request, context):
         'verified_agents': verified_agents,
         'pending_users': None,  # Admins don't need user approval section
     })
-    return render(request, 'frontend/admin_dashboard.html', context)
+    recent_parcels = [serialize_parcel(parcel, request.user) for parcel in pending_parcels[:6]]
+    recent_transactions = [serialize_transaction(tx, request.user) for tx in pending_transactions[:6]]
+    return render_react_shell(
+        request,
+        'admin-dashboard',
+        'Command Centre',
+        'Full system access for approvals, assignments, transactions, and messaging.',
+        parcels=recent_parcels,
+        transactions=recent_transactions,
+        stats=[
+            {'label': 'Pending parcels', 'value': str(pending_parcels.count()), 'tone': 'warning'},
+            {'label': 'Pending transactions', 'value': str(pending_transactions.count()), 'tone': 'accent'},
+            {'label': 'Pending agents', 'value': str(pending_agents.count()), 'tone': 'danger'},
+            {'label': 'Verified agents', 'value': str(verified_agents.count()), 'tone': 'success'},
+        ],
+        actions=[
+            {'label': 'Task management', 'href': reverse('frontend:task_management'), 'tone': 'outline'},
+            {'label': 'System admin', 'href': '/admin/', 'tone': 'secondary', 'external': True},
+        ],
+    )
 
 
 def temp_approve_agent(request, email):
@@ -317,20 +521,68 @@ def temp_approve_agent(request, email):
         agent.is_active = True
         agent.save()
         
-        return render(request, 'frontend/temp_approve.html', {
-            'agent': agent,
-            'success': True
-        })
+        return render_react_shell(
+            request,
+            'content',
+            'Temporary approval - Digiland',
+            'Testing-only approval response.',
+            content={
+                'hero': {
+                    'kicker': 'Temporary approval',
+                    'title': 'Agent approved for testing',
+                    'subtitle': agent.email,
+                    'badge': 'Success',
+                },
+                'sections': [
+                    {
+                        'title': 'Result',
+                        'body': 'The account is active and identity verified.',
+                    },
+                ],
+            },
+        )
     except CoreUser.DoesNotExist:
-        return render(request, 'frontend/temp_approve.html', {
-            'success': False,
-            'error': f'No agent found with email: {email}'
-        })
+        return render_react_shell(
+            request,
+            'content',
+            'Temporary approval - Digiland',
+            'Testing-only approval response.',
+            content={
+                'hero': {
+                    'kicker': 'Temporary approval',
+                    'title': 'No agent found',
+                    'subtitle': f'No agent found with email: {email}',
+                    'badge': 'Error',
+                },
+                'sections': [
+                    {
+                        'title': 'Result',
+                        'body': 'The lookup did not find a matching staff account.',
+                    },
+                ],
+            },
+        )
     except Exception as e:
-        return render(request, 'frontend/temp_approve.html', {
-            'success': False,
-            'error': str(e)
-        })
+        return render_react_shell(
+            request,
+            'content',
+            'Temporary approval - Digiland',
+            'Testing-only approval response.',
+            content={
+                'hero': {
+                    'kicker': 'Temporary approval',
+                    'title': 'Unexpected error',
+                    'subtitle': str(e),
+                    'badge': 'Error',
+                },
+                'sections': [
+                    {
+                        'title': 'Result',
+                        'body': 'The approval action could not be completed.',
+                    },
+                ],
+            },
+        )
 
 
 def render_agent_dashboard(request, context):
@@ -369,7 +621,26 @@ def render_agent_dashboard(request, context):
         'pending_agents': None,  # Agents cannot see other agents
         'pending_users': pending_users,
     })
-    return render(request, 'frontend/agent_dashboard_restricted.html', context)
+    recent_parcels = [serialize_parcel(parcel, request.user) for parcel in pending_parcels[:6]]
+    recent_transactions = [serialize_transaction(tx, request.user) for tx in pending_transactions[:6]]
+    return render_react_shell(
+        request,
+        'agent-dashboard',
+        'Command Centre',
+        'Your assigned pipeline for parcel verification and escrow support.',
+        parcels=recent_parcels,
+        transactions=recent_transactions,
+        stats=[
+            {'label': 'Pending parcels', 'value': str(pending_parcels.count()), 'tone': 'warning'},
+            {'label': 'Pending transactions', 'value': str(pending_transactions.count()), 'tone': 'accent'},
+            {'label': 'Pending users', 'value': str(pending_users.count()), 'tone': 'danger'},
+            {'label': 'Completed parcels', 'value': str(completed_parcels.count()), 'tone': 'success'},
+        ],
+        actions=[
+            {'label': 'Task management', 'href': reverse('frontend:task_management'), 'tone': 'outline'},
+            {'label': 'User approvals', 'href': reverse('frontend:agent_approvals'), 'tone': 'secondary'},
+        ],
+    )
 
 
 @login_required
@@ -386,10 +657,20 @@ def task_management(request):
         completed_parcels = LandParcel.objects.filter(
             assigned_agent=request.user, verification_status__in=['Verified', 'Fraudulent']
         ).order_by('-ardhisasa_last_synced')[:30]
-        return render(request, 'frontend/task_management.html', {
-            'pending_parcels': pending_parcels,
-            'completed_parcels': completed_parcels,
-        })
+        return render_react_shell(
+            request,
+            'task-management',
+            'Command Centre',
+            'Your assigned pipeline for parcel verification and escrow support.',
+            task_board={
+                'pending_parcels': [serialize_parcel(parcel, request.user) for parcel in pending_parcels],
+                'completed_parcels': [serialize_parcel(parcel, request.user) for parcel in completed_parcels],
+                'pending_transactions': [],
+                'pending_users': [],
+                'pending_agents': [],
+                'verified_agents': [],
+            },
+        )
 
     # Admin view
     all_pending_parcels = LandParcel.objects.filter(
@@ -406,12 +687,21 @@ def task_management(request):
         verification_status__in=['Verified', 'Fraudulent']
     ).select_related('assigned_agent', 'listed_by').order_by('-ardhisasa_last_synced')[:50]
 
-    return render(request, 'frontend/task_management.html', {
-        'all_pending_parcels': all_pending_parcels,
-        'unassigned_count': len(unassigned_parcels),
-        'verified_agents': verified_agents,
-        'completed_parcels': completed_parcels,
-    })
+    return render_react_shell(
+        request,
+        'task-management',
+        'Command Centre',
+        'Full system access for approvals, assignments, and parcel review.',
+        task_board={
+            'pending_parcels': [serialize_parcel(parcel, request.user) for parcel in all_pending_parcels],
+            'completed_parcels': [serialize_parcel(parcel, request.user) for parcel in completed_parcels],
+            'pending_transactions': [serialize_transaction(tx, request.user) for tx in Transaction.objects.filter(contract_agreed=True, status__in=['Deposit_Paid', 'Under_Verification']).order_by('created_at')[:20]],
+            'pending_users': [serialize_review_user(user) for user in CoreUser.objects.filter(role__in=['Buyer', 'Seller'], is_identity_verified=False, is_active=True).order_by('date_joined')],
+            'pending_agents': [serialize_review_user(user) for user in CoreUser.objects.filter(role='Agent', is_identity_verified=False, is_active=True).order_by('date_joined')],
+            'verified_agents': [serialize_review_user(user) for user in verified_agents],
+            'unassigned_count': len(unassigned_parcels),
+        },
+    )
 
 @login_required
 @user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
@@ -537,7 +827,17 @@ def agent_approvals(request):
             Q(seller=request.user)
         ).distinct().order_by('created_at')
 
-    return render(request, 'frontend/agent_approvals.html', context)
+    return render_react_shell(
+        request,
+        'approvals',
+        'Approvals',
+        'Central approvals hub for users, parcels, and transactions.',
+        approvals_page={
+            'pending_users': [serialize_review_user(user) for user in context['pending_users']],
+            'pending_parcels': [serialize_parcel(parcel, request.user) for parcel in context['pending_parcels']],
+            'pending_transactions': [serialize_transaction(tx, request.user) for tx in context['pending_transactions']],
+        },
+    )
 
 
 @login_required
@@ -570,7 +870,17 @@ def agent_user_review(request, user_id):
             buyer=reviewed_user
         ).order_by('-created_at')
 
-    return render(request, 'frontend/agent_user_review.html', context)
+    return render_react_shell(
+        request,
+        'user-review',
+        reviewed_user.email,
+        'Detailed review for the selected account.',
+        user_review={
+            'reviewed_user': serialize_review_user(reviewed_user),
+            'user_parcels': [serialize_parcel(parcel, request.user) for parcel in context.get('user_parcels', [])],
+            'user_transactions': [serialize_transaction(tx, request.user) for tx in context.get('user_transactions', [])],
+        },
+    )
 
 
 @login_required
@@ -677,7 +987,19 @@ def parcel_upload(request):
             return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
     else:
         form = LandParcelUploadForm()
-    return render(request, 'frontend/parcel_upload.html', {'form': form})
+    return render_react_shell(
+        request,
+        'form',
+        'Register a land parcel',
+        'Provide parcel details for compliance checks and listing verification.',
+        form=serialize_form(
+            form,
+            action=reverse('frontend:parcel_upload'),
+            submit_label='Submit for verification',
+            intro='Our system cross-references submitted details against registry records during review.',
+        ),
+        actions=[{'label': 'Back to marketplace', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'}],
+    )
 
 @login_required
 def upload_parcel_document(request, parcel_number):
@@ -708,7 +1030,19 @@ def upload_parcel_document(request, parcel_number):
     else:
         form = DocumentUploadForm()
         
-    return render(request, 'frontend/document_upload.html', {'form': form, 'parcel': parcel})
+    return render_react_shell(
+        request,
+        'form',
+        f'Upload document - {parcel.parcel_number}',
+        'Attach compliance documents for the selected parcel.',
+        form=serialize_form(
+            form,
+            action=reverse('frontend:upload_document', args=[parcel.parcel_number]),
+            submit_label='Upload document',
+            intro=f'Parcel: {parcel.parcel_number}. Accepted document types help unlock verification.',
+        ),
+        actions=[{'label': 'Back to parcel', 'href': reverse('frontend:parcel_detail', args=[parcel.parcel_number]), 'tone': 'outline'}],
+    )
 
 @login_required
 def parcel_edit(request, parcel_number):
@@ -729,7 +1063,20 @@ def parcel_edit(request, parcel_number):
     else:
         form = LandParcelUploadForm(instance=parcel)
         
-    return render(request, 'frontend/parcel_edit.html', {'form': form, 'parcel': parcel})
+    return render_react_shell(
+        request,
+        'form',
+        f'Edit parcel - {parcel.parcel_number}',
+        'Update parcel details before verification is finalised.',
+        form=serialize_form(
+            form,
+            action=reverse('frontend:parcel_edit', args=[parcel.parcel_number]),
+            submit_label='Save changes',
+            cancel_label='Cancel',
+            cancel_href=reverse('frontend:parcel_detail', args=[parcel.parcel_number]),
+            intro='Parcel records can be edited while they are awaiting documents, pending, or disputed.',
+        ),
+    )
 
 @login_required
 def parcel_delete(request, parcel_number):
@@ -741,8 +1088,25 @@ def parcel_delete(request, parcel_number):
     if request.method == 'POST':
         parcel.delete()
         return redirect('frontend:parcel_list')
-        
-    return render(request, 'frontend/parcel_confirm_delete.html', {'parcel': parcel})
+
+    return render_react_shell(
+        request,
+        'form',
+        f'Delete parcel - {parcel.parcel_number}',
+        'Permanent deletion requires confirmation.',
+        form={
+            'action': reverse('frontend:parcel_delete', args=[parcel.parcel_number]),
+            'method': 'post',
+            'enctype': 'application/x-www-form-urlencoded',
+            'submitLabel': 'Delete parcel',
+            'cancelLabel': 'Cancel',
+            'cancelHref': reverse('frontend:parcel_detail', args=[parcel.parcel_number]),
+            'intro': f'You are about to permanently delete {parcel.parcel_number}. This action cannot be undone.',
+            'fields': [],
+            'hiddenFields': [],
+            'errors': [],
+        },
+    )
 
 @login_required
 def initiate_escrow(request, parcel_number):
@@ -833,17 +1197,57 @@ def parcel_detail(request, parcel_number):
     except Exception:
         pass
 
-    context = {
-        'parcel': parcel,
+    joint_groups = []
+    can_use_joint_purchase = False
+    if request.user.is_authenticated and request.user.role == 'Buyer':
+        joint_groups = JointBuyerGroup.objects.filter(leader=request.user).prefetch_related('members')
+        can_use_joint_purchase = is_joint_buyer(request.user)
+
+    parcel_data = {
+        'parcel_number': str(parcel.parcel_number),
+        'image_url': parcel.image.url if getattr(parcel, 'image', None) else None,
+        'land_use_type': parcel.land_use_type,
+        'county': parcel.county,
+        'constituency': parcel.constituency,
+        'ward': parcel.ward,
+        'land_size': str(parcel.land_size),
+        'registered_owner_id_masked': f"***{parcel.registered_owner_id[3:]}" if parcel.registered_owner_id else 'N/A',
+        'verification_status': parcel.verification_status,
+        'displayed_price': str(parcel.displayed_price),
         'is_favorited': is_favorited,
-        'ai_price': ai_price,
+        'ai_price': None if not ai_price else {
+            'total_value': str(ai_price.get('total_value', '')),
+            'price_per_acre': str(ai_price.get('price_per_acre', '')),
+            'confidence_low': str(ai_price.get('confidence_low', '')),
+            'confidence_high': str(ai_price.get('confidence_high', '')),
+        },
+        'documents': [serialize_document(doc) for doc in parcel.documents.all()],
+        'can_edit': bool(request.user.is_authenticated and (request.user.role == 'Admin' or request.user == parcel.listed_by)),
+        'can_upload_document': bool(request.user.is_authenticated and (request.user.role == 'Admin' or request.user == parcel.listed_by)),
+        'can_initiate_escrow': bool(request.user.is_authenticated and request.user.role in ['Buyer', 'Admin'] and parcel.verification_status == 'Verified'),
+        'can_use_joint_purchase': can_use_joint_purchase,
+        'assigned_agent_email': parcel.assigned_agent.email if parcel.assigned_agent else None,
+        'joint_groups': [serialize_joint_group(group) for group in joint_groups] if joint_groups else [],
+        'purchase_modes': [
+            {'value': 'individual', 'label': 'Individual purchase', 'selected': True},
+            {'value': 'joint', 'label': 'Joint group purchase', 'selected': False},
+        ],
+        'initiate_escrow_url': reverse('frontend:initiate_escrow', args=[parcel.parcel_number]),
+        'upload_document_url': reverse('frontend:upload_document', args=[parcel.parcel_number]) if request.user.is_authenticated else None,
+        'edit_url': reverse('frontend:parcel_edit', args=[parcel.parcel_number]) if request.user.is_authenticated else None,
+        'delete_url': reverse('frontend:parcel_delete', args=[parcel.parcel_number]) if request.user.is_authenticated and request.user.role == 'Admin' else None,
+        'toggle_favorite_url': reverse('frontend:toggle_favorite', args=[parcel.parcel_number]) if request.user.is_authenticated else None,
+        'agent_verify_url': reverse('frontend:agent_verify_parcel', args=[parcel.parcel_number]) if request.user.is_authenticated and request.user.role in ['Admin', 'Agent'] else None,
     }
 
-    if request.user.is_authenticated and request.user.role == 'Buyer':
-        context['joint_groups'] = JointBuyerGroup.objects.filter(leader=request.user).prefetch_related('members')
-        context['can_use_joint_purchase'] = is_joint_buyer(request.user)
-
-    return render(request, 'frontend/parcel_detail.html', context)
+    return render_react_shell(
+        request,
+        'parcel-detail',
+        f'Parcel details - {parcel.parcel_number}',
+        'Review parcel information, documents, and next workflow actions.',
+        parcel_detail=parcel_data,
+        actions=[{'label': 'Back to marketplace', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'}],
+    )
 
 @login_required
 def user_transactions(request):
@@ -854,7 +1258,17 @@ def user_transactions(request):
             Transaction.objects.filter(buyer=request.user) |
             Transaction.objects.filter(seller=request.user)
         ).order_by('-created_at')
-    return render(request, 'frontend/transactions.html', {'transactions': transactions})
+    return render_react_shell(
+        request,
+        'transactions',
+        'My transactions',
+        'Track every active and completed land purchase or sale in your escrow pipeline.',
+        transactions=[serialize_transaction(tx, request.user) for tx in transactions],
+        actions=[
+            {'label': 'Browse parcels', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
+            {'label': 'Legal checklist', 'href': reverse('frontend:escrow_acts'), 'tone': 'secondary'},
+        ],
+    )
 
 @login_required
 def messages_list(request):
@@ -883,25 +1297,57 @@ def messages_list(request):
         allowed_recipients = CoreUser.objects.exclude(id=user.id)
 
     context = {
-        'allowed_recipients': allowed_recipients,
+        'allowed_recipients': [serialize_user(user) for user in allowed_recipients],
         'msg_error': request.session.pop('msg_error', None),
     }
 
     if user.role == 'Buyer':
         context['header'] = 'My Inbox'
-        context['threads'] = {p: msgs for p, msgs in threads.items() if p.role in ['Admin', 'Agent']}
+        context['threads'] = [
+            serialize_message_thread(partner, msgs, user)
+            for partner, msgs in threads.items()
+            if partner.role in ['Admin', 'Agent']
+        ]
         context['mode'] = 'single'
     elif user.role == 'Seller':
         context['header'] = 'My Inbox'
-        context['threads'] = {p: msgs for p, msgs in threads.items() if p.role in ['Admin', 'Agent']}
+        context['threads'] = [
+            serialize_message_thread(partner, msgs, user)
+            for partner, msgs in threads.items()
+            if partner.role in ['Admin', 'Agent']
+        ]
         context['mode'] = 'single'
     else:  # Admin / Agent
         context['header'] = 'Platform Communications'
-        context['buyer_threads'] = {p: msgs for p, msgs in threads.items() if p.role == 'Buyer'}
-        context['seller_threads'] = {p: msgs for p, msgs in threads.items() if p.role == 'Seller'}
+        context['buyer_threads'] = [
+            serialize_message_thread(partner, msgs, user)
+            for partner, msgs in threads.items()
+            if partner.role == 'Buyer'
+        ]
+        context['seller_threads'] = [
+            serialize_message_thread(partner, msgs, user)
+            for partner, msgs in threads.items()
+            if partner.role == 'Seller'
+        ]
         context['mode'] = 'dual'
 
-    return render(request, 'frontend/messages.html', context)
+    return render_react_shell(
+        request,
+        'messages',
+        'Messages',
+        context['header'],
+        messages_page={
+            'allowed_recipients': context['allowed_recipients'],
+            'msg_error': context['msg_error'],
+            'header': context['header'],
+            'threads': context.get('threads', []),
+            'buyer_threads': context.get('buyer_threads', []),
+            'seller_threads': context.get('seller_threads', []),
+            'mode': context.get('mode', 'single'),
+            'compose_action': reverse('frontend:send_message'),
+            'csrf_token': get_token(request),
+        },
+    )
 
 
 @login_required
@@ -944,12 +1390,35 @@ def send_message(request):
 
 @login_required
 def support_tickets(request):
+    if request.method == 'POST':
+        subject = request.POST.get('subject', '').strip()
+        message = request.POST.get('message', '').strip()
+        if subject and message:
+            SupportTicket.objects.create(user=request.user, subject=subject, message=message)
+            from django.contrib import messages
+            messages.success(request, 'Support ticket created successfully.')
+            return redirect('frontend:support')
+
     tickets = SupportTicket.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'frontend/support.html', {'tickets': tickets})
+    return render_react_shell(
+        request,
+        'support',
+        'Support',
+        'Open and review support requests related to disputes, verification issues, or account access.',
+        support_page={
+            'tickets': [serialize_support_ticket(ticket) for ticket in tickets],
+            'create_action': reverse('frontend:support'),
+            'csrf_token': get_token(request),
+        },
+        actions=[{'label': 'Open new ticket', 'href': '#', 'tone': 'outline'}],
+    )
 
 @login_required
 def sign_contract(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id)
+    transaction = get_object_or_404(
+        Transaction.objects.select_related('buyer', 'seller', 'land_parcel', 'joint_group').prefetch_related('joint_group__members'),
+        id=transaction_id,
+    )
     
     # Security: Only involved parties (buyer, seller) or Admin can access
     if request.user not in [transaction.buyer, transaction.seller] and request.user.role != 'Admin':
@@ -1024,24 +1493,36 @@ def sign_contract(request, transaction_id):
                 return redirect('frontend:payment_checkout', transaction_id=transaction.id)
             return redirect('frontend:sign_contract', transaction_id=transaction.id)
             
-    joint_breakdown = None
+    joint_breakdown = []
     if transaction.is_joint_purchase and transaction.joint_group:
         from decimal import Decimal, ROUND_HALF_UP
         total = transaction.agreed_price
-        joint_breakdown = []
-        for m in transaction.joint_group.members.all().order_by('-is_leader', 'added_at'):
+        for m in transaction.joint_group.members.all():
             amt = (total * (m.share_percentage / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
             joint_breakdown.append({'member': m, 'amount': amt})
 
-    return render(request, 'frontend/contract.html', {
-        'transaction': transaction,
-        'joint_breakdown': joint_breakdown,
-        'laws': LAND_TRANSACTION_LAWS,
-    })
+    from django.middleware.csrf import get_token
+
+    return render_react_shell(
+        request,
+        'contract',
+        'Kenyan Land Transfer Agreement',
+        f'Property: {transaction.land_parcel.parcel_number}',
+        contract=serialize_contract(
+            transaction,
+            request.user,
+            laws=LAND_TRANSACTION_LAWS,
+            joint_breakdown=joint_breakdown,
+            sign_url=reverse('frontend:sign_contract', args=[transaction.id]),
+            payment_url=reverse('frontend:payment_checkout', args=[transaction.id]),
+            transactions_url=reverse('frontend:transactions'),
+            csrf_token=get_token(request),
+        ),
+    )
 
 @login_required
 def payment_onboarding(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id)
+    transaction = get_object_or_404(Transaction.objects.select_related('buyer', 'seller', 'land_parcel', 'joint_group'), id=transaction_id)
     
     # Security: Only the Buyer can pay (or Admin verifying)
     if (request.user != transaction.buyer and request.user.role != 'Admin'):
@@ -1053,11 +1534,27 @@ def payment_onboarding(request, transaction_id):
     if not transaction.contract_agreed:
         return redirect('frontend:sign_contract', transaction_id=transaction.id)
 
-    return render(request, 'frontend/payment_onboarding.html', {'transaction': transaction})
+    return render_react_shell(
+        request,
+        'status',
+        'Contract signed',
+        'Review the next step and continue to the escrow checkout when you are ready.',
+        status=serialize_status_page(
+            icon='wallet',
+            tone='warning',
+            title='Contract signed',
+            description=f'Payment can now be initiated for parcel {transaction.land_parcel.parcel_number}. Continue to checkout to start the escrow deposit.',
+            primary_action={'label': 'Continue to checkout', 'href': reverse('frontend:payment_checkout', args=[transaction.id]), 'tone': 'default'},
+            secondary_action={'label': 'Back to transactions', 'href': reverse('frontend:transactions'), 'tone': 'outline'},
+        ),
+    )
 
 @login_required
 def payment_checkout(request, transaction_id):
-    transaction = get_object_or_404(Transaction, id=transaction_id)
+    transaction = get_object_or_404(
+        Transaction.objects.select_related('buyer', 'seller', 'land_parcel', 'joint_group').prefetch_related('joint_group__members'),
+        id=transaction_id,
+    )
     
     if (request.user != transaction.buyer and request.user.role != 'Admin'):
         return redirect('frontend:transactions')
@@ -1076,7 +1573,7 @@ def payment_checkout(request, transaction_id):
         from decimal import Decimal, ROUND_HALF_UP
         total = transaction.agreed_price
         joint_breakdown = []
-        for m in transaction.joint_group.members.all().order_by('-is_leader', 'added_at'):
+        for m in transaction.joint_group.members.all():
             amt = (total * (m.share_percentage / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
             joint_breakdown.append({'member': m, 'amount': amt})
         contributions = JointPaymentContribution.objects.filter(transaction=transaction).select_related('member')
@@ -1086,13 +1583,28 @@ def payment_checkout(request, transaction_id):
             joint_group.bank_name and joint_group.bank_account_name and joint_group.bank_account_number
         )
 
-    return render(request, 'frontend/checkout.html', {
-        'transaction': transaction,
-        'joint_breakdown': joint_breakdown,
-        'contributions': contributions,
-        'joint_bank_ready': joint_bank_ready,
-        'joint_payment_method': joint_payment_method,
-    })
+    from django.middleware.csrf import get_token
+
+    return render_react_shell(
+        request,
+        'checkout',
+        'Escrow checkout',
+        'Complete payment using M-Pesa or the shared joint bank account.',
+        checkout=serialize_checkout(
+            transaction,
+            request.user,
+            joint_breakdown=joint_breakdown,
+            contributions=contributions,
+            joint_bank_ready=joint_bank_ready,
+            joint_payment_method=joint_payment_method,
+            process_url=reverse('frontend:process_payment', args=[transaction.id]),
+            transactions_url=reverse('frontend:transactions'),
+            sign_url=reverse('frontend:sign_contract', args=[transaction.id]),
+            failed_url=reverse('frontend:transaction_failed', args=[transaction.id]),
+            csrf_token=get_token(request),
+            phone_number=getattr(request.user, 'phone_number', '') or '',
+        ),
+    )
 
 @login_required
 def process_payment(request, transaction_id):
@@ -1282,7 +1794,17 @@ def joint_groups(request):
             return redirect('frontend:buyer_account_choice')
         return redirect('frontend:home')
     groups = JointBuyerGroup.objects.filter(leader=request.user).prefetch_related('members')
-    return render(request, 'frontend/joint_groups_list.html', {'groups': groups})
+    return render_react_shell(
+        request,
+        'joint-groups',
+        'My joint groups',
+        'Manage shared buyer accounts, ownership splits, and joint bank setup.',
+        groups=[serialize_joint_group(group) for group in groups],
+        actions=[
+            {'label': 'Create group', 'href': reverse('frontend:create_joint_group'), 'tone': 'outline'},
+            {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'},
+        ],
+    )
 
 
 @login_required
@@ -1367,10 +1889,31 @@ def create_joint_group(request):
         group_form = JointBuyerGroupForm()
         member_formset = JointBuyerMemberFormSet(prefix='members')
 
-    return render(request, 'frontend/joint_group.html', {
-        'group_form': group_form,
-        'member_formset': member_formset,
-    })
+    return render_react_shell(
+        request,
+        'form',
+        'Create joint group',
+        'Set up shared ownership, payment details, and co-buyer records for a group purchase.',
+        form=serialize_form(
+            group_form,
+            action=reverse('frontend:create_joint_group'),
+            submit_label='Create joint group',
+            cancel_label='Back to groups',
+            cancel_href=reverse('frontend:joint_groups'),
+            intro='Enter the group profile first, then add at least one co-buyer in the rows below. Shares must total 100%.',
+            sections=[
+                {'title': 'Group details', 'fields': ['name', 'group_type']},
+                {'title': 'Ownership and payment', 'fields': ['ownership_type', 'preferred_payment_method', 'leader_share_percentage']},
+                {'title': 'Bank details', 'fields': ['bank_name', 'bank_account_name', 'bank_account_number', 'bank_branch']},
+            ],
+        ),
+        member_formset=serialize_formset(
+            member_formset,
+            action=reverse('frontend:create_joint_group'),
+            submit_label='Create joint group',
+            intro='Add at least one co-buyer. The leader is created automatically from your account details.',
+        ),
+    )
 
 
 @login_required
@@ -1381,8 +1924,19 @@ def joint_group_detail(request, group_id):
             messages.info(request, 'Select the joint buyer account setup first to view group details.')
             return redirect('frontend:buyer_account_choice')
         return redirect('frontend:home')
-    group = get_object_or_404(JointBuyerGroup, id=group_id, leader=request.user)
-    return render(request, 'frontend/joint_group_detail.html', {'group': group})
+    group = get_object_or_404(JointBuyerGroup.objects.prefetch_related('members'), id=group_id, leader=request.user)
+    serialized_group = serialize_joint_group(group)
+    return render_react_shell(
+        request,
+        'joint-group-detail',
+        group.name,
+        'Review members, ownership shares, and payment setup for the joint account.',
+        group=serialized_group,
+        actions=[
+            {'label': 'Edit group', 'href': reverse('frontend:edit_joint_group', args=[group.id]), 'tone': 'outline'},
+            {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'},
+        ],
+    )
 
 
 @login_required
@@ -1434,11 +1988,24 @@ def edit_joint_member(request, member_id):
     else:
         form = JointBuyerMemberForm(instance=member)
 
-    return render(request, 'frontend/joint_member_edit.html', {
-        'group': group,
-        'member': member,
-        'member_form': form,
-    })
+    return render_react_shell(
+        request,
+        'form',
+        f'Edit member - {member.full_name}',
+        'Update a co-buyer record before the group enters an active transaction.',
+        form=serialize_form(
+            form,
+            action=reverse('frontend:edit_joint_member', args=[member.id]),
+            submit_label='Save member',
+            cancel_label='Back to group',
+            cancel_href=reverse('frontend:joint_group_detail', args=[group.id]),
+            intro='Keep the co-buyer identity, contact details, and share allocation accurate before checkout.',
+            sections=[
+                {'title': 'Identity', 'fields': ['full_name', 'id_number', 'kra_pin']},
+                {'title': 'Contact and share', 'fields': ['phone_number', 'email', 'share_percentage']},
+            ],
+        ),
+    )
 
 
 @login_required
@@ -1484,10 +2051,25 @@ def edit_joint_group(request, group_id):
             initial['leader_share_percentage'] = leader_member.share_percentage
         form = JointBuyerGroupForm(instance=group, initial=initial)
 
-    return render(request, 'frontend/joint_group_edit.html', {
-        'group': group,
-        'group_form': form,
-    })
+    return render_react_shell(
+        request,
+        'form',
+        f'Edit group - {group.name}',
+        'Update the group profile, payment settings, and the leader share before any active transaction starts.',
+        form=serialize_form(
+            form,
+            action=reverse('frontend:edit_joint_group', args=[group.id]),
+            submit_label='Save group',
+            cancel_label='Back to group',
+            cancel_href=reverse('frontend:joint_group_detail', args=[group.id]),
+            intro='Keep the ownership structure aligned with the current co-buyer arrangement.',
+            sections=[
+                {'title': 'Group details', 'fields': ['name', 'group_type']},
+                {'title': 'Ownership and payment', 'fields': ['ownership_type', 'preferred_payment_method', 'leader_share_percentage']},
+                {'title': 'Bank details', 'fields': ['bank_name', 'bank_account_name', 'bank_account_number', 'bank_branch']},
+            ],
+        ),
+    )
 
 
 @login_required
@@ -1495,39 +2077,49 @@ def edit_joint_group(request, group_id):
 def rate_agent(request, agent_id):
     """Admin-only: rate an agent's performance."""
     from core.utils import send_agent_rating_notification
-    
-    if request.method != 'POST':
-        return redirect('frontend:agent_dashboard')
-    
+
     agent = get_object_or_404(CoreUser, id=agent_id, role='Agent')
-    
-    if request.method == 'POST':
-        rating = request.POST.get('rating')
-        review = request.POST.get('review', '').strip()
-        
-        if rating and rating.isdigit() and 1 <= int(rating) <= 5:
-            AgentRating.objects.create(
-                agent=agent,
-                rating=int(rating),
-                review=review,
-                rated_by=request.user
-            )
-            
-            # Send rating notification email
-            email_sent, email_message = send_agent_rating_notification(agent, int(rating), review)
-            
-            from django.contrib import messages
-            if email_sent:
-                messages.success(request, f'Rated {agent.email} with {rating} stars! Rating notification sent.')
-            else:
-                messages.success(request, f'Rated {agent.email} with {rating} stars! Email failed: {email_message}')
+    form = AgentRatingForm(request.POST or None)
+
+    if request.method == 'POST' and form.is_valid():
+        rating = int(form.cleaned_data['rating'])
+        review = form.cleaned_data.get('review', '').strip()
+        AgentRating.objects.create(
+            agent=agent,
+            rating=rating,
+            review=review,
+            rated_by=request.user,
+        )
+
+        # Send rating notification email.
+        email_sent, email_message = send_agent_rating_notification(agent, rating, review)
+
+        from django.contrib import messages
+        if email_sent:
+            messages.success(request, f'Rated {agent.email} with {rating} stars! Rating notification sent.')
         else:
-            from django.contrib import messages
-            messages.error(request, 'Invalid rating. Please provide a rating between 1-5.')
-        
+            messages.success(request, f'Rated {agent.email} with {rating} stars! Email failed: {email_message}')
+
         return redirect('frontend:agent_dashboard')
-    
-    return render(request, 'frontend/rate_agent.html', {'agent': agent})
+
+    return render_react_shell(
+        request,
+        'form',
+        f'Rate agent - {agent.email}',
+        'Record a short performance review for the selected agent.',
+        form=serialize_form(
+            form,
+            action=reverse('frontend:rate_agent', args=[agent.id]),
+            submit_label='Submit rating',
+            cancel_label='Back to dashboard',
+            cancel_href=reverse('frontend:agent_dashboard'),
+            intro='Score the agent from one to five stars and add a concise review note.',
+            sections=[
+                {'title': 'Rating', 'fields': ['rating']},
+                {'title': 'Review', 'fields': ['review']},
+            ],
+        ),
+    )
 
 
 @login_required
@@ -1596,7 +2188,7 @@ def send_admin_message(request):
 @login_required
 def transaction_failed(request, transaction_id):
     """Dedicated page showing why a transaction failed/was reversed/refunded/disputed."""
-    transaction = get_object_or_404(Transaction, id=transaction_id)
+    transaction = get_object_or_404(Transaction.objects.select_related('buyer', 'seller', 'land_parcel', 'joint_group'), id=transaction_id)
 
     # Security: Only involved parties or Admin/Agent can view
     if request.user not in [transaction.buyer, transaction.seller] and request.user.role not in ['Admin', 'Agent']:
@@ -1615,12 +2207,32 @@ def transaction_failed(request, transaction_id):
     if not reason and transaction.reversal_reason:
         reason = transaction.reversal_reason
 
-    context = {
-        'transaction': transaction,
-        'status_label': status_label,
-        'reason': reason,
-    }
-    return render(request, 'frontend/transaction_failed.html', context)
+    retry_href = None
+    if transaction.contract_agreed and transaction.status == 'Under_Verification':
+        retry_href = reverse('frontend:payment_checkout', args=[transaction.id])
+
+    return render_react_shell(
+        request,
+        'status',
+        status_label,
+        f'Parcel {transaction.land_parcel.parcel_number}',
+        status=serialize_status_page(
+            icon='alert',
+            tone='danger' if transaction.status in {'Reversed', 'Refunded', 'Disputed'} else 'warning',
+            title=status_label,
+            description=f'{reason or "The payment flow could not be completed."} Transaction ID {str(transaction.id)[:8].upper()} can be reviewed from the action buttons below.',
+            primary_action={
+                'label': 'Retry checkout' if retry_href else 'Back to transactions',
+                'href': retry_href or reverse('frontend:transactions'),
+                'tone': 'default',
+            },
+            secondary_action={
+                'label': 'Open support',
+                'href': reverse('frontend:support'),
+                'tone': 'outline',
+            },
+        ),
+    )
 
 
 @login_required
@@ -1642,14 +2254,24 @@ def recommendations(request):
         import logging
         logging.getLogger(__name__).error(f"Recommendation error: {e}")
 
-    context = {
-        'recommended': recommended,
-        'rec_type': rec_type,
-        'popular_parcels': popular_parcels,
-        'popular_county': popular_county,
-        'recently_viewed': recently_viewed,
-    }
-    return render(request, 'frontend/recommendations.html', context)
+    return render_react_shell(
+        request,
+        'recommendations',
+        'Recommended parcels',
+        'Personalized recommendations, popular alternatives, and recently viewed parcels.',
+        recommendations_page=serialize_recommendations_page(
+            recommended,
+            rec_type,
+            popular_parcels,
+            popular_county,
+            recently_viewed,
+            request.user,
+        ),
+        actions=[
+            {'label': 'Marketplace', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
+            {'label': 'Price estimator', 'href': reverse('frontend:price_prediction'), 'tone': 'secondary'},
+        ],
+    )
 
 
 @login_required
@@ -1657,55 +2279,64 @@ def price_prediction(request):
     """Interactive land price prediction tool."""
     from core.services.price_prediction import (
         predict_price, KENYA_COUNTIES, LAND_USE_TYPES,
-        get_county_averages, get_model_info
+        get_model_info
     )
 
+    form = PricePredictionForm(
+        request.POST or None,
+        counties=KENYA_COUNTIES,
+        land_use_types=LAND_USE_TYPES,
+    )
     prediction = None
-    form_data = {}
 
-    if request.method == 'POST':
-        county = request.POST.get('county', '').strip()
-        constituency = request.POST.get('constituency', '').strip()
-        land_use = request.POST.get('land_use', '').strip()
-        size_acres = request.POST.get('size_acres', '1')
-        has_road = request.POST.get('has_road_access') == 'on'
-        has_water = request.POST.get('has_water') == 'on'
-        has_electricity = request.POST.get('has_electricity') == 'on'
-
-        form_data = {
-            'county': county,
-            'constituency': constituency,
-            'land_use': land_use,
-            'size_acres': size_acres,
-            'has_road_access': has_road,
-            'has_water': has_water,
-            'has_electricity': has_electricity,
-        }
-
+    if request.method == 'POST' and form.is_valid():
+        cleaned = form.cleaned_data
         try:
-            size = float(size_acres)
             prediction = predict_price(
-                county=county,
-                constituency=constituency if constituency else county,
-                land_use=land_use,
-                size_acres=size,
-                has_road_access=has_road,
-                has_water=has_water,
-                has_electricity=has_electricity,
+                county=cleaned['county'],
+                constituency=cleaned['constituency'] if cleaned['constituency'] else cleaned['county'],
+                land_use=cleaned['land_use'],
+                size_acres=float(cleaned['size_acres']),
+                has_road_access=cleaned['has_road_access'],
+                has_water=cleaned['has_water'],
+                has_electricity=cleaned['has_electricity'],
             )
         except (ValueError, TypeError) as e:
             prediction = {'error': f'Invalid input: {e}'}
 
     model_info = get_model_info()
 
-    context = {
-        'counties': KENYA_COUNTIES,
-        'land_use_types': LAND_USE_TYPES,
-        'prediction': prediction,
-        'form_data': form_data,
-        'model_info': model_info,
-    }
-    return render(request, 'frontend/price_prediction.html', context)
+    return render_react_shell(
+        request,
+        'price-prediction',
+        'Land price estimator',
+        'Estimate parcel pricing using county, land use, and infrastructure inputs.',
+        prediction_page={
+            'counties': KENYA_COUNTIES,
+            'land_use_types': LAND_USE_TYPES,
+            'form': serialize_form(
+                form,
+                action=reverse('frontend:price_prediction'),
+                submit_label='Estimate price',
+                intro='Use the trained model to get a rough market estimate before listing or buying.',
+                sections=[
+                    {'title': 'Location', 'fields': ['county', 'constituency', 'land_use']},
+                    {'title': 'Parcel size', 'fields': ['size_acres']},
+                    {'title': 'Infrastructure', 'fields': ['has_road_access', 'has_water', 'has_electricity']},
+                ],
+            ),
+            'model_info': {
+                'n_records': str(model_info.get('n_records', 0)),
+                'n_counties': str(model_info.get('n_counties', 0)),
+                'algorithm': str(model_info.get('algorithm', 'RandomForest')),
+            } if model_info else None,
+            'prediction': serialize_prediction_result(prediction),
+        },
+        actions=[
+            {'label': 'Marketplace', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
+            {'label': 'Recommendations', 'href': reverse('frontend:recommendations'), 'tone': 'secondary'},
+        ],
+    )
 
 
 @login_required

@@ -223,9 +223,9 @@ class JointBuyerGroupForm(forms.ModelForm):
             'bank_account_number': 'Joint Bank Account Number',
             'bank_branch': 'Bank Branch',
         }
-        help_texts = {
-            'ownership_type': 'Joint Tenancy: equal shares with right of survivorship. '
-                              'Tenancy in Common: specified shares, independently transferable.',
+    help_texts = {
+            'ownership_type': 'For most non-spousal group purchases, Kenyan land law points to tenancy in common. '
+                              'Joint tenancy is generally reserved for spouses or cases approved by court.',
             'preferred_payment_method': 'Choose how the group wants to pay during checkout. Bank account details are optional unless you choose joint bank transfer.',
             'bank_name': 'Optional, but required if the group will use a joint bank account for purchase contributions.',
             'bank_account_name': 'Must match the bank mandate for the joint account.',
@@ -234,8 +234,17 @@ class JointBuyerGroupForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
+        group_type = cleaned.get('group_type')
+        ownership_type = cleaned.get('ownership_type')
         method = cleaned.get('preferred_payment_method')
         bank_fields = ['bank_name', 'bank_account_name', 'bank_account_number']
+
+        if ownership_type == 'Joint_Tenancy' and group_type and group_type != 'Couple':
+            self.add_error(
+                'ownership_type',
+                'Joint tenancy is generally only suitable for spouses or court-approved cases. '
+                'Choose tenancy in common for a group purchase.'
+            )
 
         if method == 'Joint_Bank_Account':
             missing = [field for field in bank_fields if not cleaned.get(field)]
@@ -319,3 +328,77 @@ class JointBuyerMemberForm(forms.ModelForm):
 
 
 JointBuyerMemberFormSet = formset_factory(JointBuyerMemberForm, extra=2, can_delete=True)
+
+
+class AgentRatingForm(forms.Form):
+    rating = forms.ChoiceField(
+        choices=[(str(i), f'{i} Stars') for i in range(1, 6)],
+        widget=forms.RadioSelect,
+        label='Rating',
+    )
+    review = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 5,
+            'placeholder': 'Share what the agent handled well and what should improve.',
+        }),
+        label='Review',
+        help_text='Optional, but useful for performance feedback and coaching.',
+    )
+
+
+class PricePredictionForm(forms.Form):
+    county = forms.ChoiceField(
+        choices=[],
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='County',
+    )
+    constituency = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'e.g. Westlands',
+        }),
+        label='Constituency',
+        help_text='Leave blank to use the selected county as the fallback location.',
+    )
+    land_use = forms.ChoiceField(
+        choices=[],
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Land use',
+    )
+    size_acres = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        min_value=0.01,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': '1.00',
+            'step': '0.01',
+        }),
+        label='Size in acres',
+    )
+    has_road_access = forms.BooleanField(
+        required=False,
+        label='Road access',
+        help_text='Tick if the parcel has usable road access.',
+    )
+    has_water = forms.BooleanField(
+        required=False,
+        label='Water access',
+        help_text='Tick if the parcel has a reliable water source.',
+    )
+    has_electricity = forms.BooleanField(
+        required=False,
+        label='Electricity access',
+        help_text='Tick if the parcel has power connectivity.',
+    )
+
+    def __init__(self, *args, counties=None, land_use_types=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if counties is not None:
+            self.fields['county'].choices = [(county, county) for county in counties]
+        if land_use_types is not None:
+            self.fields['land_use'].choices = [(value, value) for value in land_use_types]

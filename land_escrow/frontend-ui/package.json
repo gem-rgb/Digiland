@@ -1,0 +1,30 @@
+{
+  "name": "digiland-frontend-ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/styles/globals.css -o ./dist/react/styles.css --minify",
+    "build:js": "esbuild ./src/main.tsx --bundle --format=esm --platform=browser --target=es2020 --outfile=./dist/react/js/main.js --sourcemap",
+    "build": "npm run build:css && npm run build:js"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.453.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  }
+}

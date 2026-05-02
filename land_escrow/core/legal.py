@@ -97,10 +97,35 @@ JOINT_LAND_TRANSACTION_LAWS = [
         "official_url": "https://new.kenyalaw.org/akn/ke/act/2012/3/eng%402022-12-31",
         "applies_to": "Joint tenancy and tenancy in common",
         "summary": (
-            "Co-ownership is recognised under Kenyan land law. Where the transfer does not specify "
-            "the nature of rights, the presumption is tenancy in common in equal shares."
+            "Co-ownership is recognised under Kenyan land law. For a transfer to two or more people, "
+            "the register must show whether the owners are joint tenants or tenants in common, and if "
+            "the transfer does not specify the nature of the rights, the presumption is tenancy in common "
+            "in equal shares. Current Kenyan law limits new joint tenancies to spouses or cases allowed by court, "
+            "so group buyers should normally use tenancy in common with stated shares."
         ),
         "required": True,
+    },
+    {
+        "title": "Land Registration Act",
+        "citation": "Cap. 300, section 92",
+        "official_url": "https://new.kenyalaw.org/akn/ke/act/2012/3/eng%402022-12-31",
+        "applies_to": "Copies of title for each co-buyer",
+        "summary": (
+            "Each co-tenant is entitled to a copy of the title. The register also records the co-ownership "
+            "details so every member can confirm the registered interest."
+        ),
+        "required": False,
+    },
+    {
+        "title": "Land Registration Act",
+        "citation": "Cap. 300, section 93",
+        "official_url": "https://new.kenyalaw.org/akn/ke/act/2012/3/eng%402022-12-31",
+        "applies_to": "Spouses buying for co-ownership and use",
+        "summary": (
+            "Where a spouse acquires land during marriage for the co-ownership and use of both spouses, "
+            "the property is treated as matrimonial property and the Matrimonial Property Act applies."
+        ),
+        "required": False,
     },
     {
         "title": "Land Control Act",
@@ -150,7 +175,7 @@ JOINT_LAND_TRANSACTION_LAWS = [
 
 JOINT_LAND_TRANSACTION_CHECKLIST = [
     "Identify all co-buyers and confirm the ownership shares before signing.",
-    "Choose whether the group will hold the land as joint tenants or tenants in common.",
+    "For a group purchase, register the property as tenants in common unless the buyers are spouses or have court leave for joint tenancy.",
     "Confirm whether the land is agricultural or otherwise controlled before transfer.",
     "Obtain Land Control Board consent where the transaction is controlled land.",
     "Stamp and register the transfer instrument before completion.",

@@ -43,10 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
-    
-    # Allauth UI
-    'slippers',
-    'allauth_ui',
+
+    # Allauth
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -142,7 +140,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_DIRS = [BASE_DIR / 'frontend-ui' / 'dist', BASE_DIR / 'static']
 
 # Cloudinary Setup for entirely Free Media (PDFs, Images) hosting
 CLOUDINARY_STORAGE = {
