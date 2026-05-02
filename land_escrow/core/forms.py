@@ -80,6 +80,16 @@ class CustomSignupForm(forms.Form):
             raise forms.ValidationError(
                 'KRA PIN must be 11 characters: Letter + 9 digits + Letter (e.g. A123456789B).'
             )
+        # KRA database verification (graceful fallback if API is down)
+        try:
+            resp = requests.get(
+                f'https://itax.kra.go.ke/KRA-Portal/pinChecker.htm?taxPayerPin={value}',
+                timeout=5,
+            )
+            if resp.status_code == 200 and 'Invalid' in resp.text:
+                raise forms.ValidationError('This KRA PIN was not found in the KRA database.')
+        except requests.RequestException:
+            logger.info(f'KRA PIN Checker API unavailable during signup, using format validation for {value[:3]}***')
         return value
 
     def signup(self, request, user):

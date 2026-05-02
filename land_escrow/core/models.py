@@ -349,6 +349,13 @@ class Document(models.Model):
         ('Passport_Photo', 'Passport Photo'),
         ('Sale_Agreement', 'Sale Agreement'),
         ('Spousal_Consent', 'Spousal Consent Affidavit'),
+        ('Land_Search', 'Land Search Certificate'),
+        ('Land_Rates_Clearance', 'Land Rates Clearance'),
+        ('Land_Rent_Clearance', 'Land Rent Clearance'),
+        ('Survey_Plan', 'Survey Plan / Mutation Form'),
+        ('Consent_To_Transfer', 'Land Control Board Consent'),
+        ('Stamp_Duty_Receipt', 'Stamp Duty Receipt'),
+        ('Valuation_Report', 'Valuation Report'),
     ]
     VERIFICATION_STATUS_CHOICES = [
         ('Pending', 'Pending'),
@@ -360,7 +367,7 @@ class Document(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='uploaded_documents')
     land_parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='documents', null=True, blank=True)
-    document_type = models.CharField(max_length=20, choices=DOC_TYPE_CHOICES)
+    document_type = models.CharField(max_length=30, choices=DOC_TYPE_CHOICES)
     file_url = models.FileField(upload_to='documents/')
     verification_status = models.CharField(max_length=25, choices=VERIFICATION_STATUS_CHOICES, default='Pending')
     fraud_flag_notes = models.TextField(blank=True, null=True)

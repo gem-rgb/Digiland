@@ -1284,9 +1284,30 @@ function MessagesPage() {
     <form method="post" action={page.compose_action} className="space-y-4">
       <input type="hidden" name="csrfmiddlewaretoken" value={page.csrf_token} />
       {bootstrap.user?.role === 'Admin' || bootstrap.user?.role === 'Agent' ? (
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-foreground">Recipient email</label>
-          <Input name="receiver_email" type="email" placeholder="user@example.com" required />
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-foreground">Recipient type</label>
+            <select
+              name="recipient_type"
+              className="flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm"
+              onChange={(e) => {
+                const el = document.getElementById('receiver_email_container');
+                if (el) el.style.display = e.target.value === 'single' ? 'block' : 'none';
+                const input = document.getElementById('receiver_email_input') as HTMLInputElement;
+                if (input) input.required = e.target.value === 'single';
+              }}
+            >
+              <option value="single">Single user</option>
+              <option value="all">All users</option>
+              <option value="buyers">All buyers</option>
+              <option value="sellers">All sellers</option>
+              <option value="agents">All agents</option>
+            </select>
+          </div>
+          <div className="space-y-2" id="receiver_email_container">
+            <label className="text-sm font-semibold text-foreground">Recipient email</label>
+            <Input id="receiver_email_input" name="receiver_email" type="email" placeholder="user@example.com" required />
+          </div>
         </div>
       ) : (
         <div className="space-y-2">
@@ -1696,8 +1717,12 @@ function TaskManagementPage() {
                       <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
                       <input type="hidden" name="parcel_number" value={parcel.parcel_number} />
                       <select name="agent_id" className="flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm">
-                        <option value="">Assign agent</option>
-                        {page.verified_agents.map((agent) => (
+                        <option value="">Assign agent manually</option>
+                        {page.agent_recommendations ? page.agent_recommendations.map((rec, index) => (
+                          <option key={rec.agent_id} value={rec.agent_id}>
+                            {index === 0 ? '🏆 ' : ''}{rec.agent_email} - AI Score: {Math.round(rec.score)}/100
+                          </option>
+                        )) : page.verified_agents.map((agent) => (
                           <option key={agent.id || agent.email} value={agent.id || agent.email}>{agent.email}</option>
                         ))}
                       </select>
@@ -1710,15 +1735,45 @@ function TaskManagementPage() {
 
             <Card className="bg-white/92">
               <CardHeader>
-                <CardTitle className="text-base">Verified agents</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {page.verified_agents.map((agent) => (
-                  <div key={agent.id || agent.email} className="rounded-3xl border border-border bg-muted/40 p-4">
-                    <div className="font-semibold text-foreground">{agent.email}</div>
-                    <div className="text-sm text-muted-foreground">{agent.full_name || agent.role_label || 'Agent'}</div>
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-100 text-purple-700">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                   </div>
-                ))}
+                  <CardTitle className="text-base">AI Agent Insights</CardTitle>
+                </div>
+                <CardDescription>Intelligent task distribution based on agent capabilities, ratings, and workload.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {page.agent_recommendations ? page.agent_recommendations.map((rec) => (
+                  <div key={rec.agent_id} className="rounded-3xl border border-border bg-white p-5 shadow-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 pb-3">
+                      <div>
+                        <div className="font-bold text-foreground">{rec.agent_email}</div>
+                        {rec.is_new ? <span className="mt-1 inline-block rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800">New Agent Program</span> : null}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-black tracking-tight text-purple-700">{Math.round(rec.score)}</div>
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">AI Score</div>
+                      </div>
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2 divide-x divide-border/50 text-center text-xs">
+                      <div>
+                        <div className="font-semibold text-foreground">{rec.rating?.average_rating ? `${parseFloat(rec.rating.average_rating).toFixed(1)} ★` : 'No rating'}</div>
+                        <div className="mt-0.5 text-muted-foreground">Rating</div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-foreground">{rec.completion?.rate ? `${Math.round(rec.completion.rate * 100)}%` : '0%'}</div>
+                        <div className="mt-0.5 text-muted-foreground">Completion</div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-foreground">{rec.usage?.recent_activity || 0}</div>
+                        <div className="mt-0.5 text-muted-foreground">Recent Tasks</div>
+                      </div>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="text-center text-sm text-muted-foreground">AI recommendations not available.</div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -2392,8 +2447,140 @@ function ReactApp() {
   if (page === 'task-management') return <TaskManagementPage />;
   if (page === 'approvals') return <ApprovalsPage />;
   if (page === 'user-review') return <UserReviewPage />;
-  if (page === 'dashboard' || page === 'admin-dashboard' || page === 'agent-dashboard') return <AppShell {...shellProps}><DashboardPage /></AppShell>;
+function AdminFinancePage() {
+  const finance = bootstrap.finance_dashboard;
 
+  if (!finance) {
+    return (
+      <div className="flex h-[50vh] flex-col items-center justify-center text-center">
+        <div className="mb-4 rounded-full bg-amber-100 p-3 text-amber-700">
+          <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h2 className="text-xl font-bold text-foreground">Finance Data Missing</h2>
+        <p className="mt-2 max-w-md text-sm text-muted-foreground">The backend did not provide the finance dashboard data payload.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="bg-white/92">
+          <CardContent className="p-6">
+            <div className="text-sm font-semibold text-muted-foreground">Total Volume</div>
+            <div className="mt-2 text-3xl font-bold text-foreground">KES {finance.total_volume.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+        <Card className="bg-white/92">
+          <CardContent className="p-6">
+            <div className="text-sm font-semibold text-muted-foreground">Platform Commission (4%)</div>
+            <div className="mt-2 text-3xl font-bold text-emerald-600">KES {finance.platform_commission.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+        <Card className="bg-white/92">
+          <CardContent className="p-6">
+            <div className="text-sm font-semibold text-muted-foreground">Estimated Tax Obligation</div>
+            <div className="mt-2 text-3xl font-bold text-amber-600">KES {finance.total_tax.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+        <Card className="bg-white/92">
+          <CardContent className="p-6">
+            <div className="text-sm font-semibold text-muted-foreground">Reversed / Escrow Refunded</div>
+            <div className="mt-2 text-3xl font-bold text-rose-600">KES {finance.reversed_volume.toLocaleString()}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2 bg-white/92">
+          <CardHeader>
+            <CardTitle>Recent Transactions</CardTitle>
+            <CardDescription>Latest completed escrow settlements.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {finance.recent_transactions.length ? (
+              <div className="space-y-4">
+                {finance.recent_transactions.map((tx) => (
+                  <div key={tx.id} className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-border bg-white p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-foreground">Parcel {tx.parcel_number}</div>
+                        <div className="text-xs text-muted-foreground">{tx.updated_at}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-foreground">KES {parseFloat(tx.amount).toLocaleString()}</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Completed</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-3xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No recent completed transactions.</div>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="space-y-6">
+          <Card className="bg-white/92">
+            <CardHeader>
+              <CardTitle>Transaction Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between rounded-2xl bg-muted/60 p-3">
+                  <span className="text-sm font-semibold text-muted-foreground">Completed</span>
+                  <span className="font-bold text-foreground">{finance.completed_count}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-2xl bg-muted/60 p-3">
+                  <span className="text-sm font-semibold text-muted-foreground">Pending</span>
+                  <span className="font-bold text-foreground">{finance.pending_count}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-2xl bg-muted/60 p-3">
+                  <span className="text-sm font-semibold text-muted-foreground">Reversed</span>
+                  <span className="font-bold text-foreground">{finance.reversed_count}</span>
+                </div>
+                <div className="mt-4 border-t border-border/70 pt-3 flex items-center justify-between">
+                  <span className="text-sm font-bold text-foreground">Total</span>
+                  <span className="font-black text-foreground">{finance.total_transactions}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/92">
+            <CardHeader>
+              <CardTitle>Monthly Volume</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {finance.monthly.length ? (
+                <div className="space-y-3">
+                  {finance.monthly.map((m, idx) => (
+                    <div key={idx} className="flex items-center justify-between rounded-2xl border border-border p-3">
+                      <div>
+                        <div className="text-sm font-semibold text-foreground">{m.month}</div>
+                        <div className="text-xs text-muted-foreground">{m.count} txns</div>
+                      </div>
+                      <div className="font-bold text-foreground">KES {m.volume.toLocaleString()}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground text-center">No monthly data available.</div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+  if (page === 'dashboard' || page === 'admin-dashboard' || page === 'agent-dashboard') return <AppShell {...shellProps}><DashboardPage /></AppShell>;
+  if (page === 'finance') return <AppShell {...shellProps}><AdminFinancePage /></AppShell>;
   return (
     <AppShell {...shellProps}>
       <div className="space-y-6">

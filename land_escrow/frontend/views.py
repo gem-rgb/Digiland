@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.middleware.csrf import get_token
 from core.models import LandParcel, Transaction, Message, SupportTicket, Document, User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite, JointBuyerGroup, JointBuyerMember, JointPaymentContribution
 from core.legal import (
     LAND_TRANSACTION_LAWS,
@@ -53,7 +54,6 @@ STAFF_ROLES = {'Admin', 'Agent'}
 
 
 def render_react_shell(request, page, title, subtitle='', **extra):
-    from django.middleware.csrf import get_token
     bootstrap = {
         'page': page,
         'title': title,
@@ -62,15 +62,19 @@ def render_react_shell(request, page, title, subtitle='', **extra):
         'nav': build_nav(request.user, active=page),
         'messages': serialize_messages(request),
     }
+    bootstrap['csrf_token'] = get_token(request)
     if request.user.is_authenticated:
         bootstrap['logout_url'] = reverse('account_logout')
-        bootstrap['csrf_token'] = get_token(request)
     bootstrap.update(extra)
     return render(request, 'frontend/react_shell.html', {'react_bootstrap': bootstrap})
 
 
 def is_joint_buyer(user):
-    if not user.is_authenticated or user.role != 'Buyer':
+    if not user.is_authenticated:
+        return False
+    if user.role == 'Admin':
+        return True
+    if user.role != 'Buyer':
         return False
     if getattr(user, 'buyer_account_type', None) == 'Joint':
         return True
@@ -495,6 +499,7 @@ def render_admin_dashboard(request, context):
         ],
         actions=[
             {'label': 'Task management', 'href': reverse('frontend:task_management'), 'tone': 'outline'},
+            {'label': 'Create joint account', 'href': reverse('frontend:create_joint_group'), 'tone': 'accent'},
             {'label': 'System admin', 'href': '/admin/', 'tone': 'secondary', 'external': True},
         ],
     )
@@ -648,6 +653,7 @@ def render_agent_dashboard(request, context):
 def task_management(request):
     """Dedicated task management page: assign/reassign/unassign parcels + view allocated/completed."""
     from core.models import User as CoreUser
+    from core.services.task_assignment import TaskAssignmentScorer
 
     if request.user.role != 'Admin':
         # Agents see their own pipeline view
@@ -672,7 +678,7 @@ def task_management(request):
             },
         )
 
-    # Admin view
+    # Admin view with intelligent recommendations
     all_pending_parcels = LandParcel.objects.filter(
         verification_status='Pending'
     ).select_related('assigned_agent', 'listed_by').order_by('-ardhisasa_last_synced')
@@ -687,6 +693,25 @@ def task_management(request):
         verification_status__in=['Verified', 'Fraudulent']
     ).select_related('assigned_agent', 'listed_by').order_by('-ardhisasa_last_synced')[:50]
 
+    # Generate agent recommendations with scoring
+    scorer = TaskAssignmentScorer()
+    agent_recommendations = []
+    
+    for agent in verified_agents:
+        score, details = scorer.get_agent_score(agent)
+        agent_recommendations.append({
+            'agent_id': str(agent.id),
+            'agent_email': agent.email,
+            'score': float(score),
+            'is_new': details.get('is_new', False),
+            'rating': details.get('rating', {}),
+            'completion': details.get('completion', {}),
+            'usage': details.get('usage', {}),
+        })
+    
+    # Sort by score
+    agent_recommendations.sort(key=lambda x: x['score'], reverse=True)
+
     return render_react_shell(
         request,
         'task-management',
@@ -699,6 +724,7 @@ def task_management(request):
             'pending_users': [serialize_review_user(user) for user in CoreUser.objects.filter(role__in=['Buyer', 'Seller'], is_identity_verified=False, is_active=True).order_by('date_joined')],
             'pending_agents': [serialize_review_user(user) for user in CoreUser.objects.filter(role='Agent', is_identity_verified=False, is_active=True).order_by('date_joined')],
             'verified_agents': [serialize_review_user(user) for user in verified_agents],
+            'agent_recommendations': agent_recommendations,
             'unassigned_count': len(unassigned_parcels),
         },
     )
@@ -1026,6 +1052,10 @@ def upload_parcel_document(request, parcel_number):
                 parcel.verification_status = 'Pending'
                 parcel.save()
                 
+                # AI Task Auto-Assignment Trigger
+                from core.services.task_assignment import TaskAssignmentScorer
+                TaskAssignmentScorer().auto_assign_parcel(parcel)
+                
             return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
     else:
         form = DocumentUploadForm()
@@ -1273,6 +1303,7 @@ def user_transactions(request):
 @login_required
 def messages_list(request):
     from django.db.models import Q
+    from django.middleware.csrf import get_token
     from core.models import User as CoreUser
     user = request.user
 
@@ -1361,7 +1392,27 @@ def send_message(request):
     receiver_id = request.POST.get('receiver_id', '').strip()
     receiver_email = request.POST.get('receiver_email', '').strip()
 
+    recipient_type = request.POST.get('recipient_type', 'single').strip()
+
     if not content:
+        return redirect('frontend:messages')
+
+    if sender.role in ['Admin', 'Agent'] and recipient_type != 'single':
+        recipients = []
+        if recipient_type == 'all':
+            recipients = CoreUser.objects.exclude(id=sender.id)
+        elif recipient_type == 'buyers':
+            recipients = CoreUser.objects.filter(role='Buyer').exclude(id=sender.id)
+        elif recipient_type == 'sellers':
+            recipients = CoreUser.objects.filter(role='Seller').exclude(id=sender.id)
+        elif recipient_type == 'agents':
+            recipients = CoreUser.objects.filter(role='Agent').exclude(id=sender.id)
+        
+        for user in recipients:
+            Message.objects.create(sender=sender, receiver=user, content=content)
+        
+        from django.contrib import messages
+        messages.success(request, f'Message sent to {len(recipients)} {recipient_type}.')
         return redirect('frontend:messages')
 
     receiver = None
@@ -1503,6 +1554,10 @@ def sign_contract(request, transaction_id):
 
     from django.middleware.csrf import get_token
 
+    # Admin users see no legal restrictions (override/failover mode)
+    # Regular users see legal requirements for their reference
+    contract_laws = [] if request.user.role == 'Admin' else LAND_TRANSACTION_LAWS
+
     return render_react_shell(
         request,
         'contract',
@@ -1511,7 +1566,7 @@ def sign_contract(request, transaction_id):
         contract=serialize_contract(
             transaction,
             request.user,
-            laws=LAND_TRANSACTION_LAWS,
+            laws=contract_laws,
             joint_breakdown=joint_breakdown,
             sign_url=reverse('frontend:sign_contract', args=[transaction.id]),
             payment_url=reverse('frontend:payment_checkout', args=[transaction.id]),
@@ -2363,3 +2418,78 @@ def toggle_favorite(request, parcel_number):
         return JsonResponse({'is_favorited': is_favorited})
 
     return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+
+
+@login_required
+def admin_finance(request):
+    """Admin-only expenditure and tax dashboard."""
+    if request.user.role not in ('Admin', 'Agent'):
+        return redirect('frontend:home')
+
+    from django.db.models import Sum, Count, Q
+    from django.db.models.functions import TruncMonth
+    from django.middleware.csrf import get_token
+    from decimal import Decimal
+
+    transactions = Transaction.objects.all()
+    completed = transactions.filter(status='Completed')
+    reversed_txns = transactions.filter(status='Reversed')
+
+    total_volume = completed.aggregate(total=Sum('agreed_price'))['total'] or Decimal('0')
+    reversed_volume = reversed_txns.aggregate(total=Sum('agreed_price'))['total'] or Decimal('0')
+
+    # Platform commission at 4%
+    platform_commission = total_volume * Decimal('0.04')
+    # Stamp duty estimate at 4% (Kenyan law)
+    stamp_duty_estimate = total_volume * Decimal('0.04')
+    # Legal fees estimate at 1%
+    legal_fees_estimate = total_volume * Decimal('0.01')
+    # Total tax obligation
+    total_tax = stamp_duty_estimate + legal_fees_estimate
+
+    # Status breakdown
+    status_counts = transactions.values('status').annotate(count=Count('id')).order_by('status')
+
+    # Monthly breakdown (last 12 months)
+    monthly = (
+        completed
+        .annotate(month=TruncMonth('created_at'))
+        .values('month')
+        .annotate(volume=Sum('agreed_price'), count=Count('id'))
+        .order_by('-month')[:12]
+    )
+
+    # Recent completed transactions
+    recent = completed.select_related('buyer', 'seller', 'land_parcel').order_by('-updated_at')[:20]
+
+    finance_dashboard = {
+        'total_volume': float(total_volume),
+        'platform_commission': float(platform_commission),
+        'stamp_duty_estimate': float(stamp_duty_estimate),
+        'legal_fees_estimate': float(legal_fees_estimate),
+        'total_tax': float(total_tax),
+        'reversed_volume': float(reversed_volume),
+        'total_transactions': transactions.count(),
+        'completed_count': completed.count(),
+        'pending_count': transactions.filter(status__in=['Initiated', 'Deposit_Paid', 'Under_Verification', 'Verification_Hiatus']).count(),
+        'reversed_count': reversed_txns.count(),
+        'status_counts': list(status_counts),
+        'monthly': [
+            {
+                'month': m['month'].strftime('%b %Y') if m['month'] else 'Unknown',
+                'volume': float(m['volume'] or 0),
+                'count': m['count'],
+            }
+            for m in monthly
+        ],
+        'recent_transactions': [serialize_transaction(tx, request.user) for tx in recent],
+    }
+
+    return render_react_shell(
+        request,
+        'finance',
+        'Finance & Tax Dashboard',
+        'Platform expenditure, revenue, and tax obligations overview.',
+        finance_dashboard=finance_dashboard,
+        csrf_token=get_token(request),
+    )

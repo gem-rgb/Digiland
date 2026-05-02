@@ -164,23 +164,6 @@ export function AppShell({ title, subtitle, user, nav, children, actions, logout
           {children}
         </main>
       </div>
-
-      {/* Footer */}
-      <footer className="border-t border-border/60 bg-white/80 backdrop-blur-xl py-6 mt-8">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <ShieldCheck className="h-4 w-4 text-emerald-700" />
-              <span className="text-xs font-semibold text-foreground">Digiland</span>
-              <span className="text-xs text-muted-foreground">© 2026 Secure land escrow platform.</span>
-            </div>
-            <div className="flex items-center gap-6 text-xs text-muted-foreground">
-              <a href="/escrow-acts/" className="hover:text-emerald-700 transition-colors font-semibold">Legal</a>
-              <a href="/parcels/" className="hover:text-emerald-700 transition-colors font-semibold">Marketplace</a>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

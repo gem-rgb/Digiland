@@ -40,6 +40,7 @@ def build_nav(user, active=None):
         {'label': 'Parcels', 'href': reverse('frontend:parcel_list'), 'icon': 'parcels', 'active': active == 'parcel-list'},
         {'label': 'Transactions', 'href': reverse('frontend:transactions'), 'icon': 'transactions', 'active': active == 'transactions'},
         {'label': 'Messages', 'href': reverse('frontend:messages'), 'icon': 'documents', 'active': active == 'messages'},
+        {'label': 'Finance', 'href': reverse('frontend:admin_finance'), 'icon': 'money', 'active': active == 'finance'},
     ]
 
 

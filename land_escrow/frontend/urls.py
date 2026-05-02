@@ -58,4 +58,5 @@ urlpatterns = [
     path('terms/', TemplateView.as_view(template_name='frontend/terms.html'), name='terms'),
     path('privacy/', TemplateView.as_view(template_name='frontend/privacy.html'), name='privacy'),
     path('escrow-acts/', views.legal_requirements, name='escrow_acts'),
+    path('dashboard/finance/', views.admin_finance, name='admin_finance'),
 ]
