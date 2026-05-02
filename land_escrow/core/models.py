@@ -29,6 +29,10 @@ class User(AbstractUser):
         ('Land_Official', 'Land Official'),
         ('Admin', 'Admin'),
     ]
+    BUYER_ACCOUNT_TYPE_CHOICES = [
+        ('Individual', 'Individual'),
+        ('Joint', 'Joint'),
+    ]
 
     phone_regex = RegexValidator(
         regex=r'^(\+254|0)\d{9}$',
@@ -50,6 +54,13 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=20, validators=[phone_regex])
     kra_pin = models.CharField(max_length=11, validators=[kra_pin_regex], help_text='KRA PIN e.g. A123456789B')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    buyer_account_type = models.CharField(
+        max_length=20,
+        choices=BUYER_ACCOUNT_TYPE_CHOICES,
+        blank=True,
+        null=True,
+        help_text='Buyer onboarding choice: individual or joint purchase mode.',
+    )
     is_identity_verified = models.BooleanField(default=False)
     gavakonect_verification_id = models.CharField(max_length=100, blank=True, null=True)
 
@@ -436,11 +447,26 @@ class JointBuyerGroup(models.Model):
         ('Joint_Tenancy', 'Joint Tenancy (equal shares, right of survivorship)'),
         ('Tenancy_In_Common', 'Tenancy in Common (specified shares, independently transferable)'),
     ]
+    PAYMENT_METHOD_CHOICES = [
+        ('M_Pesa_Split', 'M-Pesa Split Contributions'),
+        ('Joint_Bank_Account', 'Joint Bank Account'),
+        ('Leader_Managed', 'Leader Manages Payment'),
+    ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200, help_text="Group or chama name (e.g. 'Wanjiku Family Trust')")
     group_type = models.CharField(max_length=20, choices=GROUP_TYPE_CHOICES)
     ownership_type = models.CharField(max_length=20, choices=OWNERSHIP_TYPE_CHOICES, default='Tenancy_In_Common')
+    preferred_payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHOD_CHOICES,
+        default='M_Pesa_Split',
+        help_text="Preferred payment method for the joint checkout flow.",
+    )
+    bank_name = models.CharField(max_length=120, blank=True, null=True, help_text="Bank name for the joint account")
+    bank_account_name = models.CharField(max_length=150, blank=True, null=True, help_text="Account name as held at the bank")
+    bank_account_number = models.CharField(max_length=50, blank=True, null=True, help_text="Joint bank account number")
+    bank_branch = models.CharField(max_length=100, blank=True, null=True, help_text="Branch where the account is held")
     leader = models.ForeignKey(User, on_delete=models.CASCADE, related_name='led_joint_groups',
                                limit_choices_to={'role': 'Buyer'},
                                help_text="The registered Buyer who manages this group")
@@ -495,18 +521,30 @@ class JointPaymentContribution(models.Model):
     STATUS_CHOICES = [
         ('Pending', 'Pending'),
         ('STK_Pushed', 'STK Push Sent'),
+        ('Bank_Submitted', 'Bank Transfer Submitted'),
         ('Completed', 'Completed'),
         ('Failed', 'Failed'),
+    ]
+    PAYMENT_CHANNEL_CHOICES = [
+        ('M_Pesa', 'M-Pesa STK'),
+        ('Bank_Transfer', 'Joint Bank Transfer'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     transaction = models.ForeignKey(Transaction, on_delete=models.CASCADE, related_name='joint_contributions')
     member = models.ForeignKey(JointBuyerMember, on_delete=models.SET_NULL, null=True, blank=True, related_name='contributions')
     amount = models.DecimalField(max_digits=14, decimal_places=2)
-    phone_number = models.CharField(max_length=20)
+    payment_channel = models.CharField(max_length=20, choices=PAYMENT_CHANNEL_CHOICES, default='M_Pesa')
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     checkout_request_id = models.CharField(max_length=100, blank=True, null=True)
     mpesa_receipt = models.CharField(max_length=100, blank=True, null=True)
+    bank_reference = models.CharField(max_length=100, blank=True, null=True)
+    depositor_name = models.CharField(max_length=150, blank=True, null=True)
+    bank_name = models.CharField(max_length=120, blank=True, null=True)
+    bank_account_number = models.CharField(max_length=50, blank=True, null=True)
+    bank_account_name = models.CharField(max_length=150, blank=True, null=True)
+    bank_branch = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -514,5 +552,5 @@ class JointPaymentContribution(models.Model):
 
     def __str__(self):
         member_label = self.member.full_name if self.member else "Leader/Full"
-        return f"{self.transaction_id} {member_label} {self.amount} ({self.status})"
-
+        channel = "Bank" if self.payment_channel == 'Bank_Transfer' else "M-Pesa"
+        return f"{self.transaction_id} {member_label} {self.amount} ({channel}, {self.status})"

@@ -50,10 +50,15 @@
           </div>
           <div class="text-end">
             {% if not m.is_leader %}
-            <form method="post" action="{% url 'frontend:delete_joint_member' m.id %}" onsubmit="return confirm('Remove this member?');">
-              {% csrf_token %}
-              <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
-            </form>
+            <div class="d-flex gap-2 justify-content-end">
+              <a class="btn btn-sm btn-outline-primary" href="{% url 'frontend:edit_joint_member' m.id %}">
+                <i class="bi bi-pencil-square"></i>
+              </a>
+              <form method="post" action="{% url 'frontend:delete_joint_member' m.id %}" onsubmit="return confirm('Remove this member?');">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
+              </form>
+            </div>
             {% endif %}
           </div>
         </div>
@@ -79,11 +84,27 @@
             <span class="text-muted">Created</span>
             <strong>{{ group.created_at|date:"M d, Y" }}</strong>
           </div>
+          <div class="summary-row">
+            <span class="text-muted">Payment method</span>
+            <strong>{{ group.get_preferred_payment_method_display }}</strong>
+          </div>
         </div>
+        {% if group.preferred_payment_method == 'Joint_Bank_Account' %}
+        <div class="border rounded-3 p-3 mb-3 bg-body-tertiary">
+          <h6 class="fw-bold mb-2"><i class="bi bi-bank me-1"></i>Joint bank account</h6>
+          <div class="small text-muted">Bank: {{ group.bank_name|default:"Not set" }}</div>
+          <div class="small text-muted">Account name: {{ group.bank_account_name|default:"Not set" }}</div>
+          <div class="small text-muted">Account number: {{ group.bank_account_number|default:"Not set" }}</div>
+          <div class="small text-muted">Branch: {{ group.bank_branch|default:"Not set" }}</div>
+        </div>
+        {% endif %}
         <div class="alert alert-info py-2 small mb-3">
           <i class="bi bi-info-circle"></i>
-          You can initiate escrow as a joint purchase from any verified parcel detail page.
+          You can initiate escrow as a joint purchase from any verified parcel detail page. The group leader can also edit, replace, or remove members before a live transaction is linked.
         </div>
+        <a class="btn btn-outline-primary w-100 mb-2" href="{% url 'frontend:joint_laws' %}">
+          <i class="bi bi-journal-text me-1"></i>Open joint laws page
+        </a>
         <a class="btn btn-outline-secondary w-100" href="{% url 'frontend:edit_joint_group' group.id %}">
           <i class="bi bi-pencil-square me-1"></i>Edit group details
         </a>

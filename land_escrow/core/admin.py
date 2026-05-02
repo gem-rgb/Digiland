@@ -7,14 +7,14 @@ from .models import User, LandParcel, Transaction, Document, AuditLog, SupportTi
 
 class CustomUserAdmin(UserAdmin):
     # Specify the fields that should be displayed in the list view
-    list_display = ('email', 'role', 'id_number', 'is_identity_verified', 'is_staff')
+    list_display = ('email', 'role', 'buyer_account_type', 'id_number', 'is_identity_verified', 'is_staff')
     search_fields = ('email', 'id_number')
     ordering = ('email',)
     
     # Define custom fieldsets to ensure the Admin can toggle high-security fields natively
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Personal info', {'fields': ('id_number', 'phone_number')}),
+        ('Personal info', {'fields': ('id_number', 'phone_number', 'buyer_account_type')}),
         ('Security & Fencing', {'fields': ('role', 'is_identity_verified', 'gavakonect_verification_id')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
@@ -24,7 +24,7 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password', 'role', 'id_number', 'phone_number', 'is_identity_verified'),
+            'fields': ('email', 'password', 'role', 'id_number', 'phone_number', 'buyer_account_type', 'is_identity_verified'),
         }),
     )
 

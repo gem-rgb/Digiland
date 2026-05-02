@@ -14,6 +14,8 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
         """
         user = request.user
         if user.is_authenticated:
+            if user.role == 'Buyer' and not getattr(user, 'buyer_account_type', None):
+                return reverse('frontend:buyer_account_choice')
             if user.role == 'Agent':
                 # Agents should never reach here via public login (blocked in
                 # pre_login). If they somehow do (e.g. direct API call),
@@ -28,11 +30,14 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
         """
         After a successful signup, agents are sent to the 'signup complete'
         gate which logs them out and directs them to the Staff Login portal.
-        All other roles use the standard login redirect.
+        Buyers are sent to their onboarding choice page so they can select
+        joint or individual account mode.
         """
         user = request.user
         if user.is_authenticated and getattr(user, 'role', None) == 'Agent':
             return reverse('frontend:agent_signup_complete')
+        if user.is_authenticated and getattr(user, 'role', None) == 'Buyer':
+            return reverse('frontend:buyer_account_choice')
         return super().get_signup_redirect_url(request)
 
     def pre_login(self, request, user, **kwargs):

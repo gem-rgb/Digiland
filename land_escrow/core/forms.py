@@ -178,7 +178,16 @@ class JointBuyerGroupForm(forms.ModelForm):
 
     class Meta:
         model = JointBuyerGroup
-        fields = ['name', 'group_type', 'ownership_type']
+        fields = [
+            'name',
+            'group_type',
+            'ownership_type',
+            'preferred_payment_method',
+            'bank_name',
+            'bank_account_name',
+            'bank_account_number',
+            'bank_branch',
+        ]
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -186,16 +195,54 @@ class JointBuyerGroupForm(forms.ModelForm):
             }),
             'group_type': forms.Select(attrs={'class': 'form-select'}),
             'ownership_type': forms.RadioSelect(),
+            'preferred_payment_method': forms.RadioSelect(),
+            'bank_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. Co-op Bank',
+            }),
+            'bank_account_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. Wanjiku Family Trust',
+            }),
+            'bank_account_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. 0123456789012',
+            }),
+            'bank_branch': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. Nairobi CBD',
+            }),
         }
         labels = {
             'name': 'Group / Chama Name',
             'group_type': 'Type of Group',
             'ownership_type': 'Ownership Structure',
+            'preferred_payment_method': 'Preferred Payment Method',
+            'bank_name': 'Joint Bank Name',
+            'bank_account_name': 'Joint Bank Account Name',
+            'bank_account_number': 'Joint Bank Account Number',
+            'bank_branch': 'Bank Branch',
         }
         help_texts = {
             'ownership_type': 'Joint Tenancy: equal shares with right of survivorship. '
                               'Tenancy in Common: specified shares, independently transferable.',
+            'preferred_payment_method': 'Choose how the group wants to pay during checkout. Bank account details are optional unless you choose joint bank transfer.',
+            'bank_name': 'Optional, but required if the group will use a joint bank account for purchase contributions.',
+            'bank_account_name': 'Must match the bank mandate for the joint account.',
+            'bank_account_number': 'Enter the exact account number used for the joint account.',
         }
+
+    def clean(self):
+        cleaned = super().clean()
+        method = cleaned.get('preferred_payment_method')
+        bank_fields = ['bank_name', 'bank_account_name', 'bank_account_number']
+
+        if method == 'Joint_Bank_Account':
+            missing = [field for field in bank_fields if not cleaned.get(field)]
+            if missing:
+                for field in missing:
+                    self.add_error(field, 'This field is required for the joint bank account payment method.')
+        return cleaned
 
 
 class JointBuyerMemberForm(forms.ModelForm):
@@ -272,4 +319,3 @@ class JointBuyerMemberForm(forms.ModelForm):
 
 
 JointBuyerMemberFormSet = formset_factory(JointBuyerMemberForm, extra=2, can_delete=True)
-

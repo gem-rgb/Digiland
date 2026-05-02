@@ -1,0 +1,81 @@
+{% extends 'frontend/base.html' %}
+{% block title %}Edit Member - Digiland{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <span class="page-kicker"><i class="bi bi-pencil-square"></i>Joint ownership</span>
+    <h2 class="page-title">Replace or update a co-buyer</h2>
+    <p class="page-subtitle">
+      {{ group.name }} - update the member record before the group is used in a live transaction.
+    </p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-outline-secondary" href="{% url 'frontend:joint_group_detail' group.id %}">
+      <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+  </div>
+</section>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header bg-dark">
+        <i class="bi bi-person-lines-fill me-2"></i>Member details
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-bold">{{ member_form.full_name.label }}</label>
+              {{ member_form.full_name }}
+              {% if member_form.full_name.errors %}<div class="invalid-feedback d-block">{{ member_form.full_name.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">{{ member_form.id_number.label }}</label>
+              {{ member_form.id_number }}
+              {% if member_form.id_number.errors %}<div class="invalid-feedback d-block">{{ member_form.id_number.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">{{ member_form.kra_pin.label }}</label>
+              {{ member_form.kra_pin }}
+              {% if member_form.kra_pin.errors %}<div class="invalid-feedback d-block">{{ member_form.kra_pin.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">{{ member_form.phone_number.label }}</label>
+              {{ member_form.phone_number }}
+              {% if member_form.phone_number.errors %}<div class="invalid-feedback d-block">{{ member_form.phone_number.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">{{ member_form.email.label }}</label>
+              {{ member_form.email }}
+              {% if member_form.email.errors %}<div class="invalid-feedback d-block">{{ member_form.email.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">{{ member_form.share_percentage.label }}</label>
+              {{ member_form.share_percentage }}
+              {% if member_form.share_percentage.errors %}<div class="invalid-feedback d-block">{{ member_form.share_percentage.errors|join:", " }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="alert alert-info py-2 small mt-4">
+            <i class="bi bi-info-circle"></i>
+            The group leader can update this member record before the group is linked to a live transaction.
+          </div>
+
+          <div class="d-grid d-md-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary fw-bold">
+              <i class="bi bi-check-circle me-1"></i>Save member changes
+            </button>
+            <a class="btn btn-outline-secondary" href="{% url 'frontend:joint_group_detail' group.id %}">
+              Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

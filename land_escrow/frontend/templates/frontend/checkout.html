@@ -106,14 +106,15 @@
                         {% if transaction.is_joint_purchase and transaction.joint_group and joint_breakdown %}
                         <div class="alert alert-warning border-warning py-2 small mb-4">
                             <i class="bi bi-exclamation-triangle-fill"></i>
-                            Joint purchases can be paid either by the leader (full amount) or by each member (split STK pushes).
+                            Joint purchases can be paid by the leader, by each member with split STK pushes, or from the joint bank account recorded for the group.
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Payment option</label>
                             <select class="form-select" id="jointPaymentMode">
-                                <option value="leader" selected>Leader pays full amount</option>
-                                <option value="split">Members pay individually (split)</option>
+                                <option value="leader_m_pesa" {% if joint_payment_method != 'Joint_Bank_Account' %}selected{% endif %}>Leader pays full amount with M-Pesa</option>
+                                <option value="split_m_pesa">Members pay individually (split STK)</option>
+                                <option value="joint_bank_account" {% if joint_payment_method == 'Joint_Bank_Account' %}selected{% endif %}>Pay from the joint bank account</option>
                             </select>
                         </div>
 
@@ -129,12 +130,42 @@
                             </select>
                             <div class="form-text">This will send an STK push to the selected member’s phone for their share.</div>
                         </div>
+
+                        <div class="mb-3 d-none" id="bankTransferSection">
+                            <div class="border rounded-3 p-3 bg-body-tertiary mb-3">
+                                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                    <div>
+                                        <h6 class="fw-bold mb-1"><i class="bi bi-bank me-1"></i>Joint bank account</h6>
+                                        <div class="small text-muted">{{ transaction.joint_group.bank_name|default:"Bank not yet configured" }}</div>
+                                        <div class="small text-muted">Account name: {{ transaction.joint_group.bank_account_name|default:"Not set" }}</div>
+                                        <div class="small text-muted">Account number: {{ transaction.joint_group.bank_account_number|default:"Not set" }}</div>
+                                        <div class="small text-muted">Branch: {{ transaction.joint_group.bank_branch|default:"Not set" }}</div>
+                                    </div>
+                                    <span class="badge bg-success">Manual bank transfer</span>
+                                </div>
+                                {% if not joint_bank_ready %}
+                                <div class="alert alert-warning py-2 small mb-0">
+                                    The group has not finished setting up a joint bank account yet. Ask the leader to add the bank details first.
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="mb-3">
+                                <label for="depositor_name" class="form-label fw-bold">Depositor name</label>
+                                <input type="text" class="form-control form-control-lg" id="depositor_name" name="depositor_name" value="{{ request.user.get_full_name|default:request.user.email }}">
+                            </div>
+                            <div class="mb-3">
+                                <label for="bank_reference" class="form-label fw-bold">Bank transfer reference</label>
+                                <input type="text" class="form-control form-control-lg" id="bank_reference" name="bank_reference" placeholder="Enter the transfer reference or slip number">
+                                <div class="form-text">Use the reference from the bank transfer so the escrow team can match the deposit.</div>
+                            </div>
+                        </div>
                         {% endif %}
 
                         <!-- STK Push Form -->
                         <div class="mt-auto" id="paymentFormSection">
                             <form id="stkPushForm" method="POST" action="{% url 'frontend:process_payment' transaction.id %}">
                                 {% csrf_token %}
+                                <input type="hidden" name="payment_method" id="payment_method" value="{% if joint_payment_method == 'Joint_Bank_Account' %}joint_bank_account{% else %}m_pesa{% endif %}">
                                 <input type="hidden" name="member_id" id="member_id">
                                 <input type="hidden" name="amount" id="amount">
                                 <div class="mb-3">
@@ -151,6 +182,19 @@
                                 </button>
                             </form>
                             <p class="text-center text-muted small mt-3"><i class="bi bi-lock"></i> 256-bit AES Encryption &bull; Safaricom Daraja API</p>
+                        </div>
+
+                        <div class="mt-auto d-none" id="bankWaitingSection">
+                            <div class="text-center py-4">
+                                <i class="bi bi-bank2 text-success" style="font-size: 3rem;"></i>
+                                <h5 class="fw-bold text-success mt-3 mb-2">Bank transfer recorded</h5>
+                                <p class="text-muted mb-2">We have saved the joint bank transfer details for this purchase.</p>
+                                <p class="text-muted small mb-3">Use the bank account shown above to complete the transfer and keep the reference number.</p>
+                                <div id="bankPaymentDetails" class="mb-3"></div>
+                                <a href="{% url 'frontend:transactions' %}" class="btn btn-primary btn-lg fw-bold">
+                                    <i class="bi bi-list-check"></i> View My Transactions
+                                </a>
+                            </div>
                         </div>
 
                         <!-- STK Push Waiting Section (hidden initially) -->
@@ -210,15 +254,34 @@ const MAX_POLLS = 40; // 40 polls at 3 seconds = 2 minutes timeout
 (function() {
   var modeEl = document.getElementById('jointPaymentMode');
   var splitSection = document.getElementById('splitPaySection');
+  var bankSection = document.getElementById('bankTransferSection');
+  var bankWaitingSection = document.getElementById('bankWaitingSection');
   var memberSelect = document.getElementById('memberSelect');
   var memberIdInput = document.getElementById('member_id');
   var amountInput = document.getElementById('amount');
   var phoneInput = document.getElementById('phone_number');
+  var paymentMethodInput = document.getElementById('payment_method');
+  var payBtn = document.getElementById('payBtn');
+  var depositorNameInput = document.getElementById('depositor_name');
+  var bankReferenceInput = document.getElementById('bank_reference');
   if (!modeEl) return;
 
   function syncMode() {
-    var split = (modeEl.value === 'split');
+    var split = (modeEl.value === 'split_m_pesa');
+    var bank = (modeEl.value === 'joint_bank_account');
     if (splitSection) splitSection.classList.toggle('d-none', !split);
+    if (bankSection) bankSection.classList.toggle('d-none', !bank);
+    if (bankWaitingSection) bankWaitingSection.classList.add('d-none');
+    if (paymentMethodInput) paymentMethodInput.value = bank ? 'joint_bank_account' : 'm_pesa';
+    if (payBtn) {
+      payBtn.innerHTML = bank
+        ? '<i class="bi bi-bank"></i> Record Bank Transfer'
+        : '<i class="bi bi-shield-lock"></i> Send M-PESA STK Push';
+    }
+    if (phoneInput) {
+      phoneInput.required = !bank;
+      phoneInput.closest('.mb-3').classList.toggle('d-none', bank);
+    }
     if (!split) {
       if (memberIdInput) memberIdInput.value = '';
       if (amountInput) amountInput.value = '';
@@ -242,16 +305,26 @@ const MAX_POLLS = 40; // 40 polls at 3 seconds = 2 minutes timeout
 document.getElementById('stkPushForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
-    const phone = document.getElementById('phone_number').value.trim();
-    if (!phone) {
+    const paymentMethod = document.getElementById('payment_method').value;
+    const phoneEl = document.getElementById('phone_number');
+    const phone = phoneEl ? phoneEl.value.trim() : '';
+    const bankReference = document.getElementById('bank_reference');
+    const depositorName = document.getElementById('depositor_name');
+    if (paymentMethod !== 'joint_bank_account' && !phone) {
         alert('Please enter your M-PESA phone number.');
+        return;
+    }
+    if (paymentMethod === 'joint_bank_account' && bankReference && !bankReference.value.trim()) {
+        alert('Please enter the bank transfer reference.');
         return;
     }
     
     // Disable button and show loading
     const btn = document.getElementById('payBtn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Initiating STK Push...';
+    btn.innerHTML = paymentMethod === 'joint_bank_account'
+        ? '<span class="spinner-border spinner-border-sm me-2"></span> Recording bank transfer...'
+        : '<span class="spinner-border spinner-border-sm me-2"></span> Initiating STK Push...';
     
     // Send request to initiate STK Push
     fetch('{% url "frontend:process_payment" transaction.id %}', {
@@ -263,9 +336,12 @@ document.getElementById('stkPushForm').addEventListener('submit', function(e) {
         },
         body: new URLSearchParams({
             'csrfmiddlewaretoken': CSRF_TOKEN,
+            'payment_method': paymentMethod,
             'phone_number': phone,
             'member_id': (document.getElementById('member_id') || {}).value || '',
-            'amount': (document.getElementById('amount') || {}).value || ''
+            'amount': (document.getElementById('amount') || {}).value || '',
+            'bank_reference': bankReference ? bankReference.value.trim() : '',
+            'depositor_name': depositorName ? depositorName.value.trim() : ''
         })
     })
     .then(response => response.json())
@@ -274,6 +350,7 @@ document.getElementById('stkPushForm').addEventListener('submit', function(e) {
             // Show waiting section
             document.getElementById('paymentFormSection').classList.add('d-none');
             document.getElementById('stkWaitingSection').classList.remove('d-none');
+            document.getElementById('bankWaitingSection').classList.add('d-none');
             
             // Start polling for payment status
             if (data.checkout_request_id) {
@@ -284,16 +361,34 @@ document.getElementById('stkPushForm').addEventListener('submit', function(e) {
                     window.location.href = '{% url "frontend:transactions" %}';
                 }, 2000);
             }
+        } else if (data.status === 'bank_pending') {
+            document.getElementById('paymentFormSection').classList.add('d-none');
+            document.getElementById('stkWaitingSection').classList.add('d-none');
+            document.getElementById('bankWaitingSection').classList.remove('d-none');
+            if (document.getElementById('bankPaymentDetails')) {
+                document.getElementById('bankPaymentDetails').innerHTML = `
+                    <div class="alert alert-success py-2 small">
+                        <strong>Reference:</strong> ${data.bank_reference || 'N/A'}<br>
+                        <strong>Escrow Reference:</strong> ${data.escrow_reference || 'N/A'}<br>
+                        <strong>Bank:</strong> ${data.bank_name || 'N/A'}<br>
+                        <strong>Account:</strong> ${data.bank_account_name || 'N/A'} (${data.bank_account_number || 'N/A'})
+                    </div>
+                `;
+            }
         } else {
             btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-shield-lock"></i> Send M-PESA STK Push';
+            btn.innerHTML = paymentMethod === 'joint_bank_account'
+                ? '<i class="bi bi-bank"></i> Record Bank Transfer'
+                : '<i class="bi bi-shield-lock"></i> Send M-PESA STK Push';
             alert(data.message || 'Failed to initiate payment. Please try again.');
         }
     })
     .catch(error => {
         console.error('Payment error:', error);
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-shield-lock"></i> Send M-PESA STK Push';
+        btn.innerHTML = document.getElementById('payment_method').value === 'joint_bank_account'
+            ? '<i class="bi bi-bank"></i> Record Bank Transfer'
+            : '<i class="bi bi-shield-lock"></i> Send M-PESA STK Push';
         alert('Network error. Please check your connection and try again.');
     });
 });

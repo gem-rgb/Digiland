@@ -46,6 +46,7 @@
                         {% for error in form.role.errors %}
                         <small class="text-danger fw-bold d-block mt-1"><i class="bi bi-x-circle-fill me-1"></i>{{ error }}</small>
                         {% endfor %}
+                        <div class="form-text">Buyer accounts will be redirected to choose between joint and individual setup after signup.</div>
                     </div>
 
                     {# ID Number #}
@@ -170,4 +171,3 @@
 })();
 </script>
 {% endblock %}
-

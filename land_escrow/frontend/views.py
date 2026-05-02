@@ -2,8 +2,15 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from core.models import LandParcel, Transaction, Message, SupportTicket, Document, User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite, JointBuyerGroup, JointBuyerMember, JointPaymentContribution
+from core.legal import (
+    LAND_TRANSACTION_LAWS,
+    LAND_TRANSACTION_CHECKLIST,
+    JOINT_LAND_TRANSACTION_LAWS,
+    JOINT_LAND_TRANSACTION_CHECKLIST,
+    JOINT_PAYMENT_GUIDANCE,
+)
 from .forms import LandParcelUploadForm
-from core.forms import DocumentUploadForm, JointBuyerGroupForm, JointBuyerMemberFormSet
+from core.forms import DocumentUploadForm, JointBuyerGroupForm, JointBuyerMemberFormSet, JointBuyerMemberForm
 
 def is_seller_or_agent(user):
     if not user.is_authenticated:
@@ -23,6 +30,17 @@ def is_verified_agent_or_admin(user):
     return False
 
 STAFF_ROLES = {'Admin', 'Agent'}
+
+
+def is_joint_buyer(user):
+    if not user.is_authenticated or user.role != 'Buyer':
+        return False
+    if getattr(user, 'buyer_account_type', None) == 'Joint':
+        return True
+    try:
+        return user.led_joint_groups.exists()
+    except Exception:
+        return False
 
 def home(request):
     from django.db.models import Q
@@ -54,6 +72,57 @@ def agent_signup_complete(request):
         logout(request)
     request.session['agent_signup_success'] = True
     return redirect(reverse('frontend:staff_login'))
+
+
+@login_required
+def buyer_account_choice(request):
+    """Buyer onboarding screen for choosing individual versus joint account mode."""
+    if request.user.role != 'Buyer':
+        return redirect('frontend:home')
+
+    if request.user.buyer_account_type == 'Joint':
+        return redirect('frontend:joint_groups')
+    if request.user.buyer_account_type == 'Individual':
+        return redirect('frontend:parcel_list')
+
+    if request.method == 'POST':
+        account_type = (request.POST.get('account_type') or '').strip()
+        if account_type not in {'Individual', 'Joint'}:
+            from django.contrib import messages
+            messages.error(request, 'Please choose either an individual or joint buyer account.')
+            return redirect('frontend:buyer_account_choice')
+
+        request.user.buyer_account_type = account_type
+        request.user.save(update_fields=['buyer_account_type'])
+
+        from django.contrib import messages
+        if account_type == 'Joint':
+            messages.success(request, 'Joint buyer account selected. Set up your group next.')
+            return redirect('frontend:create_joint_group')
+
+        messages.success(request, 'Individual buyer account selected. You can now browse the marketplace.')
+        return redirect('frontend:parcel_list')
+
+    return render(request, 'frontend/buyer_account_choice.html', {
+        'laws': LAND_TRANSACTION_LAWS,
+    })
+
+
+def legal_requirements(request):
+    """Public reference page for the land sale laws and compliance checklist."""
+    return render(request, 'frontend/escrow_acts.html', {
+        'laws': LAND_TRANSACTION_LAWS,
+        'checklist': LAND_TRANSACTION_CHECKLIST,
+    })
+
+
+def joint_legal_requirements(request):
+    """Joint-buyer reference page for co-ownership, group purchase, and payment guidance."""
+    return render(request, 'frontend/joint_laws.html', {
+        'laws': JOINT_LAND_TRANSACTION_LAWS,
+        'checklist': JOINT_LAND_TRANSACTION_CHECKLIST,
+        'payment_guidance': JOINT_PAYMENT_GUIDANCE,
+    })
 
 
 def logout_to_staff_login(request):
@@ -694,12 +763,19 @@ def initiate_escrow(request, parcel_number):
         if purchase_mode == 'joint' or joint_group_id:
             if request.user.role != 'Buyer':
                 return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+            if not is_joint_buyer(request.user):
+                from django.contrib import messages
+                messages.error(request, 'Joint purchases require a joint buyer account. Choose the joint option after signup first.')
+                return redirect('frontend:buyer_account_choice')
             if joint_group_id:
                 joint_group = get_object_or_404(JointBuyerGroup, id=joint_group_id, leader=request.user)
                 if not joint_group.is_valid:
                     from django.contrib import messages
                     messages.error(request, 'This joint group is not valid. Ensure it has at least 2 members and shares total 100%.')
                     return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+            if getattr(request.user, 'buyer_account_type', None) != 'Joint':
+                request.user.buyer_account_type = 'Joint'
+                request.user.save(update_fields=['buyer_account_type'])
 
         # Safely instantiate or retrieve the explicit Escrow transaction
         tx, created = Transaction.objects.get_or_create(
@@ -765,6 +841,7 @@ def parcel_detail(request, parcel_number):
 
     if request.user.is_authenticated and request.user.role == 'Buyer':
         context['joint_groups'] = JointBuyerGroup.objects.filter(leader=request.user).prefetch_related('members')
+        context['can_use_joint_purchase'] = is_joint_buyer(request.user)
 
     return render(request, 'frontend/parcel_detail.html', context)
 
@@ -888,11 +965,13 @@ def sign_contract(request, transaction_id):
                 transaction.buyer_signature = buyer_sig
             if seller_sig:
                 transaction.seller_signature = seller_sig
-                
+
             if transaction.buyer_signature and transaction.seller_signature:
                 transaction.contract_agreed = True
                 
             transaction.save()
+            if transaction.contract_agreed and request.user == transaction.buyer and transaction.status == 'Under_Verification':
+                return redirect('frontend:payment_checkout', transaction_id=transaction.id)
             return redirect('frontend:sign_contract', transaction_id=transaction.id)
 
         # Joint signing (leader captures co-buyer signatures)
@@ -911,6 +990,8 @@ def sign_contract(request, transaction_id):
                 if transaction.buyer_signature and transaction.seller_signature and transaction.joint_group.all_signed:
                     transaction.contract_agreed = True
                     transaction.save(update_fields=['contract_agreed'])
+                if transaction.contract_agreed and request.user == transaction.buyer and transaction.status == 'Under_Verification':
+                    return redirect('frontend:payment_checkout', transaction_id=transaction.id)
                 return redirect('frontend:sign_contract', transaction_id=transaction.id)
 
         # Regular signing - Agents cannot sign for others
@@ -939,6 +1020,8 @@ def sign_contract(request, transaction_id):
                     transaction.contract_agreed = True
                 
             transaction.save()
+            if transaction.contract_agreed and request.user == transaction.buyer and transaction.status == 'Under_Verification':
+                return redirect('frontend:payment_checkout', transaction_id=transaction.id)
             return redirect('frontend:sign_contract', transaction_id=transaction.id)
             
     joint_breakdown = None
@@ -953,6 +1036,7 @@ def sign_contract(request, transaction_id):
     return render(request, 'frontend/contract.html', {
         'transaction': transaction,
         'joint_breakdown': joint_breakdown,
+        'laws': LAND_TRANSACTION_LAWS,
     })
 
 @login_required
@@ -965,7 +1049,10 @@ def payment_onboarding(request, transaction_id):
         
     if transaction.status != 'Under_Verification':
         return redirect('frontend:transactions')
-        
+
+    if not transaction.contract_agreed:
+        return redirect('frontend:sign_contract', transaction_id=transaction.id)
+
     return render(request, 'frontend/payment_onboarding.html', {'transaction': transaction})
 
 @login_required
@@ -977,9 +1064,14 @@ def payment_checkout(request, transaction_id):
         
     if transaction.status != 'Under_Verification':
         return redirect('frontend:transactions')
-        
+
+    if not transaction.contract_agreed:
+        return redirect('frontend:sign_contract', transaction_id=transaction.id)
+
     joint_breakdown = None
     contributions = None
+    joint_bank_ready = False
+    joint_payment_method = None
     if transaction.is_joint_purchase and transaction.joint_group:
         from decimal import Decimal, ROUND_HALF_UP
         total = transaction.agreed_price
@@ -988,11 +1080,18 @@ def payment_checkout(request, transaction_id):
             amt = (total * (m.share_percentage / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
             joint_breakdown.append({'member': m, 'amount': amt})
         contributions = JointPaymentContribution.objects.filter(transaction=transaction).select_related('member')
+        joint_group = transaction.joint_group
+        joint_payment_method = joint_group.preferred_payment_method
+        joint_bank_ready = bool(
+            joint_group.bank_name and joint_group.bank_account_name and joint_group.bank_account_number
+        )
 
     return render(request, 'frontend/checkout.html', {
         'transaction': transaction,
         'joint_breakdown': joint_breakdown,
         'contributions': contributions,
+        'joint_bank_ready': joint_bank_ready,
+        'joint_payment_method': joint_payment_method,
     })
 
 @login_required
@@ -1004,9 +1103,81 @@ def process_payment(request, transaction_id):
     
     transaction = get_object_or_404(Transaction, id=transaction_id)
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    if not transaction.contract_agreed:
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': 'The contract must be signed before payment can begin.'})
+        return redirect('frontend:sign_contract', transaction_id=transaction.id)
     
     if request.method == 'POST' and (request.user == transaction.buyer or request.user.role == 'Admin'):
-        if transaction.status == 'Under_Verification':
+        if transaction.status == 'Under_Verification' and transaction.contract_agreed:
+            payment_method = (request.POST.get('payment_method') or '').strip()
+            if not payment_method:
+                if transaction.is_joint_purchase and transaction.joint_group and transaction.joint_group.preferred_payment_method == 'Joint_Bank_Account':
+                    payment_method = 'joint_bank_account'
+                else:
+                    payment_method = 'm_pesa'
+
+            if payment_method == 'joint_bank_account':
+                if not transaction.is_joint_purchase or not transaction.joint_group:
+                    if is_ajax:
+                        return JsonResponse({'status': 'error', 'message': 'Joint bank checkout is only available for joint purchases.'})
+                    return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+
+                group = transaction.joint_group
+                if not (group.bank_name and group.bank_account_name and group.bank_account_number):
+                    if is_ajax:
+                        return JsonResponse({'status': 'error', 'message': 'The joint bank account has not been configured yet.'})
+                    from django.contrib import messages
+                    messages.error(request, 'The joint bank account has not been configured yet.')
+                    return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+
+                bank_reference = (request.POST.get('bank_reference') or '').strip()
+                depositor_name = (request.POST.get('depositor_name') or '').strip()
+                if not depositor_name:
+                    depositor_name = getattr(request.user, 'get_full_name', lambda: '')() or request.user.email
+
+                if not bank_reference:
+                    if is_ajax:
+                        return JsonResponse({'status': 'error', 'message': 'Please enter the bank transfer reference number.'})
+                    return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+
+                amount_decimal = transaction.agreed_price
+                contribution = JointPaymentContribution.objects.create(
+                    transaction=transaction,
+                    member=None,
+                    amount=amount_decimal,
+                    payment_channel='Bank_Transfer',
+                    phone_number=None,
+                    status='Bank_Submitted',
+                    bank_reference=bank_reference,
+                    depositor_name=depositor_name,
+                    bank_name=group.bank_name,
+                    bank_account_number=group.bank_account_number,
+                    bank_account_name=group.bank_account_name,
+                    bank_branch=group.bank_branch,
+                )
+
+                import uuid
+                transaction.escrow_reference = f"BANK-{bank_reference[:12].upper()}" if bank_reference else f"BANK-{str(uuid.uuid4())[:8].upper()}"
+                transaction.save(update_fields=['escrow_reference'])
+
+                if is_ajax:
+                    return JsonResponse({
+                        'status': 'bank_pending',
+                        'message': 'Joint bank transfer recorded. Complete the transfer using the displayed bank details and keep the reference number.',
+                        'bank_reference': bank_reference,
+                        'bank_name': contribution.bank_name,
+                        'bank_account_name': contribution.bank_account_name,
+                        'bank_account_number': contribution.bank_account_number,
+                        'bank_branch': contribution.bank_branch,
+                        'escrow_reference': transaction.escrow_reference,
+                    })
+
+                from django.contrib import messages
+                messages.success(request, 'Joint bank transfer recorded. Use the listed account details to complete the payment.')
+                return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+
             phone_number = request.POST.get('phone_number', '').strip()
             member_id = (request.POST.get('member_id') or '').strip()
             amount_override = (request.POST.get('amount') or '').strip()
@@ -1104,7 +1275,11 @@ def process_payment(request, transaction_id):
 
 @login_required
 def joint_groups(request):
-    if request.user.role != 'Buyer':
+    if not is_joint_buyer(request.user):
+        if request.user.role == 'Buyer':
+            from django.contrib import messages
+            messages.info(request, 'Select the joint buyer account setup first to manage group purchases.')
+            return redirect('frontend:buyer_account_choice')
         return redirect('frontend:home')
     groups = JointBuyerGroup.objects.filter(leader=request.user).prefetch_related('members')
     return render(request, 'frontend/joint_groups_list.html', {'groups': groups})
@@ -1112,7 +1287,11 @@ def joint_groups(request):
 
 @login_required
 def create_joint_group(request):
-    if request.user.role != 'Buyer':
+    if not is_joint_buyer(request.user):
+        if request.user.role == 'Buyer':
+            from django.contrib import messages
+            messages.info(request, 'Select the joint buyer account setup first to create a group.')
+            return redirect('frontend:buyer_account_choice')
         return redirect('frontend:home')
 
     if request.method == 'POST':
@@ -1178,6 +1357,10 @@ def create_joint_group(request):
                 messages.error(request, 'Maximum group size is 10 members.')
                 return redirect('frontend:create_joint_group')
 
+            if getattr(request.user, 'buyer_account_type', None) != 'Joint':
+                request.user.buyer_account_type = 'Joint'
+                request.user.save(update_fields=['buyer_account_type'])
+
             messages.success(request, 'Joint buyer group created successfully.')
             return redirect('frontend:joint_group_detail', group_id=group.id)
     else:
@@ -1192,7 +1375,11 @@ def create_joint_group(request):
 
 @login_required
 def joint_group_detail(request, group_id):
-    if request.user.role != 'Buyer':
+    if not is_joint_buyer(request.user):
+        if request.user.role == 'Buyer':
+            from django.contrib import messages
+            messages.info(request, 'Select the joint buyer account setup first to view group details.')
+            return redirect('frontend:buyer_account_choice')
         return redirect('frontend:home')
     group = get_object_or_404(JointBuyerGroup, id=group_id, leader=request.user)
     return render(request, 'frontend/joint_group_detail.html', {'group': group})
@@ -1200,7 +1387,7 @@ def joint_group_detail(request, group_id):
 
 @login_required
 def delete_joint_member(request, member_id):
-    if request.user.role != 'Buyer':
+    if not is_joint_buyer(request.user):
         return redirect('frontend:home')
     member = get_object_or_404(JointBuyerMember, id=member_id)
     group = member.group
@@ -1214,11 +1401,52 @@ def delete_joint_member(request, member_id):
 
 
 @login_required
+def edit_joint_member(request, member_id):
+    """Allow the group leader to replace or update a co-buyer's record."""
+    from django.contrib import messages as django_messages
+
+    if not is_joint_buyer(request.user):
+        return redirect('frontend:home')
+
+    member = get_object_or_404(JointBuyerMember, id=member_id)
+    group = member.group
+
+    if group.leader != request.user or member.is_leader:
+        return redirect('frontend:joint_group_detail', group_id=group.id)
+
+    if group.transactions.filter(status__in=['Under_Verification', 'Deposit_Paid', 'Completed']).exists():
+        django_messages.error(request, 'You cannot edit members on a group linked to an active or completed transaction.')
+        return redirect('frontend:joint_group_detail', group_id=group.id)
+
+    if request.method == 'POST':
+        form = JointBuyerMemberForm(request.POST, instance=member)
+        if form.is_valid():
+            form.save()
+            total = group.total_share
+            if total != 100:
+                django_messages.warning(
+                    request,
+                    f'Member updated. Current group shares total {total}%, so please rebalance to 100%.',
+                )
+            else:
+                django_messages.success(request, 'Member updated successfully.')
+            return redirect('frontend:joint_group_detail', group_id=group.id)
+    else:
+        form = JointBuyerMemberForm(instance=member)
+
+    return render(request, 'frontend/joint_member_edit.html', {
+        'group': group,
+        'member': member,
+        'member_form': form,
+    })
+
+
+@login_required
 def edit_joint_group(request, group_id):
     """Edit group details (name, type, ownership) and leader share before a transaction is initiated."""
     from django.contrib import messages as django_messages
 
-    if request.user.role != 'Buyer':
+    if not is_joint_buyer(request.user):
         return redirect('frontend:home')
 
     group = get_object_or_404(JointBuyerGroup, id=group_id, leader=request.user)
@@ -1504,4 +1732,3 @@ def toggle_favorite(request, parcel_number):
         return JsonResponse({'is_favorited': is_favorited})
 
     return redirect('frontend:parcel_detail', parcel_number=parcel_number)
-

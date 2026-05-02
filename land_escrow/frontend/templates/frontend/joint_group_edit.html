@@ -38,6 +38,41 @@
             {% if group_form.ownership_type.errors %}<div class="invalid-feedback d-block">{{ group_form.ownership_type.errors|join:", " }}</div>{% endif %}
             {% if group_form.ownership_type.help_text %}<div class="form-text">{{ group_form.ownership_type.help_text }}</div>{% endif %}
           </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">{{ group_form.preferred_payment_method.label }}</label>
+            <div class="d-flex flex-column gap-2">{{ group_form.preferred_payment_method }}</div>
+            {% if group_form.preferred_payment_method.errors %}<div class="invalid-feedback d-block">{{ group_form.preferred_payment_method.errors|join:", " }}</div>{% endif %}
+            {% if group_form.preferred_payment_method.help_text %}<div class="form-text">{{ group_form.preferred_payment_method.help_text }}</div>{% endif %}
+          </div>
+          <div class="border rounded-3 p-3 mb-3 bg-body-tertiary" id="bank-details-wrap">
+            <h6 class="fw-bold mb-3"><i class="bi bi-bank me-1"></i>Joint bank account details</h6>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label fw-bold">{{ group_form.bank_name.label }}</label>
+                {{ group_form.bank_name }}
+                {% if group_form.bank_name.errors %}<div class="invalid-feedback d-block">{{ group_form.bank_name.errors|join:", " }}</div>{% endif %}
+                {% if group_form.bank_name.help_text %}<div class="form-text">{{ group_form.bank_name.help_text }}</div>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">{{ group_form.bank_account_name.label }}</label>
+                {{ group_form.bank_account_name }}
+                {% if group_form.bank_account_name.errors %}<div class="invalid-feedback d-block">{{ group_form.bank_account_name.errors|join:", " }}</div>{% endif %}
+                {% if group_form.bank_account_name.help_text %}<div class="form-text">{{ group_form.bank_account_name.help_text }}</div>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">{{ group_form.bank_account_number.label }}</label>
+                {{ group_form.bank_account_number }}
+                {% if group_form.bank_account_number.errors %}<div class="invalid-feedback d-block">{{ group_form.bank_account_number.errors|join:", " }}</div>{% endif %}
+                {% if group_form.bank_account_number.help_text %}<div class="form-text">{{ group_form.bank_account_number.help_text }}</div>{% endif %}
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-bold">{{ group_form.bank_branch.label }}</label>
+                {{ group_form.bank_branch }}
+                {% if group_form.bank_branch.errors %}<div class="invalid-feedback d-block">{{ group_form.bank_branch.errors|join:", " }}</div>{% endif %}
+                {% if group_form.bank_branch.help_text %}<div class="form-text">{{ group_form.bank_branch.help_text }}</div>{% endif %}
+              </div>
+            </div>
+          </div>
           <div class="mb-4">
             <label class="form-label fw-bold">{{ group_form.leader_share_percentage.label }}</label>
             {{ group_form.leader_share_percentage }}
@@ -60,4 +95,24 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function() {
+  var paymentRadios = document.querySelectorAll('input[name="preferred_payment_method"]');
+  var bankWrap = document.getElementById('bank-details-wrap');
+
+  function syncBankFields() {
+    var selected = document.querySelector('input[name="preferred_payment_method"]:checked');
+    if (!bankWrap || !selected) return;
+    bankWrap.style.display = selected.value === 'Joint_Bank_Account' ? 'block' : 'none';
+  }
+
+  paymentRadios.forEach(function(radio) {
+    radio.addEventListener('change', syncBankFields);
+  });
+  syncBankFields();
+})();
+</script>
 {% endblock %}
