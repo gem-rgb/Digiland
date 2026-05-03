@@ -31,6 +31,13 @@ function money(value: string | number) {
   return `KES ${value}`;
 }
 
+function splitParagraphs(content: string) {
+  return content
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+}
+
 function PanelTitle({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
   return (
     <div className="mb-4 flex items-start justify-between gap-3">
@@ -375,70 +382,130 @@ function TransactionsPage() {
 }
 
 function LegalPage() {
+  const laws = bootstrap.laws || [];
+  const checklist = bootstrap.checklist || [];
+  const paymentGuidance = bootstrap.payment_guidance || [];
+  const documentContent = bootstrap.document_content || '';
+
+  const actionClassByTone: Record<string, string> = {
+    default: 'bg-primary text-primary-foreground hover:bg-primary/90 border-transparent',
+    secondary: 'bg-slate-900 text-white hover:bg-slate-800 border-transparent',
+    outline: 'bg-white text-foreground hover:bg-muted border-border',
+    ghost: 'bg-transparent text-foreground hover:bg-white/70 border-transparent',
+    accent: 'bg-emerald-600 text-white hover:bg-emerald-500 border-transparent',
+  };
+
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-      <div className="space-y-6">
-        <PageHeader
-          kicker="Kenya law"
-          title={bootstrap.title}
-          subtitle={bootstrap.subtitle}
-          badge={bootstrap.notice}
-          actions={bootstrap.actions}
-        />
-        {bootstrap.laws ? LegalCards(bootstrap.laws) : null}
-
-        {bootstrap.document_content ? (
-          <Card className="bg-white/92">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base"><FileText className="h-4 w-4 text-emerald-700" />Platform Terms</CardTitle>
-              <CardDescription>Admin-managed terms for this transaction type. Last updated by the platform administrator.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="prose prose-sm max-w-none text-foreground">
-                {bootstrap.document_content.split('\n\n').map((paragraph: string, index: number) => (
-                  <p key={index} className="mb-4 leading-7 last:mb-0">
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ) : null}
-      </div>
-      <div className="space-y-6">
-        <Card className="bg-white/92">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base"><ShieldAlert className="h-4 w-4 text-amber-600" />Checklist</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3 text-sm leading-7 text-foreground">
-              {(bootstrap.checklist || []).map((item: string) => (
-                <li key={item} className="flex gap-3">
-                  <CircleCheckBig className="mt-1 h-4 w-4 shrink-0 text-emerald-700" />
-                  <span>{item}</span>
-                </li>
+    <div className="print-document-shell min-h-screen bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.16),_transparent_32%),linear-gradient(180deg,#f8fafc_0%,#ffffff_42%,#eef2f7_100%)] px-4 py-8 sm:px-6 lg:px-8 print:px-0 print:py-0">
+      <div className="mx-auto max-w-[9.25in] space-y-6 print:space-y-0">
+        <div className="print-document-header flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-2">
+            <div className="text-xs font-black uppercase tracking-[0.32em] text-emerald-700">Breakout legal sheet</div>
+            <h1 className="print-document-title text-3xl font-black tracking-tight text-foreground sm:text-4xl">{bootstrap.title}</h1>
+            <p className="max-w-3xl text-sm leading-7 text-muted-foreground">{bootstrap.subtitle}</p>
+          </div>
+          {bootstrap.actions?.length ? (
+            <div className="flex flex-wrap gap-2">
+              {bootstrap.actions.map((action) => (
+                <a
+                  key={action.label}
+                  href={action.href}
+                  target={action.external ? '_blank' : undefined}
+                  rel={action.external ? 'noreferrer' : undefined}
+                  className={`inline-flex h-11 items-center justify-center rounded-full border px-4 text-sm font-semibold transition-colors ${actionClassByTone[action.tone || 'default'] || actionClassByTone.default}`}
+                >
+                  {action.label}
+                </a>
               ))}
-            </ul>
-          </CardContent>
-        </Card>
+            </div>
+          ) : null}
+        </div>
 
-        {bootstrap.payment_guidance?.length ? (
-          <Card className="bg-white/92">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base"><WalletCards className="h-4 w-4 text-emerald-700" />Joint payment guidance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3 text-sm leading-7 text-foreground">
-                {bootstrap.payment_guidance.map((item: string) => (
-                  <li key={item} className="flex gap-3">
-                    <Banknote className="mt-1 h-4 w-4 shrink-0 text-emerald-700" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        ) : null}
+        <div className="print-document-sheet mx-auto w-full max-w-[8.27in] rounded-[2rem] border border-stone-300 bg-white shadow-[0_35px_90px_rgba(15,23,42,0.12)]">
+          <div className="border-b border-stone-200 px-8 py-8 sm:px-10">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-700">A4 legal brief</div>
+                <h2 className="print-document-title mt-2 text-2xl font-black tracking-tight text-slate-900">{bootstrap.title}</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">{bootstrap.subtitle}</p>
+              </div>
+              <Badge tone="outline" className="w-fit rounded-full px-4 py-2">{laws.length ? `${laws.length} sections` : 'Reference sheet'}</Badge>
+            </div>
+          </div>
+
+          <div className="print-document-body space-y-8 px-8 py-8 sm:px-10">
+            {laws.length ? laws.map((law, index) => (
+              <section key={`${law.title}-${index}`} className="break-inside-avoid rounded-[1.75rem] border border-stone-200 bg-stone-50/90 p-6 shadow-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-700">{law.citation}</div>
+                    <h3 className="mt-2 text-lg font-bold text-slate-900">{law.title}</h3>
+                  </div>
+                  <Badge tone={law.required ? 'success' : 'warning'}>{law.required ? 'Required' : 'Guidance'}</Badge>
+                </div>
+                <p className="mt-4 text-sm leading-7 text-slate-700">{law.summary}</p>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                    {law.applies_to}
+                  </span>
+                  <a
+                    href={law.official_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-9 items-center justify-center rounded-full bg-emerald-50 px-4 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
+                  >
+                    Official source
+                  </a>
+                </div>
+              </section>
+            )) : (
+              <div className="rounded-2xl border border-dashed border-stone-300 bg-stone-50 p-8 text-center text-sm text-muted-foreground">
+                No legal references were loaded for this page.
+              </div>
+            )}
+
+            {documentContent ? (
+              <article className="rounded-[1.75rem] border border-stone-200 bg-white p-6 shadow-sm">
+                <div className="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-700">Platform terms</div>
+                <div className="print-document-body mt-4 space-y-4 text-sm leading-7 text-slate-700">
+                  {splitParagraphs(documentContent).map((paragraph, paragraphIndex) => (
+                    <p key={`${paragraphIndex}-${paragraph.slice(0, 24)}`} className="whitespace-pre-wrap">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              </article>
+            ) : null}
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <section className="rounded-[1.75rem] border border-stone-200 bg-stone-50 p-6 shadow-sm">
+                <div className="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-700">Checklist</div>
+                <ul className="mt-4 space-y-3 text-sm leading-7 text-slate-700">
+                  {checklist.map((item: string) => (
+                    <li key={item} className="flex gap-3">
+                      <CircleCheckBig className="mt-1 h-4 w-4 shrink-0 text-emerald-700" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              {paymentGuidance.length ? (
+                <section className="rounded-[1.75rem] border border-stone-200 bg-stone-50 p-6 shadow-sm">
+                  <div className="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-700">Joint payment guidance</div>
+                  <ul className="mt-4 space-y-3 text-sm leading-7 text-slate-700">
+                    {paymentGuidance.map((item: string) => (
+                      <li key={item} className="flex gap-3">
+                        <Banknote className="mt-1 h-4 w-4 shrink-0 text-emerald-700" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -599,7 +666,7 @@ function JointGroupDetailPage() {
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Badge tone="outline">{member.signature_status || 'Pending signature'}</Badge>
                   {member.edit_url ? <a href={member.edit_url} className="inline-flex h-9 items-center justify-center rounded-full border border-border bg-white px-4 text-xs font-semibold text-foreground hover:bg-muted">Edit</a> : null}
-                  {member.delete_url && !member.is_leader ? <a href={member.delete_url} className="inline-flex h-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-4 text-xs font-semibold text-rose-700 hover:bg-rose-100">Remove</a> : null}
+                  {member.delete_url && !member.is_leader ? <a href={member.delete_url} className="inline-flex h-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-4 text-xs font-semibold text-rose-700 hover:bg-rose-100">Request removal</a> : null}
                 </div>
               </div>
             ))}
@@ -640,9 +707,23 @@ function JointGroupDetailPage() {
               <div className="grid gap-3 pt-2">
                 <a href={group.laws_url} className="inline-flex h-11 items-center justify-center rounded-full border border-border bg-white/80 px-5 text-sm font-semibold text-foreground hover:bg-muted">Open joint laws</a>
                 <a href={group.edit_url} className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90">Edit group details</a>
+                {group.add_member_url ? <a href={group.add_member_url} className="inline-flex h-11 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-5 text-sm font-semibold text-emerald-800 hover:bg-emerald-100">Add member</a> : null}
+                {group.transfer_leadership_url ? <a href={group.transfer_leadership_url} className="inline-flex h-11 items-center justify-center rounded-full border border-stone-200 bg-white px-5 text-sm font-semibold text-foreground hover:bg-muted">Transfer leadership</a> : null}
               </div>
             </CardContent>
           </Card>
+
+          {group.can_manage ? (
+            <Card className="bg-white/92">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base"><AlertTriangle className="h-4 w-4 text-amber-600" />Member removal</CardTitle>
+                <CardDescription>Member removal now requires admin review for consent and compensation checks.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm text-muted-foreground">
+                <p>Use the request removal action on a member card to submit the case to an admin. The admin must confirm the exit is consensual and that the departing member has been compensated for their share.</p>
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
       </div>
     </div>
@@ -1921,12 +2002,13 @@ function ApprovalsPage() {
     logoutUrl: bootstrap.logout_url,
     csrfToken: bootstrap.csrf_token,
   };
+  const pendingRemovalRequests = page.pending_joint_removals || [];
 
   return (
     <AppShell {...shellProps}>
       <div className="space-y-6">
         <PageHeader kicker="Approvals" title={bootstrap.title} subtitle={bootstrap.subtitle} />
-        <div className="grid gap-6 xl:grid-cols-3">
+        <div className="grid gap-6 xl:grid-cols-4">
           <Card className="bg-white/92">
             <CardHeader><CardTitle className="text-base">Pending users</CardTitle></CardHeader>
             <CardContent className="space-y-3">
@@ -1967,6 +2049,45 @@ function ApprovalsPage() {
                   <div className="text-sm text-muted-foreground">{tx.status} · KES {tx.amount}</div>
                 </div>
               ))}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/92 xl:col-span-4">
+            <CardHeader>
+              <CardTitle className="text-base">Pending joint member removals</CardTitle>
+              <CardDescription>Admin must confirm consent and compensation before a member is removed from a joint group.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {pendingRemovalRequests.length ? pendingRemovalRequests.map((request) => (
+                <div key={request.id} className="rounded-3xl border border-border bg-muted/40 p-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-2">
+                      <div className="font-semibold text-foreground">{request.group_name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Remove <strong>{request.member.full_name}</strong> · Requested by {request.requested_by?.email || 'Unknown'}
+                      </div>
+                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Consent: {request.consent_confirmed ? 'Confirmed' : 'Pending'} · Compensation: {request.compensation_confirmed ? `Confirmed${request.compensation_amount ? ` (KES ${request.compensation_amount})` : ''}` : 'Pending'}
+                      </div>
+                      {request.notes ? <div className="rounded-2xl bg-white px-3 py-2 text-sm text-foreground">{request.notes}</div> : null}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <form method="post" action={request.approve_url}>
+                        <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+                        <Button type="submit" size="sm" className="rounded-full">Approve removal</Button>
+                      </form>
+                      <form method="post" action={request.reject_url}>
+                        <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+                        <Button type="submit" size="sm" variant="outline" className="rounded-full">Reject</Button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              )) : (
+                <div className="rounded-3xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+                  No pending joint removal requests.
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -2076,6 +2197,46 @@ function ContractPage() {
   const pendingMembers = contract.joint_breakdown.filter((row) => !row.member.has_signed);
 
   const fullpageUrl = bootstrap.fullpage_sign_url;
+  const shouldOpenBreakout = Boolean(
+    fullpageUrl &&
+    (contract.current_user_is_buyer || contract.current_user_is_seller) &&
+    !contract.contract_agreed &&
+    !contract.current_user_is_admin
+  );
+
+  useEffect(() => {
+    if (shouldOpenBreakout && fullpageUrl) {
+      window.location.replace(fullpageUrl);
+    }
+  }, [shouldOpenBreakout, fullpageUrl]);
+
+  if (shouldOpenBreakout) {
+    return (
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.12),_transparent_32%),linear-gradient(180deg,#f8fafc_0%,#ffffff_42%,#eef2f7_100%)] px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center">
+          <Card className="w-full border-border/60 bg-white/95 shadow-2xl">
+            <CardContent className="space-y-4 p-8 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <FileText className="h-6 w-6" />
+              </div>
+              <h2 className="text-2xl font-black tracking-tight text-foreground">Opening the signing sheet</h2>
+              <p className="mx-auto max-w-lg text-sm leading-7 text-muted-foreground">
+                Buyers and sellers now open the dedicated contract breakout page by default so the agreement reads like a clean A4 document before signing.
+              </p>
+              {fullpageUrl ? (
+                <a
+                  href={fullpageUrl}
+                  className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                  Continue to signing page
+                </a>
+              ) : null}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AppShell {...shellProps}>
@@ -2241,7 +2402,7 @@ function ContractPage() {
               <Card className="border-primary/30 bg-primary/5">
                 <CardContent className="space-y-4 p-6 text-center">
                   <h3 className="text-xl font-black tracking-tight text-foreground">Legal process complete</h3>
-                  <p className="text-sm leading-7 text-muted-foreground">The contract has been signed. Continue to checkout and enter the phone number that should receive the M-Pesa STK prompt.</p>
+                  <p className="text-sm leading-7 text-muted-foreground">The contract has been signed. Continue to checkout and choose M-Pesa STK, KCB bank transfer, or Paystack.</p>
                   <a href={contract.payment_url} className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90">Continue to checkout</a>
                 </CardContent>
               </Card>
@@ -2542,6 +2703,499 @@ function CheckoutPage() {
   );
 }
 
+function CheckoutFullPage() {
+  const checkout = bootstrap.checkout;
+  const checkoutTransactionId = checkout?.transaction_id || '';
+  const checkoutCsrfToken = checkout?.csrf_token || '';
+  const checkoutTransactionsUrl = checkout?.transactions_url || '';
+  const paystackEnabled = Boolean(checkout?.paystack_enabled);
+  const [paymentMode, setPaymentMode] = useState<'m_pesa' | 'joint_bank_account' | 'kcb_bank' | 'paystack'>(checkout?.default_payment_method || 'm_pesa');
+  const [memberId, setMemberId] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState(checkout?.phone_number || bootstrap.user?.phone_number || '');
+  const [amountOverride, setAmountOverride] = useState('');
+  const [bankReference, setBankReference] = useState('');
+  const [depositorName, setDepositorName] = useState(bootstrap.user?.full_name || bootstrap.user?.email || '');
+  const [checkoutRequestId, setCheckoutRequestId] = useState('');
+  const [viewState, setViewState] = useState<'form' | 'stk_waiting' | 'bank_waiting' | 'success' | 'failed'>('form');
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const pollRef = useRef<number | null>(null);
+  const backUrl = bootstrap.back_url || checkout?.transactions_url || '/';
+  const failedUrl = checkout?.failed_url || '';
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) {
+        window.clearInterval(pollRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!checkoutRequestId || !checkoutTransactionId || !checkoutCsrfToken || !checkoutTransactionsUrl) return undefined;
+    pollRef.current = window.setInterval(async () => {
+      try {
+        const response = await fetch(
+          `/api/v1/mpesa/check-checkout-status/?checkout_request_id=${encodeURIComponent(checkoutRequestId)}&transaction_id=${encodeURIComponent(checkoutTransactionId)}`,
+          { headers: { 'X-CSRFToken': checkoutCsrfToken } }
+        );
+        const data = await response.json();
+        if (data.payment_status === 'completed') {
+          if (pollRef.current) window.clearInterval(pollRef.current);
+          setViewState('success');
+          setMessage('Payment confirmed.');
+          window.setTimeout(() => {
+            window.location.href = checkoutTransactionsUrl;
+          }, 2000);
+        } else if (data.payment_status === 'failed') {
+          if (pollRef.current) window.clearInterval(pollRef.current);
+          setViewState('failed');
+          setMessage(data.message || 'The payment was declined or cancelled.');
+        }
+      } catch {
+        // Keep polling.
+      }
+    }, 3000);
+    return () => {
+      if (pollRef.current) window.clearInterval(pollRef.current);
+    };
+  }, [checkoutTransactionId, checkoutCsrfToken, checkoutTransactionsUrl, checkoutRequestId]);
+
+  if (!checkout) {
+    return (
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.12),_transparent_32%),linear-gradient(180deg,#f8fafc_0%,#ffffff_42%,#eef2f7_100%)] px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center">
+          <Card className="w-full border-border/60 bg-white/95 shadow-2xl">
+            <CardContent className="space-y-4 p-8 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <ReceiptText className="h-6 w-6" />
+              </div>
+              <h2 className="text-2xl font-black tracking-tight text-foreground">Checkout unavailable</h2>
+              <p className="mx-auto max-w-lg text-sm leading-7 text-muted-foreground">
+                This escrow checkout link could not be loaded. Return to transactions and reopen the purchase flow.
+              </p>
+              <a
+                href={backUrl}
+                className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Back to transactions
+              </a>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const body = new URLSearchParams();
+      body.set('csrfmiddlewaretoken', checkoutCsrfToken);
+      body.set('payment_method', paymentMode);
+      body.set('phone_number', phoneNumber);
+      body.set('member_id', memberId);
+      body.set('amount', amountOverride);
+      body.set('bank_reference', bankReference);
+      body.set('depositor_name', depositorName);
+
+      const response = await fetch(checkout.process_url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': checkoutCsrfToken,
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body,
+      });
+
+      const data = await response.json();
+      if (data.status === 'success' || data.status === 'stk_pushed') {
+        setViewState('stk_waiting');
+        setCheckoutRequestId(data.checkout_request_id || '');
+        setMessage(data.message || 'STK push sent.');
+        if (!data.checkout_request_id) {
+          window.setTimeout(() => {
+            window.location.href = checkoutTransactionsUrl;
+          }, 2000);
+        }
+      } else if (data.status === 'paystack_redirect' && data.authorization_url) {
+        window.location.href = data.authorization_url;
+      } else if (data.status === 'bank_pending') {
+        setViewState('bank_waiting');
+        setMessage(data.message || 'Joint bank transfer recorded.');
+      } else {
+        setViewState('failed');
+        setMessage(data.message || 'Unable to initiate payment.');
+      }
+    } catch {
+      setViewState('failed');
+      setMessage('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const selectedMember = checkout.breakdown.find((row) => row.member_id === memberId);
+  const flowTone: 'success' | 'warning' | 'danger' | 'outline' =
+    viewState === 'failed'
+      ? 'danger'
+      : viewState === 'success'
+        ? 'success'
+        : viewState === 'stk_waiting' || viewState === 'bank_waiting'
+          ? 'warning'
+          : 'outline';
+  const flowLabel =
+    viewState === 'failed'
+      ? 'Payment failed'
+      : viewState === 'success'
+        ? 'Payment confirmed'
+        : viewState === 'stk_waiting'
+          ? 'Awaiting STK approval'
+          : viewState === 'bank_waiting'
+            ? 'Bank transfer recorded'
+            : 'Ready for payment';
+
+  return (
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.14),_transparent_32%),linear-gradient(180deg,#f8fafc_0%,#ffffff_42%,#eef2f7_100%)] px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-[11.5in] flex-col gap-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-2">
+            <div className="text-xs font-black uppercase tracking-[0.32em] text-emerald-700">Breakout checkout sheet</div>
+            <h1 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl">Escrow checkout</h1>
+            <p className="max-w-3xl text-sm leading-7 text-muted-foreground">
+              Complete the deposit in a clean full-page workflow with the invoice, payment vector, and status shown together without dashboard clutter.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge tone={flowTone}>{flowLabel}</Badge>
+            <a
+              href={backUrl}
+              className="inline-flex h-11 items-center justify-center rounded-full border border-border bg-white px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+            >
+              Back to transactions
+            </a>
+          </div>
+        </div>
+
+        <div className="mx-auto w-full max-w-[10.75in] rounded-[2rem] border border-stone-300 bg-white shadow-[0_35px_90px_rgba(15,23,42,0.12)]">
+          <div className="border-b border-stone-200 px-8 py-8 sm:px-10">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-700">Escrow payment record</div>
+                <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900">{checkout.parcel_number}</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
+                  Seller {checkout.seller_email}
+                  {checkout.buyer_email ? ` | Buyer ${checkout.buyer_email}` : ''}
+                  {checkout.is_joint_purchase && checkout.joint_group_name ? ` | ${checkout.joint_group_name}` : ''}
+                </p>
+              </div>
+              <div className="grid gap-3 sm:min-w-[18rem] sm:grid-cols-2">
+                <div className="rounded-3xl border border-stone-200 bg-stone-50 p-4">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Transaction</div>
+                  <div className="mt-1 text-sm font-black text-slate-900">{checkout.transaction_id.slice(0, 8).toUpperCase()}</div>
+                </div>
+                <div className="rounded-3xl border border-stone-200 bg-stone-50 p-4">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Agreed price</div>
+                  <div className="mt-1 text-sm font-black text-emerald-700">KES {checkout.agreed_price}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-8 px-8 py-8 lg:grid-cols-[0.95fr_1.05fr] sm:px-10">
+            <section className="rounded-[1.75rem] border border-stone-200 bg-stone-50/80 p-6 shadow-sm">
+              <div className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-700">Escrow invoice</div>
+              <div className="mt-4 grid gap-3 text-sm">
+                <div className="rounded-2xl bg-white p-4 shadow-sm">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Parcel</div>
+                  <div className="mt-1 font-semibold text-foreground">{checkout.parcel_number}</div>
+                </div>
+                <div className="rounded-2xl bg-white p-4 shadow-sm">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Seller</div>
+                  <div className="mt-1 font-semibold text-foreground">{checkout.seller_email}</div>
+                </div>
+                <div className="rounded-2xl bg-white p-4 shadow-sm">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Buyer</div>
+                  <div className="mt-1 font-semibold text-foreground">{checkout.buyer_email || 'N/A'}</div>
+                </div>
+                <div className="rounded-2xl bg-white p-4 shadow-sm">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Amount due</div>
+                  <div className="mt-1 text-xl font-black tracking-tight text-emerald-700">KES {checkout.agreed_price}</div>
+                </div>
+              </div>
+
+              {checkout.is_joint_purchase ? (
+                <div className="mt-6 space-y-4">
+                  <div className="text-sm font-semibold text-foreground">Joint split</div>
+                  <div className="space-y-3">
+                    {checkout.breakdown.map((row) => (
+                      <div key={row.member_id} className="flex items-center justify-between gap-3 rounded-3xl border border-stone-200 bg-white p-4 text-sm shadow-sm">
+                        <div>
+                          <div className="font-semibold text-foreground">{row.member_name}</div>
+                          <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            {row.share_percentage}% {'->'} KES {row.amount}
+                          </div>
+                        </div>
+                        <div className="font-black text-emerald-700">KES {row.amount}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6 rounded-3xl border border-emerald-200 bg-emerald-50/70 p-4 text-sm leading-7 text-emerald-900">
+                  Your payment will be deposited into escrow and released only after the legal and transfer steps are completed.
+                </div>
+              )}
+
+              {checkout.contributions?.length ? (
+                <div className="mt-6 rounded-3xl border border-stone-200 bg-white p-4 shadow-sm">
+                  <div className="text-sm font-semibold text-foreground">Recorded contributions</div>
+                  <div className="mt-3 space-y-2">
+                    {checkout.contributions.map((contribution, index) => (
+                      <div key={`${contribution.member_name}-${index}`} className="flex items-center justify-between gap-3 rounded-2xl bg-muted/50 px-3 py-3 text-xs text-muted-foreground">
+                        <span>{contribution.member_name}</span>
+                        <span>{contribution.channel} | {contribution.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </section>
+
+            <section className="rounded-[1.75rem] border border-stone-200 bg-white p-6 shadow-sm">
+              <div className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-700">Payment instructions</div>
+
+              <div className="mt-4">
+                {viewState === 'form' ? (
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground">Payment option</label>
+                      <select
+                        value={paymentMode}
+                        onChange={(event) => setPaymentMode(event.target.value as 'm_pesa' | 'joint_bank_account' | 'kcb_bank' | 'paystack')}
+                        className="flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm"
+                      >
+                        <option value="m_pesa">M-Pesa STK prompt</option>
+                        <option value="kcb_bank">KCB bank transfer</option>
+                        {checkout.is_joint_purchase ? <option value="joint_bank_account">Joint bank account</option> : null}
+                        {paystackEnabled ? <option value="paystack">Paystack checkout</option> : <option value="paystack" disabled>Paystack checkout (not configured)</option>}
+                      </select>
+                    </div>
+
+                    {checkout.is_joint_purchase && paymentMode === 'm_pesa' ? (
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-foreground">Pay as member</label>
+                        <select
+                          value={memberId}
+                          onChange={(event) => {
+                            setMemberId(event.target.value);
+                            const member = checkout.breakdown.find((row) => row.member_id === event.target.value);
+                            if (member) {
+                              setPhoneNumber(member.phone_number || '');
+                              setAmountOverride(member.amount);
+                            }
+                          }}
+                          className="flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm"
+                        >
+                          <option value="">Select member</option>
+                          {checkout.breakdown.map((row) => (
+                            <option key={row.member_id} value={row.member_id}>
+                              {row.member_name} ({row.share_percentage}% {'->'} KES {row.amount})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : null}
+
+                    {selectedMember && checkout.is_joint_purchase && paymentMode === 'm_pesa' ? (
+                      <div className="rounded-3xl border border-stone-200 bg-stone-50 p-4 text-sm leading-7 text-slate-700">
+                        <div className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-700">Selected member</div>
+                        <div className="mt-2 font-semibold text-slate-900">{selectedMember.member_name}</div>
+                        <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                          {selectedMember.share_percentage}% | {selectedMember.phone_number || 'No phone number'}
+                        </div>
+                        <div className="mt-2 font-semibold text-emerald-700">KES {selectedMember.amount}</div>
+                      </div>
+                    ) : null}
+
+                    {paymentMode === 'm_pesa' ? (
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-foreground">M-Pesa phone number</label>
+                        <Input value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value)} placeholder="0712345678 or +254712345678" />
+                      </div>
+                    ) : null}
+
+                    {paymentMode === 'joint_bank_account' ? (
+                      <div className="space-y-4 rounded-3xl border border-stone-200 bg-stone-50/80 p-4">
+                        <div className="text-sm font-semibold text-foreground">Joint bank account</div>
+                        <div className="grid gap-2 text-sm text-muted-foreground">
+                          <div>Bank: {checkout.bank_name || 'Bank not yet configured'}</div>
+                          <div>Account name: {checkout.bank_account_name || 'Not set'}</div>
+                          <div>Account number: {checkout.bank_account_number || 'Not set'}</div>
+                          <div>Branch: {checkout.bank_branch || 'Not set'}</div>
+                        </div>
+                        {!checkout.joint_bank_ready ? (
+                          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                            The joint bank account has not been configured yet.
+                          </div>
+                        ) : null}
+                        <div className="space-y-2">
+                          <label className="text-sm font-semibold text-foreground">Depositor name</label>
+                          <Input value={depositorName} onChange={(event) => setDepositorName(event.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-semibold text-foreground">Bank transfer reference</label>
+                          <Input value={bankReference} onChange={(event) => setBankReference(event.target.value)} placeholder="Transfer reference or slip number" />
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {paymentMode === 'kcb_bank' ? (
+                      <div className="space-y-4 rounded-3xl border border-stone-200 bg-stone-50/80 p-4">
+                        <div className="text-sm font-semibold text-foreground">KCB escrow transfer</div>
+                        <div className="grid gap-2 text-sm text-muted-foreground">
+                          <div>Bank: {checkout.escrow_bank_name || 'KCB Bank Kenya'}</div>
+                          <div>Account name: {checkout.escrow_bank_account_name || 'Digiland Escrow'}</div>
+                          <div>Account number: {checkout.escrow_bank_account_number || 'DIGILAND-ESCROW-001'}</div>
+                          <div>Branch: {checkout.escrow_bank_branch || 'Nairobi'}</div>
+                        </div>
+                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                          Make the bank transfer from your KCB account, then enter the transfer reference below.
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-semibold text-foreground">Depositor name</label>
+                          <Input value={depositorName} onChange={(event) => setDepositorName(event.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-semibold text-foreground">Bank transfer reference</label>
+                          <Input value={bankReference} onChange={(event) => setBankReference(event.target.value)} placeholder="Transfer reference or slip number" />
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {paymentMode === 'paystack' ? (
+                      <div className="rounded-3xl border border-stone-200 bg-stone-50/80 p-4 text-sm leading-7 text-slate-700">
+                        <div className="text-sm font-semibold text-foreground">Paystack checkout</div>
+                        <p className="mt-2 text-muted-foreground">
+                          You will be redirected to Paystack to complete the payment securely by card or supported online methods.
+                        </p>
+                        <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-emerald-900">
+                          Payment email: <strong>{checkout.buyer_email || bootstrap.user?.email || 'Not set'}</strong>
+                        </div>
+                        {!paystackEnabled ? (
+                          <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-amber-900">
+                            Paystack is not configured for this environment.
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {paymentMode === 'm_pesa' ? (
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-foreground">Amount override</label>
+                        <Input value={amountOverride} onChange={(event) => setAmountOverride(event.target.value)} placeholder="Leave blank for default amount" />
+                      </div>
+                    ) : null}
+
+                    <div className="rounded-3xl border border-stone-200 bg-stone-50/80 p-4 text-sm leading-7 text-slate-700">
+                      Funds remain in escrow until the transaction is fully authorised and processed.
+                    </div>
+
+                    <Button type="submit" className="w-full rounded-full" disabled={loading || (paymentMode === 'paystack' && !paystackEnabled)}>
+                      {loading
+                        ? 'Processing...'
+                        : paymentMode === 'paystack'
+                          ? 'Continue to Paystack checkout'
+                          : paymentMode === 'joint_bank_account' || paymentMode === 'kcb_bank'
+                            ? 'Record bank transfer'
+                            : 'Send M-Pesa STK push'}
+                    </Button>
+                  </form>
+                ) : (
+                  <div className="space-y-4">
+                    {viewState === 'stk_waiting' ? (
+                      <div className="rounded-[2rem] border border-emerald-200 bg-emerald-50/70 p-6">
+                        <div className="text-xl font-black text-foreground">STK push sent</div>
+                        <p className="mt-2 text-sm leading-7 text-muted-foreground">{message}</p>
+                        <p className="mt-3 text-sm text-muted-foreground">Please authorise the payment on your phone. This page will update automatically.</p>
+                      </div>
+                    ) : null}
+
+                    {viewState === 'bank_waiting' ? (
+                      <div className="space-y-4">
+                        <div className="rounded-[2rem] border border-emerald-200 bg-emerald-50/70 p-6">
+                          <div className="text-xl font-black text-foreground">Bank transfer recorded</div>
+                          <p className="mt-2 text-sm leading-7 text-muted-foreground">{message}</p>
+                        </div>
+                        <div className="grid gap-3 text-left text-sm">
+                          <div className="rounded-2xl bg-muted/60 p-3">Reference: <strong>{bankReference}</strong></div>
+                          <div className="rounded-2xl bg-muted/60 p-3">Depositor: <strong>{depositorName}</strong></div>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {viewState === 'success' ? (
+                      <div className="rounded-[2rem] border border-emerald-200 bg-emerald-50/70 p-6">
+                        <div className="text-xl font-black text-foreground">Payment confirmed</div>
+                        <p className="mt-2 text-sm leading-7 text-muted-foreground">{message}</p>
+                        <div className="mt-4 flex flex-wrap gap-3">
+                          <a href={checkout.transactions_url} className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
+                            View transactions
+                          </a>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {viewState === 'failed' ? (
+                      <div className="space-y-4">
+                        <div className="rounded-[2rem] border border-rose-200 bg-rose-50/70 p-6">
+                          <div className="text-xl font-black text-foreground">Payment failed</div>
+                          <p className="mt-2 text-sm leading-7 text-muted-foreground">{message}</p>
+                          <div className="mt-4 flex flex-wrap gap-3">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="rounded-full"
+                              onClick={() => {
+                                setViewState('form');
+                                setMessage('');
+                              }}
+                            >
+                              Try again
+                            </Button>
+                            {failedUrl ? (
+                              <a href={failedUrl} className="inline-flex h-11 items-center justify-center rounded-full border border-rose-200 bg-white px-5 text-sm font-semibold text-rose-700 hover:bg-rose-50">
+                                Open failure details
+                              </a>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {viewState !== 'success' ? (
+                      <a
+                        href={checkout.transactions_url}
+                        className="inline-flex h-11 items-center justify-center rounded-full border border-border bg-white/80 px-5 text-sm font-semibold text-foreground hover:bg-muted"
+                      >
+                        View transactions
+                      </a>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SellerWithdrawPage() {
   const data = bootstrap.withdraw_data;
   const [amount, setAmount] = React.useState('');
@@ -2835,10 +3489,10 @@ function ContractFullPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    <div className="print-document-shell min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
       {/* Header bar */}
-      <div className="sticky top-0 z-50 border-b border-border/50 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto max-w-5xl flex items-center justify-between px-6 py-4">
+      <div className="print-document-header sticky top-0 z-50 border-b border-border/50 bg-white/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[9.25in] items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <FileText className="h-5 w-5" />
@@ -2850,14 +3504,14 @@ function ContractFullPage() {
           </div>
           <div className="flex items-center gap-3">
             <Badge tone={contract.contract_agreed ? 'success' : 'warning'}>{contract.contract_agreed ? 'Fully signed' : 'Awaiting signatures'}</Badge>
-            <a href={backUrl} className="inline-flex h-9 items-center justify-center rounded-full border border-border bg-white px-4 text-xs font-semibold text-foreground hover:bg-muted">← Back to dashboard</a>
+            <a href={backUrl} className="inline-flex h-9 items-center justify-center rounded-full border border-border bg-white px-4 text-xs font-semibold text-foreground hover:bg-muted">Back to transactions</a>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-5xl px-6 py-10 space-y-10">
+      <div className="mx-auto max-w-[9.25in] space-y-10 px-4 py-10 sm:px-6 print:space-y-0 print:px-0 print:py-0">
         {/* Transaction overview */}
-        <div className="grid gap-4 sm:grid-cols-4">
+        <div className="print-document-summary grid gap-4 sm:grid-cols-4">
           <div className="rounded-3xl bg-white p-5 shadow-sm border border-border/50">
             <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Parcel</div>
             <div className="mt-1 text-lg font-black text-foreground">{contract.parcel_number}</div>
@@ -2879,52 +3533,83 @@ function ContractFullPage() {
         {/* Documents — full width, not squeezed */}
         {contract.documents && contract.documents.length > 0 ? (
           <div className="space-y-8">
-            <h2 className="text-2xl font-black tracking-tight text-foreground">Legal Documents</h2>
+            <h2 className="print-document-title text-2xl font-black tracking-tight text-foreground">Legal Documents</h2>
             {contract.documents.map((doc: any, index: number) => (
-              <div key={doc.key} className="rounded-[2rem] bg-white shadow-sm border border-border/50 overflow-hidden">
-                <div className="border-b border-border/30 bg-muted/20 px-8 py-5 flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-sm font-black text-primary">{index + 1}</span>
-                      <h3 className="text-lg font-bold text-foreground">{doc.title}</h3>
-                    </div>
-                    <p className="mt-1 text-sm text-muted-foreground ml-11">{doc.description}</p>
-                  </div>
-                  <Badge tone={doc.required ? 'success' : 'warning'}>{doc.required ? 'Required' : 'Optional'}</Badge>
-                </div>
-                <div className="px-8 py-6">
-                  <div className="prose prose-sm max-w-none text-foreground leading-8 whitespace-pre-wrap">{doc.content}</div>
-                </div>
-                {(contract.current_user_is_buyer || contract.current_user_is_seller) ? (
-                  <div className="border-t border-border/30 bg-muted/10 px-8 py-6">
-                    <div className="max-w-lg">
-                      {(contract.current_user_is_buyer && contract.buyer_signature_present) || (contract.current_user_is_seller && contract.seller_signature_present) ? (
-                        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
-                          <ShieldCheck className="h-5 w-5 mb-2" />
-                          <div className="font-bold text-sm">Signature Locked</div>
-                          <div className="text-xs mt-1">You have already signed this document. Your signature has been securely captured and cannot be changed.</div>
+              <div
+                key={doc.key}
+                className="mx-auto w-full max-w-[8.27in]"
+                style={{
+                  breakAfter: index < contract.documents.length - 1 ? 'page' : 'auto',
+                  pageBreakAfter: index < contract.documents.length - 1 ? 'always' : 'auto',
+                }}
+              >
+                <section
+                  className="print-document-sheet overflow-hidden rounded-[2rem] border border-stone-300 bg-white shadow-[0_35px_90px_rgba(15,23,42,0.12)]"
+                  style={{ minHeight: '11.69in' }}
+                >
+                  <div className="border-b border-stone-200 px-8 py-8 sm:px-10">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-sm font-black text-primary">{index + 1}</span>
+                          <div>
+                            <div className="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-700">Digitally generated contract sheet</div>
+                            <h3 className="print-document-title mt-2 text-2xl font-black tracking-tight text-slate-900">{doc.title}</h3>
+                          </div>
                         </div>
-                      ) : (
-                        <>
-                          <SignaturePad
-                            label={`Your signature for "${doc.title}"`}
-                            onChange={(val) => setDocumentSignatures(prev => ({ ...prev, [doc.key]: val }))}
-                          />
-                          {documentSignatures[doc.key] ? (
-                            <div className="mt-2 flex items-center gap-2 text-sm text-emerald-700"><ShieldCheck className="h-4 w-4" />Signature captured</div>
-                          ) : null}
-                        </>
-                      )}
+                        <p className="mt-3 ml-12 max-w-2xl text-sm leading-7 text-slate-600">{doc.description}</p>
+                      </div>
+                      <Badge tone={doc.required ? 'success' : 'warning'} className="rounded-full px-4 py-2">{doc.required ? 'Required' : 'Optional'}</Badge>
                     </div>
                   </div>
-                ) : null}
+
+                  <div className="print-document-body px-8 py-8 sm:px-10">
+                    <div className="rounded-[1.5rem] border border-stone-200 bg-stone-50/80 p-6 shadow-sm">
+                      <div className="space-y-4 text-[11.5pt] leading-8 text-slate-900">
+                        {splitParagraphs(doc.content).map((paragraph: string, paragraphIndex: number) => (
+                          <p key={`${doc.key}-${paragraphIndex}-${paragraph.slice(0, 24)}`} className="whitespace-pre-wrap">
+                            {paragraph}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {(contract.current_user_is_buyer || contract.current_user_is_seller) ? (
+                    <div className="border-t border-stone-200 px-8 py-8 sm:px-10">
+                      <div className="mx-auto max-w-xl">
+                        {(contract.current_user_is_buyer && contract.buyer_signature_present) || (contract.current_user_is_seller && contract.seller_signature_present) ? (
+                          <div className="rounded-[1.4rem] border border-emerald-200 bg-emerald-50 p-5 text-emerald-800">
+                            <ShieldCheck className="mb-2 h-5 w-5" />
+                            <div className="text-sm font-bold">Signature locked</div>
+                            <div className="mt-1 text-xs leading-6">You have already signed this document. The signature is secured and cannot be changed.</div>
+                          </div>
+                        ) : (
+                          <>
+                            <SignaturePad
+                              label={`Your signature for "${doc.title}"`}
+                              onChange={(val) => setDocumentSignatures(prev => ({ ...prev, [doc.key]: val }))}
+                              className="print-signature-pad"
+                            />
+                            {documentSignatures[doc.key] ? (
+                              <div className="mt-3 flex items-center gap-2 text-sm font-medium text-emerald-700">
+                                <ShieldCheck className="h-4 w-4" />
+                                Signature captured
+                              </div>
+                            ) : null}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+                </section>
               </div>
             ))}
           </div>
         ) : null}
 
         {/* Signature status and submit */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="print-document-toolbar grid gap-6 lg:grid-cols-2">
           <Card className="bg-white shadow-sm">
             <CardHeader>
               <CardTitle>Signature Status</CardTitle>
@@ -2965,10 +3650,10 @@ function ContractFullPage() {
         </div>
 
         {contract.contract_agreed && contract.current_user_is_buyer ? (
-          <div className="rounded-[2rem] border border-emerald-200 bg-emerald-50/70 p-8 text-center space-y-4">
+          <div className="print-document-success rounded-[2rem] border border-emerald-200 bg-emerald-50/70 p-8 text-center space-y-4">
             <ShieldCheck className="h-12 w-12 text-emerald-600 mx-auto" />
             <h3 className="text-2xl font-black tracking-tight text-foreground">Legal process complete</h3>
-            <p className="text-sm leading-7 text-muted-foreground max-w-md mx-auto">The contract has been fully signed. Continue to checkout to complete your purchase.</p>
+            <p className="text-sm leading-7 text-muted-foreground max-w-md mx-auto">The contract has been fully signed. Continue to checkout to choose M-Pesa STK, KCB bank transfer, or Paystack.</p>
             <a href={contract.payment_url} className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-8 text-sm font-semibold text-primary-foreground hover:bg-primary/90 shadow-lg">Continue to checkout</a>
           </div>
         ) : null}
@@ -3067,6 +3752,150 @@ function AdminWithdrawPage() {
 }
 
 
+function AIKYCPage() {
+  const [status, setStatus] = useState<'IDLE' | 'PROCESSING' | 'APPROVED' | 'REJECTED' | 'LOCKED'>('IDLE');
+  const [message, setMessage] = useState('Upload your ID and a clear selfie to begin verification.');
+  const [idFront, setIdFront] = useState<File | null>(null);
+  const [selfie, setSelfie] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (status !== 'PROCESSING') return;
+    
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(bootstrap.kyc_status_url);
+        const data = await res.json();
+        
+        if (data.status === 'APPROVED' || data.status === 'REJECTED' || data.status === 'LOCKED') {
+          setStatus(data.status);
+          setMessage(data.message);
+          clearInterval(interval);
+          if (data.status === 'APPROVED') {
+            setTimeout(() => { window.location.href = '/agent/dashboard/'; }, 2000);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [status]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!idFront || !selfie) {
+      alert("Please upload both documents.");
+      return;
+    }
+    
+    setStatus('PROCESSING');
+    setMessage('Submitting documents securely...');
+    
+    const formData = new FormData();
+    formData.append('id_front', idFront);
+    formData.append('selfie', selfie);
+    if (bootstrap.csrf_token) formData.append('csrfmiddlewaretoken', bootstrap.csrf_token);
+    
+    try {
+      const res = await fetch(bootstrap.kyc_submit_url, {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        setStatus('REJECTED');
+        setMessage(err.error || 'Submission failed');
+        return;
+      }
+      setMessage('Analyzing biometrics and extracting data...');
+    } catch (e) {
+      setStatus('REJECTED');
+      setMessage('Network error during submission.');
+    }
+  };
+
+  const shellProps = {
+    title: bootstrap.title,
+    subtitle: bootstrap.subtitle,
+    user: bootstrap.user,
+    nav: bootstrap.nav,
+    logoutUrl: bootstrap.logout_url,
+    csrfToken: bootstrap.csrf_token,
+  };
+
+  const body = (
+    <div className="mx-auto max-w-xl space-y-6">
+      <PageHeader kicker="Security" title={bootstrap.title} subtitle={bootstrap.subtitle} />
+      
+      <Card className="bg-white shadow-sm border border-border/50">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Identity Verification</CardTitle>
+              <CardDescription>We use AI to securely match your ID against your facial biometrics.</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {status === 'PROCESSING' && (
+            <div className="py-12 text-center space-y-4">
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              <div className="font-bold text-lg">{message}</div>
+              <p className="text-sm text-muted-foreground">Please wait. Do not close this page.</p>
+            </div>
+          )}
+          
+          {(status === 'APPROVED' || status === 'REJECTED' || status === 'LOCKED') && (
+            <div className={`rounded-2xl p-6 text-center border ${status === 'APPROVED' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-rose-200 bg-rose-50 text-rose-800'}`}>
+              <ShieldAlert className="h-10 w-10 mx-auto mb-3" />
+              <div className="text-xl font-bold mb-2">{status === 'APPROVED' ? 'Verification Complete' : 'Verification Failed'}</div>
+              <div className="text-sm opacity-90">{message}</div>
+              {status !== 'APPROVED' && (
+                <Button className="mt-6" variant="outline" onClick={() => setStatus('IDLE')}>Try Again</Button>
+              )}
+            </div>
+          )}
+
+          {status === 'IDLE' && (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-3 rounded-2xl border border-dashed border-border/60 bg-muted/20 p-5">
+                <label className="block text-sm font-bold text-foreground">1. Government ID (Front)</label>
+                <p className="text-xs text-muted-foreground mb-3">Clear, well-lit photo of your National ID or Passport.</p>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => setIdFront(e.target.files?.[0] || null)}
+                  className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                />
+              </div>
+              
+              <div className="space-y-3 rounded-2xl border border-dashed border-border/60 bg-muted/20 p-5">
+                <label className="block text-sm font-bold text-foreground">2. Selfie Photo</label>
+                <p className="text-xs text-muted-foreground mb-3">A clear selfie showing your full face to match against your ID.</p>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => setSelfie(e.target.files?.[0] || null)}
+                  className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                />
+              </div>
+              
+              <Button type="submit" className="w-full h-12 rounded-full text-base font-bold shadow-lg">Start Secure Verification</Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  if (bootstrap.user) return <AppShell {...shellProps}>{body}</AppShell>;
+  return <PublicShell title={bootstrap.title} subtitle={bootstrap.subtitle} nav={bootstrap.nav} user={bootstrap.user}>{body}</PublicShell>;
+}
+
+
 function ReactApp() {
   const page = bootstrap.page;
   const shellProps = {
@@ -3082,8 +3911,9 @@ function ReactApp() {
   if (page === 'content') return <ContentPage />;
   if (page === 'status') return <StatusPage />;
   if (page === 'form' || page === 'staff-login' || page === 'agent-kyc' || page === 'payment-onboarding') return <GenericFormPage />;
+  if (page === 'ai-kyc') return <AIKYCPage />;
   if (page === 'buyer-choice') return <AppShell {...shellProps}><BuyerChoicePage /></AppShell>;
-  if (page === 'legal' || page === 'joint-laws') return <AppShell {...shellProps}><LegalPage /></AppShell>;
+  if (page === 'legal' || page === 'joint-laws') return <LegalPage />;
   if (page === 'parcel-list') return <AppShell {...shellProps}><ParcelListPage /></AppShell>;
   if (page === 'transactions') return <AppShell {...shellProps}><TransactionsPage /></AppShell>;
   if (page === 'joint-groups') return <AppShell {...shellProps}><JointGroupsPage /></AppShell>;
@@ -3092,7 +3922,7 @@ function ReactApp() {
   if (page === 'messages') return <MessagesPage />;
   if (page === 'support') return <SupportPage />;
   if (page === 'contract') return <ContractPage />;
-  if (page === 'checkout') return <CheckoutPage />;
+  if (page === 'checkout' || page === 'checkout-fullpage') return <CheckoutFullPage />;
   if (page === 'recommendations') return <RecommendationsPage />;
   if (page === 'price-prediction') return <PredictionPage />;
   if (page === 'task-management') return <TaskManagementPage />;

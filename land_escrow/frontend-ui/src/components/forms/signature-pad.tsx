@@ -100,15 +100,15 @@ export function SignaturePad({ label, onChange, placeholder, className }: Signat
           <div className="text-sm font-semibold text-foreground">{label}</div>
           {placeholder ? <div className="text-xs text-muted-foreground">{placeholder}</div> : null}
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={clear}>
+        <Button type="button" variant="outline" size="sm" onClick={clear} className="print:hidden">
           <Eraser className="h-4 w-4 mr-1.5" />
           {isLocked ? 'Change signature' : 'Clear'}
         </Button>
       </div>
-      <div className={`relative overflow-hidden rounded-3xl border ${isLocked ? 'border-emerald-200 bg-emerald-50/60 opacity-90' : 'border-border bg-white shadow-sm'}`}>
+      <div className={`relative overflow-hidden rounded-3xl border ${isLocked ? 'border-emerald-200 bg-emerald-50/60 opacity-90' : 'border-border bg-white shadow-sm'} print:border-stone-400 print:bg-white print:shadow-none`}>
         <canvas
           ref={canvasRef}
-          className={`h-44 w-full ${isLocked ? 'pointer-events-none' : 'cursor-crosshair'}`}
+          className={`h-44 w-full ${isLocked ? 'pointer-events-none' : 'cursor-crosshair'} print:h-40 print:cursor-default`}
           onPointerDown={isLocked ? undefined : startDrawing}
           onPointerMove={isLocked ? undefined : draw}
           onPointerUp={isLocked ? undefined : stopDrawing}
@@ -116,14 +116,14 @@ export function SignaturePad({ label, onChange, placeholder, className }: Signat
           style={{ touchAction: 'none' }}
         />
         {isLocked && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/20">
+          <div className="print-signature-pad-overlay pointer-events-none absolute inset-0 flex items-center justify-center bg-white/20 print:hidden">
             <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase tracking-widest text-emerald-800 shadow-sm backdrop-blur-md">
               Signature Captured
             </span>
           </div>
         )}
       </div>
-      <div className="mt-2 text-xs text-muted-foreground">Draw your signature inside the box above.</div>
+      <div className="print-signature-pad-helper mt-2 text-xs text-muted-foreground print:hidden">Draw your signature inside the box above.</div>
     </div>
   );
 }

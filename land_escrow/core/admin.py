@@ -3,13 +3,127 @@ from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from .models import User, LandParcel, Transaction, Document, AuditLog, SupportTicket, Message, PlatformLegalDocument
+from .models import User, LandParcel, Transaction, Document, AuditLog, SupportTicket, Message, PlatformLegalDocument, KYCProfile, JointMemberRemovalRequest
 
 @admin.register(PlatformLegalDocument)
 class PlatformLegalDocumentAdmin(admin.ModelAdmin):
     list_display = ('title', 'updated_at')
     search_fields = ('title', 'content')
     readonly_fields = ('updated_at',)
+
+
+@admin.register(KYCProfile)
+class KYCProfileAdmin(admin.ModelAdmin):
+    list_display = (
+        'user', 'status', 'id_number', 'id_number_hash', 'liveness_score',
+        'created_at', 'updated_at'
+    )
+    list_filter = ('status', 'created_at', 'updated_at')
+    search_fields = (
+        'user__email', 'user__id_number', 'full_name',
+        'id_number', 'id_number_hash', 'audit_log'
+    )
+    readonly_fields = (
+        'created_at', 'updated_at', 'audit_log',
+        'id_number_hash',
+        'face_embedding', 'id_front_image', 'selfie_image'
+    )
+    ordering = ('-updated_at',)
+    actions = ('mark_approved', 'mark_rejected', 'mark_flagged_for_review', 'mark_locked')
+
+    def _apply_status(self, request, queryset, status, *, note, active=None, verified=None):
+        count = 0
+        for profile in queryset.select_related('user'):
+            profile.status = status
+            audit = dict(profile.audit_log or {})
+            audit['admin_note'] = note
+            audit['status'] = status
+            profile.audit_log = audit
+            profile.save(update_fields=['status', 'audit_log', 'updated_at'])
+
+            user = profile.user
+            if user:
+                if active is not None:
+                    user.is_active = active
+                if verified is not None:
+                    user.is_identity_verified = verified
+                user.save(update_fields=['is_active', 'is_identity_verified'])
+
+            AuditLog.objects.create(
+                user=request.user,
+                action=f'KYC admin {status.lower()} for {profile.user.email}',
+                metadata={
+                    'kyc_profile_id': str(profile.id),
+                    'user_id': str(profile.user_id),
+                    'status': status,
+                    'note': note,
+                },
+            )
+            count += 1
+
+        self.message_user(request, f'{count} KYC profile(s) updated to {status}.')
+
+    def mark_approved(self, request, queryset):
+        self._apply_status(
+            request,
+            queryset,
+            'APPROVED',
+            note='Approved by manual review.',
+            active=True,
+            verified=True,
+        )
+    mark_approved.short_description = 'Mark selected profiles approved'
+
+    def mark_rejected(self, request, queryset):
+        self._apply_status(
+            request,
+            queryset,
+            'REJECTED',
+            note='Rejected by manual review.',
+            active=True,
+            verified=False,
+        )
+    mark_rejected.short_description = 'Mark selected profiles rejected'
+
+    def mark_flagged_for_review(self, request, queryset):
+        self._apply_status(
+            request,
+            queryset,
+            'FLAGGED_FOR_REVIEW',
+            note='Flagged for manual review.',
+            active=True,
+            verified=False,
+        )
+    mark_flagged_for_review.short_description = 'Flag selected profiles for review'
+
+    def mark_locked(self, request, queryset):
+        self._apply_status(
+            request,
+            queryset,
+            'LOCKED',
+            note='Locked for suspected fraud.',
+            active=False,
+            verified=False,
+        )
+    mark_locked.short_description = 'Lock selected profiles'
+
+
+@admin.register(JointMemberRemovalRequest)
+class JointMemberRemovalRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        'group', 'member', 'requested_by', 'status', 'consent_confirmed',
+        'compensation_confirmed', 'compensation_amount', 'created_at', 'processed_at'
+    )
+    list_filter = ('status', 'consent_confirmed', 'compensation_confirmed', 'created_at', 'processed_at')
+    search_fields = (
+        'group__name',
+        'member__full_name',
+        'requested_by__email',
+        'admin_notes',
+        'notes',
+    )
+    readonly_fields = ('created_at', 'admin_reviewed_at', 'processed_at')
+    ordering = ('-created_at',)
 
 class CustomUserAdmin(UserAdmin):
     # Specify the fields that should be displayed in the list view

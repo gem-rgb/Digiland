@@ -12,6 +12,7 @@ export type PageKind =
   | 'form'
   | 'staff-login'
   | 'agent-kyc'
+  | 'ai-kyc'
   | 'agent-onboarding'
   | 'temp-approve'
   | 'task-management'
@@ -21,13 +22,21 @@ export type PageKind =
   | 'messages'
   | 'support'
   | 'contract'
+  | 'contract-fullpage'
   | 'payment-onboarding'
   | 'checkout'
+  | 'checkout-fullpage'
   | 'status'
   | 'recommendations'
   | 'price-prediction'
   | 'admin-dashboard'
   | 'agent-dashboard'
+  | 'seller-withdraw'
+  | 'escrow-release'
+  | 'agent-withdraw'
+  | 'finance'
+  | 'admin-withdraw'
+  | 'message-thread'
   | 'simple';
 
 export interface NavItem {
@@ -207,6 +216,11 @@ export interface JointGroupSummary {
   detail_url: string;
   edit_url: string;
   laws_url: string;
+  add_member_url?: string | null;
+  transfer_leadership_url?: string | null;
+  can_manage?: boolean;
+  is_group_leader?: boolean;
+  can_view_members?: boolean;
 }
 
 export interface BreakdownRow {
@@ -251,11 +265,24 @@ export interface CheckoutData {
   bank_account_name?: string | null;
   bank_account_number?: string | null;
   bank_branch?: string | null;
+  paystack_enabled?: boolean;
+  escrow_bank_name?: string | null;
+  escrow_bank_account_name?: string | null;
+  escrow_bank_account_number?: string | null;
+  escrow_bank_branch?: string | null;
 }
 
 export interface ContractBreakdownRow {
   member: JointMemberSummary;
   amount: string;
+}
+
+export interface ContractDocumentSummary {
+  key: string;
+  title: string;
+  description: string;
+  content: string;
+  required: boolean;
 }
 
 export interface ContractData {
@@ -271,6 +298,7 @@ export interface ContractData {
   joint_group_name?: string | null;
   joint_group_ownership?: string | null;
   joint_breakdown: ContractBreakdownRow[];
+  documents: ContractDocumentSummary[];
   laws: LawSummary[];
   current_user_role: string;
   current_user_is_buyer: boolean;
@@ -283,6 +311,7 @@ export interface ContractData {
   csrf_token: string;
   signature_data_name?: string;
   admin_dual_sign?: boolean;
+  [key: string]: any;
 }
 
 export interface MessageThreadMessage {
@@ -448,6 +477,27 @@ export interface ApprovalsPageData {
   pending_users: ReviewUserSummary[];
   pending_parcels: ParcelSummary[];
   pending_transactions: TransactionSummary[];
+  pending_joint_removals?: JointMemberRemovalRequestSummary[];
+}
+
+export interface JointMemberRemovalRequestSummary {
+  id: string;
+  group_id: string;
+  group_name: string;
+  member: JointMemberSummary;
+  requested_by?: UserSummary | null;
+  consent_confirmed: boolean;
+  compensation_confirmed: boolean;
+  compensation_amount?: string | null;
+  notes?: string | null;
+  status: string;
+  status_label?: string;
+  admin_reviewed_by?: UserSummary | null;
+  admin_reviewed_at?: string | null;
+  admin_notes?: string | null;
+  created_at: string;
+  approve_url: string;
+  reject_url: string;
 }
 
 export interface UserReviewPageData {
@@ -490,4 +540,23 @@ export interface BootstrapData {
   stats?: StatCardData[];
   messages?: { level: string; text: string }[];
   notice?: string;
+  document_content?: string | null;
+  fullpage_sign_url?: string;
+  back_url?: string;
+  require_signature?: boolean;
+  fullpage_mode?: boolean;
+  kyc_status_url?: string;
+  kyc_submit_url?: string;
+  kyc_manual_url?: string;
+  kyc_login_url?: string;
+  withdraw_data?: any;
+  escrow_transactions?: any[];
+  finance_dashboard?: any;
+  finance_pin_verified?: boolean;
+  finance_verify_url?: string;
+  admin_withdraw_url?: string;
+  pending_agent_applications?: any[];
+  message_thread?: any;
+  is_admin?: boolean;
+  [key: string]: any;
 }

@@ -15,13 +15,16 @@ def build_nav(user, active=None):
         ]
 
     if role == 'Buyer':
+        is_joint_buyer_account = getattr(user, 'buyer_account_type', None) == 'Joint'
+
         nav = [
             {'label': 'Dashboard', 'href': reverse('frontend:home'), 'icon': 'dashboard', 'active': active == 'dashboard'},
             {'label': 'Marketplace', 'href': reverse('frontend:parcel_list'), 'icon': 'parcels', 'active': active == 'parcel-list'},
             {'label': 'Transactions', 'href': reverse('frontend:transactions'), 'icon': 'transactions', 'active': active == 'transactions'},
-            {'label': 'My Groups', 'href': reverse('frontend:joint_groups'), 'icon': 'joint', 'active': active.startswith('joint')},
             {'label': 'Legal', 'href': reverse('frontend:escrow_acts'), 'icon': 'legal', 'active': active in {'legal', 'joint-laws'}},
         ]
+        if is_joint_buyer_account:
+            nav.insert(3, {'label': 'My Groups', 'href': reverse('frontend:joint_groups'), 'icon': 'joint', 'active': active.startswith('joint')})
         if getattr(user, 'buyer_account_type', None) == 'Joint':
             nav.insert(3, {'label': 'Buyer Setup', 'href': reverse('frontend:buyer_account_choice'), 'icon': 'security', 'active': active == 'buyer-choice'})
         return nav
@@ -214,12 +217,17 @@ def serialize_checkout(
     contributions=None,
     joint_bank_ready=False,
     joint_payment_method=None,
+    paystack_enabled=False,
     process_url,
     transactions_url,
     sign_url,
     failed_url,
     csrf_token,
     phone_number='',
+    escrow_bank_name=None,
+    escrow_bank_account_name=None,
+    escrow_bank_account_number=None,
+    escrow_bank_branch=None,
 ):
     breakdown_data = []
     for row in joint_breakdown or []:
@@ -256,6 +264,7 @@ def serialize_checkout(
         'joint_group_ownership': group.get_ownership_type_display() if group else None,
         'joint_payment_method': group.get_preferred_payment_method_display() if group else None,
         'joint_bank_ready': bool(joint_bank_ready),
+        'paystack_enabled': bool(paystack_enabled),
         'breakdown': breakdown_data,
         'contributions': contribution_data,
         'phone_number': phone_number,
@@ -269,6 +278,10 @@ def serialize_checkout(
         'bank_account_name': group.bank_account_name if group else None,
         'bank_account_number': group.bank_account_number if group else None,
         'bank_branch': group.bank_branch if group else None,
+        'escrow_bank_name': escrow_bank_name,
+        'escrow_bank_account_name': escrow_bank_account_name,
+        'escrow_bank_account_number': escrow_bank_account_number,
+        'escrow_bank_branch': escrow_bank_branch,
     }
 
 
@@ -355,8 +368,33 @@ def serialize_joint_member(member):
     }
 
 
-def serialize_joint_group(group):
+def serialize_joint_member_removal_request(removal_request):
+    return {
+        'id': str(removal_request.id),
+        'group_id': str(removal_request.group_id),
+        'group_name': removal_request.group.name if removal_request.group_id else '',
+        'member': serialize_joint_member(removal_request.member),
+        'requested_by': serialize_user(removal_request.requested_by),
+        'consent_confirmed': removal_request.consent_confirmed,
+        'compensation_confirmed': removal_request.compensation_confirmed,
+        'compensation_amount': str(removal_request.compensation_amount) if removal_request.compensation_amount is not None else None,
+        'notes': removal_request.notes,
+        'status': removal_request.status,
+        'status_label': removal_request.get_status_display() if hasattr(removal_request, 'get_status_display') else removal_request.status,
+        'admin_reviewed_by': serialize_user(removal_request.admin_reviewed_by) if removal_request.admin_reviewed_by else None,
+        'admin_reviewed_at': removal_request.admin_reviewed_at.strftime('%b %d, %Y %H:%M') if getattr(removal_request, 'admin_reviewed_at', None) else None,
+        'admin_notes': removal_request.admin_notes,
+        'created_at': removal_request.created_at.strftime('%b %d, %Y %H:%M'),
+        'approve_url': reverse('frontend:approve_joint_member_removal', args=[removal_request.id]),
+        'reject_url': reverse('frontend:reject_joint_member_removal', args=[removal_request.id]),
+    }
+
+
+def serialize_joint_group(group, user=None):
     members = [serialize_joint_member(member) for member in group.members.all()]
+    is_group_leader = bool(user and getattr(user, 'id', None) == getattr(group, 'leader_id', None))
+    is_admin = bool(user and getattr(user, 'role', None) == 'Admin')
+    can_manage = is_group_leader or is_admin
     return {
         'id': str(group.id),
         'name': group.name,
@@ -373,6 +411,11 @@ def serialize_joint_group(group):
         'detail_url': reverse('frontend:joint_group_detail', args=[group.id]),
         'edit_url': reverse('frontend:edit_joint_group', args=[group.id]),
         'laws_url': reverse('frontend:joint_laws'),
+        'add_member_url': reverse('frontend:add_joint_member', args=[group.id]) if can_manage else None,
+        'transfer_leadership_url': reverse('frontend:transfer_joint_leadership', args=[group.id]) if can_manage else None,
+        'can_manage': can_manage,
+        'is_group_leader': is_group_leader,
+        'can_view_members': True,
     }
 
 

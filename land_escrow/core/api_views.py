@@ -163,7 +163,7 @@ def verify_kra_pin_view(request):
             return JsonResponse({"status": "error", "message": "KRA PIN is required"})
         
         # Verify KRA PIN
-        result = GavaConnectAPI.verify_kra_pin(kra_pin, id_number)
+        result = GavaConnectAPI.verify_kra_pin(kra_pin)
         
         if result.get("status") == "success" and result.get("is_valid"):
             # If user_id is provided, update user's verification status
@@ -189,8 +189,10 @@ def verify_kra_pin_view(request):
                 "status": "success",
                 "message": "KRA PIN verified successfully",
                 "verification_details": {
-                    "business_name": result.get("business_name"),
-                    "registration_date": result.get("registration_date"),
+                    "taxpayer_name": result.get("taxpayer_name"),
+                    "taxpayer_type": result.get("taxpayer_type"),
+                    "pin_status": result.get("pin_status"),
+                    "response_code": result.get("response_code"),
                     "verification_id": result.get("verification_id")
                 }
             })
@@ -674,4 +676,3 @@ def check_checkout_status_view(request):
         "payment_status": "pending",
         "message": "Waiting for payment confirmation...",
     })
-

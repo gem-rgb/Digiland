@@ -5,6 +5,8 @@ from django.urls import reverse
 # Phase 1 (unverified): only KYC, onboarding, auth, and static paths
 AGENT_UNVERIFIED_EXEMPT = {
     '/agent/kyc/',
+    '/kyc/',
+    '/api/kyc/',
     '/agent/onboarding/',
     '/staff/login/',
     '/accounts/logout/',
@@ -108,4 +110,3 @@ class AgentKYCGateMiddleware:
                         return redirect(reverse('frontend:agent_kyc'))
 
         return self.get_response(request)
-

@@ -1,21 +1,28 @@
-# Document Validation Service
+"""Document validation helpers used by the KYC and parcel review flows."""
 
-def extract_text_from_document(file):
-    """
-    Uses OCR to extract text from a document. Mock returns a placeholder string.
-    """
-    return "Extracted mock text from document."
+from core.ai_kyc import analyze_document_file
+
 
 def validate_title_deed(uploaded_file, parcel_number):
     """
-    Validates uploaded title deed against parcel info. Mock returns True.
-    """
-    text = extract_text_from_document(uploaded_file)
-    return True
+    Validate a title deed against the expected parcel number.
 
-def validate_id_document(uploaded_file, user_id):
+    Returns a structured result so callers can distinguish a clean match from
+    manual-review or rejection states.
     """
-    Validates uploaded ID document. Mock returns True.
+    return analyze_document_file(
+        uploaded_file,
+        parcel_number=parcel_number,
+        doc_type="title_deed",
+    )
+
+
+def validate_id_document(uploaded_file, expected_id_number):
     """
-    text = extract_text_from_document(uploaded_file)
-    return True
+    Validate a government-issued identity document against the expected ID number.
+    """
+    return analyze_document_file(
+        uploaded_file,
+        expected_id_number=expected_id_number,
+        doc_type="id_document",
+    )

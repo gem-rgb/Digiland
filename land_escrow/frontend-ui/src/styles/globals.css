@@ -39,6 +39,11 @@ html {
     linear-gradient(180deg, #fcfbf8 0%, #f4efe7 100%);
 }
 
+@page {
+  size: A4 portrait;
+  margin: 14mm;
+}
+
 body {
   min-height: 100vh;
   color: hsl(var(--foreground));
@@ -73,3 +78,61 @@ body {
   color: transparent;
 }
 
+@media print {
+  html,
+  body,
+  #root {
+    min-height: auto;
+    background: #fff !important;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-document-shell {
+    background: #fff !important;
+  }
+
+  .print-document-header,
+  .print-document-summary,
+  .print-document-toolbar,
+  .print-document-success {
+    display: none !important;
+  }
+
+  .print-document-sheet {
+    width: auto !important;
+    max-width: none !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    border: 1px solid rgba(120, 113, 108, 0.28) !important;
+  }
+
+  .print-document-title {
+    font-family: Georgia, "Times New Roman", serif !important;
+    letter-spacing: 0.01em !important;
+  }
+
+  .print-document-body {
+    font-family: Georgia, "Times New Roman", serif !important;
+    font-size: 11pt !important;
+    line-height: 1.7 !important;
+    color: #111827 !important;
+  }
+
+  .print-signature-pad button,
+  .print-signature-pad .print-signature-pad-helper,
+  .print-signature-pad .print-signature-pad-overlay {
+    display: none !important;
+  }
+
+  .print-signature-pad canvas {
+    border-color: #a8a29e !important;
+    box-shadow: none !important;
+  }
+}

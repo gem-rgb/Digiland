@@ -113,6 +113,10 @@ class DocumentUploadForm(forms.ModelForm):
 
 
 class AgentKYCForm(forms.ModelForm):
+    MAX_DOC_SIZE_MB = 10
+    ALLOWED_IMAGE_TYPES = {'image/jpeg', 'image/png', 'image/webp'}
+    ALLOWED_PDF_TYPES = {'application/pdf'}
+
     class Meta:
         model = AgentKYCApplication
         fields = [
@@ -167,6 +171,63 @@ class AgentKYCForm(forms.ModelForm):
         except requests.RequestException:
             logger.info(f'KRA PIN Checker API unavailable, using format validation for {value[:3]}***')
         return value
+
+    def _validate_uploaded_file(self, field_name, uploaded_file, *, allow_pdf=False, required=True):
+        if not uploaded_file:
+            if required:
+                raise forms.ValidationError('This file is required.')
+            return uploaded_file
+
+        content_type = getattr(uploaded_file, 'content_type', '') or ''
+        size_mb = getattr(uploaded_file, 'size', 0) / (1024 * 1024)
+
+        allowed_types = set(self.ALLOWED_IMAGE_TYPES)
+        if allow_pdf:
+            allowed_types |= self.ALLOWED_PDF_TYPES
+
+        if content_type and content_type.lower() not in allowed_types:
+            raise forms.ValidationError(
+                'Unsupported file type. Use JPG, PNG, WEBP, or PDF where applicable.'
+            )
+
+        if size_mb > self.MAX_DOC_SIZE_MB:
+            raise forms.ValidationError(
+                f'File is too large. Keep uploads at or below {self.MAX_DOC_SIZE_MB} MB.'
+            )
+
+        return uploaded_file
+
+    def clean_id_photo(self):
+        return self._validate_uploaded_file(
+            'id_photo',
+            self.cleaned_data.get('id_photo'),
+            allow_pdf=False,
+            required=True,
+        )
+
+    def clean_resume(self):
+        return self._validate_uploaded_file(
+            'resume',
+            self.cleaned_data.get('resume'),
+            allow_pdf=True,
+            required=True,
+        )
+
+    def clean_certificate_of_good_conduct(self):
+        return self._validate_uploaded_file(
+            'certificate_of_good_conduct',
+            self.cleaned_data.get('certificate_of_good_conduct'),
+            allow_pdf=True,
+            required=True,
+        )
+
+    def clean_practicing_certificate(self):
+        return self._validate_uploaded_file(
+            'practicing_certificate',
+            self.cleaned_data.get('practicing_certificate'),
+            allow_pdf=True,
+            required=False,
+        )
 
 
 class JointBuyerGroupForm(forms.ModelForm):
@@ -338,6 +399,69 @@ class JointBuyerMemberForm(forms.ModelForm):
 
 
 JointBuyerMemberFormSet = formset_factory(JointBuyerMemberForm, extra=2, can_delete=True)
+
+
+class JointLeaderTransferForm(forms.Form):
+    """Transfer the leadership title to another eligible group member."""
+
+    new_leader_member_id = forms.ChoiceField(
+        choices=[],
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='New leader',
+        help_text='The member must already have a Buyer account on the platform.',
+    )
+    transfer_reason = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 4,
+            'placeholder': 'Optional reason for the leadership change.',
+        }),
+        label='Reason for transfer',
+    )
+
+
+class JointMemberRemovalRequestForm(forms.Form):
+    """Capture the leader and admin acknowledgements needed before removing a member."""
+
+    consent_confirmed = forms.BooleanField(
+        required=True,
+        label='The exiting member has agreed to the removal',
+        help_text='Confirm that the member leaving the group has consented to the change.',
+    )
+    compensation_confirmed = forms.BooleanField(
+        required=True,
+        label='The exiting member has received their compensation',
+        help_text='Confirm that the member leaving the group has been paid their share.',
+    )
+    compensation_amount = forms.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        min_value=0,
+        required=False,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'e.g. 250000',
+            'step': '0.01',
+        }),
+        label='Compensation amount (KES)',
+        help_text='Optional, but useful for admin review and audit records.',
+    )
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 4,
+            'placeholder': 'Any supporting details for the admin reviewer.',
+        }),
+        label='Notes for admin review',
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get('compensation_confirmed') and cleaned.get('compensation_amount') in {None, ''}:
+            self.add_error('compensation_amount', 'Enter the compensation amount if payment has been confirmed.')
+        return cleaned
 
 
 class AgentRatingForm(forms.Form):

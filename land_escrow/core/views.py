@@ -9,7 +9,7 @@ from .serializers import (
     UserSerializer, RegisterSerializer, LoginSerializer,
     LandParcelSerializer, TransactionSerializer, DocumentSerializer
 )
-from .services import identity, land, document, risk, payment
+from .services import identity, land, document as document_service, risk, payment
 
 @api_view(['POST'])
 def register_user(request):
@@ -99,15 +99,53 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='validate')
     def validate_document(self, request, pk=None):
-        document = self.get_object()
-        if document.document_type == 'Title_Deed':
-            valid = document_service.validate_title_deed(document.file_url, document.land_parcel.parcel_number)
+        document_obj = self.get_object()
+        if document_obj.document_type == 'Title_Deed':
+            validation = document_service.validate_title_deed(
+                document_obj.file_url,
+                document_obj.land_parcel.parcel_number if document_obj.land_parcel else None,
+            )
         else:
-            valid = document_service.validate_id_document(document.file_url, document.uploaded_by.id)
-            
-        document.verification_status = 'Match' if valid else 'Mismatch'
-        document.save()
-        return Response({"verification_status": document.verification_status, "fraud_flag_notes": document.fraud_flag_notes})
+            validation = document_service.validate_id_document(
+                document_obj.file_url,
+                document_obj.uploaded_by.id_number,
+            )
+
+        status_map = {
+            'APPROVED': 'Match',
+            'FLAGGED_FOR_REVIEW': 'Forgery_Suspected',
+            'REJECTED': 'Mismatch',
+        }
+        document_obj.verification_status = status_map.get(validation.get('status'), 'Mismatch')
+        notes = validation.get('reason') or ''
+        extra_notes = validation.get('reasons') or []
+        if extra_notes:
+            notes = '; '.join([note for note in [notes, *extra_notes] if note])
+        if validation.get('tamper_flags'):
+            tamper_notes = '; '.join(validation.get('tamper_flags'))
+            notes = '; '.join([note for note in [notes, tamper_notes] if note])
+        document_obj.fraud_flag_notes = notes or document_obj.fraud_flag_notes
+        document_obj.save(update_fields=['verification_status', 'fraud_flag_notes'])
+
+        AuditLog.objects.create(
+            user=request.user,
+            action=f'Document validation completed for {document_obj.id}',
+            metadata={
+                'document_id': str(document_obj.id),
+                'document_type': document_obj.document_type,
+                'verification_status': document_obj.verification_status,
+                'status': validation.get('status'),
+                'reason': validation.get('reason'),
+                'ocr_confidence': validation.get('ocr_confidence'),
+                'template_score': validation.get('template_score'),
+            },
+        )
+
+        return Response({
+            "verification_status": document_obj.verification_status,
+            "fraud_flag_notes": document_obj.fraud_flag_notes,
+            "details": validation,
+        })
 
 # Payments Endpoints
 @api_view(['POST'])
@@ -128,17 +166,67 @@ def payment_deposit(request):
     payment.hold_payment(transaction)
     return Response(response, status=status.HTTP_200_OK)
 
-@api_view(['POST'])
+@api_view(['GET', 'POST'])
 def payment_callback(request):
-    # Adaptive Callback parsing both M-PESA and Paystack payloads
-    reference = request.data.get('data', {}).get('reference')
-    mpesa_payload = request.data.get('Body', {}).get('stkCallback')
-    
+    from django.contrib import messages as django_messages
+    from django.shortcuts import redirect
+
+    payload = getattr(request, 'data', {}) or {}
+    reference = (
+        payload.get('data', {}).get('reference')
+        or getattr(request, 'query_params', request.GET).get('reference')
+        or payload.get('reference')
+    )
+    mpesa_payload = payload.get('Body', {}).get('stkCallback')
+
     if reference:
-        payment.paystack_verify(reference)
-    elif mpesa_payload:
-        pass # Insert MPESA Verification Logic
-        
+        verification = payment.paystack_verify(reference)
+        transaction = Transaction.objects.filter(id=reference).first()
+        paystack_success = bool(
+            verification.get('status') == 'success'
+            or verification.get('status') is True
+            or verification.get('data', {}).get('status') == 'success'
+        )
+
+        if transaction and paystack_success:
+            transaction.status = 'Deposit_Paid'
+            transaction.escrow_reference = f"PAYSTACK-{reference}"
+            transaction.save(update_fields=['status', 'escrow_reference'])
+            AuditLog.objects.create(
+                user=transaction.buyer,
+                action=f'Paystack payment confirmed for transaction {transaction.id}',
+                metadata={
+                    'transaction_id': str(transaction.id),
+                    'reference': reference,
+                    'amount': str(transaction.agreed_price),
+                },
+            )
+
+            if request.method == 'GET':
+                django_messages.success(request, 'Paystack payment confirmed successfully.')
+                return redirect('frontend:transactions')
+
+            return Response({"message": "Paystack payment confirmed"}, status=status.HTTP_200_OK)
+
+        if transaction:
+            transaction.escrow_reference = f"FAILED-{reference}"
+            transaction.save(update_fields=['escrow_reference'])
+
+        if request.method == 'GET':
+            if transaction:
+                django_messages.error(request, 'Paystack payment could not be verified.')
+                return redirect('frontend:transaction_failed', transaction_id=transaction.id)
+            django_messages.error(request, 'Paystack payment could not be verified.')
+            return redirect('frontend:transactions')
+
+        return Response({"status": "failed", "message": "Paystack verification failed"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if mpesa_payload:
+        return Response({"message": "Callback processed"}, status=status.HTTP_200_OK)
+
+    if request.method == 'GET':
+        return redirect('frontend:transactions')
+
     return Response({"message": "Callback processed"}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])

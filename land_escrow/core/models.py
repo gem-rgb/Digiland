@@ -144,6 +144,37 @@ class AgentKYCApplication(models.Model):
         return f'KYC: {self.agent.email} [{self.status}]'
 
 
+class KYCProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='kyc_profile')
+    status = models.CharField(max_length=20, choices=[
+        ('PENDING', 'Pending'), ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'), ('FLAGGED_FOR_REVIEW', 'Flagged for Review'),
+        ('LOCKED', 'Locked / Fraud')
+    ], default='PENDING')
+    
+    # Extracted OCR Data
+    id_number = models.CharField(max_length=100, db_index=True, blank=True, null=True)
+    id_number_hash = models.CharField(max_length=128, db_index=True, blank=True, null=True)
+    full_name = models.CharField(max_length=200, blank=True, null=True)
+    date_of_birth = models.DateField(null=True, blank=True)
+    expiry_date = models.DateField(null=True, blank=True)
+    
+    # Biometrics stored as JSON array of floats instead of pgvector
+    face_embedding = models.JSONField(null=True, blank=True)
+    liveness_score = models.FloatField(default=0.0)
+    
+    # Audit & Files
+    id_front_image = models.FileField(upload_to='kyc/secure/id/', blank=True, null=True)
+    selfie_image = models.FileField(upload_to='kyc/secure/selfie/', blank=True, null=True)
+    audit_log = models.JSONField(default=dict, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"KYCProfile for {self.user.email} - {self.status}"
+
+
 class LandParcel(models.Model):
     LAND_USE_CHOICES = [
         ('Residential', 'Residential'),
@@ -561,6 +592,44 @@ class JointPaymentContribution(models.Model):
         member_label = self.member.full_name if self.member else "Leader/Full"
         channel = "Bank" if self.payment_channel == 'Bank_Transfer' else "M-Pesa"
         return f"{self.transaction_id} {member_label} {self.amount} ({channel}, {self.status})"
+
+
+class JointMemberRemovalRequest(models.Model):
+    """Tracks a leader-requested member removal that requires admin verification."""
+
+    STATUS_CHOICES = [
+        ('Pending_Admin_Review', 'Pending Admin Review'),
+        ('Approved', 'Approved'),
+        ('Rejected', 'Rejected'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    group = models.ForeignKey(JointBuyerGroup, on_delete=models.CASCADE, related_name='removal_requests')
+    member = models.ForeignKey(JointBuyerMember, on_delete=models.CASCADE, related_name='removal_requests')
+    requested_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='joint_removal_requests')
+    consent_confirmed = models.BooleanField(default=False, help_text="Leader confirms the member agreed to exit the group.")
+    compensation_confirmed = models.BooleanField(default=False, help_text="Leader confirms the member has received their compensation.")
+    compensation_amount = models.DecimalField(max_digits=14, decimal_places=2, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='Pending_Admin_Review')
+    admin_reviewed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='reviewed_joint_removal_requests',
+    )
+    admin_reviewed_at = models.DateTimeField(blank=True, null=True)
+    admin_notes = models.TextField(blank=True, null=True)
+    processed_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.group.name} - {self.member.full_name} [{self.get_status_display()}]"
+
 
 class PlatformLegalDocument(models.Model):
     """Stores platform-wide legal documents (e.g., Joint Laws, Terms of Service) editable by Admin."""

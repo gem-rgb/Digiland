@@ -55,12 +55,12 @@ def get_paystack_headers():
         "Content-Type": "application/json"
     }
 
-def paystack_initialize(email, amount, reference):
+def paystack_initialize(email, amount, reference, callback_url=None):
     payload = {
         "email": email,
         "amount": int(float(amount) * 100),
         "reference": reference,
-        "callback_url": "http://127.0.0.1:8000/api/v1/payments/callback"
+        "callback_url": callback_url or getattr(settings, 'PAYSTACK_CALLBACK_URL', 'http://127.0.0.1:8000/api/v1/payments/callback')
     }
     response = requests.post(f"{PAYSTACK_API_URL}/transaction/initialize", json=payload, headers=get_paystack_headers())
     if response.status_code == 200:

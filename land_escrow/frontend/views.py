@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.middleware.csrf import get_token
 from django.db import models
-from core.models import LandParcel, Transaction, Message, SupportTicket, Document, User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite, JointBuyerGroup, JointBuyerMember, JointPaymentContribution, AuditLog
+from core.models import LandParcel, Transaction, Message, SupportTicket, Document, User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite, JointBuyerGroup, JointBuyerMember, JointPaymentContribution, JointMemberRemovalRequest, AuditLog
 from core.legal import (
     LAND_TRANSACTION_LAWS,
     LAND_TRANSACTION_CHECKLIST,
@@ -14,7 +14,7 @@ from core.legal import (
     JOINT_KENYAN_LAND_DOCUMENTS,
 )
 from .forms import LandParcelUploadForm
-from core.forms import AgentRatingForm, DocumentUploadForm, JointBuyerGroupForm, JointBuyerMemberFormSet, JointBuyerMemberForm, PricePredictionForm
+from core.forms import AgentRatingForm, DocumentUploadForm, JointBuyerGroupForm, JointBuyerMemberFormSet, JointBuyerMemberForm, JointLeaderTransferForm, JointMemberRemovalRequestForm, PricePredictionForm
 from .react_data import (
     build_nav,
     serialize_checkout,
@@ -23,6 +23,7 @@ from .react_data import (
     serialize_form,
     serialize_formset,
     serialize_joint_group,
+    serialize_joint_member_removal_request,
     serialize_law,
     serialize_message_thread,
     serialize_messages,
@@ -333,7 +334,7 @@ def staff_login(request):
                         return redirect('frontend:agent_onboarding')
                 except Exception:
                     pass
-                return redirect('frontend:agent_kyc')
+                return redirect('frontend:ai_kyc')
             return redirect('frontend:agent_dashboard')
 
     # Consume the "just signed up" session flag set by agent_signup_complete
@@ -943,6 +944,9 @@ def agent_approvals(request):
             contract_agreed=True,
             status__in=['Deposit_Paid', 'Under_Verification']
         ).order_by('created_at')
+        context['pending_joint_removals'] = JointMemberRemovalRequest.objects.filter(
+            status='Pending_Admin_Review'
+        ).select_related('group', 'member', 'requested_by').order_by('created_at')
     else:
         # Agent sees only their assigned parcels
         context['pending_parcels'] = LandParcel.objects.filter(
@@ -957,6 +961,7 @@ def agent_approvals(request):
             Q(buyer=request.user) |
             Q(seller=request.user)
         ).distinct().order_by('created_at')
+        context['pending_joint_removals'] = []
 
     return render_react_shell(
         request,
@@ -967,6 +972,7 @@ def agent_approvals(request):
             'pending_users': [serialize_review_user(user) for user in context['pending_users']],
             'pending_parcels': [serialize_parcel(parcel, request.user) for parcel in context['pending_parcels']],
             'pending_transactions': [serialize_transaction(tx, request.user) for tx in context['pending_transactions']],
+            'pending_joint_removals': [serialize_joint_member_removal_request(removal) for removal in context['pending_joint_removals']],
         },
     )
 
@@ -1788,6 +1794,14 @@ def sign_contract(request, transaction_id):
     # Security: Only involved parties (buyer, seller) or Admin can access
     if request.user not in [transaction.buyer, transaction.seller] and request.user.role != 'Admin':
         return redirect('frontend:transactions')
+
+    from django.core.signing import Signer
+    signer = Signer()
+    signing_token = signer.sign(str(transaction.id))
+    fullpage_url = reverse('frontend:contract_sign_fullpage', args=[signing_token])
+
+    if request.method == 'GET' and request.user.role in {'Buyer', 'Seller'} and not transaction.contract_agreed:
+        return redirect(fullpage_url)
         
     if request.method == 'POST':
         # Admin-only dual signing capability
@@ -1881,12 +1895,6 @@ def sign_contract(request, transaction_id):
     from core.models import PlatformLegalDocument
     platform_terms_doc = PlatformLegalDocument.objects.filter(title='Joint Purchase Laws').first() if transaction.is_joint_purchase else None
 
-    # Generate encrypted token for full-page signing URL
-    from django.core.signing import Signer
-    signer = Signer()
-    signing_token = signer.sign(str(transaction.id))
-    fullpage_url = reverse('frontend:contract_sign_fullpage', args=[signing_token])
-
     return render_react_shell(
         request,
         'contract',
@@ -1930,7 +1938,7 @@ def payment_onboarding(request, transaction_id):
             icon='wallet',
             tone='warning',
             title='Contract signed',
-            description=f'Payment can now be initiated for parcel {transaction.land_parcel.parcel_number}. Continue to checkout to start the escrow deposit.',
+            description=f'Payment can now be initiated for parcel {transaction.land_parcel.parcel_number}. Continue to checkout to choose M-Pesa STK, KCB bank transfer, or Paystack.',
             primary_action={'label': 'Continue to checkout', 'href': reverse('frontend:payment_checkout', args=[transaction.id]), 'tone': 'default'},
             secondary_action={'label': 'Back to transactions', 'href': reverse('frontend:transactions'), 'tone': 'outline'},
         ),
@@ -1970,13 +1978,20 @@ def payment_checkout(request, transaction_id):
             joint_group.bank_name and joint_group.bank_account_name and joint_group.bank_account_number
         )
 
+    from django.conf import settings
+    escrow_bank_name = 'KCB Bank Kenya'
+    escrow_bank_account_name = 'Digiland Escrow'
+    escrow_bank_account_number = getattr(settings, 'KCB_PLATFORM_ACCOUNT', 'DIGILAND-ESCROW-001')
+    escrow_bank_branch = 'Nairobi'
+    paystack_enabled = bool(getattr(settings, 'PAYSTACK_SECRET_KEY', ''))
+
     from django.middleware.csrf import get_token
 
     return render_react_shell(
         request,
-        'checkout',
+        'checkout-fullpage',
         'Escrow checkout',
-        'Complete payment using M-Pesa or the shared joint bank account.',
+        'Complete payment using M-Pesa, KCB bank transfer, Paystack, or the shared joint bank account.',
         checkout=serialize_checkout(
             transaction,
             request.user,
@@ -1990,11 +2005,24 @@ def payment_checkout(request, transaction_id):
             failed_url=reverse('frontend:transaction_failed', args=[transaction.id]),
             csrf_token=get_token(request),
             phone_number=getattr(request.user, 'phone_number', '') or '',
+            paystack_enabled=paystack_enabled,
+            escrow_bank_name=escrow_bank_name,
+            escrow_bank_account_name=escrow_bank_account_name,
+            escrow_bank_account_number=escrow_bank_account_number,
+            escrow_bank_branch=escrow_bank_branch,
         ),
+        fullpage_mode=True,
+        back_url=reverse('frontend:transactions'),
     )
 
 @login_required
 def process_payment(request, transaction_id):
+    return _process_payment(request, transaction_id)
+
+
+def _process_payment(request, transaction_id):
+    return _process_payment_v2(request, transaction_id)
+
     from django.http import JsonResponse
     from core.services.payment import mpesa_stk_push
     import logging
@@ -2172,6 +2200,254 @@ def process_payment(request, transaction_id):
     return redirect('frontend:payment_checkout', transaction_id=transaction.id)
 
 
+def _process_payment_v2(request, transaction_id):
+    from django.http import JsonResponse
+    from django.conf import settings
+    from django.contrib import messages as django_messages
+    from django.utils.http import urlencode
+    from core.services.payment import mpesa_stk_push, paystack_initialize
+    import logging
+    logger = logging.getLogger(__name__)
+
+    transaction = get_object_or_404(
+        Transaction.objects.select_related('buyer', 'seller', 'land_parcel', 'joint_group').prefetch_related('joint_group__members'),
+        id=transaction_id,
+    )
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    if not transaction.contract_agreed:
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': 'The contract must be signed before payment can begin.'})
+        return redirect('frontend:sign_contract', transaction_id=transaction.id)
+
+    if request.method != 'POST' or (request.user != transaction.buyer and request.user.role != 'Admin'):
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
+        return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+
+    if transaction.status != 'Under_Verification':
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': 'Payment can only start while the transaction is under verification.'})
+        return redirect('frontend:transactions')
+
+    payment_method = (request.POST.get('payment_method') or '').strip().lower()
+    if not payment_method:
+        if transaction.is_joint_purchase and transaction.joint_group and transaction.joint_group.preferred_payment_method == 'Joint_Bank_Account':
+            payment_method = 'joint_bank_account'
+        else:
+            payment_method = 'm_pesa'
+
+    from decimal import Decimal, ROUND_HALF_UP
+
+    if payment_method in {'joint_bank_account', 'kcb_bank', 'bank_transfer'}:
+        bank_reference = (request.POST.get('bank_reference') or '').strip()
+        depositor_name = (request.POST.get('depositor_name') or '').strip() or getattr(request.user, 'get_full_name', lambda: '')() or request.user.email
+
+        if not bank_reference:
+            message = 'Please enter the bank transfer reference number.'
+            if is_ajax:
+                return JsonResponse({'status': 'error', 'message': message})
+            django_messages.error(request, message)
+            return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+
+        if payment_method == 'joint_bank_account':
+            if not transaction.is_joint_purchase or not transaction.joint_group:
+                message = 'Joint bank checkout is only available for joint purchases.'
+                if is_ajax:
+                    return JsonResponse({'status': 'error', 'message': message})
+                django_messages.error(request, message)
+                return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+
+            group = transaction.joint_group
+            if not (group.bank_name and group.bank_account_name and group.bank_account_number):
+                message = 'The joint bank account has not been configured yet.'
+                if is_ajax:
+                    return JsonResponse({'status': 'error', 'message': message})
+                django_messages.error(request, message)
+                return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+
+            contribution = JointPaymentContribution.objects.create(
+                transaction=transaction,
+                member=None,
+                amount=transaction.agreed_price,
+                payment_channel='Bank_Transfer',
+                phone_number=None,
+                status='Bank_Submitted',
+                bank_reference=bank_reference,
+                depositor_name=depositor_name,
+                bank_name=group.bank_name,
+                bank_account_number=group.bank_account_number,
+                bank_account_name=group.bank_account_name,
+                bank_branch=group.bank_branch,
+            )
+            transaction.escrow_reference = f"BANK-{bank_reference[:12].upper()}"
+            transaction.save(update_fields=['escrow_reference'])
+
+            if is_ajax:
+                return JsonResponse({
+                    'status': 'bank_pending',
+                    'message': 'Joint bank transfer recorded. Complete the transfer using the displayed bank details and keep the reference number.',
+                    'bank_reference': bank_reference,
+                    'bank_name': contribution.bank_name,
+                    'bank_account_name': contribution.bank_account_name,
+                    'bank_account_number': contribution.bank_account_number,
+                    'bank_branch': contribution.bank_branch,
+                    'escrow_reference': transaction.escrow_reference,
+                })
+
+            django_messages.success(request, 'Joint bank transfer recorded. Use the listed account details to complete the payment.')
+            return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+
+        escrow_bank_name = 'KCB Bank Kenya'
+        escrow_bank_account_name = 'Digiland Escrow'
+        escrow_bank_account_number = getattr(settings, 'KCB_PLATFORM_ACCOUNT', 'DIGILAND-ESCROW-001')
+        escrow_bank_branch = 'Nairobi'
+        transaction.escrow_reference = f"KCB-{bank_reference[:12].upper()}"
+        transaction.save(update_fields=['escrow_reference'])
+        AuditLog.objects.create(
+            user=request.user,
+            action=f'Bank transfer checkout recorded for transaction {transaction.id}',
+            metadata={
+                'transaction_id': str(transaction.id),
+                'bank_reference': bank_reference,
+                'depositor_name': depositor_name,
+                'bank_name': escrow_bank_name,
+                'bank_account_name': escrow_bank_account_name,
+                'bank_account_number': escrow_bank_account_number,
+                'bank_branch': escrow_bank_branch,
+            },
+        )
+
+        if is_ajax:
+            return JsonResponse({
+                'status': 'bank_pending',
+                'message': 'KCB bank transfer recorded. Complete the transfer using the escrow bank details on the page.',
+                'bank_reference': bank_reference,
+                'bank_name': escrow_bank_name,
+                'bank_account_name': escrow_bank_account_name,
+                'bank_account_number': escrow_bank_account_number,
+                'bank_branch': escrow_bank_branch,
+                'escrow_reference': transaction.escrow_reference,
+            })
+
+        django_messages.success(request, 'KCB bank transfer recorded. Use the escrow bank details on the checkout page.')
+        return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+
+    if payment_method == 'paystack':
+        if not getattr(settings, 'PAYSTACK_SECRET_KEY', ''):
+            message = 'Paystack is not configured on this environment.'
+            if is_ajax:
+                return JsonResponse({'status': 'error', 'message': message})
+            django_messages.error(request, message)
+            return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+
+        checkout_email = (request.POST.get('email') or '').strip() or getattr(request.user, 'email', '') or transaction.buyer.email
+        callback_url = request.build_absolute_uri(reverse('core:payment-callback'))
+        response = paystack_initialize(checkout_email, transaction.agreed_price, str(transaction.id), callback_url=callback_url)
+        if response.get('status') and response.get('data', {}).get('authorization_url'):
+            authorization_url = response['data']['authorization_url']
+            reference = response.get('data', {}).get('reference') or str(transaction.id)
+            transaction.escrow_reference = f"PAYSTACK-{reference}"
+            transaction.save(update_fields=['escrow_reference'])
+
+            AuditLog.objects.create(
+                user=request.user,
+                action=f'Paystack checkout initialized for transaction {transaction.id}',
+                metadata={
+                    'transaction_id': str(transaction.id),
+                    'reference': reference,
+                    'authorization_url': authorization_url,
+                    'amount': str(transaction.agreed_price),
+                    'email': checkout_email,
+                },
+            )
+
+            if is_ajax:
+                return JsonResponse({
+                    'status': 'paystack_redirect',
+                    'authorization_url': authorization_url,
+                    'reference': reference,
+                    'message': 'Redirecting to Paystack checkout.',
+                })
+
+            return redirect(authorization_url)
+
+        error_msg = response.get('message', 'Failed to initialize Paystack checkout.')
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': error_msg})
+        django_messages.error(request, error_msg)
+        return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+
+    phone_number = request.POST.get('phone_number', '').strip() or request.user.phone_number or ''
+    member_id = (request.POST.get('member_id') or '').strip()
+    amount_override = (request.POST.get('amount') or '').strip()
+
+    if not phone_number:
+        message = 'No phone number provided.'
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': message})
+        django_messages.error(request, message)
+        return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+
+    try:
+        amount_decimal = transaction.agreed_price
+        member = None
+        if transaction.is_joint_purchase and transaction.joint_group and member_id:
+            member = JointBuyerMember.objects.get(id=member_id, group=transaction.joint_group)
+            amount_decimal = (transaction.agreed_price * (member.share_percentage / Decimal('100'))).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP
+            )
+
+        if amount_override:
+            try:
+                amount_decimal = Decimal(amount_override)
+            except Exception:
+                pass
+
+        amount = int(amount_decimal)
+        if getattr(settings, 'DARAJA_ENVIRONMENT', 'sandbox') == 'sandbox':
+            amount = min(amount, 1)
+
+        result = mpesa_stk_push(phone=phone_number, amount=amount, transaction_id=str(transaction.id))
+        logger.info(f"STK Push result for transaction {transaction.id}: {result}")
+
+        if result.get('status') == 'success':
+            checkout_request_id = result.get('checkout_request_id', '')
+
+            if transaction.is_joint_purchase and transaction.joint_group:
+                JointPaymentContribution.objects.create(
+                    transaction=transaction,
+                    member=member,
+                    amount=amount_decimal,
+                    phone_number=phone_number,
+                    status='STK_Pushed',
+                    checkout_request_id=checkout_request_id or None,
+                )
+
+            transaction.escrow_reference = f"MPESA-{checkout_request_id}" if checkout_request_id else f"ESC-{str(transaction.id)[:8].upper()}"
+            transaction.save(update_fields=['escrow_reference'])
+
+            if is_ajax:
+                return JsonResponse({
+                    'status': 'stk_pushed',
+                    'message': 'STK Push sent to your phone. Please authorize the payment.',
+                    'checkout_request_id': checkout_request_id,
+                })
+            return redirect('frontend:transactions')
+
+        error_msg = result.get('message', 'STK Push initiation failed.')
+        logger.error(f"STK Push failed for transaction {transaction.id}: {error_msg}")
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': error_msg})
+        return redirect(f"{reverse('frontend:transaction_failed', args=[transaction.id])}?reason={urlencode({'': error_msg})[1:]}")
+
+    except Exception as e:
+        logger.error(f"Payment processing error for transaction {transaction.id}: {str(e)}")
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': f'Payment processing error: {str(e)}'})
+        return redirect(f"{reverse('frontend:transaction_failed', args=[transaction.id])}?reason={urlencode({'': str(e)})[1:]}")
+
+
 @login_required
 def joint_groups(request):
     if not is_joint_buyer(request.user):
@@ -2186,7 +2462,7 @@ def joint_groups(request):
         'joint-groups',
         'My joint groups',
         'Manage shared buyer accounts, ownership splits, and joint bank setup.',
-        groups=[serialize_joint_group(group) for group in groups],
+        groups=[serialize_joint_group(group, request.user) for group in groups],
         actions=[
             {'label': 'Create group', 'href': reverse('frontend:create_joint_group'), 'tone': 'outline'},
             {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'},
@@ -2311,34 +2587,372 @@ def joint_group_detail(request, group_id):
             messages.info(request, 'Select the joint buyer account setup first to view group details.')
             return redirect('frontend:buyer_account_choice')
         return redirect('frontend:home')
-    group = get_object_or_404(JointBuyerGroup.objects.prefetch_related('members'), id=group_id, leader=request.user)
-    serialized_group = serialize_joint_group(group)
+    group = get_object_or_404(JointBuyerGroup.objects.prefetch_related('members'), id=group_id)
+    if request.user.role != 'Admin' and group.leader != request.user:
+        return redirect('frontend:joint_groups')
+
+    serialized_group = serialize_joint_group(group, request.user)
+    actions = [
+        {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'},
+    ]
+    if group.leader == request.user:
+        actions.insert(0, {'label': 'Transfer leadership', 'href': reverse('frontend:transfer_joint_leadership', args=[group.id]), 'tone': 'outline'})
+        actions.insert(0, {'label': 'Add member', 'href': reverse('frontend:add_joint_member', args=[group.id]), 'tone': 'secondary'})
+        actions.insert(0, {'label': 'Edit group', 'href': reverse('frontend:edit_joint_group', args=[group.id]), 'tone': 'outline'})
+    elif request.user.role == 'Admin':
+        actions.insert(0, {'label': 'Transfer leadership', 'href': reverse('frontend:transfer_joint_leadership', args=[group.id]), 'tone': 'outline'})
+        actions.insert(0, {'label': 'Add member', 'href': reverse('frontend:add_joint_member', args=[group.id]), 'tone': 'secondary'})
     return render_react_shell(
         request,
         'joint-group-detail',
         group.name,
         'Review members, ownership shares, and payment setup for the joint account.',
         group=serialized_group,
-        actions=[
-            {'label': 'Edit group', 'href': reverse('frontend:edit_joint_group', args=[group.id]), 'tone': 'outline'},
-            {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'},
-        ],
+        actions=actions,
     )
 
 
 @login_required
 def delete_joint_member(request, member_id):
+    from django.contrib import messages as django_messages
+    from django.utils import timezone
+
     if not is_joint_buyer(request.user):
         return redirect('frontend:home')
+
     member = get_object_or_404(JointBuyerMember, id=member_id)
     group = member.group
-    if group.leader != request.user:
+    if request.user.role != 'Admin' and group.leader != request.user:
         return redirect('frontend:home')
+
+    if member.is_leader:
+        django_messages.error(request, 'Transfer leadership before removing the current leader.')
+        return redirect('frontend:joint_group_detail', group_id=group.id)
+
+    if group.transactions.filter(status__in=['Under_Verification', 'Deposit_Paid', 'Completed']).exists():
+        django_messages.error(request, 'You cannot request a removal on a group linked to an active or completed transaction.')
+        return redirect('frontend:joint_group_detail', group_id=group.id)
+
     if request.method == 'POST':
-        if member.is_leader:
+        form = JointMemberRemovalRequestForm(request.POST)
+        if form.is_valid():
+            removal_request, created = JointMemberRemovalRequest.objects.get_or_create(
+                group=group,
+                member=member,
+                status='Pending_Admin_Review',
+                defaults={
+                    'requested_by': request.user,
+                    'consent_confirmed': form.cleaned_data['consent_confirmed'],
+                    'compensation_confirmed': form.cleaned_data['compensation_confirmed'],
+                    'compensation_amount': form.cleaned_data.get('compensation_amount'),
+                    'notes': form.cleaned_data.get('notes') or '',
+                },
+            )
+            if not created:
+                removal_request.requested_by = request.user
+                removal_request.consent_confirmed = form.cleaned_data['consent_confirmed']
+                removal_request.compensation_confirmed = form.cleaned_data['compensation_confirmed']
+                removal_request.compensation_amount = form.cleaned_data.get('compensation_amount')
+                removal_request.notes = form.cleaned_data.get('notes') or ''
+                removal_request.status = 'Pending_Admin_Review'
+                removal_request.admin_reviewed_by = None
+                removal_request.admin_reviewed_at = None
+                removal_request.admin_notes = ''
+                removal_request.processed_at = None
+                removal_request.save()
+
+            AuditLog.objects.create(
+                user=request.user,
+                action=f'Joint member removal requested for {member.full_name}',
+                metadata={
+                    'group_id': str(group.id),
+                    'member_id': str(member.id),
+                    'consent_confirmed': form.cleaned_data['consent_confirmed'],
+                    'compensation_confirmed': form.cleaned_data['compensation_confirmed'],
+                    'compensation_amount': str(form.cleaned_data.get('compensation_amount') or ''),
+                    'requested_at': timezone.now().isoformat(),
+                },
+            )
+            django_messages.success(request, 'Removal request submitted. An admin must review the consent and compensation details.')
             return redirect('frontend:joint_group_detail', group_id=group.id)
-        member.delete()
-    return redirect('frontend:joint_group_detail', group_id=group.id)
+    else:
+        form = JointMemberRemovalRequestForm()
+
+    return render_react_shell(
+        request,
+        'form',
+        f'Request removal - {member.full_name}',
+        'Submit this request to admin for consent and compensation verification.',
+        form=serialize_form(
+            form,
+            action=reverse('frontend:delete_joint_member', args=[member.id]),
+            submit_label='Submit removal request',
+            cancel_label='Back to group',
+            cancel_href=reverse('frontend:joint_group_detail', args=[group.id]),
+            intro='Member removal is not immediate. An admin must confirm that the exit is consensual and that compensation has been settled.',
+            sections=[
+                {'title': 'Confirmation', 'fields': ['consent_confirmed', 'compensation_confirmed', 'compensation_amount']},
+                {'title': 'Notes', 'fields': ['notes']},
+            ],
+        ),
+    )
+
+
+@login_required
+def add_joint_member(request, group_id):
+    from decimal import Decimal
+    from django.contrib import messages as django_messages
+    from django.utils import timezone
+
+    if not is_joint_buyer(request.user):
+        return redirect('frontend:home')
+
+    group = get_object_or_404(JointBuyerGroup.objects.prefetch_related('members'), id=group_id)
+    if request.user.role != 'Admin' and group.leader != request.user:
+        return redirect('frontend:joint_groups')
+
+    if group.transactions.filter(status__in=['Under_Verification', 'Deposit_Paid', 'Completed']).exists():
+        django_messages.error(request, 'You cannot add members to a group linked to an active or completed transaction.')
+        return redirect('frontend:joint_group_detail', group_id=group.id)
+
+    if request.method == 'POST':
+        form = JointBuyerMemberForm(request.POST)
+        if form.is_valid():
+            member = form.save(commit=False)
+            member.group = group
+            member.is_leader = False
+            member.save()
+
+            total_share = group.total_share
+            if group.members.count() > 10:
+                member.delete()
+                django_messages.error(request, 'Maximum group size is 10 members.')
+                return redirect('frontend:add_joint_member', group_id=group.id)
+            if total_share > Decimal('100'):
+                member.delete()
+                django_messages.error(request, f'Shares cannot exceed 100%. Current total would be {total_share}%.')
+                return redirect('frontend:add_joint_member', group_id=group.id)
+
+            AuditLog.objects.create(
+                user=request.user,
+                action=f'Joint member added to {group.name}',
+                metadata={
+                    'group_id': str(group.id),
+                    'member_id': str(member.id),
+                    'member_name': member.full_name,
+                    'share_percentage': str(member.share_percentage),
+                    'created_at': timezone.now().isoformat(),
+                },
+            )
+
+            if total_share != Decimal('100'):
+                django_messages.warning(request, f'Member added. Current group shares total {total_share}%, so please rebalance to 100%.')
+            else:
+                django_messages.success(request, 'Member added successfully.')
+            return redirect('frontend:joint_group_detail', group_id=group.id)
+    else:
+        form = JointBuyerMemberForm()
+
+    return render_react_shell(
+        request,
+        'form',
+        f'Add member - {group.name}',
+        'Add a new co-buyer record to the joint group.',
+        form=serialize_form(
+            form,
+            action=reverse('frontend:add_joint_member', args=[group.id]),
+            submit_label='Add member',
+            cancel_label='Back to group',
+            cancel_href=reverse('frontend:joint_group_detail', args=[group.id]),
+            intro='Enter the new member details. If their share changes the total, rebalance the group after saving.',
+            sections=[
+                {'title': 'Identity', 'fields': ['full_name', 'id_number', 'kra_pin']},
+                {'title': 'Contact and share', 'fields': ['phone_number', 'email', 'share_percentage']},
+            ],
+        ),
+    )
+
+
+@login_required
+def transfer_joint_leadership(request, group_id):
+    from django.contrib import messages as django_messages
+    from django.utils import timezone
+    from core.models import User as CoreUser
+
+    if not is_joint_buyer(request.user):
+        return redirect('frontend:home')
+
+    group = get_object_or_404(JointBuyerGroup.objects.prefetch_related('members'), id=group_id)
+    if request.user.role != 'Admin' and group.leader != request.user:
+        return redirect('frontend:joint_groups')
+
+    if group.transactions.filter(status__in=['Under_Verification', 'Deposit_Paid', 'Completed']).exists():
+        django_messages.error(request, 'You cannot transfer leadership while the group is linked to an active or completed transaction.')
+        return redirect('frontend:joint_group_detail', group_id=group.id)
+
+    eligible_members = list(group.members.exclude(is_leader=True).order_by('added_at'))
+    if not eligible_members:
+        django_messages.error(request, 'Add at least one eligible co-buyer before transferring leadership.')
+        return redirect('frontend:joint_group_detail', group_id=group.id)
+
+    if request.method == 'POST':
+        form = JointLeaderTransferForm(request.POST)
+        form.fields['new_leader_member_id'].choices = [
+            (str(member.id), f"{member.full_name} ({member.email or 'No email'})")
+            for member in eligible_members
+        ]
+        if form.is_valid():
+            selected_member_id = form.cleaned_data['new_leader_member_id']
+            selected_member = get_object_or_404(JointBuyerMember, id=selected_member_id, group=group)
+            if not selected_member.email:
+                django_messages.error(request, 'The selected member does not have an email address for account lookup.')
+                return redirect('frontend:transfer_joint_leadership', group_id=group.id)
+
+            new_leader_user = CoreUser.objects.filter(email__iexact=selected_member.email, role='Buyer', is_active=True).first()
+            if not new_leader_user:
+                django_messages.error(
+                    request,
+                    'The selected member must already have an active Buyer account before leadership can be transferred.',
+                )
+                return redirect('frontend:transfer_joint_leadership', group_id=group.id)
+
+            group.leader = new_leader_user
+            group.save(update_fields=['leader'])
+            group.members.update(is_leader=False)
+            selected_member.is_leader = True
+            selected_member.save(update_fields=['is_leader'])
+
+            AuditLog.objects.create(
+                user=request.user,
+                action=f'Joint leadership transferred for {group.name}',
+                metadata={
+                    'group_id': str(group.id),
+                    'new_leader_user_id': str(new_leader_user.id),
+                    'new_leader_member_id': str(selected_member.id),
+                    'new_leader_email': new_leader_user.email,
+                    'requested_at': timezone.now().isoformat(),
+                    'reason': form.cleaned_data.get('transfer_reason') or '',
+                },
+            )
+
+            django_messages.success(request, f'Leadership transferred to {selected_member.full_name}.')
+            return redirect('frontend:joint_group_detail', group_id=group.id)
+    else:
+        form = JointLeaderTransferForm()
+        form.fields['new_leader_member_id'].choices = [
+            (str(member.id), f"{member.full_name} ({member.email or 'No email'})")
+            for member in eligible_members
+        ]
+
+    return render_react_shell(
+        request,
+        'form',
+        f'Transfer leadership - {group.name}',
+        'Choose a new leader from the eligible members of this group.',
+        form=serialize_form(
+            form,
+            action=reverse('frontend:transfer_joint_leadership', args=[group.id]),
+            submit_label='Transfer leadership',
+            cancel_label='Back to group',
+            cancel_href=reverse('frontend:joint_group_detail', args=[group.id]),
+            intro='The selected member must already have a Buyer account. The group leadership title will move to that account after submission.',
+            sections=[
+                {'title': 'Leadership transfer', 'fields': ['new_leader_member_id']},
+                {'title': 'Reason', 'fields': ['transfer_reason']},
+            ],
+        ),
+    )
+
+
+@login_required
+@user_passes_test(lambda u: u.role == 'Admin', login_url='/agent/onboarding/')
+def approve_joint_member_removal(request, request_id):
+    from django.utils import timezone
+    from django.contrib import messages as django_messages
+
+    removal_request = get_object_or_404(
+        JointMemberRemovalRequest.objects.select_related('group', 'member', 'requested_by'),
+        id=request_id,
+    )
+
+    if request.method != 'POST':
+        return redirect('frontend:agent_approvals')
+
+    if removal_request.status != 'Pending_Admin_Review':
+        django_messages.info(request, 'This removal request has already been processed.')
+        return redirect('frontend:agent_approvals')
+
+    member = removal_request.member
+    group = removal_request.group
+    if member.is_leader:
+        django_messages.error(request, 'You cannot remove the current leader. Transfer leadership first.')
+        return redirect('frontend:agent_approvals')
+
+    if group.transactions.filter(status__in=['Under_Verification', 'Deposit_Paid', 'Completed']).exists():
+        django_messages.error(request, 'This group is linked to an active or completed transaction and cannot be modified.')
+        return redirect('frontend:agent_approvals')
+
+    removal_request.status = 'Approved'
+    removal_request.admin_reviewed_by = request.user
+    removal_request.admin_reviewed_at = timezone.now()
+    removal_request.admin_notes = (request.POST.get('admin_notes') or '').strip()
+    removal_request.processed_at = timezone.now()
+    removal_request.save(update_fields=['status', 'admin_reviewed_by', 'admin_reviewed_at', 'admin_notes', 'processed_at'])
+    member.delete()
+
+    AuditLog.objects.create(
+        user=request.user,
+        action=f'Joint member removal approved for {group.name}',
+        metadata={
+            'group_id': str(group.id),
+            'member_name': member.full_name,
+            'removal_request_id': str(removal_request.id),
+            'admin_notes': removal_request.admin_notes or '',
+        },
+    )
+
+    django_messages.success(request, f'{member.full_name} was removed from {group.name}.')
+    return redirect('frontend:agent_approvals')
+
+
+@login_required
+@user_passes_test(lambda u: u.role == 'Admin', login_url='/agent/onboarding/')
+def reject_joint_member_removal(request, request_id):
+    from django.utils import timezone
+    from django.contrib import messages as django_messages
+
+    removal_request = get_object_or_404(
+        JointMemberRemovalRequest.objects.select_related('group', 'member', 'requested_by'),
+        id=request_id,
+    )
+
+    if request.method != 'POST':
+        return redirect('frontend:agent_approvals')
+
+    if removal_request.status != 'Pending_Admin_Review':
+        django_messages.info(request, 'This removal request has already been processed.')
+        return redirect('frontend:agent_approvals')
+
+    removal_request.status = 'Rejected'
+    removal_request.admin_reviewed_by = request.user
+    removal_request.admin_reviewed_at = timezone.now()
+    removal_request.admin_notes = (request.POST.get('admin_notes') or '').strip()
+    removal_request.processed_at = timezone.now()
+    removal_request.save(update_fields=['status', 'admin_reviewed_by', 'admin_reviewed_at', 'admin_notes', 'processed_at'])
+
+    AuditLog.objects.create(
+        user=request.user,
+        action=f'Joint member removal rejected for {removal_request.group.name}',
+        metadata={
+            'group_id': str(removal_request.group_id),
+            'member_name': removal_request.member.full_name,
+            'removal_request_id': str(removal_request.id),
+            'admin_notes': removal_request.admin_notes or '',
+        },
+    )
+
+    django_messages.warning(request, f'Removal request for {removal_request.member.full_name} was rejected.')
+    return redirect('frontend:agent_approvals')
 
 
 @login_required
@@ -3028,7 +3642,7 @@ def contract_sign_fullpage(request, token):
         contract=contract_data,
         require_signature=True,
         fullpage_mode=True,
-        back_url=reverse('frontend:sign_contract', args=[transaction.id]),
+        back_url=reverse('frontend:transactions'),
     )
 
 
@@ -3147,3 +3761,61 @@ def admin_withdraw(request):
         ],
     )
 
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+@login_required
+def ai_kyc_page(request):
+    return render_react_shell(
+        request,
+        'ai-kyc',
+        'Identity Verification',
+        'Secure AI-powered document and biometric validation.',
+        kyc_status_url=reverse('frontend:kyc_status_api'),
+        kyc_submit_url=reverse('frontend:submit_kyc_api'),
+        csrf_token=get_token(request),
+    )
+
+@login_required
+def kyc_status_api(request):
+    try:
+        profile = request.user.kyc_profile
+        return JsonResponse({
+            'status': profile.status,
+            'message': profile.audit_log.get('reason', 'Processing your identity verification...') if profile.status != 'APPROVED' else 'Verification complete.'
+        })
+    except Exception:
+        return JsonResponse({'status': 'NOT_STARTED'})
+
+@login_required
+def submit_kyc_api(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+        
+    id_front = request.FILES.get('id_front')
+    selfie = request.FILES.get('selfie_video') or request.FILES.get('selfie')
+    
+    if not id_front or not selfie:
+        return JsonResponse({'error': 'Missing required documents'}, status=400)
+        
+    from core.models import KYCProfile
+    from core.ai_kyc import start_kyc_verification
+    
+    # Create or update profile
+    profile, created = KYCProfile.objects.get_or_create(user=request.user)
+    
+    # If locked, don't allow re-submission
+    if profile.status == 'LOCKED':
+        return JsonResponse({'error': 'Account locked for security reasons. Please contact support.'}, status=403)
+        
+    profile.id_front_image = id_front
+    profile.selfie_image = selfie
+    profile.status = 'PENDING'
+    profile.audit_log = {} # Reset audit log on new submission
+    profile.save()
+    
+    # Start async task
+    start_kyc_verification(profile.id)
+    
+    return JsonResponse({'status': 'processing'})
