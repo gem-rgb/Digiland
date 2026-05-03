@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowRight, Banknote, BarChart3, CircleCheckBig, Clock3, ExternalLink, FileSignature, FileText, Gavel, Heart, Landmark, Mail, MessageSquare, ReceiptText, ShieldAlert, ShieldCheck, Sparkles, Ticket, Users, WalletCards, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Banknote, BarChart3, CircleCheckBig, Clock3, ExternalLink, FileSignature, FileText, Gavel, Heart, Landmark, Mail, MessageSquare, Printer, ReceiptText, ShieldAlert, ShieldCheck, Sparkles, Ticket, Users, WalletCards, type LucideIcon } from 'lucide-react';
 import type { FormEvent, ReactNode } from 'react';
 import { readBootstrap } from './lib/bootstrap.js';
 import { AppShell } from './components/layout/app-shell.js';
@@ -238,6 +238,7 @@ function DashboardPage() {
       : 'Browse land, review contracts, and manage joint purchase activity from one clean workspace.';
 
   const pendingAgents = bootstrap.pending_agent_applications || [];
+  const individualBuyers = bootstrap.individual_buyers || [];
 
   return (
     <div className="space-y-6">
@@ -333,6 +334,43 @@ function DashboardPage() {
         </Card>
       ) : null}
 
+      {isAdmin && individualBuyers.length > 0 ? (
+        <Card className="bg-white/92">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+                <Users className="h-4 w-4" />
+              </div>
+              <div>
+                <CardTitle className="text-base">Buyer Account Type Upgrades</CardTitle>
+                <CardDescription>Promote individual buyers to joint account owners on verified admin request.</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {individualBuyers.map((buyer: any) => (
+              <div key={buyer.id} className="rounded-3xl border border-border bg-muted/30 p-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="font-bold text-foreground">{buyer.email}</div>
+                    <div className="mt-1 text-sm text-muted-foreground">
+                      Current account type: Individual
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">Phone: {buyer.phone_number || '—'} · Joined {buyer.joined_at || '—'}</div>
+                  </div>
+                  <form method="post" action={buyer.promote_to_joint_url}>
+                    <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+                    <Button type="submit" className="rounded-full bg-emerald-700 hover:bg-emerald-800">
+                      Promote to Joint
+                    </Button>
+                  </form>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card className="bg-white/92">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base"><ShieldCheck className="h-4 w-4 text-emerald-700" />Key actions</CardTitle>
@@ -404,9 +442,17 @@ function LegalPage() {
             <h1 className="print-document-title text-3xl font-black tracking-tight text-foreground sm:text-4xl">{bootstrap.title}</h1>
             <p className="max-w-3xl text-sm leading-7 text-muted-foreground">{bootstrap.subtitle}</p>
           </div>
-          {bootstrap.actions?.length ? (
-            <div className="flex flex-wrap gap-2">
-              {bootstrap.actions.map((action) => (
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="print:hidden inline-flex h-11 items-center justify-center rounded-full border border-border bg-white px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              Print A4 legal brief
+            </button>
+            {bootstrap.actions?.length ? (
+              bootstrap.actions.map((action) => (
                 <a
                   key={action.label}
                   href={action.href}
@@ -416,9 +462,9 @@ function LegalPage() {
                 >
                   {action.label}
                 </a>
-              ))}
-            </div>
-          ) : null}
+              ))
+            ) : null}
+          </div>
         </div>
 
         <div className="print-document-sheet mx-auto w-full max-w-[8.27in] rounded-[2rem] border border-stone-300 bg-white shadow-[0_35px_90px_rgba(15,23,42,0.12)]">
@@ -1311,7 +1357,6 @@ function ParcelDetailPage() {
               </CardContent>
             </Card>
           </div>
-
           <div className="space-y-6">
             {detail.agent_verify_url ? (
               <Card className="bg-white/92">
@@ -2195,6 +2240,7 @@ function ContractPage() {
     csrfToken: bootstrap.csrf_token,
   };
   const pendingMembers = contract.joint_breakdown.filter((row) => !row.member.has_signed);
+  const canProceedToCheckout = Boolean(contract.checkout_available);
 
   const fullpageUrl = bootstrap.fullpage_sign_url;
   const shouldOpenBreakout = Boolean(
@@ -2256,48 +2302,54 @@ function ContractPage() {
           </div>
         ) : null}
 
-        <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-          <div className="space-y-6">
-            <Card className="bg-white/92">
-              <CardHeader>
-                <CardTitle className="text-base">Legal framework</CardTitle>
-                <CardDescription>Core Kenyan land-sale statutes and official references.</CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-3 md:grid-cols-2">
-                {contract.documents.map((doc: any) => (
-                  <Card key={doc.key} className="bg-white/90">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <CardTitle className="text-sm">{doc.title}</CardTitle>
-                          <CardDescription>{doc.description}</CardDescription>
-                        </div>
-                        <Badge tone={doc.required ? 'success' : 'warning'}>{doc.required ? 'Required' : 'Optional'}</Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <p className="text-sm leading-7 text-foreground whitespace-pre-wrap">{doc.content}</p>
-                      {contract.current_user_is_buyer || contract.current_user_is_seller ? (
-                        <div className="mt-4 border-t border-border pt-4">
-                          {(contract.current_user_is_buyer && contract.buyer_signature_present) || (contract.current_user_is_seller && contract.seller_signature_present) ? (
-                            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-emerald-800 flex items-center gap-2">
-                              <ShieldCheck className="h-4 w-4" />
-                              <span className="font-semibold text-xs">Signature securely locked.</span>
-                            </div>
-                          ) : (
-                            <SignaturePad 
-                              label={`Signature for ${doc.title}`} 
-                              onChange={(val) => setDocumentSignatures(prev => ({ ...prev, [doc.key]: val }))} 
-                            />
-                          )}
-                        </div>
-                      ) : null}
-                    </CardContent>
-                  </Card>
-                ))}
-              </CardContent>
-            </Card>
+        <Card className="bg-white/92">
+          <CardHeader>
+            <CardTitle className="text-base">
+              {contract.contract_agreed ? 'View signed document' : 'Sign document to proceed to checkout'}
+            </CardTitle>
+            <CardDescription>
+              {contract.contract_agreed
+                ? 'Open the locked A4 copy of your signed contract before checkout.'
+                : 'All required signatures must be completed before checkout is unlocked.'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap items-center gap-3">
+            {contract.contract_agreed && fullpageUrl ? (
+              <a
+                href={fullpageUrl}
+                className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+              >
+                View signed document
+              </a>
+            ) : (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+                Sign documents to proceed to checkout.
+              </div>
+            )}
+            {fullpageUrl ? (
+              <a
+                href={fullpageUrl}
+                className="inline-flex h-11 items-center justify-center rounded-full border border-border bg-white px-5 text-sm font-semibold text-foreground hover:bg-muted"
+              >
+                Open in A4 document format
+              </a>
+            ) : null}
+            {canProceedToCheckout ? (
+              <a
+                href={contract.payment_url}
+                className="inline-flex h-11 items-center justify-center rounded-full border border-border bg-white px-5 text-sm font-semibold text-foreground hover:bg-muted"
+              >
+                Continue to checkout
+              </a>
+            ) : contract.contract_agreed ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700">
+                Checkout is not available because this transaction is already {contract.transaction_status.toLowerCase().replace('_', ' ')}.
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
 
+        <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
             {contract.is_joint_purchase ? (
               <Card className="bg-white/92">
                 <CardHeader>
@@ -2317,8 +2369,6 @@ function ContractPage() {
                 </CardContent>
               </Card>
             ) : null}
-          </div>
-
           <div className="space-y-6">
             <Card className="bg-white/92">
               <CardHeader>
@@ -2346,26 +2396,6 @@ function ContractPage() {
                     <SignaturePad label="Buyer signature" onChange={setAdminBuyerSignature} />
                     <SignaturePad label="Seller signature" onChange={setAdminSellerSignature} />
                     <Button type="submit" className="w-full rounded-full">Execute dual sign</Button>
-                  </form>
-                </CardContent>
-              </Card>
-            ) : contract.current_user_is_buyer || contract.current_user_is_seller ? (
-              <Card className="bg-white/92">
-                <CardHeader>
-                  <CardTitle className="text-base">Execute contract</CardTitle>
-                  <CardDescription>All required documents must be signed before proceeding.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form method="post" action={contract.sign_url} className="space-y-4">
-                    <input type="hidden" name="csrfmiddlewaretoken" value={contract.csrf_token} />
-                    <input type="hidden" name="signature_data" value={JSON.stringify(documentSignatures)} />
-                    <Button 
-                      type="submit" 
-                      className="w-full rounded-full" 
-                      disabled={contract.documents.some((doc: any) => doc.required && !documentSignatures[doc.key])}
-                    >
-                      Sign and accept all documents
-                    </Button>
                   </form>
                 </CardContent>
               </Card>
@@ -2397,306 +2427,7 @@ function ContractPage() {
                 </CardContent>
               </Card>
             ) : null}
-
-            {contract.contract_agreed && contract.current_user_is_buyer ? (
-              <Card className="border-primary/30 bg-primary/5">
-                <CardContent className="space-y-4 p-6 text-center">
-                  <h3 className="text-xl font-black tracking-tight text-foreground">Legal process complete</h3>
-                  <p className="text-sm leading-7 text-muted-foreground">The contract has been signed. Continue to checkout and choose M-Pesa STK, KCB bank transfer, or Paystack.</p>
-                  <a href={contract.payment_url} className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90">Continue to checkout</a>
-                </CardContent>
-              </Card>
-            ) : null}
           </div>
-        </div>
-      </div>
-    </AppShell>
-  );
-}
-
-function CheckoutPage() {
-  const checkout = bootstrap.checkout;
-  const checkoutTransactionId = checkout?.transaction_id || '';
-  const checkoutCsrfToken = checkout?.csrf_token || '';
-  const checkoutTransactionsUrl = checkout?.transactions_url || '';
-  const [paymentMode, setPaymentMode] = useState<'m_pesa' | 'joint_bank_account'>(checkout?.default_payment_method || 'm_pesa');
-  const [memberId, setMemberId] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState(checkout?.phone_number || bootstrap.user?.phone_number || '');
-  const [amountOverride, setAmountOverride] = useState('');
-  const [bankReference, setBankReference] = useState('');
-  const [depositorName, setDepositorName] = useState(bootstrap.user?.full_name || bootstrap.user?.email || '');
-  const [checkoutRequestId, setCheckoutRequestId] = useState('');
-  const [viewState, setViewState] = useState<'form' | 'stk_waiting' | 'bank_waiting' | 'success' | 'failed'>('form');
-  const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const pollRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (pollRef.current) {
-        window.clearInterval(pollRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!checkoutRequestId || !checkoutTransactionId || !checkoutCsrfToken || !checkoutTransactionsUrl) return undefined;
-    pollRef.current = window.setInterval(async () => {
-      try {
-        const response = await fetch(`/api/v1/mpesa/check-checkout-status/?checkout_request_id=${encodeURIComponent(checkoutRequestId)}&transaction_id=${encodeURIComponent(checkoutTransactionId)}`, {
-          headers: { 'X-CSRFToken': checkoutCsrfToken },
-        });
-        const data = await response.json();
-        if (data.payment_status === 'completed') {
-          if (pollRef.current) window.clearInterval(pollRef.current);
-          setViewState('success');
-          setMessage('Payment confirmed.');
-          window.setTimeout(() => {
-            window.location.href = checkoutTransactionsUrl;
-          }, 2000);
-        } else if (data.payment_status === 'failed') {
-          if (pollRef.current) window.clearInterval(pollRef.current);
-          setViewState('failed');
-          setMessage(data.message || 'The payment was declined or cancelled.');
-        }
-      } catch {
-        // Keep polling.
-      }
-    }, 3000);
-    return () => {
-      if (pollRef.current) window.clearInterval(pollRef.current);
-    };
-  }, [checkoutTransactionId, checkoutCsrfToken, checkoutTransactionsUrl, checkoutRequestId]);
-
-  if (!checkout) {
-    return <AppShell {...{
-      title: bootstrap.title,
-      subtitle: bootstrap.subtitle,
-      user: bootstrap.user,
-      nav: bootstrap.nav,
-      logoutUrl: bootstrap.logout_url,
-      csrfToken: bootstrap.csrf_token,
-    }}><Card className="bg-white/92"><CardContent className="p-8 text-center text-sm text-muted-foreground">Checkout is unavailable.</CardContent></Card></AppShell>;
-  }
-
-  const shellProps = {
-    title: bootstrap.title,
-    subtitle: bootstrap.subtitle,
-    user: bootstrap.user,
-    nav: bootstrap.nav,
-    logoutUrl: bootstrap.logout_url,
-    csrfToken: bootstrap.csrf_token,
-  };
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setLoading(true);
-    setMessage('');
-
-    try {
-      const body = new URLSearchParams();
-      body.set('csrfmiddlewaretoken', checkoutCsrfToken);
-      body.set('payment_method', paymentMode);
-      body.set('phone_number', phoneNumber);
-      body.set('member_id', memberId);
-      body.set('amount', amountOverride);
-      body.set('bank_reference', bankReference);
-      body.set('depositor_name', depositorName);
-
-      const response = await fetch(checkout.process_url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-CSRFToken': checkoutCsrfToken,
-          'X-Requested-With': 'XMLHttpRequest',
-        },
-        body,
-      });
-
-      const data = await response.json();
-      if (data.status === 'success' || data.status === 'stk_pushed') {
-        setViewState('stk_waiting');
-        setCheckoutRequestId(data.checkout_request_id || '');
-        setMessage(data.message || 'STK push sent.');
-        if (!data.checkout_request_id) {
-          window.setTimeout(() => {
-            window.location.href = checkoutTransactionsUrl;
-          }, 2000);
-        }
-      } else if (data.status === 'bank_pending') {
-        setViewState('bank_waiting');
-        setMessage(data.message || 'Joint bank transfer recorded.');
-      } else {
-        setViewState('failed');
-        setMessage(data.message || 'Unable to initiate payment.');
-      }
-    } catch {
-      setViewState('failed');
-      setMessage('Network error. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const selectedMember = checkout.breakdown.find((row) => row.member_id === memberId);
-
-  return (
-    <AppShell {...shellProps}>
-      <div className="space-y-6">
-        <PageHeader kicker="Checkout" title="Regulated escrow deposit" subtitle="Funds remain held in escrow until deed transfer and final authorisation are complete." actions={bootstrap.actions} />
-        <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-          <Card className="bg-white/92">
-            <CardHeader>
-              <CardTitle className="text-base">Escrow invoice summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 text-sm">
-                <div className="rounded-2xl bg-muted/60 p-3">Transaction ID: <strong>{checkout.transaction_id.slice(0, 8).toUpperCase()}</strong></div>
-                <div className="rounded-2xl bg-muted/60 p-3">Parcel: <strong>{checkout.parcel_number}</strong></div>
-                <div className="rounded-2xl bg-muted/60 p-3">Seller: <strong>{checkout.seller_email}</strong></div>
-                <div className="rounded-2xl bg-muted/60 p-3">Agreed price: <strong>KES {checkout.agreed_price}</strong></div>
-                {checkout.is_joint_purchase && checkout.joint_group_name ? <div className="rounded-2xl bg-muted/60 p-3">Joint group: <strong>{checkout.joint_group_name}</strong></div> : null}
-              </div>
-
-              {checkout.is_joint_purchase ? (
-                <div className="space-y-3">
-                  <div className="text-sm font-semibold text-foreground">Joint split</div>
-                  {checkout.breakdown.map((row) => (
-                    <div key={row.member_id} className="flex items-center justify-between gap-3 rounded-3xl border border-border bg-muted/40 p-4 text-sm">
-                      <div>
-                        <div className="font-semibold text-foreground">{row.member_name}</div>
-                        <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{row.share_percentage}% · {row.phone_number}</div>
-                      </div>
-                      <div className="font-black text-emerald-700">KES {row.amount}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/92">
-            <CardHeader>
-              <CardTitle className="text-base">Select payment vector</CardTitle>
-              <CardDescription>Choose M-Pesa or the jointly owned bank account if the group has one.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {viewState === 'form' ? (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {checkout.is_joint_purchase ? (
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-foreground">Payment option</label>
-                      <select value={paymentMode} onChange={(event) => setPaymentMode(event.target.value as 'm_pesa' | 'joint_bank_account')} className="flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm">
-                        <option value="m_pesa">Leader pays with M-Pesa</option>
-                        <option value="joint_bank_account">Pay from the joint bank account</option>
-                      </select>
-                    </div>
-                  ) : null}
-
-                  {checkout.is_joint_purchase && paymentMode === 'm_pesa' ? (
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-foreground">Pay as member</label>
-                      <select value={memberId} onChange={(event) => {
-                        setMemberId(event.target.value);
-                        const member = checkout.breakdown.find((row) => row.member_id === event.target.value);
-                        if (member) {
-                          setPhoneNumber(member.phone_number || '');
-                          setAmountOverride(member.amount);
-                        }
-                      }} className="flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm">
-                        <option value="">Select member</option>
-                        {checkout.breakdown.map((row) => (
-                          <option key={row.member_id} value={row.member_id}>
-                            {row.member_name} ({row.share_percentage}% → KES {row.amount})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : null}
-
-                  {paymentMode === 'joint_bank_account' ? (
-                    <div className="space-y-4 rounded-3xl border border-border bg-muted/30 p-4">
-                      <div className="text-sm font-semibold text-foreground">Joint bank account</div>
-                      <div className="text-sm text-muted-foreground">{checkout.bank_name || 'Bank not yet configured'}</div>
-                      <div className="text-sm text-muted-foreground">Account name: {checkout.bank_account_name || 'Not set'}</div>
-                      <div className="text-sm text-muted-foreground">Account number: {checkout.bank_account_number || 'Not set'}</div>
-                      <div className="text-sm text-muted-foreground">Branch: {checkout.bank_branch || 'Not set'}</div>
-                      {!checkout.joint_bank_ready ? <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">The joint bank account has not been configured yet.</div> : null}
-                      <div className="space-y-2">
-                        <label className="text-sm font-semibold text-foreground">Depositor name</label>
-                        <Input value={depositorName} onChange={(event) => setDepositorName(event.target.value)} />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-semibold text-foreground">Bank transfer reference</label>
-                        <Input value={bankReference} onChange={(event) => setBankReference(event.target.value)} placeholder="Transfer reference or slip number" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-foreground">M-Pesa phone number</label>
-                      <Input value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value)} placeholder="0712345678 or +254712345678" />
-                    </div>
-                  )}
-
-                  {paymentMode === 'm_pesa' ? (
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-foreground">Amount override</label>
-                      <Input value={amountOverride} onChange={(event) => setAmountOverride(event.target.value)} placeholder="Leave blank for default amount" />
-                    </div>
-                  ) : null}
-
-                  <Button type="submit" className="w-full rounded-full" disabled={loading}>
-                    {loading ? 'Processing...' : paymentMode === 'joint_bank_account' ? 'Record bank transfer' : 'Send M-Pesa STK push'}
-                  </Button>
-                </form>
-              ) : (
-                <div className="space-y-4 text-center">
-                  {viewState === 'stk_waiting' ? (
-                    <>
-                      <div className="rounded-[2rem] border border-emerald-200 bg-emerald-50/70 p-6">
-                        <div className="text-xl font-black text-foreground">STK push sent</div>
-                        <p className="mt-2 text-sm leading-7 text-muted-foreground">{message}</p>
-                      </div>
-                      <div className="text-sm text-muted-foreground">Please authorise the payment on your phone. This page will update automatically.</div>
-                    </>
-                  ) : null}
-                  {viewState === 'bank_waiting' ? (
-                    <>
-                      <div className="rounded-[2rem] border border-emerald-200 bg-emerald-50/70 p-6">
-                        <div className="text-xl font-black text-foreground">Bank transfer recorded</div>
-                        <p className="mt-2 text-sm leading-7 text-muted-foreground">{message}</p>
-                      </div>
-                      <div className="grid gap-3 text-left text-sm">
-                        <div className="rounded-2xl bg-muted/60 p-3">Reference: <strong>{bankReference}</strong></div>
-                        <div className="rounded-2xl bg-muted/60 p-3">Depositor: <strong>{depositorName}</strong></div>
-                      </div>
-                    </>
-                  ) : null}
-                  {viewState === 'success' ? (
-                    <div className="rounded-[2rem] border border-emerald-200 bg-emerald-50/70 p-6">
-                      <div className="text-xl font-black text-foreground">Payment confirmed</div>
-                      <p className="mt-2 text-sm leading-7 text-muted-foreground">{message}</p>
-                    </div>
-                  ) : null}
-                  {viewState === 'failed' ? (
-                    <div className="rounded-[2rem] border border-rose-200 bg-rose-50/70 p-6">
-                      <div className="text-xl font-black text-foreground">Payment failed</div>
-                      <p className="mt-2 text-sm leading-7 text-muted-foreground">{message}</p>
-                      <div className="mt-4 flex flex-wrap justify-center gap-3">
-                        <Button type="button" variant="outline" className="rounded-full" onClick={() => {
-                          setViewState('form');
-                          setMessage('');
-                        }}>
-                          Try again
-                        </Button>
-                      </div>
-                    </div>
-                  ) : null}
-                  <a href={checkout.transactions_url} className="inline-flex h-11 items-center justify-center rounded-full border border-border bg-white/80 px-5 text-sm font-semibold text-foreground hover:bg-muted">View transactions</a>
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </div>
     </AppShell>
@@ -2872,6 +2603,14 @@ function CheckoutFullPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge tone={flowTone}>{flowLabel}</Badge>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="print:hidden inline-flex h-11 items-center justify-center rounded-full border border-border bg-white px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                Print A4 checkout
+              </button>
             <a
               href={backUrl}
               className="inline-flex h-11 items-center justify-center rounded-full border border-border bg-white px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
@@ -3504,6 +3243,14 @@ function ContractFullPage() {
           </div>
           <div className="flex items-center gap-3">
             <Badge tone={contract.contract_agreed ? 'success' : 'warning'}>{contract.contract_agreed ? 'Fully signed' : 'Awaiting signatures'}</Badge>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="print:hidden inline-flex h-9 items-center justify-center rounded-full border border-border bg-white px-4 text-xs font-semibold text-foreground hover:bg-muted"
+            >
+              <Printer className="mr-1.5 h-4 w-4" />
+              Print A4 copy
+            </button>
             <a href={backUrl} className="inline-flex h-9 items-center justify-center rounded-full border border-border bg-white px-4 text-xs font-semibold text-foreground hover:bg-muted">Back to transactions</a>
           </div>
         </div>
@@ -3649,7 +3396,7 @@ function ContractFullPage() {
           ) : null}
         </div>
 
-        {contract.contract_agreed && contract.current_user_is_buyer ? (
+        {contract.checkout_available ? (
           <div className="print-document-success rounded-[2rem] border border-emerald-200 bg-emerald-50/70 p-8 text-center space-y-4">
             <ShieldCheck className="h-12 w-12 text-emerald-600 mx-auto" />
             <h3 className="text-2xl font-black tracking-tight text-foreground">Legal process complete</h3>

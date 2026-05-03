@@ -177,6 +177,12 @@ def serialize_contract(transaction, user, *, documents, joint_breakdown=None, si
             'amount': str(row.get('amount', '0')),
         })
 
+    can_checkout = bool(
+        transaction.contract_agreed
+        and getattr(user, 'role', None) in {'Buyer', 'Admin'}
+        and transaction.status in {'Initiated', 'Under_Verification'}
+    )
+
     return {
         'transaction_id': str(transaction.id),
         'parcel_number': transaction.land_parcel.parcel_number,
@@ -184,6 +190,8 @@ def serialize_contract(transaction, user, *, documents, joint_breakdown=None, si
         'seller_email': transaction.seller.email,
         'agreed_price': str(transaction.agreed_price),
         'contract_agreed': bool(transaction.contract_agreed),
+        'transaction_status': transaction.status,
+        'checkout_available': can_checkout,
         'buyer_signature_present': bool(transaction.buyer_signature),
         'seller_signature_present': bool(transaction.seller_signature),
         'is_joint_purchase': bool(transaction.is_joint_purchase),

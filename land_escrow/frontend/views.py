@@ -197,6 +197,11 @@ def buyer_account_choice(request):
     if request.user.buyer_account_type == 'Joint':
         return redirect('frontend:joint_groups')
     if request.user.buyer_account_type == 'Individual':
+        from django.contrib import messages
+        messages.info(
+            request,
+            'Your buyer account is set to Individual. To switch to Joint ownership, request an admin account upgrade.',
+        )
         return redirect('frontend:parcel_list')
 
     if request.method == 'POST':
@@ -234,10 +239,20 @@ def buyer_account_choice(request):
 def legal_requirements(request):
     """Public reference page for the land sale laws and compliance checklist."""
     actions = []
-    if not request.user.is_authenticated or request.user.role != 'Seller':
+    if not request.user.is_authenticated:
         actions = [
             {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'outline'},
             {'label': 'Buyer setup', 'href': reverse('frontend:buyer_account_choice'), 'tone': 'secondary'},
+        ]
+    elif request.user.role == 'Buyer' and not getattr(request.user, 'buyer_account_type', None):
+        actions = [
+            {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'outline'},
+            {'label': 'Buyer setup', 'href': reverse('frontend:buyer_account_choice'), 'tone': 'secondary'},
+        ]
+    else:
+        actions = [
+            {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'outline'},
+            {'label': 'Marketplace', 'href': reverse('frontend:parcel_list'), 'tone': 'secondary'},
         ]
 
     return render_react_shell(
@@ -276,6 +291,38 @@ def joint_legal_requirements(request):
     doc = PlatformLegalDocument.objects.filter(title='Joint Purchase Laws').first()
     document_content = doc.content if doc else None
     
+    user = request.user
+    actions = []
+    if user.is_authenticated and user.role == 'Buyer':
+        if getattr(user, 'buyer_account_type', None) == 'Joint':
+            actions = [
+                {'label': 'My groups', 'href': reverse('frontend:joint_groups'), 'tone': 'outline'},
+                {'label': 'Create joint group', 'href': reverse('frontend:create_joint_group'), 'tone': 'secondary'},
+            ]
+        elif getattr(user, 'buyer_account_type', None) == 'Individual':
+            actions = [
+                {'label': 'Marketplace', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
+                {'label': 'Contact support for joint upgrade', 'href': reverse('frontend:support'), 'tone': 'secondary'},
+            ]
+        else:
+            actions = [
+                {'label': 'Buyer setup', 'href': reverse('frontend:buyer_account_choice'), 'tone': 'outline'},
+                {'label': 'Marketplace', 'href': reverse('frontend:parcel_list'), 'tone': 'secondary'},
+            ]
+    elif user.is_authenticated and user.role == 'Seller':
+        actions = [
+            {'label': 'My parcels', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
+        ]
+    elif user.is_authenticated and user.role in {'Agent', 'Admin'}:
+        actions = [
+            {'label': 'Command Centre', 'href': reverse('frontend:agent_dashboard'), 'tone': 'outline'},
+        ]
+    else:
+        actions = [
+            {'label': 'Buyer setup', 'href': reverse('frontend:buyer_account_choice'), 'tone': 'outline'},
+            {'label': 'Marketplace', 'href': reverse('frontend:parcel_list'), 'tone': 'secondary'},
+        ]
+
     return render_react_shell(
         request,
         'joint-laws',
@@ -285,10 +332,7 @@ def joint_legal_requirements(request):
         checklist=JOINT_LAND_TRANSACTION_CHECKLIST,
         payment_guidance=JOINT_PAYMENT_GUIDANCE,
         document_content=document_content,
-        actions=[
-            {'label': 'Buyer setup', 'href': reverse('frontend:buyer_account_choice'), 'tone': 'outline'},
-            {'label': 'Create joint group', 'href': reverse('frontend:create_joint_group'), 'tone': 'secondary'},
-        ],
+        actions=actions,
     )
 
 
@@ -517,6 +561,7 @@ def render_admin_dashboard(request, context):
     ).order_by('created_at')
     pending_agents = CoreUser.objects.filter(role='Agent', is_identity_verified=False, is_active=True).order_by('date_joined')
     verified_agents = CoreUser.objects.filter(role='Agent', is_identity_verified=True, is_active=True).order_by('email')
+    individual_buyers = CoreUser.objects.filter(role='Buyer', buyer_account_type='Individual', is_active=True).order_by('email')[:50]
 
     context.update({
         'pending_parcels': pending_parcels,
@@ -524,6 +569,7 @@ def render_admin_dashboard(request, context):
         'pending_transactions': pending_transactions,
         'pending_agents': pending_agents,
         'verified_agents': verified_agents,
+        'individual_buyers': individual_buyers,
         'pending_users': None,  # Admins don't need user approval section
     })
     recent_transactions = [serialize_transaction(tx, request.user) for tx in pending_transactions[:10]]
@@ -545,6 +591,12 @@ def render_admin_dashboard(request, context):
         agent_data['reject_url'] = reverse('frontend:reject_agent', args=[agent.id])
         pending_agent_data.append(agent_data)
 
+    individual_buyer_data = []
+    for buyer in individual_buyers:
+        buyer_data = serialize_review_user(buyer)
+        buyer_data['promote_to_joint_url'] = reverse('frontend:admin_promote_buyer_to_joint', args=[buyer.id])
+        individual_buyer_data.append(buyer_data)
+
     return render_react_shell(
         request,
         'admin-dashboard',
@@ -552,6 +604,7 @@ def render_admin_dashboard(request, context):
         'Full system access for approvals, assignments, transactions, and messaging.',
         transactions=recent_transactions,
         pending_agent_applications=pending_agent_data,
+        individual_buyers=individual_buyer_data,
         stats=[
             {'label': 'Pending parcels', 'value': str(pending_parcels.count()), 'tone': 'warning'},
             {'label': 'Pending transactions', 'value': str(pending_transactions.count()), 'tone': 'accent'},
@@ -560,11 +613,30 @@ def render_admin_dashboard(request, context):
         ],
         actions=[
             {'label': 'Task management', 'href': reverse('frontend:task_management'), 'tone': 'outline'},
-            {'label': 'Create joint account', 'href': reverse('frontend:create_joint_group'), 'tone': 'accent'},
             {'label': 'Agent approvals', 'href': reverse('frontend:agent_approvals'), 'tone': 'outline'},
             {'label': 'System admin', 'href': '/admin/', 'tone': 'secondary', 'external': True},
         ],
     )
+
+
+@login_required
+@user_passes_test(lambda u: u.is_authenticated and getattr(u, 'role', None) == 'Admin', login_url='/')
+def admin_promote_buyer_to_joint(request, user_id):
+    """Admin action to promote an Individual Buyer account to Joint mode."""
+    if request.method != 'POST':
+        return redirect('frontend:agent_dashboard')
+
+    from django.contrib import messages
+    buyer = get_object_or_404(CoreUser, id=user_id, role='Buyer')
+    previous_type = buyer.buyer_account_type or 'Unset'
+    buyer.buyer_account_type = 'Joint'
+    buyer.save(update_fields=['buyer_account_type'])
+
+    messages.success(
+        request,
+        f'{buyer.email} upgraded from {previous_type} to Joint buyer account. They can now create and manage joint groups.',
+    )
+    return redirect('frontend:agent_dashboard')
 
 
 def temp_approve_agent(request, email):
@@ -1488,6 +1560,17 @@ def parcel_detail(request, parcel_number):
         joint_groups = JointBuyerGroup.objects.filter(leader=request.user).prefetch_related('members')
         can_use_joint_purchase = is_joint_buyer(request.user)
 
+    can_view_documents = False
+    if request.user.is_authenticated:
+        if request.user.role in ['Admin', 'Agent']:
+            can_view_documents = True
+        elif request.user.id == parcel.listed_by_id:
+            can_view_documents = True
+        elif request.user.role == 'Buyer':
+            # Buyer can only see documents if the purchase is completed
+            if parcel.transactions.filter(buyer=request.user, status='Completed').exists():
+                can_view_documents = True
+
     parcel_data = {
         'parcel_number': str(parcel.parcel_number),
         'image_url': parcel.image.url if getattr(parcel, 'image', None) else None,
@@ -1513,7 +1596,7 @@ def parcel_detail(request, parcel_number):
                 'delete_url': reverse('frontend:delete_document', args=[parcel.parcel_number, doc.id]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) else None,
             }
             for doc in parcel.documents.all()
-        ],
+        ] if can_view_documents else [],
         'can_edit': bool(request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id)),
         'edit_url': reverse('frontend:parcel_edit', args=[parcel.parcel_number]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) else None,
         'delete_url': reverse('frontend:parcel_delete', args=[parcel.parcel_number]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) else None,
@@ -1806,8 +1889,13 @@ def sign_contract(request, transaction_id):
     if request.method == 'POST':
         # Admin-only dual signing capability
         if request.user.role == 'Admin' and request.POST.get('admin_dual_sign'):
+            from django.contrib import messages
             buyer_sig = request.POST.get('buyer_signature_data')
             seller_sig = request.POST.get('seller_signature_data')
+
+            if not buyer_sig and not seller_sig:
+                messages.error(request, 'Capture at least one signature before executing dual sign.')
+                return redirect('frontend:sign_contract', transaction_id=transaction.id)
             
             if buyer_sig:
                 transaction.buyer_signature = buyer_sig
@@ -1816,9 +1904,13 @@ def sign_contract(request, transaction_id):
 
             if transaction.buyer_signature and transaction.seller_signature:
                 transaction.contract_agreed = True
+                if transaction.status == 'Initiated':
+                    transaction.status = 'Under_Verification'
                 
             transaction.save()
-            if transaction.contract_agreed and request.user == transaction.buyer and transaction.status == 'Under_Verification':
+            if transaction.contract_agreed and request.user.role == 'Admin' and transaction.status in {'Initiated', 'Under_Verification'}:
+                return redirect('frontend:payment_checkout', transaction_id=transaction.id)
+            if transaction.contract_agreed and request.user == transaction.buyer and transaction.status in {'Initiated', 'Under_Verification'}:
                 return redirect('frontend:payment_checkout', transaction_id=transaction.id)
             return redirect('frontend:sign_contract', transaction_id=transaction.id)
 
@@ -1837,8 +1929,10 @@ def sign_contract(request, transaction_id):
                 # Update contract agreed flag if all required signatures exist
                 if transaction.buyer_signature and transaction.seller_signature and transaction.joint_group.all_signed:
                     transaction.contract_agreed = True
-                    transaction.save(update_fields=['contract_agreed'])
-                if transaction.contract_agreed and request.user == transaction.buyer and transaction.status == 'Under_Verification':
+                    if transaction.status == 'Initiated':
+                        transaction.status = 'Under_Verification'
+                    transaction.save(update_fields=['contract_agreed', 'status'])
+                if transaction.contract_agreed and request.user == transaction.buyer and transaction.status in {'Initiated', 'Under_Verification'}:
                     return redirect('frontend:payment_checkout', transaction_id=transaction.id)
                 return redirect('frontend:sign_contract', transaction_id=transaction.id)
 
@@ -1866,9 +1960,11 @@ def sign_contract(request, transaction_id):
                         transaction.contract_agreed = True
                 else:
                     transaction.contract_agreed = True
+                if transaction.contract_agreed and transaction.status == 'Initiated':
+                    transaction.status = 'Under_Verification'
                 
             transaction.save()
-            if transaction.contract_agreed and request.user == transaction.buyer and transaction.status == 'Under_Verification':
+            if transaction.contract_agreed and request.user == transaction.buyer and transaction.status in {'Initiated', 'Under_Verification'}:
                 return redirect('frontend:payment_checkout', transaction_id=transaction.id)
             return redirect('frontend:sign_contract', transaction_id=transaction.id)
             
@@ -1923,7 +2019,7 @@ def payment_onboarding(request, transaction_id):
     if (request.user != transaction.buyer and request.user.role != 'Admin'):
         return redirect('frontend:transactions')
         
-    if transaction.status != 'Under_Verification':
+    if transaction.status not in {'Initiated', 'Under_Verification'}:
         return redirect('frontend:transactions')
 
     if not transaction.contract_agreed:
@@ -1954,7 +2050,7 @@ def payment_checkout(request, transaction_id):
     if (request.user != transaction.buyer and request.user.role != 'Admin'):
         return redirect('frontend:transactions')
         
-    if transaction.status != 'Under_Verification':
+    if transaction.status not in {'Initiated', 'Under_Verification'}:
         return redirect('frontend:transactions')
 
     if not transaction.contract_agreed:
@@ -2225,9 +2321,9 @@ def _process_payment_v2(request, transaction_id):
             return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
         return redirect('frontend:payment_checkout', transaction_id=transaction.id)
 
-    if transaction.status != 'Under_Verification':
+    if transaction.status not in {'Initiated', 'Under_Verification'}:
         if is_ajax:
-            return JsonResponse({'status': 'error', 'message': 'Payment can only start while the transaction is under verification.'})
+            return JsonResponse({'status': 'error', 'message': 'Payment can only start once the contract is signed and the transaction is ready for checkout.'})
         return redirect('frontend:transactions')
 
     payment_method = (request.POST.get('payment_method') or '').strip().lower()
@@ -2453,8 +2549,11 @@ def joint_groups(request):
     if not is_joint_buyer(request.user):
         if request.user.role == 'Buyer':
             from django.contrib import messages
-            messages.info(request, 'Select the joint buyer account setup first to manage group purchases.')
-            return redirect('frontend:buyer_account_choice')
+            messages.info(
+                request,
+                'You are on an Individual buyer account. You can still join an existing group when a joint group leader adds you as a member. Contact admin to upgrade your own account to Joint.',
+            )
+            return redirect('frontend:parcel_list')
         return redirect('frontend:home')
     groups = JointBuyerGroup.objects.filter(leader=request.user).prefetch_related('members')
     return render_react_shell(
@@ -2475,8 +2574,11 @@ def create_joint_group(request):
     if not is_joint_buyer(request.user):
         if request.user.role == 'Buyer':
             from django.contrib import messages
-            messages.info(request, 'Select the joint buyer account setup first to create a group.')
-            return redirect('frontend:buyer_account_choice')
+            messages.info(
+                request,
+                'Only Joint buyer accounts can create groups. Your account is Individual; contact admin to upgrade to Joint.',
+            )
+            return redirect('frontend:parcel_list')
         return redirect('frontend:home')
 
     if request.method == 'POST':
@@ -2880,6 +2982,13 @@ def approve_joint_member_removal(request, request_id):
 
     if removal_request.status != 'Pending_Admin_Review':
         django_messages.info(request, 'This removal request has already been processed.')
+        return redirect('frontend:agent_approvals')
+
+    if not removal_request.consent_confirmed or not removal_request.compensation_confirmed:
+        django_messages.error(
+            request,
+            'This removal request cannot be approved until consent and compensation are both confirmed.',
+        )
         return redirect('frontend:agent_approvals')
 
     member = removal_request.member

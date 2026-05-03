@@ -24,6 +24,7 @@ urlpatterns = [
     path('agent/send-message/', views.send_admin_message, name='send_admin_message'),
     path('agent/users/<uuid:user_id>/approve/', views.agent_approve_user, name='agent_approve_user'),
     path('agent/assign-task/', views.assign_task, name='assign_task'),
+    path('agent/buyer/<uuid:user_id>/promote-joint/', views.admin_promote_buyer_to_joint, name='admin_promote_buyer_to_joint'),
     path('agent/unassign-task/<path:parcel_number>/', views.unassign_task, name='unassign_task'),
     path('agent/approvals/', views.agent_approvals, name='agent_approvals'),
     path('agent/approvals/<uuid:user_id>/review/', views.agent_user_review, name='agent_user_review'),

@@ -103,9 +103,22 @@ export function AppShell({ title, subtitle, user, nav, children, actions, logout
         <aside className="hidden w-72 shrink-0 lg:block">
           <Card className="sticky top-24 overflow-hidden bg-white/90">
             <div className="border-b border-border/70 px-6 py-5">
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-muted-foreground">Navigation</div>
-              <div className="mt-1 text-lg font-extrabold tracking-tight text-foreground">{title}</div>
-              {subtitle ? <div className="mt-1 text-sm text-muted-foreground">{subtitle}</div> : null}
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-muted-foreground">Navigation</div>
+                  <div className="mt-1 text-lg font-extrabold tracking-tight text-foreground">{title}</div>
+                  {subtitle ? <div className="mt-1 text-sm text-muted-foreground">{subtitle}</div> : null}
+                </div>
+                {logoutUrl ? (
+                  <form method="post" action={logoutUrl}>
+                    <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken || ''} />
+                    <Button variant="outline" size="sm" className="rounded-2xl" type="submit">
+                      <LogOut className="h-4 w-4" />
+                      Sign out
+                    </Button>
+                  </form>
+                ) : null}
+              </div>
             </div>
             <nav className="space-y-1 p-3">
               {nav.map((item) => {
@@ -130,22 +143,14 @@ export function AppShell({ title, subtitle, user, nav, children, actions, logout
               <div className="text-xs font-bold uppercase tracking-[0.22em] text-muted-foreground">Session</div>
               <div className="mt-2 text-sm font-semibold text-foreground">{displayName}</div>
               <div className="mt-1 text-xs text-muted-foreground">{user?.email || 'Guest'}</div>
-              <div className="mt-4">
-                {logoutUrl ? (
-                  <form method="post" action={logoutUrl}>
-                    <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken || ''} />
-                    <Button variant="outline" className="w-full justify-start rounded-2xl" type="submit">
-                      <LogOut className="h-4 w-4" />
-                      Sign out
-                    </Button>
-                  </form>
-                ) : (
+              {!logoutUrl ? (
+                <div className="mt-4">
                   <a href="/accounts/login/" className="inline-flex h-11 w-full items-center justify-start gap-2 rounded-2xl border border-border bg-white/80 px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
                     <LogOut className="h-4 w-4" />
                     Sign in
                   </a>
-                )}
-              </div>
+                </div>
+              ) : null}
             </div>
             </div>
           </Card>

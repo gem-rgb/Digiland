@@ -292,6 +292,8 @@ export interface ContractData {
   seller_email: string;
   agreed_price: string;
   contract_agreed: boolean;
+  transaction_status: string;
+  checkout_available: boolean;
   buyer_signature_present: boolean;
   seller_signature_present: boolean;
   is_joint_purchase: boolean;
@@ -556,6 +558,7 @@ export interface BootstrapData {
   finance_verify_url?: string;
   admin_withdraw_url?: string;
   pending_agent_applications?: any[];
+  individual_buyers?: any[];
   message_thread?: any;
   is_admin?: boolean;
   [key: string]: any;
