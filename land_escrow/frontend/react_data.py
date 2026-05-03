@@ -31,17 +31,21 @@ def build_nav(user, active=None):
             {'label': 'Dashboard', 'href': reverse('frontend:home'), 'icon': 'dashboard', 'active': active == 'dashboard'},
             {'label': 'My Parcels', 'href': reverse('frontend:parcel_list'), 'icon': 'parcels', 'active': active == 'parcel-list'},
             {'label': 'Transactions', 'href': reverse('frontend:transactions'), 'icon': 'transactions', 'active': active == 'transactions'},
-            {'label': 'Legal', 'href': reverse('frontend:escrow_acts'), 'icon': 'legal', 'active': active in {'legal', 'joint-laws'}},
+            {'label': 'Messages', 'href': reverse('frontend:messages'), 'icon': 'documents', 'active': active == 'messages'},
+            {'label': 'Legal', 'href': reverse('frontend:seller_laws'), 'icon': 'legal', 'active': active in {'legal', 'seller-laws'}},
         ]
 
-    return [
+    nav = [
         {'label': 'Command Centre', 'href': reverse('frontend:agent_dashboard'), 'icon': 'dashboard', 'active': active in {'dashboard', 'admin-dashboard', 'agent-dashboard'}},
         {'label': 'Tasks', 'href': reverse('frontend:task_management'), 'icon': 'parcels', 'active': active == 'tasks'},
         {'label': 'Parcels', 'href': reverse('frontend:parcel_list'), 'icon': 'parcels', 'active': active == 'parcel-list'},
         {'label': 'Transactions', 'href': reverse('frontend:transactions'), 'icon': 'transactions', 'active': active == 'transactions'},
+        {'label': 'Escrow Release', 'href': reverse('frontend:escrow_release'), 'icon': 'security', 'active': active == 'escrow-release'},
         {'label': 'Messages', 'href': reverse('frontend:messages'), 'icon': 'documents', 'active': active == 'messages'},
-        {'label': 'Finance', 'href': reverse('frontend:admin_finance'), 'icon': 'money', 'active': active == 'finance'},
     ]
+    if getattr(user, 'role', '') == 'Admin':
+        nav.append({'label': 'Finance', 'href': reverse('frontend:admin_finance'), 'icon': 'money', 'active': active == 'finance'})
+    return nav
 
 
 def serialize_user(user):
@@ -127,6 +131,13 @@ def serialize_transaction(tx, user=None):
     elif user and getattr(user, 'id', None) == getattr(tx, 'seller_id', None) and not tx.seller_signature:
         action_label = 'Sign Agreement'
 
+    action_url = reverse('frontend:sign_contract', args=[tx.id])
+    if action_label == 'Sign Agreement':
+        from django.core.signing import Signer
+        signer = Signer()
+        signing_token = signer.sign(str(tx.id))
+        action_url = reverse('frontend:contract_sign_fullpage', args=[signing_token])
+
     return {
         'id': str(tx.id),
         'parcel_number': tx.land_parcel.parcel_number,
@@ -136,7 +147,7 @@ def serialize_transaction(tx, user=None):
         'status_tone': status_tone,
         'created_at': tx.created_at.strftime('%b %d, %Y'),
         'action_label': action_label,
-        'action_url': reverse('frontend:sign_contract', args=[tx.id]),
+        'action_url': action_url,
         'is_joint_purchase': bool(getattr(tx, 'is_joint_purchase', False)),
         'joint_label': 'Joint' if getattr(tx, 'is_joint_purchase', False) else '',
     }
@@ -154,7 +165,7 @@ def serialize_status_page(*, title, description, tone='default', icon=None, prim
     }
 
 
-def serialize_contract(transaction, user, *, laws, joint_breakdown=None, sign_url, payment_url, transactions_url, csrf_token):
+def serialize_contract(transaction, user, *, documents, joint_breakdown=None, sign_url, payment_url, transactions_url, csrf_token):
     joint_breakdown_data = []
     for row in joint_breakdown or []:
         member = row.get('member')
@@ -176,7 +187,7 @@ def serialize_contract(transaction, user, *, laws, joint_breakdown=None, sign_ur
         'joint_group_name': transaction.joint_group.name if transaction.is_joint_purchase and transaction.joint_group else None,
         'joint_group_ownership': transaction.joint_group.get_ownership_type_display() if transaction.is_joint_purchase and transaction.joint_group else None,
         'joint_breakdown': joint_breakdown_data,
-        'laws': [serialize_law(law) for law in laws],
+        'documents': documents,
         'current_user_role': getattr(user, 'role', ''),
         'current_user_is_buyer': getattr(user, 'id', None) == getattr(transaction, 'buyer_id', None),
         'current_user_is_seller': getattr(user, 'id', None) == getattr(transaction, 'seller_id', None),
@@ -374,6 +385,7 @@ def serialize_message_thread(partner, messages, user):
         'partner': serialize_user(partner),
         'latest_timestamp': messages[0].timestamp.strftime('%b %d, %Y') if messages else '',
         'count': len(messages),
+        'url': reverse('frontend:message_thread_detail', args=[partner.id]),
         'messages': [
             {
                 'id': str(message.id),

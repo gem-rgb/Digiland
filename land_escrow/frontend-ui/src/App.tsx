@@ -1220,6 +1220,8 @@ function ParcelDetailPage() {
                     <div className="flex items-center gap-2">
                       <Badge tone={doc.verification_status === 'Match' ? 'success' : doc.verification_status === 'Mismatch' ? 'danger' : 'warning'}>{doc.verification_status}</Badge>
                       {doc.file_url ? <a href={doc.file_url} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center justify-center rounded-full border border-border bg-white px-4 text-xs font-semibold text-foreground hover:bg-muted">View</a> : null}
+                      {doc.moderate_url ? <a href={doc.moderate_url} className="inline-flex h-9 items-center justify-center rounded-full border border-border bg-white px-4 text-xs font-semibold text-foreground hover:bg-muted">Moderate</a> : null}
+                      {doc.delete_url ? <a href={doc.delete_url} className="inline-flex h-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-4 text-xs font-semibold text-rose-600 hover:bg-rose-100">Delete</a> : null}
                     </div>
                   </div>
                 )) : (
@@ -1341,27 +1343,36 @@ function MessagesPage() {
     csrfToken: bootstrap.csrf_token,
   };
 
-  const renderThread = (thread: NonNullable<typeof page.threads>[number]) => (
-    <Card key={thread.partner.email} className="bg-white/92">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle className="text-base">{thread.partner.email}</CardTitle>
-            <CardDescription>{thread.partner.role}</CardDescription>
-          </div>
-          <Badge tone="outline">{thread.count}</Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {thread.messages.map((message) => (
-          <div key={message.id} className={message.is_self ? 'ml-auto max-w-[85%] rounded-3xl bg-primary px-4 py-3 text-sm text-primary-foreground' : 'max-w-[85%] rounded-3xl bg-muted/60 px-4 py-3 text-sm text-foreground'}>
-            <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] opacity-70">{message.is_self ? 'You' : message.sender_email} · {message.timestamp}</div>
-            {message.content}
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
+  const renderThread = (thread: NonNullable<typeof page.threads>[number]) => {
+    const latestMessage = thread.messages[0];
+    const previewText = latestMessage?.content.length > 60 ? latestMessage.content.slice(0, 60) + '...' : latestMessage?.content;
+
+    return (
+      <a href={thread.url} key={thread.partner.email} className="block transition-transform hover:-translate-y-1">
+        <Card className="bg-white/92 transition-colors hover:border-emerald-200 hover:bg-white">
+          <CardHeader>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-base text-emerald-800">{thread.partner.email}</CardTitle>
+                <CardDescription>{thread.partner.role}</CardDescription>
+              </div>
+              <Badge tone="outline">{thread.count} msgs</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {latestMessage ? (
+              <div className="text-sm text-muted-foreground italic">
+                <span className="font-semibold not-italic">{latestMessage.is_self ? 'You' : thread.partner.email}:</span> {previewText}
+              </div>
+            ) : null}
+            <div className="mt-4 flex items-center text-xs font-semibold text-emerald-600">
+              View full conversation <ArrowRight className="ml-1 h-3 w-3" />
+            </div>
+          </CardContent>
+        </Card>
+      </a>
+    );
+  };
 
   const composeForm = (
     <form method="post" action={page.compose_action} className="space-y-4">
@@ -2041,6 +2052,7 @@ function ContractPage() {
   const [adminBuyerSignature, setAdminBuyerSignature] = useState('');
   const [adminSellerSignature, setAdminSellerSignature] = useState('');
   const [jointSignatures, setJointSignatures] = useState<Record<string, string>>({});
+  const [documentSignatures, setDocumentSignatures] = useState<Record<string, string>>({});
 
   if (!contract) {
     return <AppShell {...{
@@ -2063,10 +2075,25 @@ function ContractPage() {
   };
   const pendingMembers = contract.joint_breakdown.filter((row) => !row.member.has_signed);
 
+  const fullpageUrl = bootstrap.fullpage_sign_url;
+
   return (
     <AppShell {...shellProps}>
       <div className="space-y-6">
         <PageHeader kicker="Contract" title="Kenyan Land Transfer Agreement" subtitle={`Property: ${contract.parcel_number}`} actions={bootstrap.actions} />
+
+        {/* Prompt to open clean full-page signing experience */}
+        {fullpageUrl && (contract.current_user_is_buyer || contract.current_user_is_seller) && !contract.contract_agreed ? (
+          <div className="rounded-[2rem] border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 p-6 flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-foreground">Sign documents in a dedicated view</h3>
+              <p className="text-sm text-muted-foreground mt-1">Open the full-page signing experience for a clean, professional document review and signature flow — away from the dashboard UI.</p>
+            </div>
+            <a href={fullpageUrl} className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground hover:bg-primary/90 whitespace-nowrap gap-2 shadow-lg">
+              <FileText className="h-4 w-4" />Open signing page
+            </a>
+          </div>
+        ) : null}
 
         <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
           <div className="space-y-6">
@@ -2076,23 +2103,34 @@ function ContractPage() {
                 <CardDescription>Core Kenyan land-sale statutes and official references.</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3 md:grid-cols-2">
-                {contract.laws.map((law) => (
-                  <Card key={`${law.title}-${law.citation}`} className="bg-white/90">
+                {contract.documents.map((doc: any) => (
+                  <Card key={doc.key} className="bg-white/90">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <CardTitle className="text-sm">{law.title}</CardTitle>
-                          <CardDescription>{law.citation}</CardDescription>
+                          <CardTitle className="text-sm">{doc.title}</CardTitle>
+                          <CardDescription>{doc.description}</CardDescription>
                         </div>
-                        <Badge tone={law.required ? 'success' : 'warning'}>{law.required ? 'Core' : 'Conditional'}</Badge>
+                        <Badge tone={doc.required ? 'success' : 'warning'}>{doc.required ? 'Required' : 'Optional'}</Badge>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <p className="text-sm leading-7 text-foreground">{law.summary}</p>
-                      <a href={law.official_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800">
-                        Open official source
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
+                      <p className="text-sm leading-7 text-foreground whitespace-pre-wrap">{doc.content}</p>
+                      {contract.current_user_is_buyer || contract.current_user_is_seller ? (
+                        <div className="mt-4 border-t border-border pt-4">
+                          {(contract.current_user_is_buyer && contract.buyer_signature_present) || (contract.current_user_is_seller && contract.seller_signature_present) ? (
+                            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-emerald-800 flex items-center gap-2">
+                              <ShieldCheck className="h-4 w-4" />
+                              <span className="font-semibold text-xs">Signature securely locked.</span>
+                            </div>
+                          ) : (
+                            <SignaturePad 
+                              label={`Signature for ${doc.title}`} 
+                              onChange={(val) => setDocumentSignatures(prev => ({ ...prev, [doc.key]: val }))} 
+                            />
+                          )}
+                        </div>
+                      ) : null}
                     </CardContent>
                   </Card>
                 ))}
@@ -2153,15 +2191,20 @@ function ContractPage() {
             ) : contract.current_user_is_buyer || contract.current_user_is_seller ? (
               <Card className="bg-white/92">
                 <CardHeader>
-                  <CardTitle className="text-base">Sign this contract</CardTitle>
-                  <CardDescription>Draw your signature to accept the legal terms.</CardDescription>
+                  <CardTitle className="text-base">Execute contract</CardTitle>
+                  <CardDescription>All required documents must be signed before proceeding.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form method="post" action={contract.sign_url} className="space-y-4">
                     <input type="hidden" name="csrfmiddlewaretoken" value={contract.csrf_token} />
-                    <input type="hidden" name="signature_data" value={contract.current_user_is_buyer ? buyerSignature : sellerSignature} />
-                    <SignaturePad label={contract.current_user_is_buyer ? 'Buyer signature' : 'Seller signature'} onChange={contract.current_user_is_buyer ? setBuyerSignature : setSellerSignature} />
-                    <Button type="submit" className="w-full rounded-full">Sign and accept</Button>
+                    <input type="hidden" name="signature_data" value={JSON.stringify(documentSignatures)} />
+                    <Button 
+                      type="submit" 
+                      className="w-full rounded-full" 
+                      disabled={contract.documents.some((doc: any) => doc.required && !documentSignatures[doc.key])}
+                    >
+                      Sign and accept all documents
+                    </Button>
                   </form>
                 </CardContent>
               </Card>
@@ -2499,6 +2542,531 @@ function CheckoutPage() {
   );
 }
 
+function SellerWithdrawPage() {
+  const data = bootstrap.withdraw_data;
+  const [amount, setAmount] = React.useState('');
+  const [phone, setPhone] = React.useState(data?.phone_number || '');
+
+  if (!data) return <div className="p-8 text-center text-muted-foreground">Withdrawal data not available.</div>;
+
+  const shellProps = {
+    title: bootstrap.title,
+    subtitle: bootstrap.subtitle,
+    user: bootstrap.user,
+    nav: bootstrap.nav,
+    logoutUrl: bootstrap.logout_url,
+    csrfToken: bootstrap.csrf_token,
+  };
+
+  return (
+    <AppShell {...shellProps}>
+      <div className="space-y-6">
+        <PageHeader kicker="Payouts" title={bootstrap.title} subtitle={bootstrap.subtitle} actions={bootstrap.actions} />
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="bg-white/92">
+            <CardContent className="p-6">
+              <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Available to withdraw</div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-emerald-700">KES {money(data.available_balance)}</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/92">
+            <CardContent className="p-6">
+              <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Held in escrow</div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-amber-600">KES {money(data.in_escrow)}</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/92">
+            <CardContent className="p-6">
+              <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Total received</div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-foreground">KES {money(data.total_received)}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="bg-white/92">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base"><WalletCards className="h-4 w-4 text-emerald-700" />Withdraw to M-Pesa</CardTitle>
+            <CardDescription>Enter the amount you wish to withdraw and your M-Pesa registered phone number.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form method="post" action={data.action_url} className="space-y-4 max-w-md">
+              <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">Withdrawal amount (KES)</label>
+                <input
+                  type="number"
+                  name="withdraw_amount"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  max={data.available_balance}
+                  min="1"
+                  step="1"
+                  placeholder="e.g. 50000"
+                  required
+                  className="flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">M-Pesa phone number</label>
+                <input
+                  type="tel"
+                  name="phone_number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+254712345678"
+                  required
+                  className="flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm"
+                />
+              </div>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                Funds will be sent directly to the M-Pesa account registered to the phone number above. Please double-check before submitting.
+              </div>
+              <Button type="submit" className="w-full rounded-full">Withdraw to M-Pesa</Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </AppShell>
+  );
+}
+
+function EscrowReleasePage() {
+  const transactions = bootstrap.escrow_transactions || [];
+  const isAdmin = bootstrap.is_admin;
+
+  const shellProps = {
+    title: bootstrap.title,
+    subtitle: bootstrap.subtitle,
+    user: bootstrap.user,
+    nav: bootstrap.nav,
+    logoutUrl: bootstrap.logout_url,
+    csrfToken: bootstrap.csrf_token,
+  };
+
+  return (
+    <AppShell {...shellProps}>
+      <div className="space-y-6">
+        <PageHeader kicker="Escrow" title={bootstrap.title} subtitle={bootstrap.subtitle} actions={bootstrap.actions} />
+
+        {isAdmin ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <strong>Admin override active.</strong> You can release payments at any time regardless of the verification deadline. Agents can only release after the escrow period ends.
+          </div>
+        ) : null}
+
+        {transactions.length === 0 ? (
+          <Card className="bg-white/92">
+            <CardContent className="flex flex-col items-center justify-center p-12 text-center">
+              <ShieldCheck className="h-12 w-12 text-muted-foreground/40 mb-4" />
+              <div className="text-lg font-bold text-foreground">No pending escrow releases</div>
+              <p className="mt-2 text-sm text-muted-foreground">All eligible transactions have been processed or none are currently assigned to you.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {transactions.map((tx: any) => (
+              <Card key={tx.id} className="bg-white/92">
+                <CardContent className="p-6">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg font-bold text-foreground">{tx.parcel_number}</span>
+                        <Badge tone={tx.deadline_passed ? 'success' : 'warning'}>{tx.deadline_passed ? 'Deadline passed' : `${tx.days_remaining} days left`}</Badge>
+                        <Badge tone={tx.contract_signed ? 'success' : 'danger'}>{tx.contract_signed ? 'Contract signed' : 'Unsigned'}</Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground">Buyer: {tx.buyer_email} · Seller: {tx.seller_email}</div>
+                      <div className="text-sm text-muted-foreground">Created {tx.created_at} · Deadline: {tx.deadline}</div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">Amount</div>
+                        <div className="text-xl font-black text-foreground">KES {money(tx.amount)}</div>
+                      </div>
+
+                      {tx.can_release ? (
+                        <form method="post" action={tx.release_url}>
+                          <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+                          <Button type="submit" className="rounded-full whitespace-nowrap">
+                            Release Payment
+                          </Button>
+                        </form>
+                      ) : (
+                        <div className="rounded-2xl border border-border bg-muted/50 px-4 py-2 text-xs font-semibold text-muted-foreground">
+                          {!tx.contract_signed ? 'Awaiting signatures' : 'Escrow period active'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-2 sm:grid-cols-4">
+                    <div className="rounded-2xl bg-muted/50 p-3 text-center">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Status</div>
+                      <div className="mt-1 text-sm font-semibold text-foreground">{tx.status}</div>
+                    </div>
+                    <div className="rounded-2xl bg-muted/50 p-3 text-center">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Buyer Sig</div>
+                      <div className={`mt-1 text-sm font-semibold ${tx.buyer_signature ? 'text-emerald-700' : 'text-rose-600'}`}>{tx.buyer_signature ? '✓ Signed' : '✗ Pending'}</div>
+                    </div>
+                    <div className="rounded-2xl bg-muted/50 p-3 text-center">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Seller Sig</div>
+                      <div className={`mt-1 text-sm font-semibold ${tx.seller_signature ? 'text-emerald-700' : 'text-rose-600'}`}>{tx.seller_signature ? '✓ Signed' : '✗ Pending'}</div>
+                    </div>
+                    <div className="rounded-2xl bg-muted/50 p-3 text-center">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Deadline</div>
+                      <div className={`mt-1 text-sm font-semibold ${tx.deadline_passed ? 'text-emerald-700' : 'text-amber-600'}`}>{tx.deadline_passed ? 'Elapsed' : `${tx.days_remaining}d remaining`}</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </AppShell>
+  );
+}
+
+function AgentWithdrawPage() {
+  const data = bootstrap.withdraw_data;
+  const [amount, setAmount] = React.useState('');
+  const [phone, setPhone] = React.useState(data?.phone_number || '');
+
+  if (!data) return <div className="p-8 text-center text-muted-foreground">Withdrawal data not available.</div>;
+
+  const shellProps = {
+    title: bootstrap.title,
+    subtitle: bootstrap.subtitle,
+    user: bootstrap.user,
+    nav: bootstrap.nav,
+    logoutUrl: bootstrap.logout_url,
+    csrfToken: bootstrap.csrf_token,
+  };
+
+  return (
+    <AppShell {...shellProps}>
+      <div className="space-y-6">
+        <PageHeader kicker="Payouts" title={bootstrap.title} subtitle={bootstrap.subtitle} actions={bootstrap.actions} />
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="bg-white/92">
+            <CardContent className="p-6">
+              <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Available to withdraw</div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-emerald-700">KES {money(data.available_balance)}</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/92">
+            <CardContent className="p-6">
+              <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Completed Transactions</div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-foreground">{data.completed_transactions_count}</div>
+              <div className="mt-1 text-sm text-muted-foreground">Commission Rate: {data.commission_rate}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="bg-white/92">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base"><WalletCards className="h-4 w-4 text-emerald-700" />Withdraw to M-Pesa</CardTitle>
+            <CardDescription>Enter the commission amount you wish to withdraw and your M-Pesa phone number.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form method="post" className="space-y-4 max-w-md">
+              <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">Withdrawal amount (KES)</label>
+                <input
+                  type="number"
+                  name="amount"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  max={data.available_balance}
+                  min="1"
+                  step="0.01"
+                  placeholder="e.g. 5000"
+                  required
+                  className="flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">M-Pesa phone number</label>
+                <input
+                  type="tel"
+                  name="phone_number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+254712345678"
+                  required
+                  className="flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm"
+                />
+              </div>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                Funds will be sent directly to the M-Pesa account registered to the phone number above. Please double-check before submitting.
+              </div>
+              <Button type="submit" className="w-full rounded-full">Withdraw to M-Pesa</Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </AppShell>
+  );
+}
+
+function ContractFullPage() {
+  const contract = bootstrap.contract;
+  const [documentSignatures, setDocumentSignatures] = useState<Record<string, string>>({});
+  const [buyerSignature, setBuyerSignature] = useState('');
+  const [sellerSignature, setSellerSignature] = useState('');
+  const backUrl = bootstrap.back_url || '/';
+
+  if (!contract) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center p-6">
+        <Card className="bg-white/95 max-w-md w-full shadow-2xl">
+          <CardContent className="p-8 text-center space-y-4">
+            <ShieldCheck className="h-12 w-12 text-muted-foreground/40 mx-auto" />
+            <h2 className="text-xl font-bold text-foreground">Invalid signing link</h2>
+            <p className="text-sm text-muted-foreground">This contract signing link may have expired or is invalid.</p>
+            <a href="/" className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground hover:bg-primary/90">Return home</a>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      {/* Header bar */}
+      <div className="sticky top-0 z-50 border-b border-border/50 bg-white/80 backdrop-blur-xl">
+        <div className="mx-auto max-w-5xl flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <FileText className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-sm font-black tracking-tight text-foreground">Digiland Contract Signing</div>
+              <div className="text-xs text-muted-foreground">Property: {contract.parcel_number}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge tone={contract.contract_agreed ? 'success' : 'warning'}>{contract.contract_agreed ? 'Fully signed' : 'Awaiting signatures'}</Badge>
+            <a href={backUrl} className="inline-flex h-9 items-center justify-center rounded-full border border-border bg-white px-4 text-xs font-semibold text-foreground hover:bg-muted">← Back to dashboard</a>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-5xl px-6 py-10 space-y-10">
+        {/* Transaction overview */}
+        <div className="grid gap-4 sm:grid-cols-4">
+          <div className="rounded-3xl bg-white p-5 shadow-sm border border-border/50">
+            <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Parcel</div>
+            <div className="mt-1 text-lg font-black text-foreground">{contract.parcel_number}</div>
+          </div>
+          <div className="rounded-3xl bg-white p-5 shadow-sm border border-border/50">
+            <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Agreed Price</div>
+            <div className="mt-1 text-lg font-black text-emerald-700">KES {money(contract.agreed_price)}</div>
+          </div>
+          <div className="rounded-3xl bg-white p-5 shadow-sm border border-border/50">
+            <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Buyer</div>
+            <div className="mt-1 text-sm font-semibold text-foreground truncate">{contract.buyer_email}</div>
+          </div>
+          <div className="rounded-3xl bg-white p-5 shadow-sm border border-border/50">
+            <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Seller</div>
+            <div className="mt-1 text-sm font-semibold text-foreground truncate">{contract.seller_email}</div>
+          </div>
+        </div>
+
+        {/* Documents — full width, not squeezed */}
+        {contract.documents && contract.documents.length > 0 ? (
+          <div className="space-y-8">
+            <h2 className="text-2xl font-black tracking-tight text-foreground">Legal Documents</h2>
+            {contract.documents.map((doc: any, index: number) => (
+              <div key={doc.key} className="rounded-[2rem] bg-white shadow-sm border border-border/50 overflow-hidden">
+                <div className="border-b border-border/30 bg-muted/20 px-8 py-5 flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-sm font-black text-primary">{index + 1}</span>
+                      <h3 className="text-lg font-bold text-foreground">{doc.title}</h3>
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground ml-11">{doc.description}</p>
+                  </div>
+                  <Badge tone={doc.required ? 'success' : 'warning'}>{doc.required ? 'Required' : 'Optional'}</Badge>
+                </div>
+                <div className="px-8 py-6">
+                  <div className="prose prose-sm max-w-none text-foreground leading-8 whitespace-pre-wrap">{doc.content}</div>
+                </div>
+                {(contract.current_user_is_buyer || contract.current_user_is_seller) ? (
+                  <div className="border-t border-border/30 bg-muted/10 px-8 py-6">
+                    <div className="max-w-lg">
+                      {(contract.current_user_is_buyer && contract.buyer_signature_present) || (contract.current_user_is_seller && contract.seller_signature_present) ? (
+                        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+                          <ShieldCheck className="h-5 w-5 mb-2" />
+                          <div className="font-bold text-sm">Signature Locked</div>
+                          <div className="text-xs mt-1">You have already signed this document. Your signature has been securely captured and cannot be changed.</div>
+                        </div>
+                      ) : (
+                        <>
+                          <SignaturePad
+                            label={`Your signature for "${doc.title}"`}
+                            onChange={(val) => setDocumentSignatures(prev => ({ ...prev, [doc.key]: val }))}
+                          />
+                          {documentSignatures[doc.key] ? (
+                            <div className="mt-2 flex items-center gap-2 text-sm text-emerald-700"><ShieldCheck className="h-4 w-4" />Signature captured</div>
+                          ) : null}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {/* Signature status and submit */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card className="bg-white shadow-sm">
+            <CardHeader>
+              <CardTitle>Signature Status</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="rounded-2xl bg-muted/60 p-3 flex items-center justify-between">
+                <span className="text-sm font-semibold">Buyer: {contract.buyer_email}</span>
+                {contract.buyer_signature_present ? <Badge tone="success">Signed</Badge> : <Badge tone="warning">Awaiting</Badge>}
+              </div>
+              <div className="rounded-2xl bg-muted/60 p-3 flex items-center justify-between">
+                <span className="text-sm font-semibold">Seller: {contract.seller_email}</span>
+                {contract.seller_signature_present ? <Badge tone="success">Signed</Badge> : <Badge tone="warning">Awaiting</Badge>}
+              </div>
+            </CardContent>
+          </Card>
+
+          {(contract.current_user_is_buyer || contract.current_user_is_seller) && !contract.contract_agreed && !((contract.current_user_is_buyer && contract.buyer_signature_present) || (contract.current_user_is_seller && contract.seller_signature_present)) ? (
+            <Card className="bg-white shadow-sm">
+              <CardHeader>
+                <CardTitle>Execute Contract</CardTitle>
+                <CardDescription>Sign all required documents and submit to complete the legal process.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form method="post" action={contract.sign_url} className="space-y-4">
+                  <input type="hidden" name="csrfmiddlewaretoken" value={contract.csrf_token} />
+                  <input type="hidden" name="signature_data" value={JSON.stringify(documentSignatures)} />
+                  <Button
+                    type="submit"
+                    className="w-full rounded-full h-12 text-base"
+                    disabled={contract.documents.some((doc: any) => doc.required && !documentSignatures[doc.key])}
+                  >
+                    Sign and accept all documents
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          ) : null}
+        </div>
+
+        {contract.contract_agreed && contract.current_user_is_buyer ? (
+          <div className="rounded-[2rem] border border-emerald-200 bg-emerald-50/70 p-8 text-center space-y-4">
+            <ShieldCheck className="h-12 w-12 text-emerald-600 mx-auto" />
+            <h3 className="text-2xl font-black tracking-tight text-foreground">Legal process complete</h3>
+            <p className="text-sm leading-7 text-muted-foreground max-w-md mx-auto">The contract has been fully signed. Continue to checkout to complete your purchase.</p>
+            <a href={contract.payment_url} className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-8 text-sm font-semibold text-primary-foreground hover:bg-primary/90 shadow-lg">Continue to checkout</a>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function AdminWithdrawPage() {
+  const data = bootstrap.withdraw_data;
+  const [amount, setAmount] = React.useState('');
+  const [phone, setPhone] = React.useState(data?.phone_number || '');
+  const [method, setMethod] = React.useState<'m_pesa' | 'kcb_bank'>('m_pesa');
+  const [bankAccount, setBankAccount] = React.useState('');
+
+  if (!data) return <div className="p-8 text-center text-muted-foreground">Withdrawal data not available.</div>;
+
+  const shellProps = {
+    title: bootstrap.title,
+    subtitle: bootstrap.subtitle,
+    user: bootstrap.user,
+    nav: bootstrap.nav,
+    logoutUrl: bootstrap.logout_url,
+    csrfToken: bootstrap.csrf_token,
+  };
+
+  return (
+    <AppShell {...shellProps}>
+      <div className="space-y-6">
+        <PageHeader kicker="Platform" title="Platform Withdrawal" subtitle="Transfer platform commission earnings." actions={bootstrap.actions} />
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="bg-white/92">
+            <CardContent className="p-6">
+              <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Available to withdraw</div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-emerald-700">KES {money(data.available_balance)}</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/92">
+            <CardContent className="p-6">
+              <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Total Commission (4%)</div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-foreground">KES {money(data.total_commission)}</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/92">
+            <CardContent className="p-6">
+              <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Total Withdrawn</div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-amber-600">KES {money(data.total_withdrawn)}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="bg-white/92">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base"><WalletCards className="h-4 w-4 text-emerald-700" />Withdraw platform earnings</CardTitle>
+            <CardDescription>Transfer to M-Pesa or KCB bank account.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form method="post" action={data.action_url} className="space-y-4 max-w-md">
+              <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+              <input type="hidden" name="withdrawal_method" value={method} />
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">Withdrawal method</label>
+                <select value={method} onChange={(e) => setMethod(e.target.value as 'm_pesa' | 'kcb_bank')} className="flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm">
+                  <option value="m_pesa">M-Pesa</option>
+                  <option value="kcb_bank">KCB Bank Transfer</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">Amount (KES)</label>
+                <input type="number" name="amount" value={amount} onChange={(e) => setAmount(e.target.value)} max={data.available_balance} min="1" step="0.01" placeholder="e.g. 50000" required className="flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm" />
+              </div>
+              {method === 'm_pesa' ? (
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-foreground">M-Pesa phone number</label>
+                  <input type="tel" name="phone_number" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+254712345678" required className="flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm" />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-foreground">KCB account number</label>
+                  <input type="text" name="bank_account" value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} placeholder="e.g. 1234567890" required className="flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm" />
+                </div>
+              )}
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                Funds will be transferred via {method === 'kcb_bank' ? 'KCB bank' : 'M-Pesa B2C'}. Please verify the details before submitting.
+              </div>
+              <Button type="submit" className="w-full rounded-full">
+                {method === 'kcb_bank' ? 'Transfer via KCB' : 'Withdraw to M-Pesa'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </AppShell>
+  );
+}
+
+
 function ReactApp() {
   const page = bootstrap.page;
   const shellProps = {
@@ -2530,8 +3098,98 @@ function ReactApp() {
   if (page === 'task-management') return <TaskManagementPage />;
   if (page === 'approvals') return <ApprovalsPage />;
   if (page === 'user-review') return <UserReviewPage />;
+  if (page === 'seller-withdraw') return <SellerWithdrawPage />;
+  if (page === 'escrow-release') return <EscrowReleasePage />;
+  if (page === 'agent-withdraw') return <AgentWithdrawPage />;
+  if (page === 'dashboard' || page === 'admin-dashboard' || page === 'agent-dashboard') return <AppShell {...shellProps}><DashboardPage /></AppShell>;
+  if (page === 'finance') return <AppShell {...shellProps}><AdminFinancePage /></AppShell>;
+  if (page === 'contract-fullpage') return <ContractFullPage />;
+  if (page === 'admin-withdraw') return <AdminWithdrawPage />;
+  if (page === 'message-thread') return <MessageThreadPage />;
+
+  // Fallback to empty shell
+  return (
+    <AppShell {...shellProps}>
+      <div className="space-y-6">
+        <PageHeader kicker="Digiland" title={bootstrap.title} subtitle={bootstrap.subtitle} badge={bootstrap.notice} actions={bootstrap.actions} />
+        <Card className="bg-white/92">
+          <CardHeader>
+            <CardTitle>Page not yet migrated</CardTitle>
+            <CardDescription>This screen is still using the Django template route. The React shell is ready for it, but the view has not been switched over yet.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-muted-foreground">
+            <p>We have already moved the main dashboard, parcel list, transactions, legal pages, and joint-group screens into the new UI layer.</p>
+            <div className="flex flex-wrap gap-3">
+              <Button className="rounded-full" onClick={() => window.location.reload()}>Refresh</Button>
+              <Button variant="outline" className="rounded-full" onClick={() => (window.location.href = '/')}>Return home</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </AppShell>
+  );
+}
+
 function AdminFinancePage() {
   const finance = bootstrap.finance_dashboard;
+  const [pinVerified, setPinVerified] = useState(!!bootstrap.finance_pin_verified);
+  const [pin, setPin] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [pinLoading, setPinLoading] = useState(false);
+  const verifyUrl = bootstrap.finance_verify_url || '';
+  const withdrawUrl = bootstrap.admin_withdraw_url || '';
+
+  // PIN gate overlay
+  if (!pinVerified) {
+    return (
+      <div className="flex h-[60vh] flex-col items-center justify-center text-center">
+        <div className="w-full max-w-[320px] mx-auto space-y-6">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+            <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+          </div>
+          <h2 className="text-xl font-black tracking-tight text-foreground">Finance Dashboard Locked</h2>
+          <p className="text-sm text-muted-foreground">Enter the admin finance PIN to access the financial data.</p>
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            setPinLoading(true);
+            setPinError('');
+            try {
+              const body = new URLSearchParams();
+              body.set('csrfmiddlewaretoken', bootstrap.csrf_token || '');
+              body.set('finance_pin', pin);
+              const resp = await fetch(verifyUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': bootstrap.csrf_token || '', 'X-Requested-With': 'XMLHttpRequest' },
+                body,
+              });
+              const data = await resp.json();
+              if (data.status === 'success') {
+                setPinVerified(true);
+              } else {
+                setPinError(data.message || 'Incorrect PIN.');
+              }
+            } catch {
+              setPinError('Network error. Please try again.');
+            } finally {
+              setPinLoading(false);
+            }
+          }} className="space-y-4">
+            <input
+              type="password"
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+              placeholder="Enter finance PIN"
+              required
+              className="flex h-12 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-center text-lg tracking-[0.3em] shadow-sm"
+              autoFocus
+            />
+            {pinError ? <div className="rounded-2xl bg-rose-50 border border-rose-200 p-3 text-sm text-rose-700">{pinError}</div> : null}
+            <Button type="submit" className="w-full rounded-full" disabled={pinLoading}>{pinLoading ? 'Verifying...' : 'Unlock Finance Dashboard'}</Button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   if (!finance) {
     return (
@@ -2547,6 +3205,19 @@ function AdminFinancePage() {
 
   return (
     <div className="space-y-6">
+      {/* Withdraw action banner */}
+      {withdrawUrl ? (
+        <div className="rounded-[2rem] border border-emerald-200 bg-gradient-to-r from-emerald-50/70 to-emerald-100/50 p-5 flex flex-col sm:flex-row items-center gap-4">
+          <div className="flex-1">
+            <h3 className="text-base font-bold text-foreground">Withdraw platform earnings</h3>
+            <p className="text-sm text-muted-foreground">Transfer available commission to M-Pesa or KCB bank account.</p>
+          </div>
+          <a href={withdrawUrl} className="inline-flex h-11 items-center justify-center rounded-full bg-emerald-600 px-6 text-sm font-semibold text-white hover:bg-emerald-700 whitespace-nowrap gap-2 shadow">
+            <WalletCards className="h-4 w-4" />Withdraw funds
+          </a>
+        </div>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-white/92">
           <CardContent className="p-6">
@@ -2662,23 +3333,92 @@ function AdminFinancePage() {
   );
 }
 
-  if (page === 'dashboard' || page === 'admin-dashboard' || page === 'agent-dashboard') return <AppShell {...shellProps}><DashboardPage /></AppShell>;
-  if (page === 'finance') return <AppShell {...shellProps}><AdminFinancePage /></AppShell>;
+function MessageThreadPage() {
+  const page = bootstrap.message_thread;
+  if (!page) return null;
+  const shellProps = {
+    title: bootstrap.title,
+    subtitle: bootstrap.subtitle,
+    user: bootstrap.user,
+    nav: bootstrap.nav,
+    logoutUrl: bootstrap.logout_url,
+    csrfToken: bootstrap.csrf_token,
+  };
+  
+  const thread = page.thread;
+
   return (
     <AppShell {...shellProps}>
-      <div className="space-y-6">
-        <PageHeader kicker="Digiland" title={bootstrap.title} subtitle={bootstrap.subtitle} badge={bootstrap.notice} actions={bootstrap.actions} />
+      <div className="mx-auto max-w-4xl space-y-6">
+        <div className="flex items-center justify-between">
+          <a href="/messages/" className="inline-flex items-center text-sm font-semibold text-emerald-700 transition-opacity hover:opacity-80">
+            <ArrowRight className="mr-2 h-4 w-4 rotate-180" /> Back to inbox
+          </a>
+          {page.clear_action ? (
+            <Button
+              variant="danger"
+              className="h-9 rounded-full px-5 text-xs"
+              onClick={async () => {
+                if (window.confirm('Are you sure you want to permanently clear this entire conversation?')) {
+                  try {
+                    const body = new URLSearchParams();
+                    body.set('csrfmiddlewaretoken', page.csrf_token);
+                    const resp = await fetch(page.clear_action, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                      body,
+                    });
+                    if (resp.ok) {
+                      window.location.href = '/messages/';
+                    } else {
+                      alert('Failed to clear thread. Please try again.');
+                    }
+                  } catch (e) {
+                    alert('Network error. Please try again.');
+                  }
+                }
+              }}
+            >
+              Clear Thread
+            </Button>
+          ) : null}
+        </div>
+
+        <PageHeader 
+          kicker="Conversation" 
+          title={thread.partner.email} 
+          subtitle={thread.partner.role} 
+        />
+        
         <Card className="bg-white/92">
-          <CardHeader>
-            <CardTitle>Page not yet migrated</CardTitle>
-            <CardDescription>This screen is still using the Django template route. The React shell is ready for it, but the view has not been switched over yet.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
-            <p>We have already moved the main dashboard, parcel list, transactions, legal pages, and joint-group screens into the new UI layer.</p>
-            <div className="flex flex-wrap gap-3">
-              <Button className="rounded-full" onClick={() => window.location.reload()}>Refresh</Button>
-              <Button variant="outline" className="rounded-full" onClick={() => (window.location.href = '/')}>Return home</Button>
-            </div>
+          <CardContent className="space-y-4 p-6">
+            {thread.messages.length === 0 ? (
+              <div className="text-center text-sm text-muted-foreground py-8">No messages in this thread.</div>
+            ) : (
+              [...thread.messages].reverse().map((message: any) => (
+                <div key={message.id} className={message.is_self ? 'ml-auto max-w-[85%] rounded-3xl bg-primary px-5 py-4 text-sm text-primary-foreground' : 'max-w-[85%] rounded-3xl bg-muted/60 px-5 py-4 text-sm text-foreground'}>
+                  <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] opacity-70">{message.is_self ? 'You' : message.sender_email} · {message.timestamp}</div>
+                  <div className="whitespace-pre-wrap">{message.content}</div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-white/92">
+          <CardContent className="p-6">
+            <form method="post" action={page.compose_action} className="space-y-4">
+              <input type="hidden" name="csrfmiddlewaretoken" value={page.csrf_token} />
+              <input type="hidden" name="recipient_type" value="single" />
+              <input type="hidden" name="receiver_email" value={thread.partner.email} />
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">Reply</label>
+                <Textarea name="content" rows={4} placeholder="Type your reply here..." className="bg-white/95" required />
+              </div>
+              <div className="flex justify-end">
+                <Button type="submit" className="rounded-full px-8">Send Message</Button>
+              </div>
+            </form>
           </CardContent>
         </Card>
       </div>

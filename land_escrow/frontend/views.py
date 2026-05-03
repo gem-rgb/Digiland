@@ -2,13 +2,16 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.middleware.csrf import get_token
-from core.models import LandParcel, Transaction, Message, SupportTicket, Document, User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite, JointBuyerGroup, JointBuyerMember, JointPaymentContribution
+from django.db import models
+from core.models import LandParcel, Transaction, Message, SupportTicket, Document, User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite, JointBuyerGroup, JointBuyerMember, JointPaymentContribution, AuditLog
 from core.legal import (
     LAND_TRANSACTION_LAWS,
     LAND_TRANSACTION_CHECKLIST,
     JOINT_LAND_TRANSACTION_LAWS,
     JOINT_LAND_TRANSACTION_CHECKLIST,
     JOINT_PAYMENT_GUIDANCE,
+    KENYAN_LAND_DOCUMENTS,
+    JOINT_KENYAN_LAND_DOCUMENTS,
 )
 from .forms import LandParcelUploadForm
 from core.forms import AgentRatingForm, DocumentUploadForm, JointBuyerGroupForm, JointBuyerMemberFormSet, JointBuyerMemberForm, PricePredictionForm
@@ -98,6 +101,44 @@ def home(request):
     if request.user.is_authenticated:
         recent_parcels = [serialize_parcel(parcel, request.user) for parcel in parcels]
         recent_transactions = [serialize_transaction(tx, request.user) for tx in transactions] if transactions else []
+
+        # Build role-specific stats
+        if request.user.role == 'Seller':
+            from django.db.models import Sum
+            completed_tx = Transaction.objects.filter(seller=request.user, status='Completed')
+            escrow_tx = Transaction.objects.filter(seller=request.user, status__in=['Deposit_Paid', 'Under_Verification', 'Verification_Hiatus'])
+            total_received = completed_tx.aggregate(total=Sum('agreed_price'))['total'] or 0
+            in_escrow = escrow_tx.aggregate(total=Sum('agreed_price'))['total'] or 0
+            # Simple rating: average of ratings given by buyers on transactions with this seller
+            seller_rating = AgentRating.objects.filter(agent=request.user).aggregate(avg=models.Avg('rating'))['avg']
+            rating_display = f"{seller_rating:.1f} ★" if seller_rating else 'No ratings yet'
+            stats = [
+                {'label': 'Listed parcels', 'value': str(LandParcel.objects.filter(listed_by=request.user).count()), 'tone': 'success'},
+                {'label': 'Seller rating', 'value': rating_display, 'tone': 'accent'},
+                {'label': 'Payments received', 'value': f'KES {total_received:,.0f}', 'tone': 'success'},
+                {'label': 'In escrow', 'value': f'KES {in_escrow:,.0f}', 'tone': 'warning'},
+            ]
+        else:
+            stats = [
+                {'label': 'Verified parcels', 'value': str(len(recent_parcels)), 'tone': 'success'},
+                {'label': 'Recent transactions', 'value': str(len(recent_transactions)), 'tone': 'accent'},
+                {'label': 'Account type', 'value': getattr(request.user, 'buyer_account_type', None) or request.user.role, 'tone': 'warning'},
+                {'label': 'Status', 'value': 'Signed in', 'tone': 'default'},
+            ]
+
+        # Build role-specific actions
+        if request.user.role == 'Seller':
+            dashboard_actions = [
+                {'label': 'My parcels', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
+                {'label': 'Withdraw funds', 'href': reverse('frontend:seller_withdraw'), 'tone': 'default'},
+                {'label': 'Messages', 'href': reverse('frontend:messages'), 'tone': 'secondary'},
+            ]
+        else:
+            dashboard_actions = [
+                {'label': 'Browse parcels', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
+                {'label': 'Open transactions', 'href': reverse('frontend:transactions'), 'tone': 'secondary'},
+            ]
+
         return render_react_shell(
             request,
             'dashboard',
@@ -105,16 +146,8 @@ def home(request):
             'Unified workspace for parcels, contracts, and escrow activity.',
             parcels=recent_parcels,
             transactions=recent_transactions,
-            stats=[
-                {'label': 'Verified parcels', 'value': str(len(recent_parcels)), 'tone': 'success'},
-                {'label': 'Recent transactions', 'value': str(len(recent_transactions)), 'tone': 'accent'},
-                {'label': 'Account type', 'value': getattr(request.user, 'buyer_account_type', None) or request.user.role, 'tone': 'warning'},
-                {'label': 'Status', 'value': 'Signed in', 'tone': 'default'},
-            ],
-            actions=[
-                {'label': 'Browse parcels', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
-                {'label': 'Open transactions', 'href': reverse('frontend:transactions'), 'tone': 'secondary'},
-            ],
+            stats=stats,
+            actions=dashboard_actions,
         )
 
     context = {
@@ -199,6 +232,13 @@ def buyer_account_choice(request):
 
 def legal_requirements(request):
     """Public reference page for the land sale laws and compliance checklist."""
+    actions = []
+    if not request.user.is_authenticated or request.user.role != 'Seller':
+        actions = [
+            {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'outline'},
+            {'label': 'Buyer setup', 'href': reverse('frontend:buyer_account_choice'), 'tone': 'secondary'},
+        ]
+
     return render_react_shell(
         request,
         'legal',
@@ -206,9 +246,25 @@ def legal_requirements(request):
         'The statutory checklist that applies to a standard land purchase.',
         laws=[serialize_law(law) for law in LAND_TRANSACTION_LAWS],
         checklist=LAND_TRANSACTION_CHECKLIST,
+        actions=actions,
+    )
+
+@login_required
+def seller_legal_requirements(request):
+    """Reference page for sellers outlining their specific obligations."""
+    if request.user.role != 'Seller':
+        return redirect('frontend:home')
+        
+    from core.legal import SELLER_TRANSACTION_LAWS, SELLER_TRANSACTION_CHECKLIST
+    return render_react_shell(
+        request,
+        'legal',
+        'Seller legal obligations',
+        'Your responsibilities and legal requirements when selling land under Kenyan law.',
+        laws=[serialize_law(law) for law in SELLER_TRANSACTION_LAWS],
+        checklist=SELLER_TRANSACTION_CHECKLIST,
         actions=[
-            {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'outline'},
-            {'label': 'Buyer setup', 'href': reverse('frontend:buyer_account_choice'), 'tone': 'secondary'},
+            {'label': 'My Parcels', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
         ],
     )
 
@@ -283,44 +339,10 @@ def staff_login(request):
     # Consume the "just signed up" session flag set by agent_signup_complete
     signup_success = request.session.pop('agent_signup_success', False)
 
-    form = {
-        'action': reverse('frontend:staff_login'),
-        'method': 'post',
-        'enctype': 'application/x-www-form-urlencoded',
-        'submitLabel': 'Authenticate',
-        'intro': 'Restricted to authorised agents and administrators only.',
-        'fields': [
-            {
-                'name': 'email',
-                'label': 'Email address',
-                'type': 'email',
-                'value': '',
-                'placeholder': 'staff@digiland.co.ke',
-                'required': True,
-                'autoFocus': True,
-            },
-            {
-                'name': 'password',
-                'label': 'Password',
-                'type': 'password',
-                'value': '',
-                'placeholder': 'Enter your password',
-                'required': True,
-            },
-        ],
-        'hiddenFields': [],
-        'errors': [error] if error else [],
-    }
-
-    return render_react_shell(
-        request,
-        'staff-login',
-        'Staff Login - Digiland',
-        'Restricted to authorised agents and administrators only.',
-        form=form,
-        notice='Agent sign-up complete' if signup_success else None,
-        actions=[{'label': 'Public login', 'href': reverse('account_login'), 'tone': 'outline'}],
-    )
+    return render(request, 'frontend/staff_login.html', {
+        'error': error,
+        'signup_success': signup_success,
+    })
 
 def parcel_list(request):
     from django.db.models import Q
@@ -346,16 +368,32 @@ def parcel_list(request):
             transactions__status__in=active_tx_statuses
         ).order_by('-ardhisasa_last_synced')
         
+    actions = []
+    if request.user.is_authenticated:
+        if request.user.role == 'Seller':
+            actions = [
+                {'label': 'Legal checklist', 'href': reverse('frontend:seller_laws'), 'tone': 'outline'},
+            ]
+        elif request.user.role == 'Buyer':
+            actions = [
+                {'label': 'Legal checklist', 'href': reverse('frontend:escrow_acts'), 'tone': 'outline'},
+                {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'},
+            ]
+        # Admin and Agent see no actions
+    else:
+        # Unauthenticated users see general laws
+        actions = [
+            {'label': 'Legal checklist', 'href': reverse('frontend:escrow_acts'), 'tone': 'outline'},
+            {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'},
+        ]
+
     return render_react_shell(
         request,
         'parcel-list',
         'Marketplace',
         'Verified parcels available for purchase or management.',
         parcels=[serialize_parcel(parcel, request.user) for parcel in parcels],
-        actions=[
-            {'label': 'Legal checklist', 'href': reverse('frontend:escrow_acts'), 'tone': 'outline'},
-            {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'},
-        ],
+        actions=actions,
     )
 
 @login_required
@@ -667,6 +705,7 @@ def render_agent_dashboard(request, context):
         actions=[
             {'label': 'Task management', 'href': reverse('frontend:task_management'), 'tone': 'outline'},
             {'label': 'User approvals', 'href': reverse('frontend:agent_approvals'), 'tone': 'secondary'},
+            {'label': 'Withdraw earnings', 'href': reverse('frontend:agent_withdraw'), 'tone': 'primary'},
         ],
     )
 
@@ -760,9 +799,52 @@ def agent_verify_parcel(request, parcel_number):
         action = request.POST.get('verify_action') or request.POST.get('action')
         if action == 'verify':
             parcel.verification_status = 'Verified'
+            parcel.save()
+            return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
         elif action == 'reject':
-            parcel.verification_status = 'Fraudulent'
-        parcel.save()
+            from core.models import Message as PlatformMessage
+
+            seller = parcel.listed_by
+            parcel_label = parcel.parcel_number
+
+            # Send automated fraud notification to the seller
+            if seller:
+                fraud_message = (
+                    f"DIGILAND PLATFORM NOTICE — Parcel {parcel_label} Rejected\n\n"
+                    f"Dear {seller.email},\n\n"
+                    f"Your listing for parcel {parcel_label} has been flagged and rejected "
+                    f"by a verified Digiland agent after review.\n\n"
+                    f"Reason: The parcel failed verification checks and has been classified "
+                    f"as potentially fraudulent under the Land Registration Act (Cap. 300) "
+                    f"and the platform's anti-fraud policy.\n\n"
+                    f"Action taken: The listing has been permanently removed from the platform.\n\n"
+                    f"If you believe this is an error, please contact Digiland support "
+                    f"with your original title documents for re-evaluation.\n\n"
+                    f"— Digiland Escrow Platform"
+                )
+                PlatformMessage.objects.create(
+                    sender=request.user,
+                    receiver=seller,
+                    content=fraud_message,
+                )
+
+            # Audit log
+            AuditLog.objects.create(
+                user=request.user,
+                action=f"Parcel {parcel_label} flagged as fraudulent and deleted",
+                metadata={
+                    'parcel_number': parcel_label,
+                    'seller_email': seller.email if seller else 'unknown',
+                    'agent_email': request.user.email,
+                }
+            )
+
+            # Delete the fraudulent parcel
+            parcel.delete()
+
+            from django.contrib import messages as django_messages
+            django_messages.success(request, f'Parcel {parcel_label} has been removed and the seller has been notified.')
+            return redirect('frontend:parcel_list')
     return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
 
 @login_required
@@ -1017,11 +1099,107 @@ def unassign_task(request, parcel_number):
 @login_required
 @user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
 def agent_finalize_transaction(request, transaction_id):
+    """Release payment from escrow. Agents can only release after deadline; Admin can override."""
+    from django.contrib import messages as django_messages
+    from django.utils import timezone
+
     transaction = get_object_or_404(Transaction, id=transaction_id)
-    if request.method == 'POST' and transaction.contract_agreed:
-        transaction.status = 'Completed'
-        transaction.save()
-    return redirect('frontend:agent_dashboard')
+
+    if request.user.role not in ['Admin', 'Agent']:
+        return redirect('frontend:home')
+
+    if request.method != 'POST':
+        return redirect('frontend:escrow_release')
+
+    if not transaction.contract_agreed:
+        django_messages.error(request, 'Contract has not been signed by both parties yet.')
+        return redirect('frontend:escrow_release')
+
+    # Only Admin can override the deadline check
+    if request.user.role == 'Agent':
+        if transaction.buyer_validation_deadline and transaction.buyer_validation_deadline > timezone.now():
+            django_messages.error(request, f'Cannot release yet. The escrow verification period ends on {transaction.buyer_validation_deadline.strftime("%b %d, %Y %H:%M")}.')
+            return redirect('frontend:escrow_release')
+
+    transaction.status = 'Completed'
+    transaction.save()
+
+    AuditLog.objects.create(
+        user=request.user,
+        action=f"Escrow released for transaction {transaction.id}",
+        metadata={
+            'transaction_id': str(transaction.id),
+            'released_by': request.user.email,
+            'role': request.user.role,
+            'parcel': transaction.land_parcel.parcel_number,
+            'amount': float(transaction.agreed_price),
+        }
+    )
+
+    django_messages.success(request, f'Payment of KES {transaction.agreed_price:,.0f} for parcel {transaction.land_parcel.parcel_number} has been released from escrow.')
+    return redirect('frontend:escrow_release')
+
+
+@login_required
+@user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
+def escrow_release(request):
+    """Dedicated page for agents/admins to manage escrow releases."""
+    from django.utils import timezone
+
+    # Transactions eligible for release: Deposit_Paid, Under_Verification, Verification_Hiatus
+    # where contract is signed
+    eligible_statuses = ['Deposit_Paid', 'Under_Verification', 'Verification_Hiatus']
+    if request.user.role == 'Agent':
+        # Agents only see transactions on parcels they are assigned to
+        eligible_tx = Transaction.objects.filter(
+            land_parcel__assigned_agent=request.user,
+            status__in=eligible_statuses,
+        ).select_related('buyer', 'seller', 'land_parcel').order_by('-created_at')
+    else:
+        # Admin sees all
+        eligible_tx = Transaction.objects.filter(
+            status__in=eligible_statuses,
+        ).select_related('buyer', 'seller', 'land_parcel').order_by('-created_at')
+
+    now = timezone.now()
+    is_admin = request.user.role == 'Admin'
+
+    transactions_data = []
+    for tx in eligible_tx:
+        deadline_passed = tx.buyer_validation_deadline and tx.buyer_validation_deadline < now
+        can_release = is_admin or (tx.contract_agreed and deadline_passed)
+        days_remaining = tx.days_remaining_for_verification
+
+        transactions_data.append({
+            'id': str(tx.id),
+            'parcel_number': tx.land_parcel.parcel_number,
+            'buyer_email': tx.buyer.email,
+            'seller_email': tx.seller.email,
+            'amount': str(tx.agreed_price),
+            'status': tx.get_status_display() if hasattr(tx, 'get_status_display') else tx.status,
+            'contract_signed': tx.contract_agreed,
+            'buyer_signature': bool(tx.buyer_signature),
+            'seller_signature': bool(tx.seller_signature),
+            'deadline': tx.buyer_validation_deadline.strftime('%b %d, %Y %H:%M') if tx.buyer_validation_deadline else 'Not set',
+            'deadline_passed': deadline_passed,
+            'days_remaining': days_remaining,
+            'can_release': can_release,
+            'release_url': reverse('frontend:agent_finalize_transaction', args=[tx.id]),
+            'created_at': tx.created_at.strftime('%b %d, %Y'),
+        })
+
+    return render_react_shell(
+        request,
+        'escrow-release',
+        'Escrow Release',
+        'Review and release payments from escrow once the verification period has elapsed.',
+        escrow_transactions=transactions_data,
+        is_admin=is_admin,
+        actions=[
+            {'label': 'Command Centre', 'href': reverse('frontend:agent_dashboard'), 'tone': 'outline'},
+            {'label': 'Tasks', 'href': reverse('frontend:task_management'), 'tone': 'secondary'},
+        ],
+    )
 
 @login_required
 @user_passes_test(is_seller_or_agent, login_url='/parcels/', redirect_field_name=None)
@@ -1098,20 +1276,63 @@ def upload_parcel_document(request, parcel_number):
     )
 
 @login_required
+def moderate_document(request, parcel_number, document_id):
+    if request.method != 'POST':
+        return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+    
+    if request.user.role not in ['Admin', 'Agent']:
+        return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+        
+    doc = get_object_or_404(Document, id=document_id, land_parcel__parcel_number=parcel_number)
+    action = request.POST.get('moderation_action')
+    
+    if action == 'approve':
+        doc.verification_status = 'Match'
+    elif action == 'reject':
+        doc.verification_status = 'Mismatch'
+        
+    doc.save()
+    return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+
+@login_required
+def delete_document(request, parcel_number, document_id):
+    if request.method != 'POST':
+        return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+        
+    parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
+    
+    if request.user != parcel.listed_by and request.user.role != 'Admin':
+        return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+        
+    doc = get_object_or_404(Document, id=document_id, land_parcel=parcel)
+    doc.delete()
+    
+    # Check compliance to re-evaluate status
+    has_title = parcel.documents.filter(document_type='Title_Deed').exists()
+    has_id = parcel.documents.filter(document_type='ID_Card').exists()
+    has_photo = parcel.documents.filter(document_type='Passport_Photo').exists()
+    has_spouse_consent = parcel.documents.filter(document_type='Spousal_Consent').exists()
+    
+    if parcel.verification_status != 'Awaiting_Documents' and not (has_title and has_id and has_photo and has_spouse_consent and parcel.image):
+        parcel.verification_status = 'Awaiting_Documents'
+        parcel.save()
+        
+    return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+
+@login_required
 def parcel_edit(request, parcel_number):
     parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
     
     if request.user != parcel.listed_by and request.user.role != 'Admin':
         return redirect('frontend:parcel_detail', parcel_number=parcel_number)
         
-    if parcel.verification_status not in ['Awaiting_Documents', 'Pending', 'Disputed'] and request.user.role != 'Admin':
-        # Can only edit if still pending or disputed or awaiting docs - Admins override this lock.
-        return redirect('frontend:parcel_detail', parcel_number=parcel_number)
-        
     if request.method == 'POST':
         form = LandParcelUploadForm(request.POST, request.FILES, instance=parcel)
         if form.is_valid():
             form.save()
+            if parcel.verification_status != 'Pending':
+                parcel.verification_status = 'Pending'
+                parcel.save()
             return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
     else:
         form = LandParcelUploadForm(instance=parcel)
@@ -1120,24 +1341,29 @@ def parcel_edit(request, parcel_number):
         request,
         'form',
         f'Edit parcel - {parcel.parcel_number}',
-        'Update parcel details before verification is finalised.',
+        'Update parcel details.',
         form=serialize_form(
             form,
             action=reverse('frontend:parcel_edit', args=[parcel.parcel_number]),
             submit_label='Save changes',
             cancel_label='Cancel',
             cancel_href=reverse('frontend:parcel_detail', args=[parcel.parcel_number]),
-            intro='Parcel records can be edited while they are awaiting documents, pending, or disputed.',
+            intro='Editing parcel details will reset the verification status to Pending.',
         ),
     )
 
 @login_required
 def parcel_delete(request, parcel_number):
-    # Strict Privilege Fencing: Only Admins can permanently delete a parcel
-    if request.user.role != 'Admin':
+    parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
+    
+    # Seller or Admin can delete, but only if there are no active transactions
+    if request.user != parcel.listed_by and request.user.role != 'Admin':
         return redirect('frontend:parcel_detail', parcel_number=parcel_number)
         
-    parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
+    if parcel.transactions.exclude(status__in=['Refunded', 'Reversed', 'Disputed']).exists():
+        # Cannot delete parcel involved in active transactions
+        return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+        
     if request.method == 'POST':
         parcel.delete()
         return redirect('frontend:parcel_list')
@@ -1274,9 +1500,18 @@ def parcel_detail(request, parcel_number):
             'confidence_low': str(ai_price.get('confidence_low', '')),
             'confidence_high': str(ai_price.get('confidence_high', '')),
         },
-        'documents': [serialize_document(doc) for doc in parcel.documents.all()],
-        'can_edit': bool(request.user.is_authenticated and (request.user.role == 'Admin' or request.user == parcel.listed_by)),
-        'can_upload_document': bool(request.user.is_authenticated and (request.user.role == 'Admin' or request.user == parcel.listed_by)),
+        'documents': [
+            {
+                **serialize_document(doc),
+                'moderate_url': reverse('frontend:moderate_document', args=[parcel.parcel_number, doc.id]) if request.user.is_authenticated and request.user.role in ['Admin', 'Agent'] else None,
+                'delete_url': reverse('frontend:delete_document', args=[parcel.parcel_number, doc.id]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) else None,
+            }
+            for doc in parcel.documents.all()
+        ],
+        'can_edit': bool(request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id)),
+        'edit_url': reverse('frontend:parcel_edit', args=[parcel.parcel_number]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) else None,
+        'delete_url': reverse('frontend:parcel_delete', args=[parcel.parcel_number]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) else None,
+        'can_upload_document': bool(request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id)),
         'can_initiate_escrow': bool(request.user.is_authenticated and request.user.role in ['Buyer', 'Admin'] and parcel.verification_status == 'Verified'),
         'can_use_joint_purchase': can_use_joint_purchase,
         'assigned_agent_email': parcel.assigned_agent.email if parcel.assigned_agent else None,
@@ -1286,9 +1521,9 @@ def parcel_detail(request, parcel_number):
             {'value': 'joint', 'label': 'Joint group purchase', 'selected': False},
         ],
         'initiate_escrow_url': reverse('frontend:initiate_escrow', args=[parcel.parcel_number]),
-        'upload_document_url': reverse('frontend:upload_document', args=[parcel.parcel_number]) if request.user.is_authenticated else None,
-        'edit_url': reverse('frontend:parcel_edit', args=[parcel.parcel_number]) if request.user.is_authenticated else None,
-        'delete_url': reverse('frontend:parcel_delete', args=[parcel.parcel_number]) if request.user.is_authenticated and request.user.role == 'Admin' else None,
+        'upload_document_url': reverse('frontend:upload_document', args=[parcel.parcel_number]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) else None,
+        'edit_url': reverse('frontend:parcel_edit', args=[parcel.parcel_number]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) else None,
+        'delete_url': reverse('frontend:parcel_delete', args=[parcel.parcel_number]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) else None,
         'toggle_favorite_url': reverse('frontend:toggle_favorite', args=[parcel.parcel_number]) if request.user.is_authenticated else None,
         'agent_verify_url': reverse('frontend:agent_verify_parcel', args=[parcel.parcel_number]) if request.user.is_authenticated and request.user.role in ['Admin', 'Agent'] else None,
     }
@@ -1319,7 +1554,7 @@ def user_transactions(request):
         transactions=[serialize_transaction(tx, request.user) for tx in transactions],
         actions=[
             {'label': 'Browse parcels', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
-            {'label': 'Legal checklist', 'href': reverse('frontend:escrow_acts'), 'tone': 'secondary'},
+            {'label': 'Legal checklist', 'href': reverse('frontend:seller_laws') if request.user.role == 'Seller' else reverse('frontend:escrow_acts'), 'tone': 'secondary'},
         ],
     )
 
@@ -1403,6 +1638,62 @@ def messages_list(request):
         },
     )
 
+
+@login_required
+def message_thread_detail(request, partner_id):
+    from django.db.models import Q
+    from django.shortcuts import get_object_or_404
+    from django.middleware.csrf import get_token
+    from core.models import User as CoreUser
+
+    user = request.user
+    partner = get_object_or_404(CoreUser, id=partner_id)
+
+    # Fetch messages
+    messages = Message.objects.filter(
+        Q(sender=user, receiver=partner) | Q(sender=partner, receiver=user)
+    ).order_by('-timestamp')
+
+    # Mark as read
+    Message.objects.filter(sender=partner, receiver=user, is_read=False).update(is_read=True)
+
+    thread_data = serialize_message_thread(partner, messages, user) if messages else {
+        'partner': serialize_user(partner),
+        'latest_timestamp': '',
+        'count': 0,
+        'url': reverse('frontend:message_thread_detail', args=[partner.id]),
+        'messages': []
+    }
+
+    return render_react_shell(
+        request,
+        'message-thread',
+        f'Conversation with {partner.email}',
+        'Secure messaging thread.',
+        message_thread={
+            'thread': thread_data,
+            'compose_action': reverse('frontend:send_message'),
+            'clear_action': reverse('frontend:clear_message_thread', args=[partner.id]) if user.role == 'Admin' else None,
+            'csrf_token': get_token(request),
+        }
+    )
+
+@login_required
+def clear_message_thread(request, partner_id):
+    from django.db.models import Q
+    from django.contrib import messages as django_messages
+
+    if request.user.role != 'Admin':
+        return redirect('frontend:messages')
+        
+    if request.method == 'POST':
+        Message.objects.filter(
+            Q(sender=request.user, receiver_id=partner_id) | 
+            Q(sender_id=partner_id, receiver=request.user)
+        ).delete()
+        django_messages.success(request, "Thread successfully cleared.")
+        
+    return redirect('frontend:messages')
 
 @login_required
 def send_message(request):
@@ -1580,15 +1871,21 @@ def sign_contract(request, transaction_id):
     # Admin users see no legal restrictions (override/failover mode)
     # Regular users see legal requirements for their reference
     if request.user.role == 'Admin':
-        contract_laws = []
+        contract_documents = []
     elif transaction.is_joint_purchase:
-        contract_laws = JOINT_LAND_TRANSACTION_LAWS
+        contract_documents = JOINT_KENYAN_LAND_DOCUMENTS
     else:
-        contract_laws = LAND_TRANSACTION_LAWS
+        contract_documents = KENYAN_LAND_DOCUMENTS
 
     # Fetch admin-editable platform terms for the contract page
     from core.models import PlatformLegalDocument
     platform_terms_doc = PlatformLegalDocument.objects.filter(title='Joint Purchase Laws').first() if transaction.is_joint_purchase else None
+
+    # Generate encrypted token for full-page signing URL
+    from django.core.signing import Signer
+    signer = Signer()
+    signing_token = signer.sign(str(transaction.id))
+    fullpage_url = reverse('frontend:contract_sign_fullpage', args=[signing_token])
 
     return render_react_shell(
         request,
@@ -1598,7 +1895,7 @@ def sign_contract(request, transaction_id):
         contract=serialize_contract(
             transaction,
             request.user,
-            laws=contract_laws,
+            documents=contract_documents,
             joint_breakdown=joint_breakdown,
             sign_url=reverse('frontend:sign_contract', args=[transaction.id]),
             payment_url=reverse('frontend:payment_checkout', args=[transaction.id]),
@@ -1607,6 +1904,7 @@ def sign_contract(request, transaction_id):
         ),
         document_content=platform_terms_doc.content if platform_terms_doc else None,
         require_signature=True,
+        fullpage_sign_url=fullpage_url,
     )
 
 @login_required
@@ -2457,7 +2755,7 @@ def toggle_favorite(request, parcel_number):
 @login_required
 def admin_finance(request):
     """Admin-only expenditure and tax dashboard."""
-    if request.user.role not in ('Admin', 'Agent'):
+    if request.user.role != 'Admin':
         return redirect('frontend:home')
 
     from django.db.models import Sum, Count, Q
@@ -2526,4 +2824,326 @@ def admin_finance(request):
         'Platform expenditure, revenue, and tax obligations overview.',
         finance_dashboard=finance_dashboard,
         csrf_token=get_token(request),
+        finance_pin_verified=bool(request.session.get('finance_pin_verified')),
+        finance_verify_url=reverse('frontend:admin_finance_verify'),
+        admin_withdraw_url=reverse('frontend:admin_withdraw'),
     )
+
+
+@login_required
+def agent_withdraw(request):
+    """Agent withdrawal page: shows available commission balance and triggers M-Pesa B2C payout."""
+    if request.user.role != 'Agent':
+        return redirect('frontend:home')
+
+    from django.db.models import Sum
+    from django.contrib import messages
+    from decimal import Decimal
+
+    # Agent gets 1% of the agreed price of completed transactions they verified
+    completed_tx = Transaction.objects.filter(
+        land_parcel__assigned_agent=request.user, 
+        status='Completed'
+    )
+    total_volume = completed_tx.aggregate(total=Sum('agreed_price'))['total'] or Decimal('0')
+    withdrawable_amount = total_volume * Decimal('0.01')
+
+    if request.method == 'POST':
+        amount_str = request.POST.get('amount', '0')
+        phone = request.POST.get('phone_number', '').strip()
+        
+        try:
+            amount = Decimal(amount_str)
+            if amount <= 0:
+                messages.error(request, 'Please enter a valid amount.')
+            elif amount > withdrawable_amount:
+                messages.error(request, 'Insufficient balance.')
+            elif not phone:
+                messages.error(request, 'Please enter a valid M-Pesa phone number.')
+            else:
+                # Simulate M-Pesa B2C payout
+                import uuid
+                ref_number = str(uuid.uuid4())[:8].upper()
+                
+                AuditLog.objects.create(
+                    user=request.user,
+                    action=f"Agent commission withdrawal: KES {amount}",
+                    metadata={
+                        'amount': float(amount),
+                        'phone': phone,
+                        'reference': ref_number,
+                        'balance_before': float(withdrawable_amount)
+                    }
+                )
+                messages.success(request, f'Withdrawal of KES {amount:,.2f} initiated successfully. Ref: {ref_number}')
+                return redirect('frontend:home')
+        except Exception:
+            messages.error(request, 'Invalid withdrawal request.')
+
+    return render_react_shell(
+        request,
+        'agent-withdraw',
+        'Withdraw Earnings',
+        'Transfer your earned commissions directly to M-Pesa.',
+        withdraw_data={
+            'available_balance': float(withdrawable_amount),
+            'completed_transactions_count': completed_tx.count(),
+            'commission_rate': '1%',
+            'phone_number': request.user.phone_number,
+        },
+        actions=[{'label': 'Back to Dashboard', 'href': reverse('frontend:home'), 'tone': 'outline'}]
+    )
+
+
+@login_required
+def seller_withdraw(request):
+    """Seller withdrawal page: shows available balance and triggers M-Pesa B2C payout."""
+    if request.user.role != 'Seller':
+        return redirect('frontend:home')
+
+    from django.db.models import Sum
+    from django.contrib import messages
+
+    completed_tx = Transaction.objects.filter(seller=request.user, status='Completed')
+    escrow_tx = Transaction.objects.filter(seller=request.user, status__in=['Deposit_Paid', 'Under_Verification', 'Verification_Hiatus'])
+    total_received = completed_tx.aggregate(total=Sum('agreed_price'))['total'] or 0
+    in_escrow = escrow_tx.aggregate(total=Sum('agreed_price'))['total'] or 0
+
+    # Available balance = completed payments (simplified; in production, track actual payouts)
+    available_balance = total_received
+
+    if request.method == 'POST':
+        withdraw_amount = request.POST.get('withdraw_amount', '0')
+        phone = request.POST.get('phone_number', request.user.phone_number)
+        try:
+            withdraw_amount = float(withdraw_amount)
+        except (ValueError, TypeError):
+            withdraw_amount = 0
+
+        if withdraw_amount <= 0 or withdraw_amount > float(available_balance):
+            messages.error(request, 'Invalid withdrawal amount. Please enter an amount within your available balance.')
+            return redirect('frontend:seller_withdraw')
+
+        # Simulate M-Pesa B2C payout
+        import uuid as _uuid
+        payout_ref = f"WD-{_uuid.uuid4().hex[:10].upper()}"
+        messages.success(request, f'Withdrawal of KES {withdraw_amount:,.0f} to {phone} initiated. Reference: {payout_ref}. You will receive the M-Pesa payment shortly.')
+
+        # Log the withdrawal
+        AuditLog.objects.create(
+            user=request.user,
+            action=f"Seller withdrawal: KES {withdraw_amount:,.0f} to {phone}",
+            metadata={
+                'reference': payout_ref,
+                'amount': withdraw_amount,
+                'phone': phone,
+            }
+        )
+        return redirect('frontend:seller_withdraw')
+
+    return render_react_shell(
+        request,
+        'seller-withdraw',
+        'Withdraw funds',
+        'Transfer your available balance directly to M-Pesa.',
+        withdraw_data={
+            'available_balance': str(available_balance),
+            'in_escrow': str(in_escrow),
+            'total_received': str(total_received),
+            'phone_number': request.user.phone_number or '',
+            'action_url': reverse('frontend:seller_withdraw'),
+        },
+        actions=[
+            {'label': 'Dashboard', 'href': reverse('frontend:home'), 'tone': 'outline'},
+            {'label': 'Transactions', 'href': reverse('frontend:transactions'), 'tone': 'secondary'},
+        ],
+    )
+
+
+@login_required
+def contract_sign_fullpage(request, token):
+    """Full-page contract signing experience accessible via encrypted token URL.
+
+    The token is a Django signing token that encodes the transaction ID.
+    This view renders outside the dashboard shell for a clean, professional
+    document-signing experience.
+    """
+    from django.core.signing import Signer, BadSignature
+    from core.legal import KENYAN_LAND_DOCUMENTS, JOINT_KENYAN_LAND_DOCUMENTS
+    from django.middleware.csrf import get_token
+
+    signer = Signer()
+    try:
+        transaction_id = signer.unsign(token)
+    except BadSignature:
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden('Invalid or expired contract signing link.')
+
+    transaction = get_object_or_404(
+        Transaction.objects.select_related('buyer', 'seller', 'land_parcel', 'joint_group').prefetch_related('joint_group__members'),
+        id=transaction_id,
+    )
+
+    # Security: Only involved parties or Admin
+    if request.user not in [transaction.buyer, transaction.seller] and request.user.role != 'Admin':
+        return redirect('frontend:transactions')
+
+    # Handle POST (signature submission) — redirect back to dashboard contract page for processing
+    if request.method == 'POST':
+        # Forward the POST to the standard sign_contract view
+        return sign_contract(request, transaction.id)
+
+    # Determine documents
+    if request.user.role == 'Admin':
+        contract_documents = []
+    elif transaction.is_joint_purchase:
+        contract_documents = JOINT_KENYAN_LAND_DOCUMENTS
+    else:
+        contract_documents = KENYAN_LAND_DOCUMENTS
+
+    joint_breakdown = []
+    if transaction.is_joint_purchase and transaction.joint_group:
+        from decimal import Decimal, ROUND_HALF_UP
+        total = transaction.agreed_price
+        for m in transaction.joint_group.members.all():
+            amt = (total * (m.share_percentage / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            joint_breakdown.append({'member': m, 'amount': amt})
+
+    contract_data = serialize_contract(
+        transaction,
+        request.user,
+        documents=contract_documents,
+        joint_breakdown=joint_breakdown,
+        sign_url=reverse('frontend:contract_sign_fullpage', args=[token]),
+        payment_url=reverse('frontend:payment_checkout', args=[transaction.id]),
+        transactions_url=reverse('frontend:transactions'),
+        csrf_token=get_token(request),
+    )
+
+    return render_react_shell(
+        request,
+        'contract-fullpage',
+        'Kenyan Land Transfer Agreement',
+        f'Property: {transaction.land_parcel.parcel_number}',
+        contract=contract_data,
+        require_signature=True,
+        fullpage_mode=True,
+        back_url=reverse('frontend:sign_contract', args=[transaction.id]),
+    )
+
+
+@login_required
+def admin_finance_verify(request):
+    """Verify the admin finance PIN before granting access to the finance dashboard."""
+    from django.http import JsonResponse
+    from django.conf import settings as django_settings
+
+    if request.user.role != 'Admin':
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'}, status=405)
+
+    pin = request.POST.get('finance_pin', '').strip()
+    expected_pin = getattr(django_settings, 'ADMIN_FINANCE_PIN', 'admin2026')
+
+    if pin == expected_pin:
+        request.session['finance_pin_verified'] = True
+        return JsonResponse({'status': 'success', 'message': 'Access granted.'})
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Incorrect PIN. Access denied.'}, status=403)
+
+
+@login_required
+def admin_withdraw(request):
+    """Admin withdrawal: transfer platform commission to M-Pesa or KCB bank account."""
+    if request.user.role != 'Admin':
+        return redirect('frontend:home')
+
+    from django.db.models import Sum
+    from django.contrib import messages
+    from decimal import Decimal
+
+    completed_tx = Transaction.objects.filter(status='Completed')
+    total_volume = completed_tx.aggregate(total=Sum('agreed_price'))['total'] or Decimal('0')
+    platform_commission = total_volume * Decimal('0.04')
+
+    # Track past admin withdrawals
+    past_withdrawals = AuditLog.objects.filter(
+        user=request.user,
+        action__startswith='Admin platform withdrawal'
+    )
+    total_withdrawn = Decimal('0')
+    for log in past_withdrawals:
+        meta = log.metadata or {}
+        total_withdrawn += Decimal(str(meta.get('amount', 0)))
+
+    available_balance = platform_commission - total_withdrawn
+
+    if request.method == 'POST':
+        amount_str = request.POST.get('amount', '0')
+        phone = request.POST.get('phone_number', '').strip()
+        withdrawal_method = request.POST.get('withdrawal_method', 'm_pesa')
+        bank_account = request.POST.get('bank_account', '').strip()
+
+        try:
+            amount = Decimal(amount_str)
+            if amount <= 0:
+                messages.error(request, 'Please enter a valid amount.')
+            elif amount > available_balance:
+                messages.error(request, 'Insufficient platform balance.')
+            else:
+                import uuid
+                ref_number = f"ADM-{uuid.uuid4().hex[:10].upper()}"
+
+                if withdrawal_method == 'kcb_bank':
+                    from core.services.kcb import initiate_b2c_payout
+                    result = initiate_b2c_payout(
+                        destination_account=bank_account,
+                        amount=float(amount),
+                        reference=ref_number,
+                        beneficiary_name='Digiland Admin',
+                        narration=f'Admin withdrawal {ref_number}',
+                    )
+                    if result.get('status') == 'success':
+                        messages.success(request, f'KCB transfer of KES {amount:,.2f} initiated. Ref: {ref_number}')
+                    else:
+                        messages.error(request, f'KCB transfer failed: {result.get("message", "Unknown error")}')
+                        return redirect('frontend:admin_withdraw')
+                else:
+                    # Simulate M-Pesa B2C
+                    messages.success(request, f'M-Pesa withdrawal of KES {amount:,.2f} to {phone} initiated. Ref: {ref_number}')
+
+                AuditLog.objects.create(
+                    user=request.user,
+                    action=f"Admin platform withdrawal: KES {amount:,.2f}",
+                    metadata={
+                        'amount': float(amount),
+                        'method': withdrawal_method,
+                        'phone': phone,
+                        'bank_account': bank_account,
+                        'reference': ref_number,
+                        'balance_before': float(available_balance),
+                    }
+                )
+                return redirect('frontend:admin_finance')
+        except Exception:
+            messages.error(request, 'Invalid withdrawal request.')
+
+    return render_react_shell(
+        request,
+        'admin-withdraw',
+        'Platform Withdrawal',
+        'Transfer platform commission earnings to M-Pesa or bank account.',
+        withdraw_data={
+            'available_balance': float(available_balance),
+            'total_commission': float(platform_commission),
+            'total_withdrawn': float(total_withdrawn),
+            'phone_number': request.user.phone_number or '',
+            'action_url': reverse('frontend:admin_withdraw'),
+        },
+        actions=[
+            {'label': 'Back to Finance', 'href': reverse('frontend:admin_finance'), 'tone': 'outline'},
+        ],
+    )
+

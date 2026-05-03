@@ -14,6 +14,7 @@ export function SignaturePad({ label, onChange, placeholder, className }: Signat
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef(false);
   const hasInk = useRef(false);
+  const [isLocked, setIsLocked] = React.useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -73,10 +74,11 @@ export function SignaturePad({ label, onChange, placeholder, className }: Signat
 
   const stopDrawing = () => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !drawing.current) return;
     drawing.current = false;
     if (hasInk.current) {
       onChange(canvas.toDataURL('image/png'));
+      setIsLocked(true);
     }
   };
 
@@ -87,6 +89,7 @@ export function SignaturePad({ label, onChange, placeholder, className }: Signat
     const rect = canvas.getBoundingClientRect();
     ctx.clearRect(0, 0, rect.width, rect.height);
     hasInk.current = false;
+    setIsLocked(false);
     onChange('');
   };
 
@@ -98,19 +101,28 @@ export function SignaturePad({ label, onChange, placeholder, className }: Signat
           {placeholder ? <div className="text-xs text-muted-foreground">{placeholder}</div> : null}
         </div>
         <Button type="button" variant="outline" size="sm" onClick={clear}>
-          <Eraser className="h-4 w-4" />
-          Clear
+          <Eraser className="h-4 w-4 mr-1.5" />
+          {isLocked ? 'Change signature' : 'Clear'}
         </Button>
       </div>
-      <canvas
-        ref={canvasRef}
-        className="h-44 w-full rounded-3xl border border-border bg-white shadow-sm"
-        onPointerDown={startDrawing}
-        onPointerMove={draw}
-        onPointerUp={stopDrawing}
-        onPointerLeave={stopDrawing}
-        style={{ touchAction: 'none' }}
-      />
+      <div className={`relative overflow-hidden rounded-3xl border ${isLocked ? 'border-emerald-200 bg-emerald-50/60 opacity-90' : 'border-border bg-white shadow-sm'}`}>
+        <canvas
+          ref={canvasRef}
+          className={`h-44 w-full ${isLocked ? 'pointer-events-none' : 'cursor-crosshair'}`}
+          onPointerDown={isLocked ? undefined : startDrawing}
+          onPointerMove={isLocked ? undefined : draw}
+          onPointerUp={isLocked ? undefined : stopDrawing}
+          onPointerLeave={isLocked ? undefined : stopDrawing}
+          style={{ touchAction: 'none' }}
+        />
+        {isLocked && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/20">
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase tracking-widest text-emerald-800 shadow-sm backdrop-blur-md">
+              Signature Captured
+            </span>
+          </div>
+        )}
+      </div>
       <div className="mt-2 text-xs text-muted-foreground">Draw your signature inside the box above.</div>
     </div>
   );

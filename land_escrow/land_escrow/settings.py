@@ -211,6 +211,17 @@ DARAJA_INITIATOR_NAME = config('DARAJA_INITIATOR_NAME', default='')
 DARAJA_INITIATOR_PASSWORD = config('DARAJA_INITIATOR_PASSWORD', default='')
 DARAJA_ENVIRONMENT = config('DARAJA_ENVIRONMENT', default='sandbox')
 
+# KCB Bank API Configuration
+KCB_API_BASE_URL = config('KCB_API_BASE_URL', default='https://uat.bfrg.co.ke:8443/api')
+KCB_CLIENT_ID = config('KCB_CLIENT_ID', default='')
+KCB_CLIENT_SECRET = config('KCB_CLIENT_SECRET', default='')
+KCB_COMPANY_CODE = config('KCB_COMPANY_CODE', default='')
+KCB_PLATFORM_ACCOUNT = config('KCB_PLATFORM_ACCOUNT', default='DIGILAND-ESCROW-001')
+KCB_SANDBOX = config('KCB_SANDBOX', default=True, cast=bool)
+
+# Admin Finance Dashboard PIN (password gate for sensitive financial data)
+ADMIN_FINANCE_PIN = config('ADMIN_FINANCE_PIN', default='admin2026')
+
 # API Configuration
 API_TIMEOUT_SECONDS = config('API_TIMEOUT_SECONDS', default=30, cast=int)
 API_RETRY_ATTEMPTS = config('API_RETRY_ATTEMPTS', default=3, cast=int)
