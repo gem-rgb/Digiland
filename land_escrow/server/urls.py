@@ -2,7 +2,7 @@ from django.urls import path
 from django.views.generic import TemplateView
 from . import views
 
-app_name = 'frontend'
+app_name = 'server'
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -32,12 +32,12 @@ urlpatterns = [
     path('agent/transaction/<uuid:transaction_id>/finalize/', views.agent_finalize_transaction, name='agent_finalize_transaction'),
     path('agent/escrow-release/', views.escrow_release, name='escrow_release'),
     path('parcels/upload/', views.parcel_upload, name='parcel_upload'),
-    path('parcels/<path:parcel_number>/edit/', views.parcel_edit, name='parcel_edit'),
-    path('parcels/<path:parcel_number>/delete/', views.parcel_delete, name='parcel_delete'),
-    path('parcels/<path:parcel_number>/initiate-escrow/', views.initiate_escrow, name='initiate_escrow'),
-    path('parcels/<path:parcel_number>/upload-document/', views.upload_parcel_document, name='upload_document'),
     path('parcels/<path:parcel_number>/documents/<uuid:document_id>/moderate/', views.moderate_document, name='moderate_document'),
     path('parcels/<path:parcel_number>/documents/<uuid:document_id>/delete/', views.delete_document, name='delete_document'),
+    path('parcels/<path:parcel_number>/upload-document/', views.upload_parcel_document, name='upload_document'),
+    path('parcels/<path:parcel_number>/initiate-escrow/', views.initiate_escrow, name='initiate_escrow'),
+    path('parcels/<path:parcel_number>/edit/', views.parcel_edit, name='parcel_edit'),
+    path('parcels/<path:parcel_number>/delete/', views.parcel_delete, name='parcel_delete'),
     path('parcels/<path:parcel_number>/', views.parcel_detail, name='parcel_detail'),
     path('buyer/account-choice/', views.buyer_account_choice, name='buyer_account_choice'),
     path('transactions/', views.user_transactions, name='transactions'),
@@ -55,6 +55,7 @@ urlpatterns = [
     path('joint/', views.joint_groups, name='joint_groups'),
     path('joint/laws/', views.joint_legal_requirements, name='joint_laws'),
     path('seller/withdraw/', views.seller_withdraw, name='seller_withdraw'),
+    path('seller/promotions/', views.seller_promotions, name='seller_promotions'),
     path('agent/withdraw/', views.agent_withdraw, name='agent_withdraw'),
     path('joint/create/', views.create_joint_group, name='create_joint_group'),
     path('joint/<uuid:group_id>/', views.joint_group_detail, name='joint_group_detail'),
@@ -76,6 +77,7 @@ urlpatterns = [
     path('dashboard/finance/', views.admin_finance, name='admin_finance'),
     path('dashboard/finance/verify/', views.admin_finance_verify, name='admin_finance_verify'),
     path('dashboard/admin/withdraw/', views.admin_withdraw, name='admin_withdraw'),
+    path('api/popup-ads/event/', views.popup_ad_event_api, name='popup_ad_event_api'),
     path('messages/thread/<uuid:partner_id>/', views.message_thread_detail, name='message_thread_detail'),
     path('messages/thread/<uuid:partner_id>/clear/', views.clear_message_thread, name='clear_message_thread'),
 ]

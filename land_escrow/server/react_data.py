@@ -33,6 +33,7 @@ def build_nav(user, active=None):
         return [
             {'label': 'Dashboard', 'href': reverse('frontend:home'), 'icon': 'dashboard', 'active': active == 'dashboard'},
             {'label': 'My Parcels', 'href': reverse('frontend:parcel_list'), 'icon': 'parcels', 'active': active == 'parcel-list'},
+            {'label': 'Promotions & Ads', 'href': reverse('frontend:seller_promotions'), 'icon': 'security', 'active': active == 'seller-promotions'},
             {'label': 'Transactions', 'href': reverse('frontend:transactions'), 'icon': 'transactions', 'active': active == 'transactions'},
             {'label': 'Messages', 'href': reverse('frontend:messages'), 'icon': 'documents', 'active': active == 'messages'},
             {'label': 'Legal', 'href': reverse('frontend:seller_laws'), 'icon': 'legal', 'active': active in {'legal', 'seller-laws'}},
@@ -83,6 +84,11 @@ def serialize_review_user(user):
 def serialize_parcel(parcel, user=None):
     is_owner = bool(user and getattr(user, 'id', None) == getattr(parcel.listed_by, 'id', None))
     is_admin = bool(user and getattr(user, 'role', None) == 'Admin')
+    
+    # Check for active promotion tier
+    active_promo = parcel.promotions.filter(is_active=True, payment_status='Paid').first()
+    promotion_tier = active_promo.tier if active_promo else None
+    
     return {
         'parcel_number': str(parcel.parcel_number),
         'county': parcel.county,
@@ -96,6 +102,18 @@ def serialize_parcel(parcel, user=None):
         'manage_label': 'Manage Listing' if (is_owner or is_admin) else 'View Details and Buy',
         'manage_url': reverse('frontend:parcel_detail', args=[parcel.parcel_number]),
         'status_badge': parcel.get_verification_status_display() if hasattr(parcel, 'get_verification_status_display') else parcel.verification_status,
+        'promotion_tier': promotion_tier,
+        'is_promoted': bool(promotion_tier),
+        'asking_price': str(parcel.asking_price) if getattr(parcel, 'asking_price', None) is not None else None,
+        'displayed_price': str(parcel.displayed_price) if getattr(parcel, 'displayed_price', None) is not None else None,
+        'latitude': str(parcel.latitude) if parcel.latitude else None,
+        'longitude': str(parcel.longitude) if parcel.longitude else None,
+        'dist_to_road': parcel.dist_to_road,
+        'dist_to_school': parcel.dist_to_school,
+        'dist_to_hospital': parcel.dist_to_hospital,
+        'dist_to_mall': parcel.dist_to_mall,
+        'dist_to_industrial_zone': parcel.dist_to_industrial_zone,
+        'dist_to_transport_hub': parcel.dist_to_transport_hub,
     }
 
 
@@ -237,6 +255,8 @@ def serialize_checkout(
     escrow_bank_account_number=None,
     escrow_bank_branch=None,
 ):
+    from core.services.service_fee import ServiceFeeService
+
     breakdown_data = []
     for row in joint_breakdown or []:
         member = row.get('member')
@@ -261,12 +281,77 @@ def serialize_checkout(
         })
 
     group = transaction.joint_group if transaction.is_joint_purchase and transaction.joint_group else None
+    fee_explanations = ServiceFeeService.get_fee_explanations()
+    fee_breakdown = [
+        {
+            'key': 'land_price',
+            'label': 'Land Price',
+            'amount': str(transaction.agreed_price),
+            'description': 'The negotiated purchase price for the parcel.',
+            'included': True,
+            'tone': 'default',
+        },
+        {
+            'key': 'platform_service_fee',
+            'label': fee_explanations['platform_service']['label'],
+            'amount': str(transaction.platform_service_fee),
+            'description': fee_explanations['platform_service']['what'],
+            'note': fee_explanations['platform_service']['why'],
+            'included': True,
+            'tone': 'warning',
+        },
+        {
+            'key': 'escrow_fee',
+            'label': fee_explanations['escrow_holding']['label'],
+            'amount': str(transaction.escrow_fee),
+            'description': fee_explanations['escrow_holding']['what'],
+            'note': fee_explanations['escrow_holding']['why'],
+            'included': True,
+            'tone': 'warning',
+        },
+        {
+            'key': 'processing_fee',
+            'label': fee_explanations['payment_processing']['label'],
+            'amount': str(transaction.processing_fee),
+            'description': fee_explanations['payment_processing']['what'],
+            'note': fee_explanations['payment_processing']['why'],
+            'included': True,
+            'tone': 'default',
+        },
+        {
+            'key': 'legal_verification_fee',
+            'label': fee_explanations['verification']['label'],
+            'amount': str(transaction.legal_verification_fee),
+            'description': fee_explanations['verification']['what'],
+            'note': 'Selected' if transaction.include_legal_verification else 'Optional',
+            'included': bool(transaction.include_legal_verification),
+            'tone': 'default',
+        },
+        {
+            'key': 'due_diligence_fee',
+            'label': fee_explanations['due_diligence']['label'],
+            'amount': str(transaction.due_diligence_fee),
+            'description': fee_explanations['due_diligence']['what'],
+            'note': 'Selected' if transaction.include_due_diligence else 'Optional',
+            'included': bool(transaction.include_due_diligence),
+            'tone': 'default',
+        },
+        {
+            'key': 'total_payable',
+            'label': 'TOTAL PAYABLE',
+            'amount': str(transaction.total_payable),
+            'description': 'Land price plus all selected service fees.',
+            'included': True,
+            'tone': 'success',
+        },
+    ]
     return {
         'transaction_id': str(transaction.id),
         'parcel_number': transaction.land_parcel.parcel_number,
         'seller_email': transaction.seller.email,
         'buyer_email': transaction.buyer.email,
         'agreed_price': str(transaction.agreed_price),
+        'land_price': str(transaction.agreed_price),
         'is_joint_purchase': bool(transaction.is_joint_purchase),
         'joint_group_name': group.name if group else None,
         'joint_group_ownership': group.get_ownership_type_display() if group else None,
@@ -290,10 +375,21 @@ def serialize_checkout(
         'escrow_bank_account_name': escrow_bank_account_name,
         'escrow_bank_account_number': escrow_bank_account_number,
         'escrow_bank_branch': escrow_bank_branch,
+        'platform_service_fee': str(transaction.platform_service_fee),
+        'escrow_fee': str(transaction.escrow_fee),
+        'processing_fee': str(transaction.processing_fee),
+        'legal_verification_fee': str(transaction.legal_verification_fee),
+        'due_diligence_fee': str(transaction.due_diligence_fee),
+        'include_legal_verification': bool(transaction.include_legal_verification),
+        'include_due_diligence': bool(transaction.include_due_diligence),
+        'fee_breakdown': fee_breakdown,
+        'fee_explanations': fee_explanations,
+        'grand_total': str(transaction.total_payable),
+        'total_payable': str(transaction.total_payable),
     }
 
 
-def serialize_recommendations_page(recommended, rec_type, popular_parcels, popular_county, recently_viewed, user=None):
+def serialize_recommendations_page(recommended, rec_type, popular_parcels, popular_county, recently_viewed, hot_deals=None, recently_viewed_similar=None, trending_in_target_area=None, people_also_viewed=None, sponsored_listings=None, user=None):
     def _serialize_parcels(parcels):
         return [serialize_parcel(parcel, user) for parcel in parcels]
 
@@ -309,6 +405,11 @@ def serialize_recommendations_page(recommended, rec_type, popular_parcels, popul
         'popular_county': popular_county,
         'popular_parcels': _serialize_parcels(popular_parcels or []),
         'recently_viewed': _serialize_parcels(recently_viewed or []),
+        'hot_deals': _serialize_parcels(hot_deals or []),
+        'recently_viewed_similar': _serialize_parcels(recently_viewed_similar or []),
+        'trending_in_target_area': _serialize_parcels(trending_in_target_area or []),
+        'people_also_viewed': _serialize_parcels(people_also_viewed or []),
+        'sponsored_listings': _serialize_parcels(sponsored_listings or []),
     }
 
 

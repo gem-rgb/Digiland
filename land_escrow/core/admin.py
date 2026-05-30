@@ -3,13 +3,101 @@ from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from .models import User, LandParcel, Transaction, Document, AuditLog, SupportTicket, Message, PlatformLegalDocument, KYCProfile, JointMemberRemovalRequest
+from .models import User, LandParcel, Transaction, Document, AuditLog, SupportTicket, Message, PlatformLegalDocument, KYCProfile, JointMemberRemovalRequest, PopupAdCampaign, PopupAdEvent
 
 @admin.register(PlatformLegalDocument)
 class PlatformLegalDocumentAdmin(admin.ModelAdmin):
     list_display = ('title', 'updated_at')
     search_fields = ('title', 'content')
     readonly_fields = ('updated_at',)
+
+
+@admin.register(PopupAdCampaign)
+class PopupAdCampaignAdmin(admin.ModelAdmin):
+    list_display = (
+        'campaign_name',
+        'popup_type',
+        'billing_model',
+        'status',
+        'payment_status',
+        'parcel',
+        'created_by',
+        'impressions_count',
+        'clicks_count',
+        'leads_count',
+        'roi_score',
+        'created_at',
+    )
+    list_filter = (
+        'popup_type',
+        'billing_model',
+        'status',
+        'payment_status',
+        'geo_exclusive',
+        'seller_verified_only',
+        'created_at',
+    )
+    search_fields = (
+        'campaign_name',
+        'headline',
+        'subheadline',
+        'parcel__parcel_number',
+        'created_by__email',
+        'target_counties',
+        'target_locations',
+        'target_buyer_categories',
+        'target_intent_tags',
+    )
+    readonly_fields = (
+        'created_at',
+        'updated_at',
+        'last_scored_at',
+        'spent_amount',
+        'revenue_value',
+        'impressions_count',
+        'clicks_count',
+        'leads_count',
+        'dismissals_count',
+        'quality_score',
+        'engagement_score',
+        'auction_score',
+        'roi_score',
+    )
+    autocomplete_fields = ('parcel', 'created_by')
+
+
+@admin.register(PopupAdEvent)
+class PopupAdEventAdmin(admin.ModelAdmin):
+    list_display = (
+        'campaign',
+        'event_type',
+        'placement_area',
+        'buyer_category',
+        'county_context',
+        'intent_score',
+        'relevance_score',
+        'charge_amount',
+        'created_at',
+    )
+    list_filter = (
+        'event_type',
+        'placement_area',
+        'buyer_category',
+        'county_context',
+        'created_at',
+    )
+    search_fields = (
+        'campaign__campaign_name',
+        'campaign__parcel__parcel_number',
+        'user__email',
+        'session_key',
+    )
+    readonly_fields = (
+        'created_at',
+        'charge_amount',
+        'conversion_value',
+        'metadata',
+    )
 
 
 @admin.register(KYCProfile)

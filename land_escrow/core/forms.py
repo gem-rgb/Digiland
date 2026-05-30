@@ -1,6 +1,7 @@
 from django import forms
 from django.forms import formset_factory
-from core.models import LandParcel, Document, User, AgentKYCApplication, JointBuyerGroup, JointBuyerMember
+from django.db import models
+from core.models import LandParcel, Document, User, AgentKYCApplication, JointBuyerGroup, JointBuyerMember, PopupAdCampaign
 import re
 import requests
 import logging
@@ -536,3 +537,219 @@ class PricePredictionForm(forms.Form):
             self.fields['county'].choices = [(county, county) for county in counties]
         if land_use_types is not None:
             self.fields['land_use'].choices = [(value, value) for value in land_use_types]
+
+
+def _split_popup_targets(raw_value):
+    if not raw_value:
+        return []
+    if isinstance(raw_value, (list, tuple)):
+        values = raw_value
+    else:
+        values = re.split(r'[,;\n]+', str(raw_value))
+    return [value.strip() for value in values if str(value).strip()]
+
+
+class PopupAdCampaignForm(forms.ModelForm):
+    target_counties_text = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Kiambu, Nairobi, Machakos',
+        }),
+        label='Target counties',
+        help_text='Comma-separated counties or regions to prioritise in the auction.',
+    )
+    target_locations_text = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Karen, Ruiru, Kitengela',
+        }),
+        label='Target locations',
+        help_text='Specific towns, wards, estates, or search locations.',
+    )
+    target_buyer_categories_text = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Residential, Commercial, Diaspora',
+        }),
+        label='Preferred audience',
+        help_text='Comma-separated buyer categories to target.',
+    )
+    target_intent_tags_text = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'high intent, investor, urgent buyer',
+        }),
+        label='Intent tags',
+        help_text='Describe the buyer intent signals you want to match.',
+    )
+
+    class Meta:
+        model = PopupAdCampaign
+        fields = [
+            'parcel',
+            'campaign_name',
+            'popup_type',
+            'billing_model',
+            'headline',
+            'subheadline',
+            'cta_text',
+            'landing_url',
+            'target_budget_min',
+            'target_budget_max',
+            'target_acreage_min',
+            'target_acreage_max',
+            'travel_radius_km',
+            'frequency_cap_per_session',
+            'cooldown_minutes',
+            'duration_days',
+            'daily_budget',
+            'total_budget',
+            'priority_bid',
+            'geo_exclusive',
+            'seller_verified_only',
+            'creative_image',
+            'creative_video_url',
+            'status',
+            'notes',
+        ]
+        widgets = {
+            'parcel': forms.Select(attrs={'class': 'form-select'}),
+            'campaign_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. Karen luxury land push',
+            }),
+            'popup_type': forms.Select(attrs={'class': 'form-select'}),
+            'billing_model': forms.Select(attrs={'class': 'form-select'}),
+            'headline': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Headline buyers will see first',
+            }),
+            'subheadline': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'A short persuasive description',
+            }),
+            'cta_text': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'View listing',
+            }),
+            'landing_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://...',
+            }),
+            'target_budget_min': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'target_budget_max': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'target_acreage_min': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.0001'}),
+            'target_acreage_max': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.0001'}),
+            'travel_radius_km': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1', 'min': '0'}),
+            'frequency_cap_per_session': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+            'cooldown_minutes': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+            'duration_days': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+            'daily_budget': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'total_budget': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'priority_bid': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'geo_exclusive': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'seller_verified_only': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'creative_image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'creative_video_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://...'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+        }
+        labels = {
+            'parcel': 'Land listing',
+            'campaign_name': 'Campaign name',
+            'popup_type': 'Popup type',
+            'billing_model': 'Billing model',
+            'headline': 'Headline',
+            'subheadline': 'Supporting copy',
+            'cta_text': 'CTA text',
+            'landing_url': 'Landing URL',
+            'target_budget_min': 'Target budget min',
+            'target_budget_max': 'Target budget max',
+            'target_acreage_min': 'Target acreage min',
+            'target_acreage_max': 'Target acreage max',
+            'travel_radius_km': 'Travel radius (km)',
+            'frequency_cap_per_session': 'Frequency cap per session',
+            'cooldown_minutes': 'Cooldown (minutes)',
+            'duration_days': 'Campaign duration (days)',
+            'daily_budget': 'Daily budget',
+            'total_budget': 'Campaign budget',
+            'priority_bid': 'Priority bid',
+            'geo_exclusive': 'Geo-exclusive campaign',
+            'seller_verified_only': 'Verified seller only',
+            'creative_image': 'Creative image',
+            'creative_video_url': 'Creative video URL',
+            'status': 'Campaign status',
+            'notes': 'Notes',
+        }
+        help_texts = {
+            'landing_url': 'Leave blank to route buyers to the parcel detail page automatically.',
+            'priority_bid': 'Higher bids improve auction rank when relevance is close.',
+            'geo_exclusive': 'Restrict delivery to the target area and nearby travel radius.',
+            'seller_verified_only': 'Only show if the seller or agent trust gate is satisfied.',
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+        parcel_qs = LandParcel.objects.none()
+        if user is not None:
+            if getattr(user, 'role', None) == 'Admin':
+                parcel_qs = LandParcel.objects.all().order_by('-ardhisasa_last_synced')
+            elif getattr(user, 'role', None) == 'Agent':
+                parcel_qs = LandParcel.objects.filter(
+                    models.Q(listed_by=user) | models.Q(assigned_agent=user)
+                ).order_by('-ardhisasa_last_synced')
+            else:
+                parcel_qs = LandParcel.objects.filter(listed_by=user).order_by('-ardhisasa_last_synced')
+        self.fields['parcel'].queryset = parcel_qs
+
+        if self.instance and self.instance.pk:
+            self.fields['target_counties_text'].initial = ', '.join(self.instance.target_counties or [])
+            self.fields['target_locations_text'].initial = ', '.join(self.instance.target_locations or [])
+            self.fields['target_buyer_categories_text'].initial = ', '.join(self.instance.target_buyer_categories or [])
+            self.fields['target_intent_tags_text'].initial = ', '.join(self.instance.target_intent_tags or [])
+
+    def clean(self):
+        cleaned = super().clean()
+        budget_min = cleaned.get('target_budget_min')
+        budget_max = cleaned.get('target_budget_max')
+        acreage_min = cleaned.get('target_acreage_min')
+        acreage_max = cleaned.get('target_acreage_max')
+        total_budget = cleaned.get('total_budget')
+        daily_budget = cleaned.get('daily_budget')
+
+        if budget_min and budget_max and budget_min > budget_max:
+            self.add_error('target_budget_max', 'Budget max must be greater than or equal to budget min.')
+        if acreage_min and acreage_max and acreage_min > acreage_max:
+            self.add_error('target_acreage_max', 'Acreage max must be greater than or equal to acreage min.')
+        if total_budget and daily_budget and daily_budget > total_budget:
+            self.add_error('daily_budget', 'Daily budget cannot exceed the total campaign budget.')
+        return cleaned
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.target_counties = _split_popup_targets(self.cleaned_data.get('target_counties_text'))
+        instance.target_locations = _split_popup_targets(self.cleaned_data.get('target_locations_text'))
+        instance.target_buyer_categories = _split_popup_targets(self.cleaned_data.get('target_buyer_categories_text'))
+        instance.target_intent_tags = _split_popup_targets(self.cleaned_data.get('target_intent_tags_text'))
+
+        if not instance.landing_url and instance.parcel_id:
+            try:
+                from django.urls import reverse
+                instance.landing_url = reverse('frontend:parcel_detail', args=[instance.parcel.parcel_number])
+            except Exception:
+                instance.landing_url = ''
+
+        if commit:
+            instance.save()
+        return instance

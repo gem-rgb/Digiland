@@ -43,7 +43,8 @@ Backend
 - Payment: Paystack
 
 Frontend
-- Templates: Django Templates with Bootstrap
+- Server UI: Django Templates with Bootstrap and React shell bootstrap
+- Client: React/Tailwind app in `land_escrow/client`
 - UI Components: Widget Tweaks, Slippers
 - Static Files: WhiteNoise for production serving
 
@@ -153,10 +154,13 @@ land_escrow/
 │   ├── views.py           # Main business logic views
 │   ├── services/          # Business logic services
 │   └── middleware.py      # Custom middleware
-├── frontend/              # Frontend application with templates and UI
+├── server/                # Django server app with templates, views, and React bootstrap
 │   ├── templates/         # HTML templates
-│   ├── views.py           # UI-specific views
-│   └── forms.py           # Frontend forms
+│   ├── views.py           # Server-side views and page bootstrap
+│   └── forms.py           # Server-side forms
+├── client/                # React client application
+│   ├── src/               # React source code
+│   └── dist/              # Built assets served by Django
 ├── land_escrow/          # Django project settings
 │   ├── settings.py       # Project configuration
 │   └── urls.py          # Main URL routing

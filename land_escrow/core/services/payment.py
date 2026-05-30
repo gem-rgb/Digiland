@@ -1038,3 +1038,60 @@ def check_transaction_status(transaction_ref):
             "status": "error",
             "message": f"Status check error: {str(e)}"
         }
+
+
+def calculate_checkout_fees(agreed_price, include_verification=False, include_due_diligence=False, include_legal=None):
+    """
+    Calculate the transparent checkout/escrow fees breakdown.
+    The checkout page shares the same fee model as the service-fee engine:
+    - Platform Service Fee: 4% of agreed price
+    - Escrow Holding Fee: 2% of agreed price
+    - Processing Fee: Flat KES 50
+    - Optional Verification Fee: KES 10,000
+    - Optional Due Diligence Fee: KES 20,000
+    """
+    from decimal import Decimal
+    from types import SimpleNamespace
+    from core.services.service_fee import ServiceFeeService
+
+    if include_legal is not None:
+        include_verification = include_legal
+
+    quote = SimpleNamespace(agreed_price=Decimal(str(agreed_price)))
+    fees = ServiceFeeService.calculate_fees(
+        quote,
+        include_verification=include_verification,
+        include_due_diligence=include_due_diligence,
+    )
+
+    return {
+        'land_price': fees['land_price'],
+        'platform_service_fee': fees['platform_service_fee'],
+        'escrow_fee': fees['escrow_fee'],
+        'escrow_holding_fee': fees['escrow_holding_fee'],
+        'processing_fee': fees['payment_processing_fee'],
+        'payment_processing_fee': fees['payment_processing_fee'],
+        'legal_verification_fee': fees['verification_fee'],
+        'due_diligence_fee': fees['due_diligence_fee'],
+        'total_fees': fees['total_fees'],
+        'total_payable': fees['total_payable'],
+        'grand_total': fees['grand_total'],
+    }
+
+
+def pay_for_promotion(promotion_id, payment_ref, gateway='paystack'):
+    """
+    Simulates payment verification for a seller/agent promotion campaign.
+    Marks promotion as active and paid upon success.
+    """
+    try:
+        from core.models import LandPromotion
+        promo = LandPromotion.objects.get(id=promotion_id)
+        promo.payment_reference = payment_ref
+        promo.payment_status = 'Paid'
+        promo.is_active = True
+        promo.save(update_fields=['payment_reference', 'payment_status', 'is_active'])
+        return {"status": "success", "message": "Promotion paid successfully"}
+    except Exception as e:
+        logger.error(f"Failed to pay for promotion: {e}")
+        return {"status": "error", "message": str(e)}

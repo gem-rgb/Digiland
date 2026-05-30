@@ -7,7 +7,7 @@ django.setup()
 
 from core.models import User, Message
 from django.test import RequestFactory
-from frontend.views import clear_message_thread
+from server.views import clear_message_thread
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.contrib.messages.middleware import MessageMiddleware
 

@@ -3,6 +3,7 @@ export type PageKind =
   | 'dashboard'
   | 'parcel-list'
   | 'transactions'
+  | 'seller-promotions'
   | 'buyer-choice'
   | 'legal'
   | 'joint-laws'
@@ -151,6 +152,10 @@ export interface ParcelSummary {
   manage_label?: string;
   manage_url?: string;
   status_badge?: string;
+  asking_price?: string | null;
+  displayed_price?: string | null;
+  promotion_tier?: string | null;
+  is_promoted?: boolean;
 }
 
 export interface ParcelDocumentSummary {
@@ -241,17 +246,47 @@ export interface ContributionSummary {
   depositor_name?: string | null;
 }
 
+export interface FeeBreakdownLine {
+  key: string;
+  label: string;
+  amount: string;
+  description: string;
+  note?: string | null;
+  included?: boolean;
+  tone?: 'default' | 'success' | 'warning' | 'muted';
+}
+
+export interface FeeExplanation {
+  label: string;
+  percent?: string;
+  amount?: string;
+  what: string;
+  why: string;
+}
+
 export interface CheckoutData {
   transaction_id: string;
   parcel_number: string;
   seller_email: string;
   buyer_email?: string;
   agreed_price: string;
+  land_price?: string;
   is_joint_purchase: boolean;
   joint_group_name?: string;
   joint_group_ownership?: string;
   joint_payment_method?: string;
   joint_bank_ready?: boolean;
+  platform_service_fee?: string;
+  escrow_fee?: string;
+  processing_fee?: string;
+  legal_verification_fee?: string;
+  due_diligence_fee?: string;
+  include_legal_verification?: boolean;
+  include_due_diligence?: boolean;
+  fee_breakdown?: FeeBreakdownLine[];
+  fee_explanations?: Record<string, FeeExplanation>;
+  grand_total?: string;
+  total_payable?: string;
   breakdown: BreakdownRow[];
   contributions: ContributionSummary[];
   phone_number: string;
@@ -395,6 +430,173 @@ export interface RecommendationsPageData {
   popular_county: string;
   popular_parcels: ParcelSummary[];
   recently_viewed: ParcelSummary[];
+  recently_viewed_similar?: ParcelSummary[];
+  hot_deals?: ParcelSummary[];
+  trending_in_target_area?: ParcelSummary[];
+  people_also_viewed?: ParcelSummary[];
+  sponsored_listings?: ParcelSummary[];
+}
+
+export interface PopupCampaignParcelSummary {
+  parcel_number: string;
+  county: string;
+  constituency: string;
+  ward: string;
+  land_size: string;
+  land_use_type: string;
+  verification_status: string;
+  image_url?: string | null;
+  displayed_price: string;
+  asking_price?: string | null;
+  details_url: string;
+}
+
+export interface PopupAdSellerSummary {
+  email: string;
+  role: string;
+  is_verified: boolean;
+  trust_score: number;
+  label: string;
+}
+
+export interface PopupAdBudgetSummary {
+  daily_budget: string;
+  total_budget: string;
+  spent_amount: string;
+  remaining_budget: string;
+  priority_bid: string;
+  billing_model: string;
+  billing_model_label: string;
+}
+
+export interface PopupAdMetricSummary {
+  impressions: number;
+  clicks: number;
+  leads: number;
+  dismissals: number;
+  ctr: number;
+  lead_rate: number;
+  spend: string;
+  revenue: string;
+  roi: number;
+  quality_score: number;
+  engagement_score: number;
+  auction_score: number;
+  seller_trust_score: number;
+}
+
+export interface PopupAdCampaignSummary {
+  id: string;
+  campaign_name: string;
+  popup_type: string;
+  popup_type_label: string;
+  billing_model: string;
+  billing_model_label: string;
+  status: string;
+  status_label: string;
+  status_tone?: 'success' | 'warning' | 'muted' | 'default';
+  headline: string;
+  subheadline: string;
+  cta_text: string;
+  landing_url: string;
+  creative_image_url?: string | null;
+  creative_video_url?: string | null;
+  parcel: PopupCampaignParcelSummary;
+  seller: PopupAdSellerSummary;
+  targeting: {
+    counties: string[];
+    locations: string[];
+    buyer_categories: string[];
+    intent_tags: string[];
+    budget_min?: string | null;
+    budget_max?: string | null;
+    acreage_min?: string | null;
+    acreage_max?: string | null;
+    travel_radius_km: number;
+    geo_exclusive: boolean;
+  };
+  frequency: {
+    frequency_cap_per_session: number;
+    cooldown_minutes: number;
+    duration_days: number;
+    geo_exclusive: boolean;
+  };
+  budget: PopupAdBudgetSummary;
+  metrics: PopupAdMetricSummary;
+  amenities: Array<{ label: string; value: string }>;
+  score: number;
+  match_reasons: string[];
+  trigger?: 'smart' | 'geo' | 'urgency' | 'retargeting' | 'exit_intent' | null;
+  social_proof: string[];
+  scarcity_text: string;
+  created_at: string;
+  updated_at: string;
+  display_delay_ms?: number;
+}
+
+export interface PopupAdsPayload {
+  enabled: boolean;
+  page: PageKind | string;
+  placement?: string;
+  intent_score?: number;
+  intent_label?: string;
+  buyer_category?: string;
+  county?: string | null;
+  constituency?: string | null;
+  ward?: string | null;
+  recommended_delay_ms?: number;
+  frequency_cap_per_session?: number;
+  session_show_count?: number;
+  candidates: Record<'smart' | 'geo' | 'urgency' | 'retargeting' | 'exit_intent', PopupAdCampaignSummary[]>;
+  primary?: PopupAdCampaignSummary | null;
+  exit_candidate?: PopupAdCampaignSummary | null;
+  recent_search_terms?: string[];
+  suppressed_reason?: string | null;
+  reason?: string | null;
+}
+
+export interface PopupDashboardSummary {
+  total_campaigns: number;
+  active_campaigns: number;
+  paused_campaigns: number;
+  draft_campaigns: number;
+  total_impressions: number;
+  total_clicks: number;
+  total_leads: number;
+  total_dismissals: number;
+  ctr: number;
+  lead_rate: number;
+  total_spend: string;
+  total_revenue: string;
+  roi: number;
+}
+
+export interface PopupHeatmapRow {
+  county: string;
+  impressions: number;
+  clicks: number;
+  leads: number;
+  dismissals: number;
+}
+
+export interface PopupTriggerBreakdownRow {
+  popup_type: string;
+  impressions: number;
+  clicks: number;
+  leads: number;
+}
+
+export interface SellerPromotionsPageData {
+  summary: PopupDashboardSummary;
+  campaigns: PopupAdCampaignSummary[];
+  heatmap: PopupHeatmapRow[];
+  trigger_breakdown: PopupTriggerBreakdownRow[];
+  recommendations: Array<{ title: string; body: string }>;
+  supported_popup_types: string[];
+  supported_billing_models: string[];
+  events_count: number;
+  campaign_action_url: string;
+  form: SerializedForm;
 }
 
 export interface PredictionComparisonSummary {
@@ -528,6 +730,8 @@ export interface BootstrapData {
   support_page?: SupportPageData | null;
   status?: StatusPageData | null;
   recommendations_page?: RecommendationsPageData | null;
+  popup_ads?: PopupAdsPayload | null;
+  seller_promotions_page?: SellerPromotionsPageData | null;
   prediction_page?: PredictionPageData | null;
   task_board?: TaskManagementData | null;
   approvals_page?: ApprovalsPageData | null;

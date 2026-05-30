@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.middleware.csrf import get_token
 from django.db import models
-from core.models import LandParcel, Transaction, Message, SupportTicket, Document, User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite, JointBuyerGroup, JointBuyerMember, JointPaymentContribution, JointMemberRemovalRequest, AuditLog
+from core.models import LandParcel, Transaction, Message, SupportTicket, Document, User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite, JointBuyerGroup, JointBuyerMember, JointPaymentContribution, JointMemberRemovalRequest, AuditLog, PopupAdCampaign
 from core.legal import (
     LAND_TRANSACTION_LAWS,
     LAND_TRANSACTION_CHECKLIST,
@@ -14,7 +14,7 @@ from core.legal import (
     JOINT_KENYAN_LAND_DOCUMENTS,
 )
 from .forms import LandParcelUploadForm
-from core.forms import AgentRatingForm, DocumentUploadForm, JointBuyerGroupForm, JointBuyerMemberFormSet, JointBuyerMemberForm, JointLeaderTransferForm, JointMemberRemovalRequestForm, PricePredictionForm
+from core.forms import AgentRatingForm, DocumentUploadForm, JointBuyerGroupForm, JointBuyerMemberFormSet, JointBuyerMemberForm, JointLeaderTransferForm, JointMemberRemovalRequestForm, PricePredictionForm, PopupAdCampaignForm
 from .react_data import (
     build_nav,
     serialize_checkout,
@@ -36,6 +36,7 @@ from .react_data import (
     serialize_transaction,
     serialize_user,
 )
+from core.services.popup_ads import build_popup_ads_payload, build_seller_promotions_dashboard, record_popup_event
 
 def is_seller_or_agent(user):
     if not user.is_authenticated:
@@ -58,6 +59,7 @@ STAFF_ROLES = {'Admin', 'Agent'}
 
 
 def render_react_shell(request, page, title, subtitle='', **extra):
+    popup_context = extra.pop('popup_context', None)
     bootstrap = {
         'page': page,
         'title': title,
@@ -69,6 +71,10 @@ def render_react_shell(request, page, title, subtitle='', **extra):
     bootstrap['csrf_token'] = get_token(request)
     if request.user.is_authenticated:
         bootstrap['logout_url'] = reverse('account_logout')
+    try:
+        bootstrap['popup_ads'] = build_popup_ads_payload(request, page, context=popup_context)
+    except Exception:
+        bootstrap['popup_ads'] = {'enabled': False, 'page': page, 'candidates': {}, 'primary': None}
     bootstrap.update(extra)
     return render(request, 'frontend/react_shell.html', {'react_bootstrap': bootstrap})
 
@@ -1610,7 +1616,7 @@ def parcel_detail(request, parcel_number):
             {'value': 'joint', 'label': 'Joint group purchase', 'selected': False},
         ],
         'initiate_escrow_url': reverse('frontend:initiate_escrow', args=[parcel.parcel_number]),
-        'upload_document_url': reverse('frontend:upload_document', args=[parcel.parcel_number]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) else None,
+        'upload_document_url': reverse('frontend:upload_document', args=[parcel.parcel_number]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) and parcel.verification_status != 'Verified' else None,
         'edit_url': reverse('frontend:parcel_edit', args=[parcel.parcel_number]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) else None,
         'delete_url': reverse('frontend:parcel_delete', args=[parcel.parcel_number]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) else None,
         'toggle_favorite_url': reverse('frontend:toggle_favorite', args=[parcel.parcel_number]) if request.user.is_authenticated else None,
@@ -1623,6 +1629,13 @@ def parcel_detail(request, parcel_number):
         f'Parcel details - {parcel.parcel_number}',
         'Review parcel information, documents, and next workflow actions.',
         parcel_detail=parcel_data,
+        popup_context={
+            'parcel': parcel,
+            'county': parcel.county,
+            'constituency': parcel.constituency,
+            'ward': parcel.ward,
+            'placement': 'parcel-detail',
+        },
         actions=[{'label': 'Back to marketplace', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'}],
     )
 
@@ -2056,13 +2069,45 @@ def payment_checkout(request, transaction_id):
     if not transaction.contract_agreed:
         return redirect('frontend:sign_contract', transaction_id=transaction.id)
 
+    # Calculate detailed transaction fees
+    from core.services.payment import calculate_checkout_fees
+    from core.services.service_fee import ServiceFeeService
+
+    include_verification = (
+        request.GET.get('include_verification') == 'true'
+        or request.GET.get('include_legal') == 'true'
+    )
+    include_due_diligence = request.GET.get('include_due_diligence') == 'true'
+    
+    fees = calculate_checkout_fees(transaction.agreed_price, include_verification, include_due_diligence)
+    
+    transaction.platform_service_fee = fees['platform_service_fee']
+    transaction.escrow_fee = fees['escrow_fee']
+    transaction.processing_fee = fees['processing_fee']
+    transaction.legal_verification_fee = fees['legal_verification_fee']
+    transaction.due_diligence_fee = fees['due_diligence_fee']
+    transaction.include_legal_verification = include_verification
+    transaction.include_due_diligence = include_due_diligence
+    transaction.total_payable = fees['total_payable']
+    transaction.save(update_fields=[
+        'platform_service_fee', 'escrow_fee', 'processing_fee',
+        'legal_verification_fee', 'due_diligence_fee',
+        'include_legal_verification', 'include_due_diligence', 'total_payable'
+    ])
+    ServiceFeeService.record_fees_on_transaction(
+        transaction,
+        include_verification=include_verification,
+        include_due_diligence=include_due_diligence,
+        fees_data=fees,
+    )
+
     joint_breakdown = None
     contributions = None
     joint_bank_ready = False
     joint_payment_method = None
     if transaction.is_joint_purchase and transaction.joint_group:
         from decimal import Decimal, ROUND_HALF_UP
-        total = transaction.agreed_price
+        total = transaction.total_payable
         joint_breakdown = []
         for m in transaction.joint_group.members.all():
             amt = (total * (m.share_percentage / Decimal('100'))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
@@ -3348,34 +3393,49 @@ def transaction_failed(request, transaction_id):
 @login_required
 def recommendations(request):
     """Personalized parcel recommendations for Buyers."""
-    from core.services.recommendation import get_recommendations, get_popular_in_county, get_recently_viewed
-
-    recommended = []
-    rec_type = 'popular'
-    popular_parcels = []
-    popular_county = 'Nairobi'
-    recently_viewed = []
+    from core.services.recommendation import build_recommendation_feed
 
     try:
-        recommended, rec_type = get_recommendations(request.user, limit=12)
-        popular_parcels, popular_county = get_popular_in_county(request.user, limit=6)
-        recently_viewed = get_recently_viewed(request.user, limit=6)
+        feed = build_recommendation_feed(request.user, limit=12)
     except Exception as e:
         import logging
         logging.getLogger(__name__).error(f"Recommendation error: {e}")
+        feed = {
+            'recommended': [],
+            'rec_type': 'popular',
+            'popular_parcels': [],
+            'popular_county': 'Nairobi',
+            'recently_viewed': [],
+            'recently_viewed_similar': [],
+            'hot_deals': [],
+            'trending_in_target_area': [],
+            'people_also_viewed': [],
+            'sponsored_listings': [],
+            'buyer_category': None,
+        }
 
     return render_react_shell(
         request,
         'recommendations',
         'Recommended parcels',
         'Personalized recommendations, popular alternatives, and recently viewed parcels.',
+        popup_context={
+            'placement': 'recommendations',
+            'county': feed.get('popular_county'),
+            'buyer_category': feed.get('buyer_category'),
+        },
         recommendations_page=serialize_recommendations_page(
-            recommended,
-            rec_type,
-            popular_parcels,
-            popular_county,
-            recently_viewed,
-            request.user,
+            feed.get('recommended'),
+            feed.get('rec_type'),
+            feed.get('popular_parcels'),
+            feed.get('popular_county'),
+            feed.get('recently_viewed'),
+            hot_deals=feed.get('hot_deals'),
+            recently_viewed_similar=feed.get('recently_viewed_similar'),
+            trending_in_target_area=feed.get('trending_in_target_area'),
+            people_also_viewed=feed.get('people_also_viewed'),
+            sponsored_listings=feed.get('sponsored_listings'),
+            user=request.user,
         ),
         actions=[
             {'label': 'Marketplace', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
@@ -3681,6 +3741,181 @@ def seller_withdraw(request):
             {'label': 'Transactions', 'href': reverse('frontend:transactions'), 'tone': 'secondary'},
         ],
     )
+
+
+@login_required
+def seller_promotions(request):
+    """Seller/agent campaign studio for popup ads and discovery promotions."""
+    from django.contrib import messages
+    from django.middleware.csrf import get_token
+    from decimal import Decimal
+    import uuid as _uuid
+
+    if not is_seller_or_agent(request.user) and request.user.role != 'Admin':
+        return redirect('frontend:home')
+
+    campaigns_qs = PopupAdCampaign.objects.select_related('parcel', 'created_by')
+    if request.user.role != 'Admin':
+        campaigns_qs = campaigns_qs.filter(created_by=request.user)
+
+    campaigns_qs = campaigns_qs.order_by('-updated_at', '-created_at')
+
+    if request.method == 'POST':
+        form_type = request.POST.get('form_type', 'create').strip()
+        if form_type == 'campaign_action':
+            campaign_id = request.POST.get('campaign_id')
+            action = request.POST.get('campaign_action', '').strip().lower()
+            campaign = get_object_or_404(PopupAdCampaign, id=campaign_id)
+            if request.user.role != 'Admin' and campaign.created_by_id != request.user.id:
+                return redirect('frontend:seller_promotions')
+
+            if action == 'pause':
+                campaign.status = 'Paused'
+                campaign.save(update_fields=['status', 'updated_at'])
+                messages.success(request, f'Campaign "{campaign.campaign_name}" paused.')
+            elif action == 'activate':
+                campaign.status = 'Active'
+                campaign.payment_status = 'Paid'
+                if not campaign.payment_reference:
+                    campaign.payment_reference = f'POP-{_uuid.uuid4().hex[:10].upper()}'
+                if campaign.billing_model == 'Subscription' and Decimal(str(campaign.spent_amount or 0)) == Decimal('0.00'):
+                    campaign.spent_amount = campaign.total_budget
+                campaign.save(update_fields=['status', 'payment_status', 'payment_reference', 'spent_amount', 'updated_at'])
+                messages.success(request, f'Campaign "{campaign.campaign_name}" activated.')
+            elif action == 'archive':
+                campaign.status = 'Archived'
+                campaign.save(update_fields=['status', 'updated_at'])
+                messages.success(request, f'Campaign "{campaign.campaign_name}" archived.')
+            else:
+                messages.error(request, 'Unknown campaign action.')
+
+            AuditLog.objects.create(
+                user=request.user,
+                action=f'Popup campaign action: {action}',
+                metadata={
+                    'campaign_id': str(campaign.id),
+                    'campaign_name': campaign.campaign_name,
+                    'action': action,
+                },
+            )
+            return redirect('frontend:seller_promotions')
+
+        form = PopupAdCampaignForm(request.POST, request.FILES, user=request.user)
+        if form.is_valid():
+            campaign = form.save(commit=False)
+            campaign.created_by = request.user
+            if not campaign.payment_reference:
+                campaign.payment_reference = f'POP-{_uuid.uuid4().hex[:10].upper()}'
+            if campaign.status == 'Active':
+                campaign.payment_status = 'Paid'
+            elif not campaign.payment_status:
+                campaign.payment_status = 'Pending'
+            if campaign.billing_model == 'Subscription' and campaign.status == 'Active' and Decimal(str(campaign.spent_amount or 0)) == Decimal('0.00'):
+                campaign.spent_amount = campaign.total_budget
+            campaign.save()
+
+            AuditLog.objects.create(
+                user=request.user,
+                action=f'Popup campaign created: {campaign.campaign_name}',
+                metadata={
+                    'campaign_id': str(campaign.id),
+                    'parcel_number': campaign.parcel.parcel_number,
+                    'popup_type': campaign.popup_type,
+                    'billing_model': campaign.billing_model,
+                    'status': campaign.status,
+                },
+            )
+            messages.success(request, f'Campaign "{campaign.campaign_name}" saved.')
+            return redirect('frontend:seller_promotions')
+        messages.error(request, 'Please fix the highlighted campaign settings.')
+    else:
+        form = PopupAdCampaignForm(user=request.user)
+
+    dashboard = build_seller_promotions_dashboard(request.user)
+
+    return render_react_shell(
+        request,
+        'seller-promotions',
+        'Promotions & Ads',
+        'Premium popup campaigns, targeting controls, and performance analytics.',
+        seller_promotions_page={
+            'summary': dashboard['summary'],
+            'campaigns': dashboard['campaigns'],
+            'heatmap': dashboard['heatmap'],
+            'trigger_breakdown': dashboard['trigger_breakdown'],
+            'recommendations': dashboard['recommendations'],
+            'supported_popup_types': dashboard['supported_popup_types'],
+            'supported_billing_models': dashboard['supported_billing_models'],
+            'events_count': dashboard['events_count'],
+            'campaign_action_url': dashboard['campaign_action_url'],
+            'form': serialize_form(
+                form,
+                action=reverse('frontend:seller_promotions'),
+                submit_label='Launch campaign',
+                intro='Build a premium popup campaign that follows the buyer journey without interrupting it. In this build, active campaigns are auto-marked paid so you can validate the experience end-to-end.',
+                sections=[
+                    {'title': 'Campaign setup', 'fields': ['parcel', 'campaign_name', 'popup_type', 'billing_model', 'status']},
+                    {'title': 'Creative', 'fields': ['headline', 'subheadline', 'cta_text', 'landing_url', 'creative_image', 'creative_video_url', 'notes']},
+                    {'title': 'Targeting', 'fields': ['target_counties_text', 'target_locations_text', 'target_buyer_categories_text', 'target_intent_tags_text']},
+                    {'title': 'Budget & rules', 'fields': ['target_budget_min', 'target_budget_max', 'target_acreage_min', 'target_acreage_max', 'travel_radius_km', 'frequency_cap_per_session', 'cooldown_minutes', 'duration_days', 'daily_budget', 'total_budget', 'priority_bid', 'geo_exclusive', 'seller_verified_only']},
+                ],
+            ),
+        },
+        actions=[
+            {'label': 'Marketplace', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
+            {'label': 'Buyer recommendations', 'href': reverse('frontend:recommendations'), 'tone': 'secondary'},
+        ],
+    )
+
+
+def popup_ad_event_api(request):
+    """Record popup impressions, clicks, leads, dismissals, and exit-intent signals."""
+    from django.http import JsonResponse
+    import json
+
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'POST required'}, status=405)
+
+    payload = {}
+    if request.content_type and 'application/json' in request.content_type:
+        try:
+            payload = json.loads(request.body.decode('utf-8') or '{}')
+        except Exception:
+            payload = {}
+    else:
+        payload = request.POST.dict()
+
+    campaign_id = payload.get('campaign_id')
+    if not campaign_id:
+        return JsonResponse({'status': 'error', 'message': 'Missing campaign_id'}, status=400)
+
+    campaign = get_object_or_404(PopupAdCampaign, id=campaign_id)
+    event_type = (payload.get('event_type') or 'Impression').strip()
+    placement_area = payload.get('placement_area') or payload.get('page_context') or 'marketplace'
+    page_context = payload.get('page_context') or placement_area
+
+    metadata = payload.get('metadata') or {}
+    if isinstance(metadata, str):
+        try:
+            metadata = json.loads(metadata)
+        except Exception:
+            metadata = {'raw': metadata}
+
+    result = record_popup_event(
+        campaign,
+        user=request.user if request.user.is_authenticated else None,
+        request=request,
+        event_type=event_type,
+        placement_area=placement_area,
+        page_context=page_context,
+        buyer_category=payload.get('buyer_category'),
+        county_context=payload.get('county_context'),
+        intent_score=float(payload.get('intent_score') or 0.0),
+        relevance_score=float(payload.get('relevance_score') or 0.0),
+        dwell_seconds=float(payload.get('dwell_seconds') or 0.0),
+        metadata=metadata,
+    )
+    return JsonResponse({'status': 'success', 'event': result})
 
 
 @login_required

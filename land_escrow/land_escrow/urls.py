@@ -25,7 +25,7 @@ urlpatterns = [
     path('admin/', include(admin_urls)),
     path('accounts/', include('allauth.urls')),
     path('api/v1/', include('core.urls')),
-    path('', include('frontend.urls')),
+    path('', include('server.urls')),
 ]
 
 if settings.DEBUG:

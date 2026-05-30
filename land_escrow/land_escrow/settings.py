@@ -54,7 +54,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'core',
-    'frontend',
+    'server.apps.ServerConfig',
     'cloudinary',
     'cloudinary_storage',
 ]
@@ -140,7 +140,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / 'frontend-ui' / 'dist', BASE_DIR / 'static']
+STATICFILES_DIRS = [BASE_DIR / 'client' / 'dist', BASE_DIR / 'static']
 
 # Cloudinary Setup for entirely Free Media (PDFs, Images) hosting
 CLOUDINARY_STORAGE = {

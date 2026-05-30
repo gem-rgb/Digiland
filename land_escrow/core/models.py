@@ -210,6 +210,14 @@ class LandParcel(models.Model):
     )
     asking_price = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text="Seller's absolute asking price")
     lowest_negotiable_price = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True, help_text="Hidden bottom limit for auto-negotiation")
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Geospatial latitude")
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Geospatial longitude")
+    dist_to_road = models.FloatField(default=0.5, help_text="Distance to closest road in km")
+    dist_to_school = models.FloatField(default=1.5, help_text="Distance to closest school in km")
+    dist_to_hospital = models.FloatField(default=2.0, help_text="Distance to closest hospital in km")
+    dist_to_mall = models.FloatField(default=5.0, help_text="Distance to closest mall in km")
+    dist_to_industrial_zone = models.FloatField(default=8.0, help_text="Distance to closest industrial zone in km")
+    dist_to_transport_hub = models.FloatField(default=3.0, help_text="Distance to closest transport hub in km")
 
     @property
     def displayed_price(self):
@@ -241,6 +249,14 @@ class Transaction(models.Model):
     agreed_price = models.DecimalField(max_digits=14, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Initiated')
     escrow_reference = models.CharField(max_length=100, blank=True, null=True)
+    platform_service_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    escrow_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    processing_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    legal_verification_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    due_diligence_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    include_legal_verification = models.BooleanField(default=False)
+    include_due_diligence = models.BooleanField(default=False)
+    total_payable = models.DecimalField(max_digits=14, decimal_places=2, default=0.00)
     
     buyer_signature = models.TextField(null=True, blank=True, help_text="Base64 encoded cryptographic signature graphic of the buyer")
     seller_signature = models.TextField(null=True, blank=True, help_text="Base64 encoded cryptographic signature graphic of the seller")
@@ -644,3 +660,649 @@ class PlatformLegalDocument(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class LandPromotion(models.Model):
+    TIER_CHOICES = [
+        ('Basic', 'Basic Promotion'),
+        ('Pro', 'Pro Promotion'),
+        ('Elite', 'Elite Promotion'),
+    ]
+    BILLING_CHOICES = [
+        ('Daily', 'Pay-per-day'),
+        ('PPC', 'Pay-per-click'),
+        ('PPI', 'Pay-per-impression'),
+        ('Bundle', 'Subscription Bundle'),
+    ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='promotions')
+    tier = models.CharField(max_length=20, choices=TIER_CHOICES)
+    billing_model = models.CharField(max_length=20, choices=BILLING_CHOICES)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='purchased_promotions')
+    start_date = models.DateField(auto_now_add=True)
+    end_date = models.DateField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    
+    # Targeting fields
+    target_counties = models.JSONField(default=list, blank=True, help_text="Targeted counties/regions")
+    target_budget_min = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    target_budget_max = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    target_buyer_intents = models.JSONField(default=list, blank=True, help_text="List of buyer intents targeted")
+    
+    # Payment details
+    payment_reference = models.CharField(max_length=100, blank=True, null=True)
+    payment_status = models.CharField(max_length=20, default='Pending') # Pending, Paid, Failed
+    price_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    
+    # Cached metrics
+    views_count = models.IntegerField(default=0)
+    impressions_count = models.IntegerField(default=0)
+    clicks_count = models.IntegerField(default=0)
+    inquiries_count = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['-start_date']
+
+    def __str__(self):
+        return f"{self.tier} - {self.parcel.parcel_number}"
+
+
+class PopupAdCampaign(models.Model):
+    POPUP_TYPE_CHOICES = [
+        ('Smart_Recommendation', 'Smart Recommendation'),
+        ('Exit_Intent', 'Exit Intent'),
+        ('Geo_Targeted', 'Geo-Targeted'),
+        ('Urgency', 'Urgency'),
+        ('Behavioral_Retargeting', 'Behavioral Retargeting'),
+    ]
+    BILLING_CHOICES = [
+        ('PPV', 'Pay Per View'),
+        ('PPC', 'Pay Per Click'),
+        ('PPL', 'Pay Per Lead'),
+        ('Subscription', 'Premium Subscription'),
+        ('Geo_Exclusive', 'Geo-Exclusive Campaign'),
+    ]
+    STATUS_CHOICES = [
+        ('Draft', 'Draft'),
+        ('Active', 'Active'),
+        ('Paused', 'Paused'),
+        ('Completed', 'Completed'),
+        ('Archived', 'Archived'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='popup_campaigns')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='popup_campaigns')
+    campaign_name = models.CharField(max_length=220)
+    popup_type = models.CharField(max_length=30, choices=POPUP_TYPE_CHOICES)
+    billing_model = models.CharField(max_length=20, choices=BILLING_CHOICES)
+    headline = models.CharField(max_length=220)
+    subheadline = models.TextField(blank=True, null=True)
+    cta_text = models.CharField(max_length=80, default='View listing')
+    landing_url = models.URLField(blank=True, null=True)
+    target_counties = models.JSONField(default=list, blank=True)
+    target_locations = models.JSONField(default=list, blank=True)
+    target_buyer_categories = models.JSONField(default=list, blank=True)
+    target_intent_tags = models.JSONField(default=list, blank=True)
+    target_budget_min = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    target_budget_max = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    target_acreage_min = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+    target_acreage_max = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+    travel_radius_km = models.FloatField(default=20.0)
+    frequency_cap_per_session = models.PositiveIntegerField(default=1)
+    cooldown_minutes = models.PositiveIntegerField(default=45)
+    duration_days = models.PositiveIntegerField(default=7)
+    daily_budget = models.DecimalField(max_digits=14, decimal_places=2, default=0.00)
+    total_budget = models.DecimalField(max_digits=14, decimal_places=2, default=0.00)
+    priority_bid = models.DecimalField(max_digits=14, decimal_places=2, default=0.00)
+    geo_exclusive = models.BooleanField(default=False)
+    seller_verified_only = models.BooleanField(default=True)
+    creative_image = models.ImageField(upload_to='popup_ads/images/', blank=True, null=True)
+    creative_video_url = models.URLField(blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Draft')
+    payment_reference = models.CharField(max_length=100, blank=True, null=True)
+    payment_status = models.CharField(max_length=20, default='Pending')
+    spent_amount = models.DecimalField(max_digits=14, decimal_places=2, default=0.00)
+    revenue_value = models.DecimalField(max_digits=14, decimal_places=2, default=0.00)
+    impressions_count = models.IntegerField(default=0)
+    clicks_count = models.IntegerField(default=0)
+    leads_count = models.IntegerField(default=0)
+    dismissals_count = models.IntegerField(default=0)
+    quality_score = models.FloatField(default=0.0)
+    engagement_score = models.FloatField(default=0.0)
+    auction_score = models.FloatField(default=0.0)
+    roi_score = models.FloatField(default=0.0)
+    last_scored_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True, null=True)
+    start_date = models.DateField(auto_now_add=True)
+    end_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    @property
+    def remaining_budget(self):
+        from decimal import Decimal
+        return max(Decimal('0.00'), (self.total_budget or Decimal('0.00')) - (self.spent_amount or Decimal('0.00')))
+
+    @property
+    def is_delivery_ready(self):
+        from django.utils import timezone
+
+        if self.status != 'Active' or self.payment_status != 'Paid':
+            return False
+
+        today = timezone.now().date()
+        if self.start_date and self.start_date > today:
+            return False
+        if self.end_date and self.end_date < today:
+            return False
+        return True
+
+    def __str__(self):
+        return f"{self.campaign_name} - {self.parcel.parcel_number}"
+
+
+class PopupAdEvent(models.Model):
+    EVENT_CHOICES = [
+        ('Impression', 'Impression'),
+        ('Click', 'Click'),
+        ('Lead', 'Lead'),
+        ('Dismissed', 'Dismissed'),
+        ('Suppressed', 'Suppressed'),
+        ('Exit_Intent', 'Exit Intent'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    campaign = models.ForeignKey(PopupAdCampaign, on_delete=models.CASCADE, related_name='events')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='popup_ad_events')
+    event_type = models.CharField(max_length=20, choices=EVENT_CHOICES)
+    placement_area = models.CharField(max_length=50, blank=True, null=True)
+    session_key = models.CharField(max_length=64, blank=True, null=True, db_index=True)
+    page_context = models.CharField(max_length=80, blank=True, null=True)
+    buyer_category = models.CharField(max_length=30, blank=True, null=True)
+    county_context = models.CharField(max_length=100, blank=True, null=True)
+    intent_score = models.FloatField(default=0.0)
+    relevance_score = models.FloatField(default=0.0)
+    dwell_seconds = models.FloatField(default=0.0)
+    charge_amount = models.DecimalField(max_digits=14, decimal_places=2, default=0.00)
+    conversion_value = models.DecimalField(max_digits=14, decimal_places=2, default=0.00)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['campaign', 'event_type']),
+            models.Index(fields=['placement_area', 'created_at']),
+            models.Index(fields=['county_context', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.campaign_id} - {self.event_type}"
+
+
+class PromotionAnalyticsLog(models.Model):
+    EVENT_CHOICES = [
+        ('Impression', 'Impression'),
+        ('Click', 'Click'),
+        ('Inquiry', 'Inquiry'),
+    ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    promotion = models.ForeignKey(LandPromotion, on_delete=models.CASCADE, related_name='logs')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    event_type = models.CharField(max_length=20, choices=EVENT_CHOICES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    placement_area = models.CharField(max_length=50, blank=True, null=True) # homepage, search, map, recs, email, push
+
+    class Meta:
+        ordering = ['-timestamp']
+
+
+class SearchQueryLog(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='search_logs', null=True, blank=True)
+    query = models.CharField(max_length=255)
+    filters = models.JSONField(default=dict, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+
+class BuyerInterestProfile(models.Model):
+    CATEGORY_CHOICES = [
+        ('Residential', 'Residential Buyer'),
+        ('Agricultural', 'Agricultural Investor'),
+        ('Commercial', 'Commercial Developer'),
+        ('Speculator', 'Speculator'),
+        ('Luxury', 'Luxury Buyer'),
+        ('Diaspora', 'Diaspora Investor'),
+    ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='interest_profile')
+    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES, default='Residential')
+    preferred_counties = models.JSONField(default=list, blank=True)
+    budget_min = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    budget_max = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    preferred_acreage_min = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+    preferred_acreage_max = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+    preferred_land_use = models.CharField(max_length=20, blank=True, null=True)
+    last_location_lat = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    last_location_lng = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.email} Profile - {self.category}"
+
+
+class BuyerEngagementSignal(models.Model):
+    SIGNAL_CHOICES = [
+        ('View', 'View Listing'),
+        ('Click', 'Click Listing'),
+        ('Favorite', 'Favorite Listing'),
+        ('Inquiry', 'Inquiry/Message'),
+        ('Map_Interaction', 'Map Interaction'),
+        ('Video_Watch', 'Video Watch Time'),
+        ('Offer_Submitted', 'Offer Submitted'),
+    ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='engagement_signals')
+    parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='engagement_signals')
+    signal_type = models.CharField(max_length=20, choices=SIGNAL_CHOICES)
+    value = models.FloatField(default=1.0, help_text="Watch time in seconds or other weight indicator")
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+
+# ==================== PREMIUM PROMOTION TIER MODELS ====================
+
+class PromotionTier(models.Model):
+    """Seller promotion subscription tiers"""
+    TIER_LEVELS = [
+        ('Basic', 'Basic - Free'),
+        ('Pro', 'Pro - $100/month'),
+        ('Elite', 'Elite - $500/month'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=50, choices=TIER_LEVELS, unique=True)
+    slug = models.SlugField(max_length=50, unique=True)
+    tier_level = models.IntegerField(choices=[(0, 'Basic'), (1, 'Pro'), (2, 'Elite')])
+    monthly_price = models.DecimalField(max_digits=10, decimal_places=2)
+    features_json = models.JSONField(default=dict, help_text='Features available in this tier')
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['tier_level']
+        verbose_name_plural = 'Promotion Tiers'
+
+    def __str__(self):
+        return f"{self.name} (${self.monthly_price}/mo)"
+
+
+class PromotionPlan(models.Model):
+    """Seller's active promotion subscription"""
+    PLAN_STATUS = [
+        ('Active', 'Active'),
+        ('Expired', 'Expired'),
+        ('Paused', 'Paused'),
+        ('Cancelled', 'Cancelled'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    seller = models.OneToOneField(User, on_delete=models.CASCADE, related_name='promotion_plan',
+                                  limit_choices_to={'role__in': ['Seller', 'Agent']})
+    tier = models.ForeignKey(PromotionTier, on_delete=models.PROTECT)
+    start_date = models.DateTimeField(auto_now_add=True)
+    end_date = models.DateTimeField(null=True, blank=True)
+    auto_renew = models.BooleanField(default=True)
+    status = models.CharField(max_length=20, choices=PLAN_STATUS, default='Active')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'Promotion Plans'
+
+    def __str__(self):
+        return f"{self.seller.email} - {self.tier.name}"
+
+    @property
+    def is_active(self):
+        from django.utils import timezone
+        if self.status != 'Active':
+            return False
+        if self.end_date and self.end_date <= timezone.now():
+            return False
+        return True
+
+
+class PromotionPlanPayment(models.Model):
+    """Payment tracking for promotion subscriptions"""
+    PAYMENT_STATUS = [
+        ('Initiated', 'Initiated'),
+        ('Completed', 'Completed'),
+        ('Failed', 'Failed'),
+        ('Refunded', 'Refunded'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    plan = models.ForeignKey(PromotionPlan, on_delete=models.CASCADE, related_name='payments')
+    transaction = models.ForeignKey(Transaction, on_delete=models.SET_NULL, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='Initiated')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_reference = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'Promotion Plan Payments'
+
+    def __str__(self):
+        return f"Plan Payment: {self.plan.seller.email} - {self.status}"
+
+
+# ==================== SPONSORED AD MODELS ====================
+
+class SponsoredAd(models.Model):
+    """Individual sponsored ad/campaign"""
+    AD_STATUS = [
+        ('Draft', 'Draft'),
+        ('Scheduled', 'Scheduled'),
+        ('Active', 'Active'),
+        ('Paused', 'Paused'),
+        ('Ended', 'Ended'),
+        ('Rejected', 'Rejected'),
+    ]
+
+    AD_BILLING_MODELS = [
+        ('PayPerDay', 'Pay Per Day'),
+        ('PayPerClick', 'Pay Per Click'),
+        ('PayPerImpression', 'Pay Per Impression'),
+        ('Subscription', 'Subscription Bundle'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='sponsored_ads')
+    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sponsored_ads',
+                               limit_choices_to={'role__in': ['Seller', 'Agent']})
+    tier = models.CharField(max_length=20, default='Basic')
+
+    title = models.CharField(max_length=200, blank=True, help_text='Custom ad title (optional)')
+    description = models.TextField(max_length=500, blank=True, help_text='Ad description')
+    image_url = models.URLField(max_length=500, blank=True, help_text='Custom ad image')
+
+    status = models.CharField(max_length=20, choices=AD_STATUS, default='Draft')
+    billing_model = models.CharField(max_length=20, choices=AD_BILLING_MODELS, default='PayPerDay')
+
+    budget_daily = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True,
+                                       help_text='Daily budget for this campaign')
+    budget_total = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True,
+                                       help_text='Total campaign budget')
+    budget_spent = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    targeting_criteria = models.JSONField(default=dict, blank=True,
+                                          help_text='Location, budget, buyer type targeting')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    starts_at = models.DateTimeField(null=True, blank=True)
+    ends_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = 'Sponsored Ads'
+
+    def __str__(self):
+        return f"Ad: {self.parcel.parcel_number} - {self.status}"
+
+    @property
+    def is_active(self):
+        from django.utils import timezone
+        if self.status != 'Active':
+            return False
+        now = timezone.now()
+        if self.starts_at and self.starts_at > now:
+            return False
+        if self.ends_at and self.ends_at <= now:
+            return False
+        return True
+
+
+class AdEngagement(models.Model):
+    """Track ad interactions (impressions, clicks, conversions)"""
+    EVENT_TYPES = [
+        ('Impression', 'Impression'),
+        ('Click', 'Click'),
+        ('Save', 'Save'),
+        ('Inquiry', 'Inquiry/Conversion'),
+        ('Share', 'Share'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    ad = models.ForeignKey(SponsoredAd, on_delete=models.CASCADE, related_name='engagements')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    source_page = models.CharField(max_length=50, blank=True, help_text='homepage, search, recommendations, etc.')
+    device_type = models.CharField(max_length=20, blank=True, help_text='mobile, desktop, tablet')
+    geolocation = models.JSONField(default=dict, blank=True, help_text='User location at time of engagement')
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"Ad Engagement: {self.ad.parcel.parcel_number} - {self.event_type}"
+
+
+class AdBillingEvent(models.Model):
+    """Billable events for ads (impressions, clicks, conversions)"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    ad = models.ForeignKey(SponsoredAd, on_delete=models.CASCADE, related_name='billing_events')
+
+    event_type = models.CharField(max_length=20, choices=[
+        ('Impression', 'Impression'),
+        ('Click', 'Click'),
+        ('Conversion', 'Conversion'),
+    ])
+    amount_charged = models.DecimalField(max_digits=10, decimal_places=2)
+    engagement = models.ForeignKey(AdEngagement, on_delete=models.SET_NULL, null=True, blank=True)
+
+    timestamp = models.DateTimeField(auto_now_add=True)
+    billing_status = models.CharField(max_length=20, default='Pending', choices=[
+        ('Pending', 'Pending'),
+        ('Billed', 'Billed'),
+        ('Paid', 'Paid'),
+    ])
+
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name_plural = 'Ad Billing Events'
+
+    def __str__(self):
+        return f"Billing: {self.ad.parcel.parcel_number} - {self.event_type}"
+
+
+# ==================== ANALYTICS MODELS ====================
+
+class AnalyticsEvent(models.Model):
+    """General engagement tracking for analytics"""
+    EVENT_TYPES = [
+        ('View', 'Parcel View'),
+        ('SearchImpression', 'Search Result Impression'),
+        ('Click', 'Click Listing'),
+        ('Save', 'Save Favorite'),
+        ('Inquiry', 'Send Inquiry'),
+        ('Share', 'Share Listing'),
+        ('MapInteraction', 'Map Interaction'),
+        ('VideoWatch', 'Video Watch'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='analytics_events')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    event_type = models.CharField(max_length=30, choices=EVENT_TYPES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    metadata = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['parcel', 'timestamp']),
+            models.Index(fields=['event_type', 'timestamp']),
+        ]
+
+    def __str__(self):
+        return f"{self.event_type}: {self.parcel.parcel_number}"
+
+
+class RecommendationLog(models.Model):
+    """Track what was recommended to whom"""
+    ALGORITHM_TYPES = [
+        ('ContentBased', 'Content Based'),
+        ('Collaborative', 'Collaborative'),
+        ('GeoSpatial', 'Geo-Spatial'),
+        ('Trending', 'Trending'),
+        ('Sponsored', 'Sponsored'),
+        ('Hybrid', 'Hybrid'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recommendation_logs')
+    parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='recommendation_logs')
+
+    algorithm_type = models.CharField(max_length=30, choices=ALGORITHM_TYPES)
+    rank = models.IntegerField(help_text='Position in recommendation list')
+    score = models.FloatField(default=0, help_text='Recommendation score (0-100)')
+
+    clicked = models.BooleanField(default=False)
+    saved = models.BooleanField(default=False)
+    inquired = models.BooleanField(default=False)
+
+    timestamp = models.DateTimeField(auto_now_add=True)
+    feedback_score = models.IntegerField(null=True, blank=True, help_text='User feedback: -1 (bad), 0 (neutral), 1 (good)')
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"Rec: {self.user.email} -> {self.parcel.parcel_number}"
+
+
+# ==================== FRAUD & TRUST MODELS ====================
+
+class FraudScore(models.Model):
+    """Risk scoring for users"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='fraud_score')
+
+    score = models.IntegerField(default=0, help_text='0-100 fraud risk score')
+    risk_factors = models.JSONField(default=list, blank=True, help_text='List of detected risk factors')
+
+    flagged_for_review = models.BooleanField(default=False)
+    review_notes = models.TextField(blank=True, null=True)
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='fraud_reviews')
+
+    last_calculated = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = 'Fraud Scores'
+
+    def __str__(self):
+        return f"Fraud Score: {self.user.email} = {self.score}/100"
+
+    @property
+    def risk_level(self):
+        if self.score < 20:
+            return 'Low'
+        elif self.score < 50:
+            return 'Medium'
+        elif self.score < 75:
+            return 'High'
+        else:
+            return 'Critical'
+
+
+class VerificationBadge(models.Model):
+    """Trust badges for verified listings"""
+    BADGE_TYPES = [
+        ('Verified', 'Verified Listing'),
+        ('LegalChecked', 'Legal Checked'),
+        ('TransactionSuccess', 'Transaction Success'),
+        ('SellerTrusted', 'Trusted Seller'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='verification_badges')
+
+    badge_type = models.CharField(max_length=20, choices=BADGE_TYPES)
+    issued_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                 limit_choices_to={'role__in': ['Agent', 'Admin']})
+
+    issued_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    revoked = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-issued_at']
+        unique_together = ['parcel', 'badge_type']
+
+    def __str__(self):
+        return f"{self.get_badge_type_display()}: {self.parcel.parcel_number}"
+
+    @property
+    def is_active(self):
+        from django.utils import timezone
+        if self.revoked:
+            return False
+        if self.expires_at and self.expires_at <= timezone.now():
+            return False
+        return True
+
+
+# ==================== SERVICE FEE MODELS ====================
+
+class ServiceFee(models.Model):
+    """Track service fees for transactions"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    transaction = models.OneToOneField(Transaction, on_delete=models.CASCADE, related_name='service_fee')
+
+    platform_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0,
+                                       help_text='4% platform service fee')
+    escrow_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0,
+                                     help_text='2% escrow holding fee')
+    processing_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0,
+                                         help_text='Flat payment processing fee')
+    verification_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0,
+                                           help_text='Optional verification fee')
+    due_diligence_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0,
+                                            help_text='Optional due diligence fee')
+
+    total_fees = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    breakdown = models.JSONField(default=dict, blank=True,
+                                help_text='Detailed breakdown of fees')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'Service Fees'
+
+    def __str__(self):
+        return f"Fees for Transaction {self.transaction.id}"
+
+    @property
+    def total_with_fees(self):
+        return self.transaction.agreed_price + self.total_fees

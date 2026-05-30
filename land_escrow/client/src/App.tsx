@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowRight, Banknote, BarChart3, CircleCheckBig, Clock3, ExternalLink, FileSignature, FileText, Gavel, Heart, Landmark, Mail, MessageSquare, Printer, ReceiptText, ShieldAlert, ShieldCheck, Sparkles, Ticket, Users, WalletCards, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Banknote, BarChart3, CircleCheckBig, Clock3, ExternalLink, FileSignature, FileText, Gavel, Heart, Landmark, Mail, MessageSquare, Printer, ReceiptText, ShieldAlert, ShieldCheck, Sparkles, Ticket, Upload, Users, WalletCards, type LucideIcon } from 'lucide-react';
 import type { FormEvent, ReactNode } from 'react';
 import { readBootstrap } from './lib/bootstrap.js';
 import { AppShell } from './components/layout/app-shell.js';
@@ -7,16 +7,22 @@ import { PublicShell } from './components/layout/public-shell.js';
 import { PageHeader } from './components/layout/page-header.js';
 import { FormRenderer } from './components/forms/serialized-form.js';
 import { SignaturePad } from './components/forms/signature-pad.js';
+import { PopupAdManager } from './components/ads/popup-ad-manager.js';
 import { Input } from './components/ui/input.js';
 import { Textarea } from './components/ui/textarea.js';
 import { Badge } from './components/ui/badge.js';
 import { Button } from './components/ui/button.js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card.js';
 import { Separator } from './components/ui/separator.js';
-import type { ActionLink } from './types.js';
+import type { ActionLink, CheckoutData, ParcelSummary, RecommendationParcelSummary } from './types.js';
 import { cn } from './lib/utils.js';
+import { SellerPromotionsPage } from './pages/seller-promotions-page.js';
 
 const bootstrap = readBootstrap();
+const kshFormatter = new Intl.NumberFormat('en-KE', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 0,
+});
 
 function statusTone(status?: string) {
   if (!status) return 'muted';
@@ -28,6 +34,10 @@ function statusTone(status?: string) {
 }
 
 function money(value: string | number) {
+  const parsed = typeof value === 'number' ? value : Number(String(value).replace(/,/g, ''));
+  if (Number.isFinite(parsed)) {
+    return `KES ${kshFormatter.format(parsed)}`;
+  }
   return `KES ${value}`;
 }
 
@@ -60,6 +70,236 @@ function StatusBadge({ label, tone }: { label: string; tone?: string }) {
     outline: 'outline',
   };
   return <Badge tone={toneMap[tone || 'default']}>{label}</Badge>;
+}
+
+function ListingCard({
+  parcel,
+  showMatchScore = false,
+  className = '',
+  compact = false,
+  ctaLabel = 'View details',
+}: {
+  parcel: ParcelSummary & Partial<RecommendationParcelSummary> & { match_score?: number };
+  showMatchScore?: boolean;
+  className?: string;
+  compact?: boolean;
+  ctaLabel?: string;
+}) {
+  const promotionTone: 'default' | 'success' | 'warning' | 'danger' | 'muted' | 'outline' =
+    parcel.promotion_tier === 'Elite' ? 'success' : parcel.promotion_tier === 'Pro' ? 'warning' : 'outline';
+  const listingTone = statusTone(parcel.verification_status);
+  const price = parcel.displayed_price || parcel.asking_price;
+
+  return (
+    <Card className={cn('overflow-hidden bg-white/92', parcel.is_promoted ? 'border-amber-200 shadow-soft' : '', className)}>
+      <div className="relative aspect-[16/10] bg-gradient-to-br from-emerald-50 via-stone-50 to-teal-50">
+        {parcel.image_url ? (
+          <img src={parcel.image_url} alt={parcel.parcel_number} className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full items-center justify-center text-sm font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+            No image
+          </div>
+        )}
+        <div className="absolute left-3 top-3 flex max-w-[75%] flex-wrap gap-2">
+          {parcel.is_promoted ? <Badge tone="success">Featured</Badge> : null}
+          {parcel.promotion_tier ? <Badge tone={promotionTone}>{parcel.promotion_tier}</Badge> : null}
+          {showMatchScore && parcel.match_score != null ? <Badge tone="success">{Math.round(parcel.match_score)}% match</Badge> : null}
+        </div>
+        <div className="absolute right-3 top-3">
+          <StatusBadge label={parcel.status_badge || parcel.verification_status} tone={listingTone} />
+        </div>
+      </div>
+      <CardHeader className={cn('pb-3', compact ? 'pb-2' : '')}>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <CardTitle className={cn('text-base', compact ? 'text-sm' : '')}>{parcel.parcel_number}</CardTitle>
+            <CardDescription>
+              {parcel.county}, {parcel.constituency}
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className={cn('space-y-4', compact ? 'p-4 pt-0' : '')}>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="rounded-2xl bg-muted/60 p-3">
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Land use</div>
+            <div className="mt-1 font-semibold text-foreground">{parcel.land_use_type}</div>
+          </div>
+          <div className="rounded-2xl bg-muted/60 p-3">
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Size</div>
+            <div className="mt-1 font-semibold text-foreground">{parcel.land_size}</div>
+          </div>
+        </div>
+
+        {price ? (
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3">
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Price</div>
+            <div className="mt-1 text-lg font-black tracking-tight text-foreground">{money(price)}</div>
+          </div>
+        ) : null}
+
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          {parcel.ward ? <span>{parcel.ward}</span> : null}
+          {parcel.displayed_price || parcel.asking_price ? <span>Transparent pricing</span> : null}
+        </div>
+
+        <a
+          href={parcel.details_url}
+          className="inline-flex h-11 w-full items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          {parcel.manage_label || ctaLabel}
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </a>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RecommendationSection({
+  title,
+  subtitle,
+  items,
+  emptyMessage,
+  gridClassName = 'grid gap-4 md:grid-cols-2 xl:grid-cols-3',
+  showMatchScore = false,
+  ctaLabel = 'Open parcel',
+}: {
+  title: string;
+  subtitle?: string;
+  items: Array<ParcelSummary & Partial<RecommendationParcelSummary> & { match_score?: number }>;
+  emptyMessage?: string;
+  gridClassName?: string;
+  showMatchScore?: boolean;
+  ctaLabel?: string;
+}) {
+  if (!items.length) {
+    return emptyMessage ? (
+      <Card className="bg-white/92">
+        <CardContent className="p-8 text-center text-sm text-muted-foreground">{emptyMessage}</CardContent>
+      </Card>
+    ) : null;
+  }
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-black tracking-tight text-foreground">{title}</h2>
+          {subtitle ? <p className="mt-1 max-w-3xl text-sm leading-7 text-muted-foreground">{subtitle}</p> : null}
+        </div>
+        <Badge tone="outline">{items.length}</Badge>
+      </div>
+      <div className={gridClassName}>
+        {items.map((parcel) => (
+          <ListingCard key={parcel.parcel_number} parcel={parcel} showMatchScore={showMatchScore} compact ctaLabel={ctaLabel} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FeeBreakdownPanel({ checkout }: { checkout: CheckoutData }) {
+  const feeBreakdown = checkout.fee_breakdown?.length
+    ? checkout.fee_breakdown
+    : [
+        {
+          key: 'land_price',
+          label: 'Land Price',
+          amount: checkout.land_price || checkout.agreed_price,
+          description: 'The negotiated purchase price for the parcel.',
+          included: true,
+          tone: 'default' as const,
+        },
+        {
+          key: 'platform_service_fee',
+          label: checkout.fee_explanations?.['platform_service']?.label || 'Platform Service Fee',
+          amount: checkout.platform_service_fee || '0',
+          description: checkout.fee_explanations?.['platform_service']?.what || 'Covers platform operations and marketplace discovery.',
+          note: checkout.fee_explanations?.['platform_service']?.why || 'Supports the marketplace and buyer discovery tools.',
+          included: true,
+          tone: 'warning' as const,
+        },
+        {
+          key: 'escrow_fee',
+          label: checkout.fee_explanations?.['escrow_holding']?.label || 'Escrow Fee',
+          amount: checkout.escrow_fee || '0',
+          description: checkout.fee_explanations?.['escrow_holding']?.what || 'Secure fund holding and settlement management.',
+          note: checkout.fee_explanations?.['escrow_holding']?.why || 'Protects both buyer and seller during settlement.',
+          included: true,
+          tone: 'warning' as const,
+        },
+        {
+          key: 'processing_fee',
+          label: checkout.fee_explanations?.['payment_processing']?.label || 'Payment Processing Fee',
+          amount: checkout.processing_fee || '0',
+          description: checkout.fee_explanations?.['payment_processing']?.what || 'Payment gateway transaction costs.',
+          note: checkout.fee_explanations?.['payment_processing']?.why || 'Covers payment processor fees for secure transfers.',
+          included: true,
+          tone: 'default' as const,
+        },
+        {
+          key: 'legal_verification_fee',
+          label: checkout.fee_explanations?.['verification']?.label || 'Verification Fee',
+          amount: checkout.legal_verification_fee || '0',
+          description: checkout.fee_explanations?.['verification']?.what || 'Document review and compliance verification.',
+          note: checkout.include_legal_verification ? 'Selected' : 'Optional',
+          included: Boolean(checkout.include_legal_verification),
+          tone: 'default' as const,
+        },
+        {
+          key: 'due_diligence_fee',
+          label: checkout.fee_explanations?.['due_diligence']?.label || 'Due Diligence Fee',
+          amount: checkout.due_diligence_fee || '0',
+          description: checkout.fee_explanations?.['due_diligence']?.what || 'Legal document review and due diligence.',
+          note: checkout.include_due_diligence ? 'Selected' : 'Optional',
+          included: Boolean(checkout.include_due_diligence),
+          tone: 'default' as const,
+        },
+        {
+          key: 'total_payable',
+          label: 'TOTAL PAYABLE',
+          amount: checkout.total_payable || checkout.grand_total || checkout.agreed_price,
+          description: 'Land price plus all selected service fees.',
+          included: true,
+          tone: 'success' as const,
+        },
+      ];
+  if (!feeBreakdown.length) return null;
+
+  return (
+    <div className="mt-6 space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm font-semibold text-foreground">Transparent fee breakdown</div>
+        <Badge tone="outline">Itemized</Badge>
+      </div>
+
+      <div className="space-y-3">
+        {feeBreakdown.map((line) => (
+          <div
+            key={line.key}
+            className={cn(
+              'rounded-3xl border p-4 shadow-sm',
+              line.tone === 'success' ? 'border-emerald-200 bg-emerald-50/70' : 'border-stone-200 bg-white'
+            )}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
+                <div className="font-semibold text-foreground">{line.label}</div>
+                <div className="text-xs leading-6 text-muted-foreground">{line.description}</div>
+                {line.note ? <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{line.note}</div> : null}
+              </div>
+              <div className="text-right">
+                <div className={cn('text-base font-black tracking-tight', line.tone === 'success' ? 'text-emerald-700' : 'text-foreground')}>
+                  {money(line.amount)}
+                </div>
+                {line.included === false ? <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Optional</div> : null}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function StatGrid() {
@@ -96,47 +336,7 @@ function ParcelGrid() {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {parcels.map((parcel) => (
-        <Card key={parcel.parcel_number} className="overflow-hidden bg-white/92">
-          <div className="aspect-[16/10] bg-gradient-to-br from-emerald-50 via-stone-50 to-teal-50">
-            {parcel.image_url ? (
-              <img src={parcel.image_url} alt={parcel.parcel_number} className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full items-center justify-center text-sm font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                No image
-              </div>
-            )}
-          </div>
-          <CardHeader className="pb-3">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <CardTitle className="text-base">{parcel.parcel_number}</CardTitle>
-                <CardDescription>
-                  {parcel.county}, {parcel.constituency}
-                </CardDescription>
-              </div>
-              <StatusBadge label={parcel.status_badge || parcel.verification_status} tone={statusTone(parcel.verification_status)} />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-2xl bg-muted/60 p-3">
-                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Land use</div>
-                <div className="mt-1 font-semibold text-foreground">{parcel.land_use_type}</div>
-              </div>
-              <div className="rounded-2xl bg-muted/60 p-3">
-                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Size</div>
-                <div className="mt-1 font-semibold text-foreground">{parcel.land_size}</div>
-              </div>
-            </div>
-            <a
-              href={parcel.details_url}
-              className="inline-flex h-11 w-full items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              {parcel.manage_label || 'View details'}
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </a>
-          </CardContent>
-        </Card>
+        <ListingCard key={parcel.parcel_number} parcel={parcel} />
       ))}
     </div>
   );
@@ -1069,42 +1269,7 @@ function LandingPage() {
             </div>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {parcels.slice(0, 6).map((parcel) => (
-                <Card key={parcel.parcel_number} className="overflow-hidden bg-white/92">
-                  <div className="aspect-[16/10] bg-gradient-to-br from-emerald-50 via-stone-50 to-teal-50">
-                    {parcel.image_url ? (
-                      <img src={parcel.image_url} alt={parcel.parcel_number} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-sm font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                        No image
-                      </div>
-                    )}
-                  </div>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <CardTitle className="text-base">{parcel.parcel_number}</CardTitle>
-                        <CardDescription>{parcel.county}, {parcel.constituency}</CardDescription>
-                      </div>
-                      <Badge tone={parcel.verification_status === 'Verified' ? 'success' : 'warning'}>{parcel.status_badge || parcel.verification_status}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="rounded-2xl bg-muted/60 p-3">
-                        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Land use</div>
-                        <div className="mt-1 font-semibold text-foreground">{parcel.land_use_type}</div>
-                      </div>
-                      <div className="rounded-2xl bg-muted/60 p-3">
-                        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Size</div>
-                        <div className="mt-1 font-semibold text-foreground">{parcel.land_size}</div>
-                      </div>
-                    </div>
-                    <a href={parcel.details_url} className="inline-flex h-11 w-full items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
-                      {parcel.manage_label || 'View details'}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </a>
-                  </CardContent>
-                </Card>
+                <ListingCard key={parcel.parcel_number} parcel={parcel} />
               ))}
             </div>
           </section>
@@ -1124,7 +1289,7 @@ function ContentPage() {
 
   return (
     <PublicShell title={bootstrap.title} subtitle={bootstrap.subtitle} nav={bootstrap.nav} user={bootstrap.user} actions={bootstrap.actions}>
-      <div className="space-y-6">
+      <div className="space-y-8">
         <section className="space-y-4">
           {hero.kicker ? <div className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-700">{hero.kicker}</div> : null}
           <div className="flex flex-col gap-4 rounded-[2rem] border border-border/70 bg-white/90 p-6 shadow-soft lg:flex-row lg:items-end lg:justify-between">
@@ -1283,7 +1448,7 @@ function ParcelDetailPage() {
 
   return (
     <AppShell {...shellProps}>
-      <div className="space-y-6">
+      <div className="space-y-8">
         <PageHeader
           kicker="Parcel profile"
           title={detail.parcel_number}
@@ -1334,8 +1499,13 @@ function ParcelDetailPage() {
             </Card>
 
             <Card className="bg-white/92">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="flex items-center gap-2 text-base"><FileText className="h-4 w-4 text-emerald-700" />Compliance documents</CardTitle>
+                {detail.upload_document_url ? (
+                  <a href={detail.upload_document_url} className="inline-flex h-9 items-center justify-center rounded-full border border-border bg-white px-4 text-xs font-semibold text-foreground hover:bg-muted">
+                    <Upload className="mr-2 h-4 w-4" /> Upload Document
+                  </a>
+                ) : null}
               </CardHeader>
               <CardContent className="space-y-3">
                 {detail.documents.length ? detail.documents.map((doc) => (
@@ -1675,45 +1845,107 @@ function RecommendationsPage() {
 
   return (
     <AppShell {...shellProps}>
-      <div className="space-y-6">
+      <div className="space-y-8">
         <PageHeader kicker="AI-powered" title={bootstrap.title} subtitle={bootstrap.subtitle} actions={bootstrap.actions} />
 
-        <div className="space-y-4">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <div className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-700">{page.rec_type === 'personalized' ? 'Tailored picks' : 'Trending now'}</div>
-              <h2 className="text-2xl font-black tracking-tight text-foreground">Recommended for you</h2>
+        <Card className="border-border/70 bg-white/92">
+          <CardContent className="grid gap-4 p-6 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge tone={page.rec_type === 'personalized' ? 'success' : 'outline'}>
+                  {page.rec_type === 'personalized' ? 'ML personalized' : 'Popular feed'}
+                </Badge>
+                <Badge tone="outline">{page.popular_county || 'Target area'}</Badge>
+              </div>
+              <h2 className="text-2xl font-black tracking-tight text-foreground">Land discovery tuned to intent, budget, and geography</h2>
+              <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
+                The feed combines behavior signals, map proximity, target county demand, and premium sponsored placements to surface land that is actually relevant.
+              </p>
             </div>
-            {page.rec_type === 'personalized' ? <Badge tone="success">ML personalized</Badge> : <Badge tone="outline">Popular</Badge>}
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {page.recommended.length ? page.recommended.map((parcel) => (
-              <Card key={parcel.parcel_number} className="overflow-hidden bg-white/92">
-                <div className="aspect-[16/10] bg-gradient-to-br from-emerald-50 via-stone-50 to-teal-50">
-                  {parcel.image_url ? <img src={parcel.image_url} alt={parcel.parcel_number} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-emerald-700"><Sparkles className="h-10 w-10" /></div>}
-                </div>
-                <CardContent className="space-y-3 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-bold text-foreground">{parcel.parcel_number}</div>
-                      <div className="text-xs text-muted-foreground">{parcel.ward}, {parcel.county}</div>
-                    </div>
-                    {parcel.match_score != null ? <Badge tone="success">{Math.round(parcel.match_score)}% match</Badge> : null}
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                { label: 'Recommended', value: page.recommended?.length || 0, tone: 'success' as const },
+                { label: 'Sponsored', value: page.sponsored_listings?.length || 0, tone: 'warning' as const },
+                { label: 'Hot deals', value: page.hot_deals?.length || 0, tone: 'accent' as const },
+                { label: 'Popular', value: page.popular_parcels?.length || 0, tone: 'default' as const },
+              ].map((stat) => (
+                <div key={stat.label} className="rounded-3xl border border-border bg-muted/30 p-4">
+                  <div className="text-[10px] font-black uppercase tracking-[0.26em] text-muted-foreground">{stat.label}</div>
+                  <div className={cn('mt-2 text-2xl font-black tracking-tight', stat.tone === 'success' ? 'text-emerald-700' : stat.tone === 'warning' ? 'text-amber-700' : stat.tone === 'accent' ? 'text-slate-900' : 'text-foreground')}>
+                    {stat.value}
                   </div>
-                  <div className="text-base font-black text-emerald-700">KES {parcel.land_size}</div>
-                  <a href={parcel.details_url} className="inline-flex h-10 w-full items-center justify-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
-                    Open parcel
-                  </a>
-                </CardContent>
-              </Card>
-            )) : (
-              <Card className="bg-white/92 md:col-span-2 xl:col-span-4"><CardContent className="p-8 text-center text-sm text-muted-foreground">No recommendations yet.</CardContent></Card>
-            )}
-          </div>
-        </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-        {page.popular_parcels.length ? (
+        <RecommendationSection
+          title="Recommended for You"
+          subtitle="Personalized land matches built from your behavior and location signals."
+          items={page.recommended || []}
+          gridClassName="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+          showMatchScore
+          ctaLabel="Open parcel"
+        />
+
+        <RecommendationSection
+          title="Premium Sponsored Lands"
+          subtitle="Priority placements from sellers investing in visibility."
+          items={page.sponsored_listings || []}
+          gridClassName="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+          ctaLabel="Open sponsored parcel"
+        />
+
+        <RecommendationSection
+          title="Hot Deals Near You"
+          subtitle="Lower-priced opportunities inside your target radius."
+          items={page.hot_deals || []}
+          gridClassName="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+          ctaLabel="Open deal"
+        />
+
+        <RecommendationSection
+          title={`Trending in ${page.popular_county || 'your area'}`}
+          subtitle="Listings with rising engagement in your strongest county."
+          items={page.trending_in_target_area || []}
+          gridClassName="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+          ctaLabel="Open trend"
+        />
+
+        <RecommendationSection
+          title="Recently Viewed Lands"
+          subtitle="Resume from where you left off."
+          items={page.recently_viewed || []}
+          gridClassName="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+          ctaLabel="Continue browsing"
+        />
+
+        <RecommendationSection
+          title="Recently Viewed Similar Lands"
+          subtitle="Similar parcels matched to your last viewing session."
+          items={page.recently_viewed_similar || []}
+          gridClassName="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+          ctaLabel="Open similar parcel"
+        />
+
+        <RecommendationSection
+          title="People Also Viewed"
+          subtitle="What comparable buyers are exploring."
+          items={page.people_also_viewed || []}
+          gridClassName="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+          ctaLabel="Open parcel"
+        />
+
+        <RecommendationSection
+          title={`Popular in ${page.popular_county || 'your county'}`}
+          subtitle="The highest-interest parcels in your active county."
+          items={page.popular_parcels || []}
+          gridClassName="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+          ctaLabel="Open parcel"
+        />
+
+        {false && page.popular_parcels.length ? (
           <Card className="bg-white/92">
             <CardHeader>
               <CardTitle className="text-base">Popular in {page.popular_county}</CardTitle>
@@ -1728,7 +1960,7 @@ function RecommendationsPage() {
           </Card>
         ) : null}
 
-        {page.recently_viewed.length ? (
+        {false && page.recently_viewed.length ? (
           <Card className="bg-white/92">
             <CardHeader>
               <CardTitle className="text-base">Recently viewed</CardTitle>
@@ -2638,8 +2870,8 @@ function CheckoutFullPage() {
                   <div className="mt-1 text-sm font-black text-slate-900">{checkout.transaction_id.slice(0, 8).toUpperCase()}</div>
                 </div>
                 <div className="rounded-3xl border border-stone-200 bg-stone-50 p-4">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Agreed price</div>
-                  <div className="mt-1 text-sm font-black text-emerald-700">KES {checkout.agreed_price}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Total payable</div>
+                  <div className="mt-1 text-sm font-black text-emerald-700">{money(checkout.total_payable || checkout.grand_total || checkout.agreed_price)}</div>
                 </div>
               </div>
             </div>
@@ -2662,10 +2894,12 @@ function CheckoutFullPage() {
                   <div className="mt-1 font-semibold text-foreground">{checkout.buyer_email || 'N/A'}</div>
                 </div>
                 <div className="rounded-2xl bg-white p-4 shadow-sm">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Amount due</div>
-                  <div className="mt-1 text-xl font-black tracking-tight text-emerald-700">KES {checkout.agreed_price}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Land price</div>
+                  <div className="mt-1 text-xl font-black tracking-tight text-emerald-700">{money(checkout.land_price || checkout.agreed_price)}</div>
                 </div>
               </div>
+
+              <FeeBreakdownPanel checkout={checkout} />
 
               {checkout.is_joint_purchase ? (
                 <div className="mt-6 space-y-4">
@@ -3654,56 +3888,66 @@ function ReactApp() {
     csrfToken: bootstrap.csrf_token,
   };
 
-  if (page === 'landing') return <LandingPage />;
-  if (page === 'content') return <ContentPage />;
-  if (page === 'status') return <StatusPage />;
-  if (page === 'form' || page === 'staff-login' || page === 'agent-kyc' || page === 'payment-onboarding') return <GenericFormPage />;
-  if (page === 'ai-kyc') return <AIKYCPage />;
-  if (page === 'buyer-choice') return <AppShell {...shellProps}><BuyerChoicePage /></AppShell>;
-  if (page === 'legal' || page === 'joint-laws') return <LegalPage />;
-  if (page === 'parcel-list') return <AppShell {...shellProps}><ParcelListPage /></AppShell>;
-  if (page === 'transactions') return <AppShell {...shellProps}><TransactionsPage /></AppShell>;
-  if (page === 'joint-groups') return <AppShell {...shellProps}><JointGroupsPage /></AppShell>;
-  if (page === 'joint-group-detail') return <AppShell {...shellProps}><JointGroupDetailPage /></AppShell>;
-  if (page === 'parcel-detail') return <ParcelDetailPage />;
-  if (page === 'messages') return <MessagesPage />;
-  if (page === 'support') return <SupportPage />;
-  if (page === 'contract') return <ContractPage />;
-  if (page === 'checkout' || page === 'checkout-fullpage') return <CheckoutFullPage />;
-  if (page === 'recommendations') return <RecommendationsPage />;
-  if (page === 'price-prediction') return <PredictionPage />;
-  if (page === 'task-management') return <TaskManagementPage />;
-  if (page === 'approvals') return <ApprovalsPage />;
-  if (page === 'user-review') return <UserReviewPage />;
-  if (page === 'seller-withdraw') return <SellerWithdrawPage />;
-  if (page === 'escrow-release') return <EscrowReleasePage />;
-  if (page === 'agent-withdraw') return <AgentWithdrawPage />;
-  if (page === 'dashboard' || page === 'admin-dashboard' || page === 'agent-dashboard') return <AppShell {...shellProps}><DashboardPage /></AppShell>;
-  if (page === 'finance') return <AppShell {...shellProps}><AdminFinancePage /></AppShell>;
-  if (page === 'contract-fullpage') return <ContractFullPage />;
-  if (page === 'admin-withdraw') return <AdminWithdrawPage />;
-  if (page === 'message-thread') return <MessageThreadPage />;
+  let pageContent: ReactNode = null;
 
-  // Fallback to empty shell
+  if (page === 'landing') pageContent = <LandingPage />;
+  else if (page === 'content') pageContent = <ContentPage />;
+  else if (page === 'status') pageContent = <StatusPage />;
+  else if (page === 'form' || page === 'staff-login' || page === 'agent-kyc' || page === 'payment-onboarding') pageContent = <GenericFormPage />;
+  else if (page === 'ai-kyc') pageContent = <AIKYCPage />;
+  else if (page === 'buyer-choice') pageContent = <AppShell {...shellProps}><BuyerChoicePage /></AppShell>;
+  else if (page === 'legal' || page === 'joint-laws') pageContent = <LegalPage />;
+  else if (page === 'parcel-list') pageContent = <AppShell {...shellProps}><ParcelListPage /></AppShell>;
+  else if (page === 'transactions') pageContent = <AppShell {...shellProps}><TransactionsPage /></AppShell>;
+  else if (page === 'joint-groups') pageContent = <AppShell {...shellProps}><JointGroupsPage /></AppShell>;
+  else if (page === 'joint-group-detail') pageContent = <AppShell {...shellProps}><JointGroupDetailPage /></AppShell>;
+  else if (page === 'parcel-detail') pageContent = <ParcelDetailPage />;
+  else if (page === 'messages') pageContent = <MessagesPage />;
+  else if (page === 'support') pageContent = <SupportPage />;
+  else if (page === 'contract') pageContent = <ContractPage />;
+  else if (page === 'checkout' || page === 'checkout-fullpage') pageContent = <CheckoutFullPage />;
+  else if (page === 'recommendations') pageContent = <RecommendationsPage />;
+  else if (page === 'price-prediction') pageContent = <PredictionPage />;
+  else if (page === 'task-management') pageContent = <TaskManagementPage />;
+  else if (page === 'approvals') pageContent = <ApprovalsPage />;
+  else if (page === 'user-review') pageContent = <UserReviewPage />;
+  else if (page === 'seller-promotions') pageContent = <AppShell {...shellProps}><SellerPromotionsPage pageData={bootstrap.seller_promotions_page!} csrfToken={bootstrap.csrf_token} /></AppShell>;
+  else if (page === 'seller-withdraw') pageContent = <SellerWithdrawPage />;
+  else if (page === 'escrow-release') pageContent = <EscrowReleasePage />;
+  else if (page === 'agent-withdraw') pageContent = <AgentWithdrawPage />;
+  else if (page === 'dashboard' || page === 'admin-dashboard' || page === 'agent-dashboard') pageContent = <AppShell {...shellProps}><DashboardPage /></AppShell>;
+  else if (page === 'finance') pageContent = <AppShell {...shellProps}><AdminFinancePage /></AppShell>;
+  else if (page === 'contract-fullpage') pageContent = <ContractFullPage />;
+  else if (page === 'admin-withdraw') pageContent = <AdminWithdrawPage />;
+  else if (page === 'message-thread') pageContent = <MessageThreadPage />;
+  else {
+    pageContent = (
+      <AppShell {...shellProps}>
+        <div className="space-y-6">
+          <PageHeader kicker="Digiland" title={bootstrap.title} subtitle={bootstrap.subtitle} badge={bootstrap.notice} actions={bootstrap.actions} />
+          <Card className="bg-white/92">
+            <CardHeader>
+              <CardTitle>Page not yet migrated</CardTitle>
+              <CardDescription>This screen is still using the Django template route. The React shell is ready for it, but the view has not been switched over yet.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm text-muted-foreground">
+              <p>We have already moved the main dashboard, parcel list, transactions, legal pages, and joint-group screens into the new UI layer.</p>
+              <div className="flex flex-wrap gap-3">
+                <Button className="rounded-full" onClick={() => window.location.reload()}>Refresh</Button>
+                <Button variant="outline" className="rounded-full" onClick={() => (window.location.href = '/')}>Return home</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
-    <AppShell {...shellProps}>
-      <div className="space-y-6">
-        <PageHeader kicker="Digiland" title={bootstrap.title} subtitle={bootstrap.subtitle} badge={bootstrap.notice} actions={bootstrap.actions} />
-        <Card className="bg-white/92">
-          <CardHeader>
-            <CardTitle>Page not yet migrated</CardTitle>
-            <CardDescription>This screen is still using the Django template route. The React shell is ready for it, but the view has not been switched over yet.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
-            <p>We have already moved the main dashboard, parcel list, transactions, legal pages, and joint-group screens into the new UI layer.</p>
-            <div className="flex flex-wrap gap-3">
-              <Button className="rounded-full" onClick={() => window.location.reload()}>Refresh</Button>
-              <Button variant="outline" className="rounded-full" onClick={() => (window.location.href = '/')}>Return home</Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </AppShell>
+    <>
+      {pageContent}
+      <PopupAdManager popupAds={bootstrap.popup_ads} csrfToken={bootstrap.csrf_token} />
+    </>
   );
 }
 
