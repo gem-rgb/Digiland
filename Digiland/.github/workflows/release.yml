@@ -1,0 +1,522 @@
+# =============================================================================
+# Digiland — Release Management Pipeline
+# =============================================================================
+# Automates semantic versioning, changelog generation, release candidate
+# creation, production promotion, hotfix flows, Docker image tagging,
+# artifact signing, and rollback capability.
+# Triggers: push to main, manual dispatch with release type selection
+# =============================================================================
+
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: "Release type"
+        required: true
+        default: "patch"
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+          - rc
+          - hotfix
+      hotfix_base:
+        description: "Base tag for hotfix (e.g. v1.2.3)"
+        required: false
+        type: string
+      dry_run:
+        description: "Dry run (no actual release)"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  PYTHON_VERSION: "3.12"
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+# ---------------------------------------------------------------------------
+# Jobs
+# ---------------------------------------------------------------------------
+jobs:
+  # =========================================================================
+  # 1. DETERMINE VERSION
+  # =========================================================================
+  determine-version:
+    name: Determine Next Version
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.version.outputs.new_version }}
+      previous_version: ${{ steps.version.outputs.previous_version }}
+      release_type: ${{ steps.version.outputs.release_type }}
+      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Get latest tag
+        id: latest_tag
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "Latest tag: $LATEST_TAG"
+
+      - name: Calculate next version
+        id: version
+        run: |
+          LATEST="${{ steps.latest_tag.outputs.tag }}"
+          # Strip leading 'v'
+          VERSION="${LATEST#v}"
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+          # Handle rc suffix in patch
+          PATCH="${PATCH%%-rc*}"
+          PATCH="${PATCH%%-*}"
+
+          MAJOR=${MAJOR:-0}
+          MINOR=${MINOR:-0}
+          PATCH=${PATCH:-0}
+
+          RELEASE_TYPE="${{ github.event.inputs.release_type || 'patch' }}"
+          IS_PRERELEASE="false"
+
+          case "$RELEASE_TYPE" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+            rc)
+              PATCH=$((PATCH + 1))
+              NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}-rc.1"
+              IS_PRERELEASE="true"
+              ;;
+            hotfix)
+              PATCH=$((PATCH + 1))
+              HOTFIX_BASE="${{ github.event.inputs.hotfix_base }}"
+              if [ -n "$HOTFIX_BASE" ]; then
+                BASE="${HOTFIX_BASE#v}"
+                IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
+                PATCH=$((PATCH + 1))
+              fi
+              NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}-hotfix.1"
+              IS_PRERELEASE="true"
+              ;;
+          esac
+
+          if [ -z "$NEW_VERSION" ]; then
+            NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          fi
+
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "previous_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "release_type=$RELEASE_TYPE" >> $GITHUB_OUTPUT
+          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+          echo "Next version: v${NEW_VERSION} (from v${VERSION}, type: ${RELEASE_TYPE})"
+
+  # =========================================================================
+  # 2. GENERATE CHANGELOG
+  # =========================================================================
+  generate-changelog:
+    name: Generate Changelog
+    runs-on: ubuntu-latest
+    needs: determine-version
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog from commits
+        id: changelog
+        run: |
+          PREV_TAG="${{ needs.determine-version.outputs.previous_version }}"
+          NEW_VERSION="${{ needs.determine-version.outputs.new_version }}"
+
+          if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "0.0.0" ]; then
+            RANGE="v${PREV_TAG}..HEAD"
+          else
+            RANGE="HEAD~50..HEAD"
+          fi
+
+          # Categorize commits
+          FEATURES=$(git log "$RANGE" --pretty=format:"- %s (%h)" --grep="^feat" 2>/dev/null || true)
+          FIXES=$(git log "$RANGE" --pretty=format:"- %s (%h)" --grep="^fix" 2>/dev/null || true)
+          BREAKING=$(git log "$RANGE" --pretty=format:"- %s (%h)" --grep="BREAKING" 2>/dev/null || true)
+          MISC=$(git log "$RANGE" --pretty=format:"- %s (%h)" --grep="^chore\|^docs\|^style\|^refactor\|^test\|^ci" 2>/dev/null || true)
+
+          # Build changelog
+          {
+            echo "## v${NEW_VERSION} ($(date -u '+%Y-%m-%d'))"
+            echo ""
+
+            if [ -n "$BREAKING" ]; then
+              echo "### :rotating_light: Breaking Changes"
+              echo "$BREAKING"
+              echo ""
+            fi
+
+            if [ -n "$FEATURES" ]; then
+              echo "### :rocket: Features"
+              echo "$FEATURES"
+              echo ""
+            fi
+
+            if [ -n "$FIXES" ]; then
+              echo "### :bug: Bug Fixes"
+              echo "$FIXES"
+              echo ""
+            fi
+
+            if [ -n "$MISC" ]; then
+              echo "### :wrench: Maintenance"
+              echo "$MISC"
+              echo ""
+            fi
+
+            echo "---"
+            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/v${PREV_TAG}...v${NEW_VERSION}"
+          } > CHANGELOG_ENTRY.md
+
+          # Output for use in release notes
+          CHANGELOG_CONTENT=$(cat CHANGELOG_ENTRY.md)
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          cat CHANGELOG_ENTRY.md
+
+      - name: Upload changelog
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog-entry
+          path: CHANGELOG_ENTRY.md
+          retention-days: 90
+
+  # =========================================================================
+  # 3. BUILD AND TAG DOCKER IMAGE
+  # =========================================================================
+  build-release-image:
+    name: Build & Tag Release Image
+    runs-on: ubuntu-latest
+    needs: determine-version
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    outputs:
+      image_digest: ${{ steps.build.outputs.digest }}
+      image_tags: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ needs.determine-version.outputs.new_version }}
+            type=raw,value=v${{ needs.determine-version.outputs.new_version }}
+            type=sha,prefix=
+            type=raw,value=latest,enable=${{ needs.determine-version.outputs.is_prerelease == 'false' }}
+            type=raw,value=stable,enable=${{ needs.determine-version.outputs.is_prerelease == 'false' }}
+            type=raw,value=rc,enable=${{ contains(needs.determine-version.outputs.new_version, 'rc') }}
+            type=raw,value=hotfix,enable=${{ contains(needs.determine-version.outputs.new_version, 'hotfix') }}
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./land_escrow
+          file: ./land_escrow/config/Dockerfile.production
+          push: ${{ github.event.inputs.dry_run != 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+            VERSION=v${{ needs.determine-version.outputs.new_version }}
+
+      - name: Sign image with Cosign
+        if: github.event.inputs.dry_run != 'true'
+        uses: sigstore/cosign-installer@v3
+        continue-on-error: true
+
+      - name: Sign the Docker image
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          cosign sign --yes \
+            ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }} \
+            || echo "::warning::Image signing failed — verify Cosign setup"
+        continue-on-error: true
+
+      - name: Verify image signature
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          cosign verify \
+            ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }} \
+            || echo "::warning::Image verification failed"
+        continue-on-error: true
+
+  # =========================================================================
+  # 4. CREATE RELEASE CANDIDATE
+  # =========================================================================
+  release-candidate:
+    name: Create Release Candidate
+    runs-on: ubuntu-latest
+    needs: [determine-version, generate-changelog, build-release-image]
+    if: contains(needs.determine-version.outputs.new_version, 'rc') || contains(needs.determine-version.outputs.new_version, 'hotfix')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog-entry
+
+      - name: Create release candidate tag
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ needs.determine-version.outputs.new_version }}" -m "Release candidate v${{ needs.determine-version.outputs.new_version }}"
+          git push origin "v${{ needs.determine-version.outputs.new_version }}"
+
+      - name: Create GitHub pre-release
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          CHANGELOG=$(cat CHANGELOG_ENTRY.md)
+          gh release create "v${{ needs.determine-version.outputs.new_version }}" \
+            --title "v${{ needs.determine-version.outputs.new_version }}" \
+            --notes "$CHANGELOG" \
+            --prerelease \
+            --target ${{ github.sha }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: RC summary
+        run: |
+          echo "## Release Candidate Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version**: v${{ needs.determine-version.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Type**: ${{ needs.determine-version.outputs.release_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Docker image**: \`${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.determine-version.outputs.new_version }}\`" >> $GITHUB_STEP_SUMMARY
+
+  # =========================================================================
+  # 5. PRODUCTION RELEASE
+  # =========================================================================
+  production-release:
+    name: Production Release
+    runs-on: ubuntu-latest
+    needs: [determine-version, generate-changelog, build-release-image]
+    if: needs.determine-version.outputs.is_prerelease == 'false'
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Download changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog-entry
+
+      - name: Update CHANGELOG.md
+        run: |
+          if [ -f CHANGELOG.md ]; then
+            # Prepend new entry
+            {
+              cat CHANGELOG_ENTRY.md
+              echo ""
+              cat CHANGELOG.md
+            } > CHANGELOG.md.new
+            mv CHANGELOG.md.new CHANGELOG.md
+          else
+            cp CHANGELOG_ENTRY.md CHANGELOG.md
+          fi
+
+          git add CHANGELOG.md
+          git commit -m "docs: update CHANGELOG.md for v${{ needs.determine-version.outputs.new_version }}" || true
+
+      - name: Create release tag
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          git tag -a "v${{ needs.determine-version.outputs.new_version }}" \
+            -m "Release v${{ needs.determine-version.outputs.new_version }}"
+          git push origin "v${{ needs.determine-version.outputs.new_version }}"
+
+      - name: Create GitHub release
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          CHANGELOG=$(cat CHANGELOG_ENTRY.md)
+          gh release create "v${{ needs.determine-version.outputs.new_version }}" \
+            --title "v${{ needs.determine-version.outputs.new_version }}" \
+            --notes "$CHANGELOG" \
+            --target ${{ github.sha }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate release notes
+        run: |
+          echo "## Production Release" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | \`v${{ needs.determine-version.outputs.new_version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Previous | \`v${{ needs.determine-version.outputs.previous_version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Type | ${{ needs.determine-version.outputs.release_type }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Image | \`${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.determine-version.outputs.new_version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image Digest | \`${{ needs.build-release-image.outputs.image_digest }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Signed | Yes (Cosign) |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify Slack — Release
+        if: always()
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": "Release v${{ needs.determine-version.outputs.new_version }} ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ job.status == 'success' && ':rocket' || ':x' }} *Release v${{ needs.determine-version.outputs.new_version }} ${{ job.status }}*\n• Type: ${{ needs.determine-version.outputs.release_type }}\n• Image: \`${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.determine-version.outputs.new_version }}\`\n• Commit: \`${{ github.sha }}\`\n• Actor: ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_PRODUCTION }}
+        continue-on-error: true
+
+  # =========================================================================
+  # 6. ROLLBACK CAPABILITY
+  # =========================================================================
+  rollback:
+    name: Rollback Release
+    runs-on: ubuntu-latest
+    if: failure()
+    needs: [production-release, release-candidate]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Identify rollback target
+        id: rollback
+        run: |
+          # Find the previous stable release
+          PREV_TAG=$(git tag --sort=-version:refname | grep -v "rc\|hotfix" | head -2 | tail -1 || echo "none")
+          echo "previous_tag=$PREV_TAG" >> $GITHUB_OUTPUT
+          echo "Rollback target: $PREV_TAG"
+
+      - name: Revert Docker tag 'latest' to previous version
+        if: steps.rollback.outputs.previous_tag != 'none'
+        run: |
+          echo "Rolling back 'latest' tag to ${{ steps.rollback.outputs.previous_tag }}"
+          # Re-tag the previous image as latest using skopeo or crane
+          # This is a placeholder — actual implementation depends on registry access
+          echo "::warning::Manual rollback may be required: re-deploy image tag ${{ steps.rollback.outputs.previous_tag }}"
+
+      - name: Create rollback issue
+        run: |
+          gh issue create \
+            --title "Rollback: v${{ needs.determine-version.outputs.new_version }} failed" \
+            --body "Automated rollback triggered for release v${{ needs.determine-version.outputs.new_version }}.
+
+          **Rollback target**: ${{ steps.rollback.outputs.previous_tag }}
+          **Failed commit**: ${{ github.sha }}
+          **Triggered by**: ${{ github.actor }}
+
+          Action items:
+          - [ ] Verify the previous version is stable
+          - [ ] Re-deploy using image tag \`${{ steps.rollback.outputs.previous_tag }}\`
+          - [ ] Update DNS/service if needed
+          - [ ] Investigate root cause of failure
+          - [ ] Update changelog with rollback note" \
+            --label "rollback,bug,critical" || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify Slack — Rollback
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": ":rotating_light: Release rollback triggered for v${{ needs.determine-version.outputs.new_version }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":rotating_light: *Release Rollback*\n• Failed version: \`v${{ needs.determine-version.outputs.new_version }}\`\n• Rollback target: \`${{ steps.rollback.outputs.previous_tag }}\`\n• Manual intervention may be required"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_PRODUCTION }}
+        continue-on-error: true

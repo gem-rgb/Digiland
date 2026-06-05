@@ -1,0 +1,842 @@
+export type PageKind =
+  | 'landing'
+  | 'dashboard'
+  | 'parcel-list'
+  | 'transactions'
+  | 'seller-promotions'
+  | 'promotion-tiers'
+  | 'sponsored-ads'
+  | 'buyer-choice'
+  | 'legal'
+  | 'joint-laws'
+  | 'joint-groups'
+  | 'joint-group-detail'
+  | 'content'
+  | 'form'
+  | 'staff-login'
+  | 'agent-kyc'
+  | 'ai-kyc'
+  | 'agent-onboarding'
+  | 'temp-approve'
+  | 'task-management'
+  | 'approvals'
+  | 'user-review'
+  | 'parcel-detail'
+  | 'messages'
+  | 'support'
+  | 'contract'
+  | 'contract-fullpage'
+  | 'payment-onboarding'
+  | 'checkout'
+  | 'checkout-fullpage'
+  | 'status'
+  | 'recommendations'
+  | 'price-prediction'
+  | 'admin-dashboard'
+  | 'agent-dashboard'
+  | 'seller-withdraw'
+  | 'escrow-release'
+  | 'agent-withdraw'
+  | 'finance'
+  | 'admin-withdraw'
+  | 'message-thread'
+  | 'simple';
+
+export interface NavItem {
+  label: string;
+  href: string;
+  icon?: string;
+  active?: boolean;
+}
+
+export interface UserSummary {
+  email: string;
+  role: string;
+  buyer_account_type?: string | null;
+  is_identity_verified?: boolean;
+  full_name?: string | null;
+  phone_number?: string | null;
+}
+
+export interface ReviewUserSummary extends UserSummary {
+  id: string;
+  is_active?: boolean;
+  id_number?: string | null;
+  phone_number?: string | null;
+  kra_pin?: string | null;
+  joined_at?: string | null;
+  role_label?: string;
+}
+
+export interface ActionLink {
+  label: string;
+  href: string;
+  tone?: 'default' | 'secondary' | 'outline' | 'ghost' | 'accent';
+  external?: boolean;
+}
+
+export interface StatusChip {
+  label: string;
+  tone?: 'default' | 'success' | 'warning' | 'danger' | 'muted';
+}
+
+export interface StatCardData {
+  label: string;
+  value: string;
+  tone?: 'default' | 'success' | 'warning' | 'accent';
+}
+
+export interface FormChoice {
+  value: string;
+  label: string;
+  selected?: boolean;
+  disabled?: boolean;
+}
+
+export interface FormField {
+  name: string;
+  label: string;
+  type: 'text' | 'email' | 'password' | 'number' | 'tel' | 'file' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'hidden' | 'url';
+  value?: string;
+  checked?: boolean;
+  placeholder?: string;
+  helpText?: string;
+  required?: boolean;
+  disabled?: boolean;
+  rows?: number;
+  min?: string;
+  max?: string;
+  step?: string;
+  accept?: string;
+  options?: FormChoice[];
+  errors?: string[];
+  autoFocus?: boolean;
+}
+
+export interface FormSection {
+  title?: string;
+  subtitle?: string;
+  fields: FormField[];
+}
+
+export interface SerializedForm {
+  action: string;
+  method?: string;
+  enctype?: string;
+  submitLabel: string;
+  cancelLabel?: string;
+  cancelHref?: string;
+  intro?: string;
+  sections?: FormSection[];
+  fields?: FormField[];
+  hiddenFields?: Array<{ name: string; value: string }>;
+  managementFields?: Array<{ name: string; value: string }>;
+  csrf_token?: string;
+  formsetRows?: Array<{
+    index: number;
+    fields: FormField[];
+    hiddenFields?: Array<{ name: string; value: string }>;
+    deleteField?: FormField;
+  }>;
+  errors?: string[];
+}
+
+export interface ParcelSummary {
+  parcel_number: string;
+  county: string;
+  constituency: string;
+  ward?: string;
+  land_size: string;
+  land_use_type: string;
+  verification_status: string;
+  image_url?: string | null;
+  details_url: string;
+  manage_label?: string;
+  manage_url?: string;
+  status_badge?: string;
+  asking_price?: string | null;
+  displayed_price?: string | null;
+  promotion_tier?: string | null;
+  is_promoted?: boolean;
+}
+
+export interface ParcelDocumentSummary {
+  id: string;
+  document_type: string;
+  document_label: string;
+  verification_status: string;
+  uploaded_at: string;
+  file_url?: string | null;
+}
+
+export interface TransactionSummary {
+  id: string;
+  parcel_number: string;
+  role_label: string;
+  amount: string;
+  status: string;
+  status_tone?: 'success' | 'warning' | 'danger' | 'muted' | 'default';
+  created_at: string;
+  action_label: string;
+  action_url: string;
+  is_joint_purchase?: boolean;
+  joint_label?: string;
+}
+
+export interface LawSummary {
+  title: string;
+  citation: string;
+  applies_to: string;
+  summary: string;
+  official_url: string;
+  required: boolean;
+}
+
+export interface JointMemberSummary {
+  id: string;
+  full_name: string;
+  share_percentage: string;
+  phone_number: string;
+  email?: string | null;
+  id_number?: string | null;
+  kra_pin?: string | null;
+  is_leader?: boolean;
+  has_signed?: boolean;
+  signature_status?: string;
+  edit_url?: string;
+  delete_url?: string;
+}
+
+export interface JointGroupSummary {
+  id: string;
+  name: string;
+  group_type: string;
+  ownership_type: string;
+  preferred_payment_method: string;
+  bank_name?: string | null;
+  bank_account_name?: string | null;
+  bank_account_number?: string | null;
+  bank_branch?: string | null;
+  total_share: string;
+  is_valid: boolean;
+  members: JointMemberSummary[];
+  detail_url: string;
+  edit_url: string;
+  laws_url: string;
+  add_member_url?: string | null;
+  transfer_leadership_url?: string | null;
+  can_manage?: boolean;
+  is_group_leader?: boolean;
+  can_view_members?: boolean;
+}
+
+export interface BreakdownRow {
+  member_name: string;
+  member_id?: string;
+  share_percentage: string;
+  amount: string;
+  phone_number?: string;
+}
+
+export interface ContributionSummary {
+  member_name: string;
+  amount: string;
+  channel: string;
+  status: string;
+  phone_number?: string | null;
+  bank_reference?: string | null;
+  depositor_name?: string | null;
+}
+
+export interface FeeBreakdownLine {
+  key: string;
+  label: string;
+  amount: string;
+  description: string;
+  note?: string | null;
+  included?: boolean;
+  tone?: 'default' | 'success' | 'warning' | 'muted';
+}
+
+export interface FeeExplanation {
+  label: string;
+  percent?: string;
+  amount?: string;
+  what: string;
+  why: string;
+}
+
+export interface CheckoutData {
+  transaction_id: string;
+  parcel_number: string;
+  seller_email: string;
+  buyer_email?: string;
+  agreed_price: string;
+  land_price?: string;
+  is_joint_purchase: boolean;
+  joint_group_name?: string;
+  joint_group_ownership?: string;
+  joint_payment_method?: string;
+  joint_bank_ready?: boolean;
+  platform_service_fee?: string;
+  escrow_fee?: string;
+  processing_fee?: string;
+  legal_verification_fee?: string;
+  due_diligence_fee?: string;
+  include_legal_verification?: boolean;
+  include_due_diligence?: boolean;
+  fee_breakdown?: FeeBreakdownLine[];
+  fee_explanations?: Record<string, FeeExplanation>;
+  grand_total?: string;
+  total_payable?: string;
+  breakdown: BreakdownRow[];
+  contributions: ContributionSummary[];
+  phone_number: string;
+  csrf_token: string;
+  process_url: string;
+  transactions_url: string;
+  sign_url?: string;
+  failed_url?: string;
+  default_payment_method?: 'm_pesa' | 'joint_bank_account';
+  bank_name?: string | null;
+  bank_account_name?: string | null;
+  bank_account_number?: string | null;
+  bank_branch?: string | null;
+  paystack_enabled?: boolean;
+  escrow_bank_name?: string | null;
+  escrow_bank_account_name?: string | null;
+  escrow_bank_account_number?: string | null;
+  escrow_bank_branch?: string | null;
+}
+
+export interface ContractBreakdownRow {
+  member: JointMemberSummary;
+  amount: string;
+}
+
+export interface ContractDocumentSummary {
+  key: string;
+  title: string;
+  description: string;
+  content: string;
+  required: boolean;
+}
+
+export interface ContractData {
+  transaction_id: string;
+  parcel_number: string;
+  buyer_email: string;
+  seller_email: string;
+  agreed_price: string;
+  contract_agreed: boolean;
+  transaction_status: string;
+  checkout_available: boolean;
+  buyer_signature_present: boolean;
+  seller_signature_present: boolean;
+  is_joint_purchase: boolean;
+  joint_group_name?: string | null;
+  joint_group_ownership?: string | null;
+  joint_breakdown: ContractBreakdownRow[];
+  documents: ContractDocumentSummary[];
+  laws: LawSummary[];
+  current_user_role: string;
+  current_user_is_buyer: boolean;
+  current_user_is_seller: boolean;
+  current_user_is_admin: boolean;
+  current_user_is_joint_leader: boolean;
+  sign_url: string;
+  payment_url: string;
+  transactions_url: string;
+  csrf_token: string;
+  signature_data_name?: string;
+  admin_dual_sign?: boolean;
+  [key: string]: any;
+}
+
+export interface MessageThreadMessage {
+  id: string;
+  sender_email: string;
+  content: string;
+  timestamp: string;
+  is_self: boolean;
+}
+
+export interface MessageThreadSummary {
+  partner: UserSummary;
+  latest_timestamp: string;
+  count: number;
+  messages: MessageThreadMessage[];
+}
+
+export interface MessagesPageData {
+  mode: 'single' | 'dual';
+  header: string;
+  threads: MessageThreadSummary[];
+  buyer_threads?: MessageThreadSummary[];
+  seller_threads?: MessageThreadSummary[];
+  allowed_recipients: UserSummary[];
+  msg_error?: string | null;
+  compose_action: string;
+  csrf_token: string;
+}
+
+export interface SupportTicketSummary {
+  id: string;
+  subject: string;
+  message_excerpt: string;
+  status: string;
+  created_at: string;
+}
+
+export interface SupportPageData {
+  tickets: SupportTicketSummary[];
+  create_action: string;
+  csrf_token: string;
+}
+
+export interface StatusPageData {
+  icon?: string;
+  tone?: 'default' | 'success' | 'warning' | 'danger' | 'muted';
+  title: string;
+  description: string;
+  primary_action?: ActionLink;
+  secondary_action?: ActionLink;
+  extra_actions?: ActionLink[];
+}
+
+export interface ContentSection {
+  kicker?: string;
+  title: string;
+  body: string;
+  bullets?: string[];
+  actions?: ActionLink[];
+}
+
+export interface ContentPageData {
+  hero?: {
+    kicker?: string;
+    title: string;
+    subtitle?: string;
+    badge?: string;
+  };
+  sections: ContentSection[];
+}
+
+export interface RecommendationParcelSummary extends ParcelSummary {
+  match_score?: number;
+}
+
+export interface RecommendationsPageData {
+  rec_type: string;
+  recommended: RecommendationParcelSummary[];
+  popular_county: string;
+  popular_parcels: ParcelSummary[];
+  recently_viewed: ParcelSummary[];
+  recently_viewed_similar?: ParcelSummary[];
+  hot_deals?: ParcelSummary[];
+  trending_in_target_area?: ParcelSummary[];
+  people_also_viewed?: ParcelSummary[];
+  sponsored_listings?: ParcelSummary[];
+}
+
+export interface PopupCampaignParcelSummary {
+  parcel_number: string;
+  county: string;
+  constituency: string;
+  ward: string;
+  land_size: string;
+  land_use_type: string;
+  verification_status: string;
+  image_url?: string | null;
+  displayed_price: string;
+  asking_price?: string | null;
+  details_url: string;
+}
+
+export interface PopupAdSellerSummary {
+  email: string;
+  role: string;
+  is_verified: boolean;
+  trust_score: number;
+  label: string;
+}
+
+export interface PopupAdBudgetSummary {
+  daily_budget: string;
+  total_budget: string;
+  spent_amount: string;
+  remaining_budget: string;
+  priority_bid: string;
+  billing_model: string;
+  billing_model_label: string;
+}
+
+export interface PopupAdMetricSummary {
+  impressions: number;
+  clicks: number;
+  leads: number;
+  dismissals: number;
+  ctr: number;
+  lead_rate: number;
+  spend: string;
+  revenue: string;
+  roi: number;
+  quality_score: number;
+  engagement_score: number;
+  auction_score: number;
+  seller_trust_score: number;
+}
+
+export interface PopupAdCampaignSummary {
+  id: string;
+  campaign_name: string;
+  popup_type: string;
+  popup_type_label: string;
+  billing_model: string;
+  billing_model_label: string;
+  status: string;
+  status_label: string;
+  status_tone?: 'success' | 'warning' | 'muted' | 'default';
+  headline: string;
+  subheadline: string;
+  cta_text: string;
+  landing_url: string;
+  creative_image_url?: string | null;
+  creative_video_url?: string | null;
+  parcel: PopupCampaignParcelSummary;
+  seller: PopupAdSellerSummary;
+  targeting: {
+    counties: string[];
+    locations: string[];
+    buyer_categories: string[];
+    intent_tags: string[];
+    budget_min?: string | null;
+    budget_max?: string | null;
+    acreage_min?: string | null;
+    acreage_max?: string | null;
+    travel_radius_km: number;
+    geo_exclusive: boolean;
+  };
+  frequency: {
+    frequency_cap_per_session: number;
+    cooldown_minutes: number;
+    duration_days: number;
+    geo_exclusive: boolean;
+  };
+  budget: PopupAdBudgetSummary;
+  metrics: PopupAdMetricSummary;
+  amenities: Array<{ label: string; value: string }>;
+  score: number;
+  match_reasons: string[];
+  trigger?: 'smart' | 'geo' | 'urgency' | 'retargeting' | 'exit_intent' | null;
+  social_proof: string[];
+  scarcity_text: string;
+  created_at: string;
+  updated_at: string;
+  display_delay_ms?: number;
+}
+
+export interface PopupAdsPayload {
+  enabled: boolean;
+  page: PageKind | string;
+  placement?: string;
+  intent_score?: number;
+  intent_label?: string;
+  buyer_category?: string;
+  county?: string | null;
+  constituency?: string | null;
+  ward?: string | null;
+  recommended_delay_ms?: number;
+  frequency_cap_per_session?: number;
+  session_show_count?: number;
+  candidates: Record<'smart' | 'geo' | 'urgency' | 'retargeting' | 'exit_intent', PopupAdCampaignSummary[]>;
+  primary?: PopupAdCampaignSummary | null;
+  exit_candidate?: PopupAdCampaignSummary | null;
+  recent_search_terms?: string[];
+  suppressed_reason?: string | null;
+  reason?: string | null;
+}
+
+export interface PopupDashboardSummary {
+  total_campaigns: number;
+  active_campaigns: number;
+  paused_campaigns: number;
+  draft_campaigns: number;
+  total_impressions: number;
+  total_clicks: number;
+  total_leads: number;
+  total_dismissals: number;
+  ctr: number;
+  lead_rate: number;
+  total_spend: string;
+  total_revenue: string;
+  roi: number;
+}
+
+export interface PopupHeatmapRow {
+  county: string;
+  impressions: number;
+  clicks: number;
+  leads: number;
+  dismissals: number;
+}
+
+export interface PopupTriggerBreakdownRow {
+  popup_type: string;
+  impressions: number;
+  clicks: number;
+  leads: number;
+}
+
+export interface SellerPromotionsPageData {
+  summary: PopupDashboardSummary;
+  campaigns: PopupAdCampaignSummary[];
+  heatmap: PopupHeatmapRow[];
+  trigger_breakdown: PopupTriggerBreakdownRow[];
+  recommendations: Array<{ title: string; body: string }>;
+  supported_popup_types: string[];
+  supported_billing_models: string[];
+  events_count: number;
+  campaign_action_url: string;
+  form: SerializedForm;
+}
+
+export interface PredictionComparisonSummary {
+  constituency: string;
+  county: string;
+  land_use: string;
+  size_acres: string;
+  price_per_acre: string;
+}
+
+export interface PredictionResultSummary {
+  error?: string;
+  county?: string;
+  land_use?: string;
+  size_acres?: string;
+  price_per_acre?: string;
+  total_value?: string;
+  confidence_low?: string;
+  confidence_high?: string;
+  model_accuracy?: string;
+  comparisons?: PredictionComparisonSummary[];
+}
+
+export interface PredictionPageData {
+  counties: string[];
+  land_use_types: string[];
+  form: SerializedForm;
+  model_info?: {
+    n_records: string;
+    n_counties: string;
+    algorithm: string;
+  } | null;
+  prediction?: PredictionResultSummary | null;
+}
+
+export interface ParcelDetailData {
+  parcel_number: string;
+  image_url?: string | null;
+  land_use_type: string;
+  county: string;
+  constituency: string;
+  ward: string;
+  land_size: string;
+  registered_owner_id_masked: string;
+  verification_status: string;
+  status_tone?: 'success' | 'warning' | 'danger' | 'muted' | 'default';
+  displayed_price: string;
+  is_favorited: boolean;
+  ai_price?: {
+    total_value: string;
+    price_per_acre: string;
+    confidence_low: string;
+    confidence_high: string;
+  } | null;
+  documents: ParcelDocumentSummary[];
+  can_edit: boolean;
+  can_upload_document: boolean;
+  can_initiate_escrow: boolean;
+  can_use_joint_purchase: boolean;
+  assigned_agent_email?: string | null;
+  joint_groups?: JointGroupSummary[];
+  purchase_modes?: Array<{ value: string; label: string; selected?: boolean }>;
+  initiate_escrow_url: string;
+  upload_document_url?: string | null;
+  edit_url?: string | null;
+  delete_url?: string | null;
+  toggle_favorite_url?: string | null;
+  agent_verify_url?: string | null;
+}
+
+export interface TaskManagementData {
+  pending_parcels: ParcelSummary[];
+  completed_parcels: ParcelSummary[];
+  pending_transactions: TransactionSummary[];
+  pending_users: ReviewUserSummary[];
+  pending_agents: ReviewUserSummary[];
+  verified_agents: ReviewUserSummary[];
+  unassigned_count?: number;
+}
+
+export interface ApprovalsPageData {
+  pending_users: ReviewUserSummary[];
+  pending_parcels: ParcelSummary[];
+  pending_transactions: TransactionSummary[];
+  pending_joint_removals?: JointMemberRemovalRequestSummary[];
+}
+
+export interface JointMemberRemovalRequestSummary {
+  id: string;
+  group_id: string;
+  group_name: string;
+  member: JointMemberSummary;
+  requested_by?: UserSummary | null;
+  consent_confirmed: boolean;
+  compensation_confirmed: boolean;
+  compensation_amount?: string | null;
+  notes?: string | null;
+  status: string;
+  status_label?: string;
+  admin_reviewed_by?: UserSummary | null;
+  admin_reviewed_at?: string | null;
+  admin_notes?: string | null;
+  created_at: string;
+  approve_url: string;
+  reject_url: string;
+}
+
+export interface UserReviewPageData {
+  reviewed_user: ReviewUserSummary;
+  user_parcels?: ParcelSummary[];
+  user_transactions?: TransactionSummary[];
+}
+
+export interface PromotionTierFeature {
+  label: string;
+  included: boolean;
+  detail?: string;
+}
+
+export interface PromotionTierData {
+  id: string;
+  name: string;
+  slug: string;
+  tier_level: number;
+  monthly_price: string;
+  features_json: PromotionTierFeature[];
+  active: boolean;
+}
+
+export interface PromotionPlanData {
+  id: string;
+  tier: PromotionTierData;
+  tier_name: string;
+  status: string;
+  is_active: boolean;
+  auto_renew: boolean;
+  start_date: string;
+  end_date: string;
+}
+
+export interface PromotionTiersPageData {
+  tiers: PromotionTierData[];
+  current_plan: PromotionPlanData | null;
+  seller_email: string;
+}
+
+export interface SponsoredAdEngagementSummary {
+  impressions: number;
+  clicks: number;
+  saves: number;
+  inquiries: number;
+  shares: number;
+}
+
+export interface SponsoredAdSummary {
+  id: string;
+  parcel_number: string;
+  parcel: { parcel_number: string; county: string; asking_price: string; image_url: string | null } | null;
+  tier: string;
+  title: string;
+  description: string;
+  status: string;
+  billing_model: string;
+  budget_daily: string | null;
+  budget_total: string | null;
+  budget_spent: string;
+  is_active: boolean;
+  engagement_summary: SponsoredAdEngagementSummary;
+  starts_at: string;
+  ends_at: string;
+  created_at: string;
+}
+
+export interface SponsoredAdsPageData {
+  campaigns: SponsoredAdSummary[];
+  parcels: Array<{ id: string; parcel_number: string; county: string; asking_price: string }>;
+  total_active: number;
+  total_spent: string;
+  total_impressions: number;
+  total_clicks: number;
+}
+
+export interface BootstrapData {
+  page: PageKind;
+  title: string;
+  subtitle?: string;
+  user?: UserSummary | null;
+  nav: NavItem[];
+  logout_url?: string;
+  csrf_token?: string;
+  actions?: ActionLink[];
+  content_key?: string;
+  content?: ContentPageData | null;
+  form?: SerializedForm | null;
+  member_formset?: SerializedForm | null;
+  parcel_detail?: ParcelDetailData | null;
+  contract?: ContractData | null;
+  checkout?: CheckoutData | null;
+  messages_page?: MessagesPageData | null;
+  support_page?: SupportPageData | null;
+  status?: StatusPageData | null;
+  recommendations_page?: RecommendationsPageData | null;
+  popup_ads?: PopupAdsPayload | null;
+  seller_promotions_page?: SellerPromotionsPageData | null;
+  promotion_tiers_page?: PromotionTiersPageData | null;
+  sponsored_ads_page?: SponsoredAdsPageData | null;
+  prediction_page?: PredictionPageData | null;
+  task_board?: TaskManagementData | null;
+  approvals_page?: ApprovalsPageData | null;
+  user_review?: UserReviewPageData | null;
+  parcels?: ParcelSummary[];
+  transactions?: TransactionSummary[];
+  laws?: LawSummary[];
+  checklist?: string[];
+  payment_guidance?: string[];
+  groups?: JointGroupSummary[];
+  group?: JointGroupSummary | null;
+  stats?: StatCardData[];
+  messages?: { level: string; text: string }[];
+  notice?: string;
+  document_content?: string | null;
+  fullpage_sign_url?: string;
+  back_url?: string;
+  require_signature?: boolean;
+  fullpage_mode?: boolean;
+  kyc_status_url?: string;
+  kyc_submit_url?: string;
+  kyc_manual_url?: string;
+  kyc_login_url?: string;
+  withdraw_data?: any;
+  escrow_transactions?: any[];
+  finance_dashboard?: any;
+  finance_pin_verified?: boolean;
+  finance_verify_url?: string;
+  admin_withdraw_url?: string;
+  pending_agent_applications?: any[];
+  individual_buyers?: any[];
+  message_thread?: any;
+  is_admin?: boolean;
+  [key: string]: any;
+}

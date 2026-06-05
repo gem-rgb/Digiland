@@ -1,0 +1,130 @@
+# Default values for Digiland Helm Chart
+
+replicaCount: 2
+
+image:
+  repository: ghcr.io/gem-rgb/digiland
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podSecurityContext:
+  fsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: digiland.co.ke
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: digiland-tls
+      hosts:
+        - digiland.co.ke
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: true
+  ingressFrom: []
+  egressTo:
+    - namespace: digiland
+    - port: 5432
+    - port: 6379
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Application configuration
+config:
+  djangoSettingsModule: land_escrow.settings_production
+  debug: "false"
+  allowedHosts: "digiland.co.ke,www.digiland.co.ke"
+  celeryTaskAlwaysEager: "false"
+
+# Secrets (use --set or external secret management)
+secrets:
+  secretKey: ""
+  databaseUrl: ""
+  redisUrl: ""
+  celeryBrokerUrl: ""
+  stripeSecretKey: ""
+  paystackSecretKey: ""
+
+# Celery configuration
+celery:
+  worker:
+    enabled: true
+    replicaCount: 2
+    concurrency: 4
+    maxTasksPerChild: 1000
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  beat:
+    enabled: true
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+# PostgreSQL (if using in-cluster database)
+postgresql:
+  enabled: false
+
+# Redis (if using in-cluster Redis)
+redis:
+  enabled: false

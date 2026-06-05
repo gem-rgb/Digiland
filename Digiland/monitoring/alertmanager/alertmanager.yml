@@ -1,0 +1,99 @@
+# =============================================================================
+# Alertmanager Configuration for Digiland Production
+# =============================================================================
+# Routes alerts from Prometheus to notification channels.
+# IMPORTANT: Set the Slack webhook URL via environment variable before deploy:
+#   export ALERTMANAGER_SLACK_URL=https://hooks.slack.com/services/XXX/YYY/ZZZ
+# For PagerDuty integration, add a pagerduty_configs receiver.
+# =============================================================================
+
+global:
+  resolve_timeout: 5m
+  # Slack webhook URL — set via ALERTMANAGER_SLACK_URL env variable.
+  # To configure: create a Slack app → Incoming Webhooks → copy URL → set env var.
+  # If using Docker: add -e ALERTMANAGER_SLACK_URL=... to the container.
+  slack_api_url: '{{ env "ALERTMANAGER_SLACK_URL" }}'
+
+# Route hierarchy
+route:
+  receiver: 'default'
+  group_by: ['alertname', 'cluster', 'namespace']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 10s
+      repeat_interval: 1h
+
+    # Payment/financial alerts - high priority
+    - match_re:
+        alertname: PaymentProcessingFailures|EscrowFailure|PaymentGatewayDown
+      receiver: 'financial-alerts'
+      group_wait: 30s
+      repeat_interval: 30m
+
+    # Authentication/security alerts - high priority
+    - match_re:
+        alertname: BruteForceDetected|AuthFailureSpike|MFAFailureSpike|SuspiciousActivity
+      receiver: 'security-alerts'
+      group_wait: 30s
+      repeat_interval: 1h
+
+    # Infrastructure alerts
+    - match_re:
+        alertname: DatabaseConnectionPoolExhausted|HighMemoryUsage|PodCrashLooping|PVCAlmostFull
+      receiver: 'infra-alerts'
+      group_wait: 1m
+      repeat_interval: 2h
+
+# Inhibition rules - suppress lower-severity alerts when higher-severity fires
+inhibit_rules:
+  - source_match:
+      severity: critical
+    target_match:
+      severity: warning
+    equal: ['alertname', 'cluster', 'namespace']
+
+# Receivers
+receivers:
+  - name: 'default'
+    webhook_configs:
+      - url: 'http://localhost:5001/alerts'
+        send_resolved: true
+
+  - name: 'critical-alerts'
+    slack_configs:
+      - channel: '#digiland-critical'
+        title: '{{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}*Alert:* {{ .Annotations.summary }} *Severity:* {{ .Labels.severity }}{{ end }}'
+        send_resolved: true
+    # Uncomment to add PagerDuty for critical alerts:
+    # pagerduty_configs:
+    #   - service_key: '{{ env "PAGERDUTY_SERVICE_KEY" }}'
+    #     severity: critical
+
+  - name: 'financial-alerts'
+    slack_configs:
+      - channel: '#digiland-payments'
+        title: '{{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}*Alert:* {{ .Annotations.summary }} *Severity:* {{ .Labels.severity }}{{ end }}'
+        send_resolved: true
+
+  - name: 'security-alerts'
+    slack_configs:
+      - channel: '#digiland-security'
+        title: '{{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}*Alert:* {{ .Annotations.summary }} *Severity:* {{ .Labels.severity }}{{ end }}'
+        send_resolved: true
+
+  - name: 'infra-alerts'
+    slack_configs:
+      - channel: '#digiland-infra'
+        title: '{{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}*Alert:* {{ .Annotations.summary }} *Severity:* {{ .Labels.severity }}{{ end }}'
+        send_resolved: true

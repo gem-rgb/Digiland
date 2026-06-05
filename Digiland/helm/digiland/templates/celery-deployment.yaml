@@ -1,0 +1,33 @@
+{{- if .Values.celery.worker.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "digiland.fullname" . }}-celery-worker
+  labels:
+    {{- include "digiland.labels" . | nindent 4 }}
+    app: {{ include "digiland.name" . }}-celery-worker
+spec:
+  replicas: {{ .Values.celery.worker.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "digiland.selectorLabels" . | nindent 6 }}
+      app: {{ include "digiland.name" . }}-celery-worker
+  template:
+    metadata:
+      labels:
+        {{- include "digiland.selectorLabels" . | nindent 8 }}
+        app: {{ include "digiland.name" . }}-celery-worker
+    spec:
+      serviceAccountName: {{ include "digiland.serviceAccountName" . }}
+      containers:
+        - name: celery-worker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          command: ["celery", "-A", "land_escrow", "worker", "--loglevel=info", "--concurrency={{ .Values.celery.worker.concurrency }}", "--max-tasks-per-child={{ .Values.celery.worker.maxTasksPerChild }}"]
+          envFrom:
+            - configMapRef:
+                name: {{ include "digiland.fullname" . }}-config
+            - secretRef:
+                name: {{ include "digiland.fullname" . }}-secrets
+          resources:
+            {{- toYaml .Values.celery.worker.resources | nindent 12 }}
+{{- end }}

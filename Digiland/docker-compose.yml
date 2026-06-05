@@ -1,0 +1,269 @@
+# =============================================================================
+# Digiland - Docker Compose Production Configuration
+# =============================================================================
+# Usage:
+#   docker compose up -d              # Start all services
+#   docker compose up -d --build      # Rebuild and start
+#   docker compose logs -f web        # Follow web service logs
+#   docker compose down -v            # Stop and remove volumes
+# =============================================================================
+
+version: "3.9"
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 16 + PostGIS
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: digiland-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-digiland}
+      POSTGRES_USER: ${POSTGRES_USER:-digiland}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-digiland_secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # SECURITY: Do NOT expose PostgreSQL port externally.
+    # Only internal Docker network access is needed.
+    # ports:
+    #   - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-digiland} -d ${POSTGRES_DB:-digiland}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - digiland-network
+
+  # ---------------------------------------------------------------------------
+  # Redis (Cache + Celery Broker)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: digiland-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-redis_secret}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+    volumes:
+      - redis_data:/data
+    # SECURITY: Do NOT expose Redis port externally.
+    # Only internal Docker network access is needed.
+    # ports:
+    #   - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_secret}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - digiland-network
+
+  # ---------------------------------------------------------------------------
+  # Elasticsearch (Optional - for advanced search)
+  # ---------------------------------------------------------------------------
+  elasticsearch:
+    image: elasticsearch:8.12.0
+    container_name: digiland-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - cluster.name=digiland-es
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    # SECURITY: Do NOT expose Elasticsearch port externally.
+    # Only internal Docker network access is needed.
+    # ports:
+    #   - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    profiles:
+      - elasticsearch
+    networks:
+      - digiland-network
+
+  # ---------------------------------------------------------------------------
+  # Django Web (Gunicorn)
+  # ---------------------------------------------------------------------------
+  web:
+    build:
+      context: ./land_escrow
+      dockerfile: config/Dockerfile
+    container_name: digiland-web
+    restart: unless-stopped
+    command: >
+      gunicorn land_escrow.wsgi:application
+      --config config/gunicorn.conf.py
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-digiland}:${POSTGRES_PASSWORD:-digiland_secret}@db:5432/${POSTGRES_DB:-digiland}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379/0
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379/2
+    volumes:
+      - media_data:/app/media
+      - static_data:/app/staticfiles
+    # SECURITY: Django should only be accessible via Nginx reverse proxy.
+    # Do NOT expose port 8000 externally in production.
+    # For local development only, uncomment the ports mapping.
+    # ports:
+    #   - "8000:8000"
+    expose:
+      - "8000"  # Internal only
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/admin/')\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - digiland-network
+
+  # ---------------------------------------------------------------------------
+  # Celery Worker
+  # ---------------------------------------------------------------------------
+  celery-worker:
+    build:
+      context: ./land_escrow
+      dockerfile: config/Dockerfile
+    container_name: digiland-celery-worker
+    restart: unless-stopped
+    command: >
+      celery -A land_escrow worker
+      --loglevel=${CELERY_LOG_LEVEL:-info}
+      --concurrency=${CELERY_WORKER_CONCURRENCY:-4}
+      --max-tasks-per-child=1000
+      --without-heartbeat
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-digiland}:${POSTGRES_PASSWORD:-digiland_secret}@db:5432/${POSTGRES_DB:-digiland}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379/0
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379/2
+    volumes:
+      - media_data:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A land_escrow inspect ping --timeout 10 || exit 1"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+    networks:
+      - digiland-network
+
+  # ---------------------------------------------------------------------------
+  # Celery Beat (Periodic Task Scheduler)
+  # ---------------------------------------------------------------------------
+  celery-beat:
+    build:
+      context: ./land_escrow
+      dockerfile: config/Dockerfile
+    container_name: digiland-celery-beat
+    restart: unless-stopped
+    command: >
+      celery -A land_escrow beat
+      --loglevel=${CELERY_LOG_LEVEL:-info}
+      --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-digiland}:${POSTGRES_PASSWORD:-digiland_secret}@db:5432/${POSTGRES_DB:-digiland}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379/0
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-redis_secret}@redis:6379/2
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'celery.*beat' || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - digiland-network
+
+  # ---------------------------------------------------------------------------
+  # Nginx (Reverse Proxy)
+  # ---------------------------------------------------------------------------
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: digiland-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - static_data:/usr/share/nginx/static:ro
+      - media_data:/usr/share/nginx/media:ro
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost/health/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - digiland-network
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  media_data:
+    driver: local
+  static_data:
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  digiland-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

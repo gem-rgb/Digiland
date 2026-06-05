@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: digiland-web-pdb
+  namespace: digiland
+  labels:
+    app: digiland
+    component: web
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: digiland
+      component: web

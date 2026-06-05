@@ -1,0 +1,460 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --background: 40 33% 98%;
+  --foreground: 224 25% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 224 25% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 25% 12%;
+  --primary: 160 78% 28%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 39 18% 93%;
+  --secondary-foreground: 224 25% 12%;
+  --muted: 38 22% 95%;
+  --muted-foreground: 224 10% 43%;
+  --accent: 154 40% 92%;
+  --accent-foreground: 160 74% 22%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 218 22% 88%;
+  --input: 218 22% 88%;
+  --ring: 160 78% 28%;
+  --chart-1: 160 78% 28%;
+  --chart-2: 39 82% 52%;
+  --chart-3: 199 89% 48%;
+  --chart-4: 0 84% 60%;
+  --chart-5: 262 83% 58%;
+  --sidebar-background: 0 0% 98%;
+  --sidebar-foreground: 224 25% 12%;
+  --sidebar-primary: 160 78% 28%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 154 40% 92%;
+  --sidebar-accent-foreground: 160 74% 22%;
+  --sidebar-border: 218 22% 88%;
+  --sidebar-ring: 160 78% 28%;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: 222 47% 8%;
+  --foreground: 210 40% 96%;
+  --card: 222 47% 11%;
+  --card-foreground: 210 40% 96%;
+  --popover: 222 47% 11%;
+  --popover-foreground: 210 40% 96%;
+  --primary: 160 64% 44%;
+  --primary-foreground: 222 47% 8%;
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 96%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 55%;
+  --accent: 160 40% 16%;
+  --accent-foreground: 160 60% 70%;
+  --destructive: 0 63% 50%;
+  --destructive-foreground: 210 40% 96%;
+  --border: 217 33% 17%;
+  --input: 217 33% 17%;
+  --ring: 160 64% 44%;
+  --chart-1: 160 64% 44%;
+  --chart-2: 39 82% 58%;
+  --chart-3: 199 89% 55%;
+  --chart-4: 0 72% 58%;
+  --chart-5: 262 83% 65%;
+  --sidebar-background: 222 47% 6%;
+  --sidebar-foreground: 210 40% 96%;
+  --sidebar-primary: 160 64% 44%;
+  --sidebar-primary-foreground: 222 47% 8%;
+  --sidebar-accent: 160 40% 16%;
+  --sidebar-accent-foreground: 160 60% 70%;
+  --sidebar-border: 217 33% 17%;
+  --sidebar-ring: 160 64% 44%;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(16, 185, 129, 0.16), transparent 28%),
+    radial-gradient(circle at top right, rgba(2, 132, 199, 0.08), transparent 24%),
+    linear-gradient(180deg, #fcfbf8 0%, #f4efe7 100%);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark html,
+.dark {
+  background:
+    radial-gradient(circle at top left, rgba(16, 185, 129, 0.08), transparent 28%),
+    radial-gradient(circle at top right, rgba(2, 132, 199, 0.04), transparent 24%),
+    linear-gradient(180deg, #0c1222 0%, #0f1729 100%);
+}
+
+@page {
+  size: A4 portrait;
+  margin: 14mm;
+}
+
+body {
+  min-height: 100vh;
+  color: hsl(var(--foreground));
+  background: transparent;
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+* {
+  border-color: hsl(var(--border));
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+
+::selection {
+  background: rgba(16, 185, 129, 0.18);
+}
+
+.dark ::selection {
+  background: rgba(16, 185, 129, 0.3);
+}
+
+.glass-bg {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.9)),
+    radial-gradient(circle at top left, rgba(16, 185, 129, 0.06), transparent 34%);
+  backdrop-filter: blur(12px);
+}
+
+.dark .glass-bg {
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0.9)),
+    radial-gradient(circle at top left, rgba(16, 185, 129, 0.08), transparent 34%);
+}
+
+.soft-panel {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 24px 72px -36px rgba(15, 23, 42, 0.28);
+}
+
+.dark .soft-panel {
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(15, 23, 42, 0.9);
+  box-shadow: 0 24px 72px -36px rgba(0, 0, 0, 0.5);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #0f766e, #166534);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.dark .gradient-text {
+  background: linear-gradient(135deg, #34d399, #6ee7b7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Map Styles                                                         */
+/* ------------------------------------------------------------------ */
+
+.digiland-map-container {
+  z-index: 0;
+}
+
+.digiland-marker-icon {
+  background: none !important;
+  border: none !important;
+}
+
+.digiland-cluster-wrapper {
+  background: none !important;
+}
+
+.digiland-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #059669, #047857);
+  color: #fff;
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  animation: digiland-cluster-pulse 2s ease-in-out infinite;
+}
+
+.digiland-cluster--small {
+  width: 40px;
+  height: 40px;
+  font-size: 12px;
+}
+
+.digiland-cluster--medium {
+  width: 48px;
+  height: 48px;
+  font-size: 13px;
+}
+
+.digiland-cluster--large {
+  width: 56px;
+  height: 56px;
+  font-size: 15px;
+}
+
+@keyframes digiland-cluster-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+.digiland-popup {
+  min-width: 200px;
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+}
+
+.digiland-popup__image {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px 8px 0 0;
+}
+
+.digiland-popup__content {
+  padding: 10px 4px 4px;
+}
+
+.digiland-popup__title {
+  font-weight: 800;
+  font-size: 14px;
+  color: #064e3b;
+}
+
+.digiland-popup__location {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.digiland-popup__meta {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.digiland-popup__price {
+  font-size: 15px;
+  font-weight: 800;
+  color: #059669;
+  margin-top: 6px;
+}
+
+.digiland-popup__match {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #d1fae5;
+  color: #065f46;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.digiland-popup-container .leaflet-popup-content-wrapper {
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 0;
+  overflow: hidden;
+}
+
+.digiland-popup-container .leaflet-popup-content {
+  margin: 0;
+}
+
+.digiland-popup-container .leaflet-popup-tip {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.digiland-county-tooltip {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid #d1fae5 !important;
+  border-radius: 8px !important;
+  padding: 4px 10px !important;
+  font-family: 'Manrope', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  color: #065f46 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+.dark .digiland-popup__title {
+  color: #6ee7b7;
+}
+
+.dark .digiland-popup__price {
+  color: #34d399;
+}
+
+.dark .digiland-popup__match {
+  background: #064e3b;
+  color: #6ee7b7;
+}
+
+.dark .digiland-county-tooltip {
+  background: rgba(15, 23, 42, 0.95) !important;
+  border-color: #065f46 !important;
+  color: #6ee7b7 !important;
+}
+
+/* Leaflet dark mode overrides */
+.dark .leaflet-tile-pane {
+  filter: brightness(0.7) contrast(1.1) saturate(0.8);
+}
+
+.dark .leaflet-control-zoom a {
+  background: rgba(15, 23, 42, 0.9) !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+
+.dark .leaflet-control-attribution {
+  background: rgba(15, 23, 42, 0.7) !important;
+  color: #94a3b8 !important;
+}
+
+.dark .leaflet-control-attribution a {
+  color: #6ee7b7 !important;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Print styles                                                       */
+/* ------------------------------------------------------------------ */
+
+@media print {
+  html,
+  body,
+  #root {
+    min-height: auto;
+    background: #fff !important;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-document-shell {
+    background: #fff !important;
+  }
+
+  .print-document-header,
+  .print-document-summary,
+  .print-document-toolbar,
+  .print-document-success {
+    display: none !important;
+  }
+
+  .print-document-sheet {
+    width: auto !important;
+    max-width: none !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    border: 1px solid rgba(120, 113, 108, 0.28) !important;
+  }
+
+  .print-document-title {
+    font-family: Georgia, "Times New Roman", serif !important;
+    letter-spacing: 0.01em !important;
+  }
+
+  .print-document-body {
+    font-family: Georgia, "Times New Roman", serif !important;
+    font-size: 11pt !important;
+    line-height: 1.7 !important;
+    color: #111827 !important;
+  }
+
+  .print-signature-pad button,
+  .print-signature-pad .print-signature-pad-helper,
+  .print-signature-pad .print-signature-pad-overlay {
+    display: none !important;
+  }
+
+  .print-signature-pad canvas {
+    border-color: #a8a29e !important;
+    box-shadow: none !important;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Custom Scrollbar                                                   */
+/* ------------------------------------------------------------------ */
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+.dark .scrollbar-thin {
+  scrollbar-color: rgba(148, 163, 184, 0.2) transparent;
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.35);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Hero Section – Anime.js powered (CSS fallbacks only)              */
+/*  Primary animations are driven by anime.js via use-hero-animations */
+/*  These CSS keyframes are kept as fallback / for non-JS contexts     */
+/* ------------------------------------------------------------------ */
+
+/* Fallback: basic fade-in if Anime.js fails to load */
+@keyframes hero-fallback-fade {
+  0% { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.hero-entrance-item {
+  animation: hero-fallback-fade 0.6s ease-out both;
+}
+
+/* Dark mode hero background overlay */
+.dark .hero-gradient-overlay {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.85));
+}

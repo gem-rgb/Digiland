@@ -1,0 +1,21 @@
+replicaCount: 2
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+
+config:
+  debug: "false"
+  allowedHosts: "staging.digiland.co.ke"
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+celery:
+  worker:
+    replicaCount: 2

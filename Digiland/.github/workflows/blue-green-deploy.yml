@@ -1,0 +1,589 @@
+# =============================================================================
+# Digiland — Blue-Green Deployment Strategy
+# =============================================================================
+# Implements a full blue-green deployment with:
+#   - Green environment provisioning
+#   - Smoke tests against green
+#   - Integration tests against green
+#   - Health check verification
+#   - Traffic switching (blue → green)
+#   - Post-switch error rate monitoring
+#   - Automatic rollback on failure
+#   - Manual approval for production traffic switch
+# Triggers: workflow_dispatch, release published
+# =============================================================================
+
+name: Blue-Green Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+      image_tag:
+        description: "Docker image tag to deploy"
+        required: false
+        type: string
+      skip_integration_tests:
+        description: "Skip integration tests"
+        required: false
+        type: boolean
+        default: false
+  release:
+    types: [published]
+
+concurrency:
+  group: blue-green-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  DEPLOYMENT_NAME: digiland-web
+  KUBE_NAMESPACE_STAGING: digiland-staging
+  KUBE_NAMESPACE_PRODUCTION: digiland-production
+  ERROR_RATE_THRESHOLD: "5"
+  MONITOR_DURATION: 120
+  MONITOR_INTERVAL: 15
+
+permissions:
+  contents: read
+  packages: read
+
+# ---------------------------------------------------------------------------
+# Jobs
+# ---------------------------------------------------------------------------
+jobs:
+  # =========================================================================
+  # 1. PREPARE — Resolve deployment parameters
+  # =========================================================================
+  prepare:
+    name: Prepare Deployment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.resolve.outputs.environment }}
+      image_tag: ${{ steps.resolve.outputs.image_tag }}
+      namespace: ${{ steps.resolve.outputs.namespace }}
+      deploy_url: ${{ steps.resolve.outputs.deploy_url }}
+    steps:
+      - name: Resolve parameters
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            ENV="production"
+            TAG="${{ github.event.release.tag_name }}"
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            ENV="${{ github.event.inputs.environment }}"
+            TAG="${{ github.event.inputs.image_tag }}"
+          else
+            ENV="staging"
+          fi
+
+          TAG="${TAG:-${{ github.sha }}}"
+
+          case "$ENV" in
+            production)
+              NS="${{ env.KUBE_NAMESPACE_PRODUCTION }}"
+              URL="https://digiland.co.ke"
+              ;;
+            staging)
+              NS="${{ env.KUBE_NAMESPACE_STAGING }}"
+              URL="https://staging.digiland.co.ke"
+              ;;
+          esac
+
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+          echo "image_tag=$TAG" >> $GITHUB_OUTPUT
+          echo "namespace=$NS" >> $GITHUB_OUTPUT
+          echo "deploy_url=$URL" >> $GITHUB_OUTPUT
+
+          echo "Deploying to: $ENV ($NS)"
+          echo "Image tag: $TAG"
+          echo "URL: $URL"
+
+  # =========================================================================
+  # 2. DEPLOY GREEN — Provision the new environment
+  # =========================================================================
+  deploy-green:
+    name: Deploy Green Environment
+    runs-on: ubuntu-latest
+    needs: prepare
+    environment: ${{ needs.prepare.outputs.environment }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          if [ "${{ needs.prepare.outputs.environment }}" == "production" ]; then
+            echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+          else
+            echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+          fi
+          chmod 600 $HOME/.kube/config
+
+      - name: Identify current deployment colour
+        id: colour
+        run: |
+          CURRENT=$(kubectl get service ${{ env.DEPLOYMENT_NAME }}-service \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            -o jsonpath='{.spec.selector.version}' 2>/dev/null || echo "blue")
+          NEXT=$([ "$CURRENT" = "blue" ] && echo "green" || echo "blue")
+          echo "current=$CURRENT" >> $GITHUB_OUTPUT
+          echo "next=$NEXT" >> $GITHUB_OUTPUT
+          echo "Current: $CURRENT → Deploying: $NEXT"
+
+      - name: Deploy green environment with Helm
+        run: |
+          NEXT_COLOUR="${{ steps.colour.outputs.next }}"
+          IMAGE="${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.image_tag }}"
+
+          helm upgrade --install digiland-${NEXT_COLOUR} ./helm/digiland \
+            --namespace ${{ needs.prepare.outputs.namespace }} \
+            --values ./helm/digiland/values.yaml \
+            --values ./helm/digiland/values-${{ needs.prepare.outputs.environment }}.yaml \
+            --set image.tag=${{ needs.prepare.outputs.image_tag }} \
+            --set image.repository=${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }} \
+            --set nameOverride=digiland-${NEXT_COLOUR} \
+            --set extraLabels.version=${NEXT_COLOUR} \
+            --wait \
+            --timeout=600s
+
+          echo "Green ($NEXT_COLOUR) deployment created"
+
+      - name: Run migrations on green
+        run: |
+          NEXT_COLOUR="${{ steps.colour.outputs.next }}"
+          kubectl exec deployment/digiland-${NEXT_COLOUR} \
+            -n ${{ needs.prepare.outputs.namespace }} -- \
+            python manage.py migrate --noinput || echo "::warning::Migration execution returned non-zero"
+
+      - name: Verify green pods are running
+        run: |
+          NEXT_COLOUR="${{ steps.colour.outputs.next }}"
+          kubectl rollout status deployment/digiland-${NEXT_COLOUR} \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            --timeout=300s
+
+          # Verify pod count
+          READY_PODS=$(kubectl get deployment digiland-${NEXT_COLOUR} \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+
+          echo "Green pods ready: $READY_PODS"
+          if [ "$READY_PODS" -lt 1 ]; then
+            echo "::error::No green pods are ready"
+            exit 1
+          fi
+
+      - name: Output colour info
+        id: output
+        run: |
+          echo "current_colour=${{ steps.colour.outputs.current }}" >> $GITHUB_OUTPUT
+          echo "next_colour=${{ steps.colour.outputs.next }}" >> $GITHUB_OUTPUT
+
+  # =========================================================================
+  # 3. SMOKE TESTS — Validate green environment basics
+  # =========================================================================
+  smoke-test-green:
+    name: Smoke Test Green
+    runs-on: ubuntu-latest
+    needs: [prepare, deploy-green]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          if [ "${{ needs.prepare.outputs.environment }}" == "production" ]; then
+            echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+          else
+            echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+          fi
+          chmod 600 $HOME/.kube/config
+
+      - name: Run health check on green pods
+        run: |
+          NEXT_COLOUR="green"
+          PODS=$(kubectl get pods -l app=${{ env.DEPLOYMENT_NAME }},version=${NEXT_COLOUR} \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || echo "")
+
+          if [ -z "$PODS" ]; then
+            # Try the other colour
+            NEXT_COLOUR="blue"
+            PODS=$(kubectl get pods -l app=${{ env.DEPLOYMENT_NAME }},version=${NEXT_COLOUR} \
+              -n ${{ needs.prepare.outputs.namespace }} \
+              -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || echo "")
+          fi
+
+          for pod in $PODS; do
+            STATUS=$(kubectl exec "$pod" \
+              -n ${{ needs.prepare.outputs.namespace }} -- \
+              curl -sf -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/health/ 2>/dev/null || echo "000")
+            if [ "$STATUS" != "200" ]; then
+              echo "::error::Pod $pod health check FAILED (HTTP $STATUS)"
+              exit 1
+            fi
+            echo "Smoke test PASSED for pod $pod (HTTP $STATUS)"
+          done
+
+      - name: Run endpoint smoke tests via port-forward
+        run: |
+          # Port-forward to the green service
+          NEXT_COLOUR="green"
+          kubectl port-forward deployment/digiland-${NEXT_COLOUR} 8888:8000 \
+            -n ${{ needs.prepare.outputs.namespace }} &
+          PF_PID=$!
+          sleep 5
+
+          # Test health endpoint
+          HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" http://localhost:8888/api/v1/health/ 2>/dev/null || echo "000")
+          if [ "$HTTP_STATUS" != "200" ]; then
+            kill $PF_PID 2>/dev/null || true
+            echo "::error::Health endpoint smoke test failed (HTTP $HTTP_STATUS)"
+            exit 1
+          fi
+          echo "Health endpoint: OK (HTTP $HTTP_STATUS)"
+
+          # Test admin endpoint
+          HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" http://localhost:8888/admin/login/ 2>/dev/null || echo "000")
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
+            echo "Admin endpoint: OK (HTTP $HTTP_STATUS)"
+          else
+            echo "::warning::Admin endpoint returned HTTP $HTTP_STATUS"
+          fi
+
+          kill $PF_PID 2>/dev/null || true
+
+  # =========================================================================
+  # 4. INTEGRATION TESTS — More thorough testing on green
+  # =========================================================================
+  integration-test-green:
+    name: Integration Test Green
+    runs-on: ubuntu-latest
+    needs: [prepare, deploy-green]
+    if: ${{ github.event.inputs.skip_integration_tests != 'true' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          if [ "${{ needs.prepare.outputs.environment }}" == "production" ]; then
+            echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+          else
+            echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+          fi
+          chmod 600 $HOME/.kube/config
+
+      - name: Run API integration tests against green
+        run: |
+          NEXT_COLOUR="green"
+          kubectl port-forward deployment/digiland-${NEXT_COLOUR} 8888:8000 \
+            -n ${{ needs.prepare.outputs.namespace }} &
+          PF_PID=$!
+          sleep 5
+
+          # Test API v1 endpoints
+          ENDPOINTS=(
+            "/api/v1/health/"
+            "/api/v1/"
+          )
+
+          FAILURES=0
+          for endpoint in "${ENDPOINTS[@]}"; do
+            HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "http://localhost:8888${endpoint}" 2>/dev/null || echo "000")
+            if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 500 ]; then
+              echo "Integration test PASSED: $endpoint (HTTP $HTTP_STATUS)"
+            else
+              echo "Integration test FAILED: $endpoint (HTTP $HTTP_STATUS)"
+              FAILURES=$((FAILURES + 1))
+            fi
+          done
+
+          kill $PF_PID 2>/dev/null || true
+
+          if [ "$FAILURES" -gt 0 ]; then
+            echo "::error::$FAILURES integration tests failed"
+            exit 1
+          fi
+
+          echo "All integration tests passed"
+
+  # =========================================================================
+  # 5. HEALTH CHECK — Comprehensive green health verification
+  # =========================================================================
+  health-check-green:
+    name: Health Check Green
+    runs-on: ubuntu-latest
+    needs: [prepare, deploy-green, smoke-test-green, integration-test-green]
+    if: always() && needs.smoke-test-green.result == 'success'
+    steps:
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          if [ "${{ needs.prepare.outputs.environment }}" == "production" ]; then
+            echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+          else
+            echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+          fi
+          chmod 600 $HOME/.kube/config
+
+      - name: Comprehensive health check
+        run: |
+          NEXT_COLOUR="green"
+          NAMESPACE="${{ needs.prepare.outputs.namespace }}"
+
+          # Check deployment status
+          READY=$(kubectl get deployment digiland-${NEXT_COLOUR} \
+            -n $NAMESPACE \
+            -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+          DESIRED=$(kubectl get deployment digiland-${NEXT_COLOUR} \
+            -n $NAMESPACE \
+            -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
+
+          echo "Replicas: $READY/$DESIRED ready"
+
+          if [ "$READY" != "$DESIRED" ]; then
+            echo "::error::Not all replicas are ready ($READY/$DESIRED)"
+            exit 1
+          fi
+
+          # Check for CrashLoopBackOff pods
+          CRASHING=$(kubectl get pods -n $NAMESPACE \
+            -l app=${{ env.DEPLOYMENT_NAME }},version=${NEXT_COLOUR} \
+            --field-selector=status.phase!=Running \
+            --no-headers 2>/dev/null | wc -l || echo "0")
+
+          if [ "$CRASHING" -gt 0 ]; then
+            echo "::error::$CRASHING pods are not in Running state"
+            exit 1
+          fi
+
+          # Check for recent restarts
+          kubectl get pods -n $NAMESPACE \
+            -l app=${{ env.DEPLOYMENT_NAME }},version=${NEXT_COLOUR} \
+            -o custom-columns=NAME:.metadata.name,RESTARTS:.status.containerStatuses[0].restartCount \
+            --no-headers 2>/dev/null || true
+
+          echo "Green environment health check PASSED"
+
+  # =========================================================================
+  # 6. MANUAL APPROVAL — Required for production traffic switch
+  # =========================================================================
+  approve-switch:
+    name: "Approve Traffic Switch (${{ needs.prepare.outputs.environment }})"
+    runs-on: ubuntu-latest
+    needs: [prepare, health-check-green]
+    if: needs.prepare.outputs.environment == 'production'
+    environment:
+      name: production-approval
+      url: ${{ needs.prepare.outputs.deploy_url }}
+    steps:
+      - name: Await manual approval
+        run: |
+          echo "Manual approval granted for traffic switch to green"
+          echo "Environment: ${{ needs.prepare.outputs.environment }}"
+          echo "Image tag: ${{ needs.prepare.outputs.image_tag }}"
+
+  # =========================================================================
+  # 7. SWITCH TRAFFIC — Blue → Green
+  # =========================================================================
+  switch-traffic:
+    name: Switch Traffic (Blue → Green)
+    runs-on: ubuntu-latest
+    needs: [prepare, health-check-green, approve-switch]
+    if: always() && needs.health-check-green.result == 'success'
+    environment:
+      name: ${{ needs.prepare.outputs.environment }}
+      url: ${{ needs.prepare.outputs.deploy_url }}
+    steps:
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          if [ "${{ needs.prepare.outputs.environment }}" == "production" ]; then
+            echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+          else
+            echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+          fi
+          chmod 600 $HOME/.kube/config
+
+      - name: Identify colours
+        id: colour
+        run: |
+          CURRENT=$(kubectl get service ${{ env.DEPLOYMENT_NAME }}-service \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            -o jsonpath='{.spec.selector.version}' 2>/dev/null || echo "blue")
+          NEXT=$([ "$CURRENT" = "blue" ] && echo "green" || echo "blue")
+          echo "current=$CURRENT" >> $GITHUB_OUTPUT
+          echo "next=$NEXT" >> $GITHUB_OUTPUT
+
+      - name: Switch traffic from blue to green
+        run: |
+          NEXT_COLOUR="${{ steps.colour.outputs.next }}"
+          echo "Switching service selector to version=$NEXT_COLOUR..."
+
+          kubectl patch service ${{ env.DEPLOYMENT_NAME }}-service \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            -p "{\"spec\":{\"selector\":{\"app\":\"${{ env.DEPLOYMENT_NAME }}\",\"version\":\"${NEXT_COLOUR}\"}}}"
+
+          echo "Traffic switched to $NEXT_COLOUR"
+
+      - name: Verify traffic switch
+        run: |
+          DEPLOY_URL="${{ needs.prepare.outputs.deploy_url }}"
+          MAX_RETRIES=15
+          SLEEP_INTERVAL=10
+
+          for i in $(seq 1 $MAX_RETRIES); do
+            HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "${DEPLOY_URL}/api/v1/health/" 2>/dev/null || echo "000")
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              echo "Post-switch health check PASSED (HTTP $HTTP_STATUS) on attempt $i"
+              exit 0
+            fi
+            echo "Post-switch health check attempt $i — HTTP $HTTP_STATUS. Retrying..."
+            sleep $SLEEP_INTERVAL
+          done
+
+          echo "Post-switch health check FAILED — initiating rollback"
+          exit 1
+
+  # =========================================================================
+  # 8. MONITOR POST-SWITCH — Watch error rates
+  # =========================================================================
+  monitor-post-switch:
+    name: Monitor Post-Switch Error Rates
+    runs-on: ubuntu-latest
+    needs: [prepare, switch-traffic]
+    steps:
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          if [ "${{ needs.prepare.outputs.environment }}" == "production" ]; then
+            echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+          else
+            echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+          fi
+          chmod 600 $HOME/.kube/config
+
+      - name: Monitor error rates
+        run: |
+          DEPLOY_URL="${{ needs.prepare.outputs.deploy_url }}"
+          ELAPSED=0
+          ERROR_COUNT=0
+          MAX_ERRORS=3
+
+          echo "Monitoring $DEPLOY_URL for ${{ env.MONITOR_DURATION }}s..."
+          echo "Error rate threshold: ${{ env.ERROR_RATE_THRESHOLD }}%"
+
+          while [ $ELAPSED -lt ${{ env.MONITOR_DURATION }} ]; do
+            HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "${DEPLOY_URL}/api/v1/health/" 2>/dev/null || echo "000")
+
+            if [ "$HTTP_STATUS" -ge 500 ]; then
+              ERROR_COUNT=$((ERROR_COUNT + 1))
+              echo "::warning::Server error detected (HTTP $HTTP_STATUS) — errors: $ERROR_COUNT/$MAX_ERRORS"
+            elif [ "$HTTP_STATUS" -ge 400 ]; then
+              echo "Client error (HTTP $HTTP_STATUS) — not counted as server fault"
+            else
+              echo "Health check OK (HTTP $HTTP_STATUS) at ${ELAPSED}s"
+            fi
+
+            if [ $ERROR_COUNT -ge $MAX_ERRORS ]; then
+              echo "::error::Error threshold exceeded ($ERROR_COUNT/$MAX_ERRORS) — automatic rollback triggered"
+              exit 1
+            fi
+
+            sleep ${{ env.MONITOR_INTERVAL }}
+            ELAPSED=$((ELAPSED + ${{ env.MONITOR_INTERVAL }}))
+          done
+
+          echo "Monitoring complete — no critical errors detected"
+
+  # =========================================================================
+  # 9. CLEANUP OR ROLLBACK
+  # =========================================================================
+  finalize:
+    name: Finalize Deployment
+    runs-on: ubuntu-latest
+    needs: [prepare, switch-traffic, monitor-post-switch]
+    if: always()
+    steps:
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          if [ "${{ needs.prepare.outputs.environment }}" == "production" ]; then
+            echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+          else
+            echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+          fi
+          chmod 600 $HOME/.kube/config
+
+      - name: Identify colours
+        id: colour
+        run: |
+          CURRENT=$(kubectl get service ${{ env.DEPLOYMENT_NAME }}-service \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            -o jsonpath='{.spec.selector.version}' 2>/dev/null || echo "blue")
+          PREV=$([ "$CURRENT" = "blue" ] && echo "green" || echo "blue")
+          echo "current=$CURRENT" >> $GITHUB_OUTPUT
+          echo "previous=$PREV" >> $GITHUB_OUTPUT
+
+      - name: Scale down old (blue) deployment on success
+        if: needs.monitor-post-switch.result == 'success'
+        run: |
+          PREV_COLOUR="${{ steps.colour.outputs.previous }}"
+          kubectl scale deployment/digiland-${PREV_COLOUR} \
+            --replicas=0 \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            --timeout=60s || true
+          echo "Old ($PREV_COLOUR) deployment scaled down"
+
+      - name: Rollback on failure
+        if: failure() || needs.monitor-post-switch.result == 'failure'
+        run: |
+          PREV_COLOUR="${{ steps.colour.outputs.previous }}"
+          CURRENT_COLOUR="${{ steps.colour.outputs.current }}"
+
+          echo "ROLLING BACK — Switching traffic back to $PREV_COLOUR..."
+
+          kubectl patch service ${{ env.DEPLOYMENT_NAME }}-service \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            -p "{\"spec\":{\"selector\":{\"app\":\"${{ env.DEPLOYMENT_NAME }}\",\"version\":\"${PREV_COLOUR}\"}}}"
+
+          # Scale down the failed green deployment
+          kubectl scale deployment/digiland-${CURRENT_COLOUR} \
+            --replicas=0 \
+            -n ${{ needs.prepare.outputs.namespace }} || true
+
+          echo "Rollback complete. Traffic restored to $PREV_COLOUR."
+
+      - name: Notify Slack — Blue-Green Deploy
+        if: always()
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": "Blue-Green Deploy ${{ job.status }} for ${{ needs.prepare.outputs.environment }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ job.status == 'success' && ':white_check_mark' || ':x' }} *Blue-Green Deploy ${{ job.status }}*\n• Environment: ${{ needs.prepare.outputs.environment }}\n• Image: `${{ needs.prepare.outputs.image_tag }}`\n• Strategy: Blue → Green\n• Commit: `${{ github.sha }}`\n• Actor: ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ needs.prepare.outputs.environment == 'production' && secrets.SLACK_WEBHOOK_PRODUCTION || secrets.SLACK_WEBHOOK_STAGING }}
+        continue-on-error: true

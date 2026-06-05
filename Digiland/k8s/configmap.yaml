@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: digiland-config
+  namespace: digiland
+  labels:
+    app: digiland
+    component: config
+data:
+  DJANGO_SETTINGS_MODULE: "land_escrow.settings"
+  ENVIRONMENT: "production"
+  ALLOWED_HOSTS: "digiland.co.ke,www.digiland.co.ke,api.digiland.co.ke"
+  DEBUG: "False"
+  GUNICORN_WORKERS: "4"
+  GUNICORN_THREADS: "2"
+  GUNICORN_TIMEOUT: "120"
+  GUNICORN_BIND: "0.0.0.0:8000"
+  GUNICORN_WORKER_CLASS: "gevent"
+  GUNICORN_MAX_REQUESTS: "5000"
+  GUNICORN_MAX_REQUESTS_JITTER: "500"
+  CELERY_LOG_LEVEL: "info"
+  CELERY_WORKER_CONCURRENCY: "4"
+  CELERY_WORKER_MAX_TASKS_PER_CHILD: "1000"
+  POSTGRES_HOST: "digiland-db-service"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "digiland"
+  POSTGRES_USER: "digiland"
+  REDIS_HOST: "digiland-redis-service"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"

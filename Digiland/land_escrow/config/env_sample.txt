@@ -1,0 +1,302 @@
+# =============================================================================
+# Digiland - Environment Variables Template
+# =============================================================================
+# Copy this file to .env and fill in your values:
+#   cp .env.example .env
+#
+# NEVER commit the .env file to version control!
+# =============================================================================
+
+# =============================================================================
+# Django Core
+# =============================================================================
+# SECURITY WARNING: Generate a strong secret key for production!
+# Use: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+# NEVER use a default or placeholder secret key in production!
+SECRET_KEY=  # REQUIRED - No default allowed
+
+# Set to False in production
+DEBUG=False
+
+# Comma-separated list of allowed hostnames / IPs
+ALLOWED_HOSTS=localhost,127.0.0.1,your-domain.com
+
+# Comma-separated list of trusted origins for CSRF (include https:// prefix)
+CSRF_TRUSTED_ORIGINS=http://localhost,https://your-domain.com
+
+# Django settings module
+DJANGO_SETTINGS_MODULE=land_escrow.settings
+
+# =============================================================================
+# PostgreSQL Database
+# =============================================================================
+POSTGRES_DB=digiland
+POSTGRES_USER=digiland
+POSTGRES_PASSWORD=change-me-to-a-strong-password
+
+# Full database URL (used by some Django packages)
+# Format: postgres://USER:PASSWORD@HOST:PORT/DBNAME
+DATABASE_URL=postgres://digiland:change-me-to-a-strong-password@db:5432/digiland
+
+# =============================================================================
+# Redis
+# =============================================================================
+REDIS_PASSWORD=change-me-to-a-strong-redis-password
+REDIS_URL=redis://:change-me-to-a-strong-redis-password@redis:6379/0
+
+# =============================================================================
+# Celery
+# =============================================================================
+CELERY_BROKER_URL=redis://:change-me-to-a-strong-redis-password@redis:6379/1
+CELERY_RESULT_BACKEND=redis://:change-me-to-a-strong-redis-password@redis:6379/2
+
+# Number of concurrent worker processes
+CELERY_WORKER_CONCURRENCY=4
+
+# Log level: debug, info, warning, error, critical
+CELERY_LOG_LEVEL=info
+
+# =============================================================================
+# Email Configuration
+# =============================================================================
+# LOCAL DEVELOPMENT uses the console email backend by default — no SMTP
+# credentials needed.  Verification emails appear in the runserver stdout.
+# To test real delivery, switch to SMTP:
+#   EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+#
+# PRODUCTION forces SMTP via settings_production.py regardless of this value.
+# =============================================================================
+
+# Email backend: console (dev default) or smtp (production)
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=your-app-password-here
+EMAIL_USE_TLS=True
+EMAIL_USE_SSL=False
+
+# Default "from" address for outgoing emails — independent of SMTP login.
+# If blank, falls back to EMAIL_HOST_USER, then to noreply@digiland.local.
+DEFAULT_FROM_EMAIL=noreply@digiland.co.ke
+
+# Admin notification recipients
+ADMIN_USER_NAME=Digiland Admin
+ADMIN_USER_EMAIL=admin@digiland.co.ke
+
+# =============================================================================
+# Cloudinary (Media Storage)
+# =============================================================================
+# Sign up at https://cloudinary.com/ for free tier
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+# =============================================================================
+# Paystack (Payment Gateway - Nigeria/Kenya)
+# =============================================================================
+# Sign up at https://paystack.com/
+PAYSTACK_PUBLIC_KEY=pk_test_xxxxxxxxxxxxxxxxxxxx
+PAYSTACK_SECRET_KEY=sk_test_xxxxxxxxxxxxxxxxxxxx
+
+# =============================================================================
+# GavaConnect KRA API (Kenya Revenue Authority)
+# =============================================================================
+# App: Digiland — PIN Checker BY ID
+GAVACONNECT_CONSUMER_KEY=
+GAVACONNECT_CONSUMER_SECRET=
+# App: DigilandFull — PIN Checker by PIN
+GAVACONNECT_PIN_CONSUMER_KEY=
+GAVACONNECT_PIN_CONSUMER_SECRET=
+# App: Digiland Escrow — Tax Compliance Certificate Checker
+GAVACONNECT_TCC_CONSUMER_KEY=
+GAVACONNECT_TCC_CONSUMER_SECRET=
+# Shared settings
+GAVACONNECT_BASE_URL=https://sbx.kra.go.ke
+GAVACONNECT_ENVIRONMENT=sandbox
+
+# =============================================================================
+# Safaricom Daraja API (M-Pesa Integration)
+# =============================================================================
+DARAJA_CONSUMER_KEY=
+DARAJA_CONSUMER_SECRET=
+DARAJA_SHORTCODE=
+DARAJA_PASSKEY=
+DARAJA_INITIATOR_NAME=
+DARAJA_INITIATOR_PASSWORD=
+# Environment: sandbox or production
+DARAJA_ENVIRONMENT=sandbox
+# M-PESA callback secret — set in production to verify incoming Safaricom callbacks
+MPESA_CALLBACK_SECRET=
+
+# =============================================================================
+# KCB Bank API
+# =============================================================================
+KCB_API_BASE_URL=https://uat.bfrg.co.ke:8443/api
+KCB_CLIENT_ID=
+KCB_CLIENT_SECRET=
+KCB_COMPANY_CODE=
+KCB_PLATFORM_ACCOUNT=DIGILAND-ESCROW-001
+KCB_SANDBOX=True
+
+# =============================================================================
+# AWS S3 (Optional — for static/media file storage via django-storages)
+# =============================================================================
+# Uncomment and configure if using S3 instead of Cloudinary for media
+# AWS_ACCESS_KEY_ID=
+# AWS_SECRET_ACCESS_KEY=
+# AWS_STORAGE_BUCKET_NAME=
+# AWS_S3_REGION_NAME=eu-west-1
+# AWS_S3_CUSTOM_DOMAIN=
+# AWS_QUERYSTRING_AUTH=False
+
+# =============================================================================
+# Elasticsearch (Optional — for full-text search)
+# =============================================================================
+ELASTICSEARCH_URL=http://elasticsearch:9200
+ELASTICSEARCH_ENABLED=False
+
+# =============================================================================
+# Gunicorn
+# =============================================================================
+# Number of worker processes (recommended: 2-4 x CPU cores)
+GUNICORN_WORKERS=4
+# Threads per worker
+GUNICORN_THREADS=2
+# Worker timeout in seconds
+GUNICORN_TIMEOUT=120
+# Bind address (use 0.0.0.0 for Docker)
+GUNICORN_BIND=0.0.0.0:8000
+
+# =============================================================================
+# Admin & Security
+# =============================================================================
+# Admin finance PIN is DEPRECATED. Admin operations require proper RBAC + MFA.
+# ADMIN_FINANCE_PIN=  # Do NOT set this - use Django admin with MFA instead
+
+# =============================================================================
+# API Configuration
+# =============================================================================
+# Timeout for external API calls in seconds
+API_TIMEOUT_SECONDS=30
+# Number of retry attempts for failed API calls
+API_RETRY_ATTEMPTS=3
+
+# =============================================================================
+# Logging
+# =============================================================================
+# Enable detailed API request/response logging
+ENABLE_API_LOGGING=True
+# Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+LOG_LEVEL=INFO
+
+# =============================================================================
+# Sentry (Optional — Error Tracking)
+# =============================================================================
+# SENTRY_DSN=
+# SENTRY_ENVIRONMENT=production
+# SENTRY_TRACES_SAMPLE_RATE=0.1
+
+# =============================================================================
+# Authentication & Security
+# =============================================================================
+# JWT signing key (defaults to SECRET_KEY if not set)
+JWT_SIGNING_KEY=
+
+# Brute force protection
+BRUTE_FORCE_MAX_ATTEMPTS=5
+BRUTE_FORCE_WINDOW_MINUTES=15
+
+# MFA Configuration
+MFA_TOTP_ISSUER=Digiland
+MFA_RECOVERY_CODE_COUNT=8
+MFA_TRUST_DURATION_DAYS=30
+MFA_STEP_UP_DURATION_MINUTES=5
+
+# Session Security
+SESSION_COOKIE_AGE=3600
+
+# =============================================================================
+# WebAuthn / Hardware Security Keys
+# =============================================================================
+WEBAUTHN_RP_ID=localhost
+WEBAUTHN_RP_NAME=Digiland
+WEBAUTHN_RP_ORIGIN=http://localhost:8000
+WEBAUTHN_MAX_CREDENTIALS_PER_USER=5
+WEBAUTHN_CHALLENGE_TTL_SECONDS=300
+
+# =============================================================================
+# Dual Approval (Four-Eyes Principle)
+# =============================================================================
+DUAL_APPROVAL_ENABLED=True
+# Amount in KES above which dual approval is required
+DUAL_APPROVAL_CRITICAL_THRESHOLD=2000000
+DUAL_APPROVAL_ACTION_EXPIRY_HOURS=24
+# Amount above which hardware key is required for approval
+DUAL_APPROVAL_REQUIRE_HARDWARE_KEY_ABOVE=2000000
+
+# =============================================================================
+# Secrets Vault
+# =============================================================================
+# Master encryption key for the secrets vault (MUST be set in production)
+SECRETS_VAULT_MASTER_KEY=
+SECRETS_VAULT_DEFAULT_ROTATION_DAYS=90
+SECRETS_VAULT_ACCESS_RATE_LIMIT_PER_MINUTE=30
+SECRETS_VAULT_ACCESS_RATE_LIMIT_PER_HOUR=200
+
+# =============================================================================
+# SIEM Integration
+# =============================================================================
+SIEM_ENABLED=False
+SIEM_ENDPOINT_URL=
+SIEM_API_KEY=
+# Output format: json, cef, syslog
+SIEM_OUTPUT_FORMAT=json
+SIEM_BATCH_SIZE=100
+
+# =============================================================================
+# Emergency Controls
+# =============================================================================
+EMERGENCY_TEMP_ADMIN_MAX_LIFETIME_HOURS=24
+# Comma-separated list of emergency incident responder emails
+EMERGENCY_INCIDENT_RESPONDERS=
+
+# =============================================================================
+# Admin Control Plane
+# =============================================================================
+# Comma-separated list of allowed IP ranges for admin access (production MUST set this)
+ADMIN_ALLOWED_IP_RANGES=
+ADMIN_SESSION_IDLE_TIMEOUT_SECONDS=1800
+ADMIN_SESSION_ABSOLUTE_TIMEOUT_SECONDS=14400
+ADMIN_SESSION_TERMINATE_ON_IP_CHANGE=True
+ADMIN_SESSION_TERMINATE_ON_DEVICE_CHANGE=False
+ADMIN_TRUSTED_PROXY_COUNT=0
+
+# =============================================================================
+# External Services Layer (ESL)
+# =============================================================================
+ESL_IP_ALLOWLIST=
+ESL_WEBHOOK_SECRET_PAYSTACK=
+ESL_WEBHOOK_SECRET_STRIPE=
+ESL_PAYSTACK_SIGNING_SECRET=
+ESL_STRIPE_SIGNING_SECRET=
+ESL_DEFAULT_TIMEOUT_SECONDS=30
+ESL_MAX_RETRIES=3
+ESL_CIRCUIT_BREAKER_FAILURE_THRESHOLD=5
+ESL_CIRCUIT_BREAKER_RECOVERY_TIMEOUT=60
+
+# =============================================================================
+# OAuth / SSO Providers
+# =============================================================================
+GOOGLE_OAUTH_CLIENT_ID=
+GOOGLE_OAUTH_CLIENT_SECRET=
+GITHUB_OAUTH_CLIENT_ID=
+GITHUB_OAUTH_CLIENT_SECRET=
+MICROSOFT_OAUTH_CLIENT_ID=
+MICROSOFT_OAUTH_CLIENT_SECRET=
+
+# =============================================================================
+# Frontend URL
+# =============================================================================
+FRONTEND_URL=http://localhost:3000

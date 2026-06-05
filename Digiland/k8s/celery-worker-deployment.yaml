@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: digiland-celery-worker
+  namespace: digiland
+  labels:
+    app: digiland
+    component: celery-worker
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: digiland
+      component: celery-worker
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: digiland
+        component: celery-worker
+    spec:
+      serviceAccountName: digiland-serviceaccount
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: celery-worker
+          image: ghcr.io/digiland/digiland:latest
+          imagePullPolicy: Always
+          command: ['celery']
+          args:
+            - -A
+            - land_escrow
+            - worker
+            - --loglevel=info
+            - --concurrency=4
+            - --max-tasks-per-child=1000
+            - --without-heartbeat
+          envFrom:
+            - configMapRef:
+                name: digiland-config
+            - secretRef:
+                name: digiland-secrets
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: media
+              mountPath: /app/media
+            - name: tmp
+              mountPath: /app/tmp
+      volumes:
+        - name: media
+          persistentVolumeClaim:
+            claimName: digiland-media-pvc
+        - name: tmp
+          emptyDir: {}
+      terminationGracePeriodSeconds: 120
