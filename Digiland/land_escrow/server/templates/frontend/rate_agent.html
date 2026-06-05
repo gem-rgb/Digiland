@@ -1,0 +1,81 @@
+{% extends 'frontend/base.html' %}
+{% load static %}
+{% block title %}Rate Agent - Digiland{% endblock %}
+
+{% block content %}
+<section class="content-page">
+  <div class="content-hero">
+    <span class="page-kicker justify-content-center"><i class="bi bi-star"></i>Agent Feedback</span>
+    <h2 class="page-title">Rate agent performance</h2>
+    <p class="page-subtitle mx-auto">Evaluate <strong>{{ agent.email }}</strong> based on their recent delivery, communication, and professionalism.</p>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+      <div class="card">
+        <div class="card-body">
+          <div class="profile-card mb-4">
+            <div class="d-flex align-items-center gap-3">
+              <span class="icon-chip tone-info"><i class="bi bi-person-check"></i></span>
+              <div>
+                <h5 class="mb-1">Agent information</h5>
+                <p class="text-muted mb-0">A quick summary of the staff member you are reviewing.</p>
+              </div>
+            </div>
+            <div class="row g-3 text-muted small">
+              <div class="col-md-6"><strong>Email:</strong> {{ agent.email }}</div>
+              <div class="col-md-6"><strong>Phone:</strong> {{ agent.phone_number|default:"Not provided" }}</div>
+              <div class="col-md-6"><strong>ID Number:</strong> {{ agent.id_number|default:"Not provided" }}</div>
+              <div class="col-md-6"><strong>Member Since:</strong> {{ agent.date_joined|date:"M d, Y" }}</div>
+              {% if agent.average_rating %}
+              <div class="col-md-6">
+                <strong>Current Rating:</strong>
+                <span class="rating-stars">
+                  {% for i in ''|center:agent.average_rating %}<i class="bi bi-star-fill"></i>{% endfor %}
+                  {{ agent.average_rating }}/5.0
+                </span>
+              </div>
+              {% endif %}
+              <div class="col-md-6"><strong>Tasks Completed:</strong> {{ agent.total_tasks_completed }}</div>
+            </div>
+          </div>
+
+          <form method="POST">
+            {% csrf_token %}
+            <div class="mb-4">
+              <label class="form-label">Performance Rating</label>
+              <div class="rating-options">
+                {% for i in "12345" %}
+                <div class="rating-option">
+                  <input type="radio" name="rating" value="{{ i }}" id="star{{ i }}" required>
+                  <label for="star{{ i }}">
+                    <span>{{ i }} Star{{ i|pluralize }}</span>
+                    <span class="rating-stars">
+                      {% for j in ''|center:i %}<i class="bi bi-star-fill"></i>{% endfor %}
+                    </span>
+                  </label>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label for="review" class="form-label">Performance Review</label>
+              <textarea class="form-control" id="review" name="review" rows="5" placeholder="Share specific feedback on the agent's work, communication, and professionalism."></textarea>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-star"></i>Submit Rating
+              </button>
+              <a href="{% url 'frontend:agent_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i>Cancel
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

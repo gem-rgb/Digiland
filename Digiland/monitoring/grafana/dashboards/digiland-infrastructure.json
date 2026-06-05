@@ -1,0 +1,172 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0},
+      "id": 1,
+      "title": "CPU Usage",
+      "type": "timeseries",
+      "targets": [
+        {"expr": "100 - (avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)", "legendFormat": "{{instance}}"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "percent", "max": 100, "min": 0},
+        "overrides": []
+      }
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
+      "id": 2,
+      "title": "Memory Usage",
+      "type": "timeseries",
+      "targets": [
+        {"expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100", "legendFormat": "{{instance}}"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "percent", "max": 100, "min": 0},
+        "overrides": []
+      }
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0},
+      "id": 3,
+      "title": "Disk Usage",
+      "type": "timeseries",
+      "targets": [
+        {"expr": "(1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100", "legendFormat": "{{instance}} {{mountpoint}}"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "percent", "max": 100, "min": 0},
+        "overrides": []
+      }
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "id": 4,
+      "title": "PostgreSQL Connections",
+      "type": "timeseries",
+      "targets": [
+        {"expr": "pg_stat_activity_count", "legendFormat": "{{instance}} active"},
+        {"expr": "pg_settings_max_connections", "legendFormat": "{{instance}} max"}
+      ]
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "id": 5,
+      "title": "PostgreSQL Query Rate",
+      "type": "timeseries",
+      "targets": [
+        {"expr": "rate(pg_stat_database_xact_commit[5m])", "legendFormat": "{{datname}} commits/s"},
+        {"expr": "rate(pg_stat_database_xact_rollback[5m])", "legendFormat": "{{datname}} rollbacks/s"}
+      ]
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 16},
+      "id": 6,
+      "title": "Redis Memory",
+      "type": "timeseries",
+      "targets": [
+        {"expr": "redis_memory_used_bytes", "legendFormat": "Used"},
+        {"expr": "redis_memory_max_bytes", "legendFormat": "Max"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "bytes"},
+        "overrides": []
+      }
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 16},
+      "id": 7,
+      "title": "Redis Operations",
+      "type": "timeseries",
+      "targets": [
+        {"expr": "rate(redis_commands_processed_total[5m])", "legendFormat": "Commands/s"},
+        {"expr": "rate(redis_keyspace_hits_total[5m])", "legendFormat": "Hits/s"},
+        {"expr": "rate(redis_keyspace_misses_total[5m])", "legendFormat": "Misses/s"}
+      ]
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 16},
+      "id": 8,
+      "title": "Redis Connected Clients",
+      "type": "timeseries",
+      "targets": [
+        {"expr": "redis_connected_clients", "legendFormat": "Clients"}
+      ]
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+      "id": 9,
+      "title": "Network I/O",
+      "type": "timeseries",
+      "targets": [
+        {"expr": "rate(node_network_receive_bytes_total{device!=\"lo\"}[5m])", "legendFormat": "{{instance}} {{device}} RX"},
+        {"expr": "rate(node_network_transmit_bytes_total{device!=\"lo\"}[5m])", "legendFormat": "{{instance}} {{device}} TX"}
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "Bps"},
+        "overrides": []
+      }
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+      "id": 10,
+      "title": "Container Restart Count",
+      "type": "timeseries",
+      "targets": [
+        {"expr": "rate(container_restart_count[1h])", "legendFormat": "{{name}}"}
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["digiland", "infrastructure"],
+  "templating": {
+    "list": [
+      {
+        "current": {"selected": false, "text": "Prometheus", "value": "Prometheus"},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Datasource",
+        "multi": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": {"from": "now-1h", "to": "now"},
+  "title": "Digiland - Infrastructure",
+  "uid": "digiland-infrastructure",
+  "version": 1
+}

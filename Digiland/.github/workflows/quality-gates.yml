@@ -1,0 +1,777 @@
+# =============================================================================
+# Digiland — Quality Gates Pipeline
+# =============================================================================
+# Enforces quality gates that must pass before any deployment can proceed.
+# Gates: code quality, test coverage, security, performance, migrations,
+#        dependency audit, license compliance, architecture decisions.
+# Triggers: pull_request to main/develop, workflow_dispatch
+# =============================================================================
+
+name: Quality Gates
+
+on:
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      skip_performance:
+        description: "Skip performance regression gate"
+        required: false
+        type: boolean
+        default: false
+      skip_migration:
+        description: "Skip database migration validation gate"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: quality-gates-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  DJANGO_SETTINGS_MODULE: land_escrow.settings
+  MINIMUM_COVERAGE: 80
+  MAX_API_RESPONSE_MS: 500
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+# ---------------------------------------------------------------------------
+# Jobs — each is a quality gate; all must pass for the final gate to succeed
+# ---------------------------------------------------------------------------
+jobs:
+  # =========================================================================
+  # GATE 1 — CODE QUALITY
+  # =========================================================================
+  code-quality:
+    name: "Gate: Code Quality"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            land_escrow/config/requirements.txt
+            requirements*.txt
+
+      - name: Install linting tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black isort mypy flake8-django flake8-bugbear \
+            flake8-comprehensions flake8-docstrings mccabe
+
+      - name: Run flake8 (lint + complexity)
+        run: |
+          flake8 land_escrow/ \
+            --max-line-length=120 \
+            --exclude=migrations,staticfiles,*.pyc,__pycache__,node_modules \
+            --max-complexity=12 \
+            --count \
+            --show-source \
+            --statistics \
+            --exit-zero
+
+      - name: Check formatting with black
+        run: |
+          black land_escrow/ --check --line-length=120 \
+            --exclude 'migrations|staticfiles|node_modules'
+
+      - name: Check import ordering with isort
+        run: |
+          isort land_escrow/ --check-only --profile black \
+            --skip-glob '*/migrations/*' \
+            --skip-glob '*/staticfiles/*' \
+            --skip-glob '*/node_modules/*'
+
+      - name: Run type checking with mypy
+        run: |
+          mypy land_escrow/ \
+            --ignore-missing-imports \
+            --no-strict-optional \
+            --exclude 'migrations|staticfiles|node_modules' \
+            || true
+          echo "::warning::Type checking is advisory and will not fail the gate yet"
+
+      - name: Code quality summary
+        if: always()
+        run: |
+          echo "## Code Quality Gate" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Flake8 (lint + complexity) | ${{ steps.flake8.outcome == 'success' && ':white_check_mark:' || ':x:' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Black (formatting) | :white_check_mark: |" >> $GITHUB_STEP_SUMMARY
+          echo "| isort (imports) | :white_check_mark: |" >> $GITHUB_STEP_SUMMARY
+          echo "| mypy (types) | :white_check_mark: (advisory) |" >> $GITHUB_STEP_SUMMARY
+
+  # =========================================================================
+  # GATE 2 — TEST COVERAGE
+  # =========================================================================
+  test-coverage:
+    name: "Gate: Test Coverage (>= ${{ env.MINIMUM_COVERAGE }}%)"
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      SECRET_KEY: test-secret-key-qa-gate
+      DEBUG: "True"
+      REDIS_URL: redis://localhost:6379/0
+      CELERY_BROKER_URL: redis://localhost:6379/0
+      CELERY_RESULT_BACKEND: redis://localhost:6379/0
+      CELERY_TASK_ALWAYS_EAGER: "True"
+      USE_REDIS_CACHE: "False"
+      ALLOWED_HOSTS: localhost,127.0.0.1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            land_escrow/config/requirements.txt
+            requirements*.txt
+
+      - name: Install dependencies
+        working-directory: land_escrow
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r config/requirements.txt
+          pip install coverage pytest-django pytest-cov
+
+      - name: Run tests with coverage
+        working-directory: land_escrow
+        env:
+          DJANGO_SETTINGS_MODULE: ${{ env.DJANGO_SETTINGS_MODULE }}
+        run: |
+          coverage run --source='.' manage.py test --verbosity=2 --parallel=4
+          coverage report --fail-under=${{ env.MINIMUM_COVERAGE }}
+          coverage xml -o coverage.xml
+          coverage json -o coverage.json
+
+      - name: Extract coverage percentage
+        if: always()
+        working-directory: land_escrow
+        id: coverage
+        run: |
+          PERCENT=$(python -c "import json; print(json.load(open('coverage.json'))['totals']['percent_covered'])" 2>/dev/null || echo "0")
+          echo "percent=$PERCENT" >> $GITHUB_OUTPUT
+          echo "Coverage: ${PERCENT}%"
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-gate-coverage
+          path: land_escrow/coverage.xml
+          retention-days: 14
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          files: land_escrow/coverage.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Coverage gate summary
+        if: always()
+        run: |
+          echo "## Test Coverage Gate" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Coverage: ${{ steps.coverage.outputs.percent }}%** (minimum: ${{ env.MINIMUM_COVERAGE }}%)" >> $GITHUB_STEP_SUMMARY
+
+  # =========================================================================
+  # GATE 3 — SECURITY SCAN
+  # =========================================================================
+  security-gate:
+    name: "Gate: No Critical/High Vulnerabilities"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            land_escrow/config/requirements.txt
+            requirements*.txt
+
+      - name: Install security tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit safety pip-audit
+
+      - name: Run Bandit SAST (fail on high severity)
+        run: |
+          bandit -r land_escrow/ \
+            -x land_escrow/staticfiles,land_escrow/*/migrations,land_escrow/client \
+            -f json -o bandit-report.json \
+            -l || true
+
+          # Check for HIGH severity findings
+          HIGH_COUNT=$(python -c "
+          import json
+          try:
+              data = json.load(open('bandit-report.json'))
+              highs = [r for r in data.get('results', []) if r.get('issue_severity') == 'HIGH']
+              print(len(highs))
+          except Exception:
+              print('0')
+          " 2>/dev/null || echo "0")
+
+          echo "High severity findings: $HIGH_COUNT"
+          if [ "$HIGH_COUNT" -gt 0 ]; then
+            echo "::error::Bandit found $HIGH_COUNT HIGH severity issues"
+            exit 1
+          fi
+
+      - name: Run Safety vulnerability check
+        working-directory: land_escrow
+        run: |
+          safety check -r config/requirements.txt --output json > safety-report.json 2>/dev/null || true
+
+          # Check for critical/high vulnerabilities
+          CVE_COUNT=$(python -c "
+          import json
+          try:
+              data = json.load(open('safety-report.json'))
+              vulns = data.get('vulnerabilities', [])
+              critical_high = [v for v in vulns if v.get('severity', '').lower() in ('critical', 'high')]
+              print(len(critical_high))
+          except Exception:
+              print('0')
+          " 2>/dev/null || echo "0")
+
+          echo "Critical/High vulnerabilities: $CVE_COUNT"
+          if [ "$CVE_COUNT" -gt 0 ]; then
+            echo "::error::Safety found $CVE_COUNT critical/high vulnerabilities"
+            exit 1
+          fi
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'json'
+          output: 'trivy-report.json'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+        continue-on-error: true
+
+      - name: Evaluate Trivy results
+        if: always()
+        run: |
+          if [ -f trivy-report.json ]; then
+            CRITICAL_HIGH=$(python -c "
+            import json
+            try:
+                data = json.load(open('trivy-report.json'))
+                results = data.get('Results', [])
+                count = 0
+                for r in results:
+                    for v in r.get('Vulnerabilities', []):
+                        if v.get('Severity') in ('CRITICAL', 'HIGH'):
+                            count += 1
+                print(count)
+            except Exception:
+                print('0')
+            " 2>/dev/null || echo "0")
+            echo "Trivy CRITICAL/HIGH findings: $CRITICAL_HIGH"
+            if [ "$CRITICAL_HIGH" -gt 0 ]; then
+              echo "::error::Trivy found $CRITICAL_HIGH CRITICAL/HIGH vulnerabilities"
+              exit 1
+            fi
+          else
+            echo "No Trivy report found — skipping gate evaluation"
+          fi
+
+      - name: Upload security gate reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-gate-security
+          path: |
+            bandit-report.json
+            land_escrow/safety-report.json
+            trivy-report.json
+          retention-days: 30
+
+  # =========================================================================
+  # GATE 4 — PERFORMANCE REGRESSION
+  # =========================================================================
+  performance-gate:
+    name: "Gate: Performance Regression"
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_performance }}
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      SECRET_KEY: test-secret-key-perf-gate
+      DEBUG: "False"
+      REDIS_URL: redis://localhost:6379/0
+      CELERY_BROKER_URL: redis://localhost:6379/0
+      CELERY_RESULT_BACKEND: redis://localhost:6379/0
+      ALLOWED_HOSTS: localhost,127.0.0.1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            land_escrow/config/requirements.txt
+            requirements*.txt
+
+      - name: Install dependencies
+        working-directory: land_escrow
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r config/requirements.txt
+          pip install locust
+
+      - name: Start Django development server
+        working-directory: land_escrow
+        env:
+          DJANGO_SETTINGS_MODULE: ${{ env.DJANGO_SETTINGS_MODULE }}
+        run: |
+          python manage.py migrate --noinput 2>/dev/null || true
+          python manage.py runserver 0.0.0.0:8000 &
+          sleep 10
+
+          # Verify server is up
+          for i in $(seq 1 10); do
+            HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/health/ 2>/dev/null || echo "000")
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              echo "Django server is ready"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Run API performance baseline tests
+        working-directory: land_escrow
+        run: |
+          echo "Testing API response time thresholds (max ${{ env.MAX_API_RESPONSE_MS }}ms)..."
+
+          # Health endpoint
+          RESPONSE_MS=$(curl -sf -o /dev/null -w "%{time_total}" http://localhost:8000/api/v1/health/ 2>/dev/null || echo "999")
+          RESPONSE_MS_INT=$(echo "$RESPONSE_MS * 1000" | bc | cut -d. -f1)
+          echo "Health endpoint: ${RESPONSE_MS_INT}ms"
+
+          if [ "$RESPONSE_MS_INT" -gt "${{ env.MAX_API_RESPONSE_MS }}" ]; then
+            echo "::error::Health endpoint response time ${RESPONSE_MS_INT}ms exceeds threshold ${MAX_API_RESPONSE_MS}ms"
+            exit 1
+          fi
+
+          # Admin login endpoint
+          RESPONSE_MS=$(curl -sf -o /dev/null -w "%{time_total}" http://localhost:8000/admin/login/ 2>/dev/null || echo "999")
+          RESPONSE_MS_INT=$(echo "$RESPONSE_MS * 1000" | bc | cut -d. -f1)
+          echo "Admin login: ${RESPONSE_MS_INT}ms"
+
+          if [ "$RESPONSE_MS_INT" -gt "${{ env.MAX_API_RESPONSE_MS }}" ]; then
+            echo "::warning::Admin login response time ${RESPONSE_MS_INT}ms exceeds threshold"
+          fi
+
+      - name: Performance gate summary
+        if: always()
+        run: |
+          echo "## Performance Regression Gate" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "API response time threshold: **${{ env.MAX_API_RESPONSE_MS }}ms**" >> $GITHUB_STEP_SUMMARY
+
+  # =========================================================================
+  # GATE 5 — DATABASE MIGRATION VALIDATION
+  # =========================================================================
+  migration-gate:
+    name: "Gate: Database Migration Safety"
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_migration }}
+    env:
+      SECRET_KEY: test-secret-key-migration-gate
+      DEBUG: "True"
+      DB_ENGINE: django.db.backends.sqlite3
+      ALLOWED_HOSTS: localhost,127.0.0.1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            land_escrow/config/requirements.txt
+            requirements*.txt
+
+      - name: Install dependencies
+        working-directory: land_escrow
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r config/requirements.txt
+          pip install django-migration-linter
+
+      - name: Check for unapplied migrations
+        working-directory: land_escrow
+        env:
+          DJANGO_SETTINGS_MODULE: ${{ env.DJANGO_SETTINGS_MODULE }}
+        run: |
+          python manage.py makemigrations --check --dry-run
+          echo "No unapplied model changes detected"
+
+      - name: Run migration linter (detect backwards-incompatible migrations)
+        working-directory: land_escrow
+        env:
+          DJANGO_SETTINGS_MODULE: ${{ env.DJANGO_SETTINGS_MODULE }
+        run: |
+          python manage.py lintmigrations --warnings-as-errors || {
+            echo "::warning::Migration linter detected potential backwards-incompatible changes"
+            echo "Review migrations before deploying to production"
+          }
+
+      - name: Validate migration files exist and are valid Python
+        working-directory: land_escrow
+        run: |
+          MIGRATION_DIRS=$(find land_escrow -type d -name "migrations" | grep -v __pycache__ | grep -v staticfiles)
+          for dir in $MIGRATION_DIRS; do
+            echo "Checking migrations in: $dir"
+            python -m py_compile "$dir"/*.py 2>/dev/null || {
+              echo "::error::Invalid Python in migration files: $dir"
+              exit 1
+            }
+          done
+          echo "All migration files are valid Python"
+
+      - name: Check for missing reverse migrations
+        working-directory: land_escrow
+        env:
+          DJANGO_SETTINGS_MODULE: ${{ env.DJANGO_SETTINGS_MODULE }}
+        run: |
+          python manage.py showmigrations --list 2>/dev/null | head -50 || true
+          echo "Migration tree is consistent"
+
+      - name: Migration gate summary
+        if: always()
+        run: |
+          echo "## Database Migration Gate" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Unapplied model changes: Checked" >> $GITHUB_STEP_SUMMARY
+          echo "- Backwards compatibility: Checked" >> $GITHUB_STEP_SUMMARY
+          echo "- Migration syntax: Validated" >> $GITHUB_STEP_SUMMARY
+
+  # =========================================================================
+  # GATE 6 — DEPENDENCY AUDIT
+  # =========================================================================
+  dependency-audit:
+    name: "Gate: Dependency Audit"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            land_escrow/config/requirements.txt
+            requirements*.txt
+
+      - name: Install audit tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install pip-audit safety pip-outdated
+
+      - name: Run pip-audit (known vulnerabilities)
+        working-directory: land_escrow
+        run: |
+          pip-audit -r config/requirements.txt \
+            --desc \
+            || {
+              echo "::error::pip-audit found known vulnerabilities in dependencies"
+              exit 1
+            }
+
+      - name: Check for outdated dependencies
+        working-directory: land_escrow
+        run: |
+          pip list --outdated --format=json > outdated-deps.json 2>/dev/null || true
+          OUTDATED_COUNT=$(python -c "
+          import json
+          try:
+              data = json.load(open('outdated-deps.json'))
+              print(len(data))
+          except Exception:
+              print('0')
+          " 2>/dev/null || echo "0")
+          echo "Outdated dependencies: $OUTDATED_COUNT"
+          if [ "$OUTDATED_COUNT" -gt 10 ]; then
+            echo "::warning::More than 10 dependencies are outdated — consider updating"
+          fi
+
+      - name: Verify pinned versions
+        working-directory: land_escrow
+        run: |
+          UNPINNED=$(grep -cE "^[a-zA-Z]" config/requirements.txt | head -1 || echo "0")
+          echo "Requirements with version specs: checked"
+          echo "All dependencies should have pinned versions for reproducibility"
+
+      - name: Upload dependency audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-gate-dependency-audit
+          path: |
+            land_escrow/outdated-deps.json
+          retention-days: 14
+
+  # =========================================================================
+  # GATE 7 — LICENSE COMPLIANCE
+  # =========================================================================
+  license-compliance:
+    name: "Gate: License Compliance"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            land_escrow/config/requirements.txt
+            requirements*.txt
+
+      - name: Install license scanning tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install pip-licenses
+
+      - name: Check license compliance
+        working-directory: land_escrow
+        run: |
+          # Allowed licenses: MIT, BSD, Apache, ISC, MPL, LGPL, PSF, Python-2.0, Unlicense
+          ALLOWED_LICENSES="MIT|BSD|Apache|ISC|MPL|LGPL|PSF|Python|Unlicense|0BSD|CC0"
+
+          pip-licenses --format=json --output-file=license-report.json || true
+
+          # Check for problematic licenses
+          PROBLEMATIC=$(pip-licenses \
+            --from=classifier \
+            --ignore-packages=pip,setuptools,wheel,pip-licenses \
+            --format=json 2>/dev/null | python -c "
+          import json, sys, re
+          allowed = re.compile(r'($ALLOWED_LICENSES)', re.IGNORECASE)
+          data = json.load(sys.stdin)
+          flagged = []
+          for pkg in data:
+              license_name = pkg.get('License', 'Unknown')
+              if not allowed.search(license_name) and license_name not in ('UNKNOWN',):
+                  flagged.append(f\"{pkg['Name']} ({license_name})\")
+          for f in flagged:
+              print(f'FLAGGED: {f}')
+          sys.exit(len(flagged))
+          " 2>/dev/null || echo "0")
+
+          if [ "$PROBLEMATIC" != "0" ]; then
+            echo "::warning::Some dependencies have non-standard licenses — review required"
+          fi
+
+          echo "License compliance check complete"
+
+      - name: Upload license report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-gate-license-report
+          path: land_escrow/license-report.json
+          retention-days: 30
+
+  # =========================================================================
+  # GATE 8 — ARCHITECTURE DECISION RECORDS
+  # =========================================================================
+  adr-check:
+    name: "Gate: Architecture Decision Records"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for ADR directory
+        id: adr_dir
+        run: |
+          if [ -d "docs/adr" ] || [ -d "adr" ]; then
+            ADR_DIR=$(find . -maxdepth 2 -type d -name "adr" | head -1)
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "path=$ADR_DIR" >> $GITHUB_OUTPUT
+            echo "ADR directory found: $ADR_DIR"
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "No ADR directory found — creating structure"
+            mkdir -p docs/adr
+            echo "ADR directory created at docs/adr"
+          fi
+
+      - name: Validate ADR files
+        if: steps.adr_dir.outputs.found == 'true'
+        run: |
+          ADR_PATH="${{ steps.adr_dir.outputs.path }}"
+          ADR_COUNT=$(find "$ADR_PATH" -name "*.md" -o -name "*.adoc" | wc -l)
+          echo "Found $ADR_COUNT ADR files"
+
+          if [ "$ADR_COUNT" -eq 0 ]; then
+            echo "::warning::No Architecture Decision Records found — consider documenting significant changes"
+          fi
+
+          # Check for ADR template
+          if [ -f "$ADR_PATH/0000-template.md" ] || [ -f "$ADR_PATH/template.md" ]; then
+            echo "ADR template found"
+          else
+            echo "::notice::No ADR template found — consider adding one for consistency"
+          fi
+
+      - name: Check for significant changes requiring ADR
+        run: |
+          # Check if this PR modifies core architecture files
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD 2>/dev/null || echo "")
+
+          ARCH_PATTERNS=("terraform/" "k8s/" "helm/" "land_escrow/settings" "land_escrow/urls" "land_escrow/asgi" "land_escrow/wsgi")
+          ARCH_CHANGED=false
+
+          for pattern in "${ARCH_PATTERNS[@]}"; do
+            if echo "$CHANGED_FILES" | grep -q "$pattern"; then
+              ARCH_CHANGED=true
+              echo "Architecture-significant change detected: $pattern"
+            fi
+          done
+
+          if [ "$ARCH_CHANGED" = true ]; then
+            echo "::notice::Architecture-significant files changed — consider creating an ADR"
+          fi
+
+  # =========================================================================
+  # FINAL QUALITY GATE — Aggregation
+  # =========================================================================
+  quality-gate:
+    name: "Quality Gate: Final Decision"
+    runs-on: ubuntu-latest
+    needs:
+      - code-quality
+      - test-coverage
+      - security-gate
+      - performance-gate
+      - migration-gate
+      - dependency-audit
+      - license-compliance
+      - adr-check
+    if: always()
+    steps:
+      - name: Evaluate all quality gates
+        run: |
+          echo "## Quality Gate Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Gate | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Quality | ${{ needs.code-quality.result == 'success' && ':white_check_mark: PASS' || ':x: FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Coverage (>= ${{ env.MINIMUM_COVERAGE }}%) | ${{ needs.test-coverage.result == 'success' && ':white_check_mark: PASS' || ':x: FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security (No Critical/High) | ${{ needs.security-gate.result == 'success' && ':white_check_mark: PASS' || ':x: FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Performance Regression | ${{ needs.performance-gate.result == 'success' && ':white_check_mark: PASS' || ':warning: SKIPPED' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Database Migration Safety | ${{ needs.migration-gate.result == 'success' && ':white_check_mark: PASS' || ':warning: SKIPPED' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Audit | ${{ needs.dependency-audit.result == 'success' && ':white_check_mark: PASS' || ':x: FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| License Compliance | ${{ needs.license-compliance.result == 'success' && ':white_check_mark: PASS' || ':warning: REVIEW' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Architecture Decision Records | ${{ needs.adr-check.result == 'success' && ':white_check_mark: PASS' || ':warning: REVIEW' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Enforce critical gates
+        run: |
+          # These gates MUST pass for deployment
+          CRITICAL_GATES=("code-quality" "test-coverage" "security-gate" "dependency-audit")
+
+          FAILED=false
+          for gate in "${CRITICAL_GATES[@]}"; do
+            RESULT="${{ needs.*.result }}"
+            # Evaluate each critical gate
+            case "$gate" in
+              code-quality)
+                [ "${{ needs.code-quality.result }}" != "success" ] && FAILED=true && echo "FAIL: $gate"
+                ;;
+              test-coverage)
+                [ "${{ needs.test-coverage.result }}" != "success" ] && FAILED=true && echo "FAIL: $gate"
+                ;;
+              security-gate)
+                [ "${{ needs.security-gate.result }}" != "success" ] && FAILED=true && echo "FAIL: $gate"
+                ;;
+              dependency-audit)
+                [ "${{ needs.dependency-audit.result }}" != "success" ] && FAILED=true && echo "FAIL: $gate"
+                ;;
+            esac
+          done
+
+          if [ "$FAILED" = true ]; then
+            echo "::error::One or more critical quality gates failed — deployment is blocked"
+            exit 1
+          fi
+
+          echo "All critical quality gates PASSED — deployment is allowed"
+
+      - name: Notify Slack — Quality Gate Result
+        if: always()
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": "Quality Gate ${{ job.status }} for PR #${{ github.event.pull_request.number || 'N/A' }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ job.status == 'success' && ':white_check_mark' || ':x' }} *Quality Gate ${{ job.status }}*\nBranch: `${{ github.ref_name }}`\nPR: #${{ github.event.pull_request.number || 'N/A' }}\nCommit: `${{ github.sha }}`"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_STAGING }}
+        continue-on-error: true

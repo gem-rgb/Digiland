@@ -1,0 +1,4 @@
+﻿Operations to perform:
+  Apply all migrations: account, admin, auth, contenttypes, core, sessions, sites, socialaccount
+Running migrations:
+  Applying core.0010_landparcel_assigned_agent... OK

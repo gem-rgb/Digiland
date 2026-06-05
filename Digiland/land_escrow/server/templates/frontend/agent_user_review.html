@@ -1,0 +1,240 @@
+{% extends 'frontend/base.html' %}
+{% load static %}
+{% block title %}Review {{ reviewed_user.email }} - Digiland{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <span class="page-kicker"><i class="bi bi-person-check"></i>Identity Review</span>
+        <h2 class="page-title">User Verification Review</h2>
+        <p class="page-subtitle">Review this user's identity details and supporting documents before making an approval decision.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'frontend:agent_approvals' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>All Approvals
+        </a>
+        <a href="{% url 'frontend:agent_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-speedometer2"></i>Dashboard
+        </a>
+    </div>
+</section>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <!-- User Identity Card -->
+        <section class="card mb-4">
+            <div class="card-header bg-dark d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-person-badge me-2"></i>Identity Profile</span>
+                <span class="badge {% if reviewed_user.is_identity_verified %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                    {% if reviewed_user.is_identity_verified %}Verified{% else %}Pending Verification{% endif %}
+                </span>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless detail-table mb-0">
+                    <tbody>
+                        <tr class="border-bottom">
+                            <th class="ps-0" style="width:180px">Email Address</th>
+                            <td class="pe-0 fw-semibold">{{ reviewed_user.email }}</td>
+                        </tr>
+                        <tr class="border-bottom">
+                            <th class="ps-0">Account Role</th>
+                            <td class="pe-0">
+                                <span class="badge {% if reviewed_user.role == 'Buyer' %}bg-info{% elif reviewed_user.role == 'Seller' %}bg-secondary{% else %}bg-dark{% endif %} fs-6">
+                                    {{ reviewed_user.role }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr class="border-bottom">
+                            <th class="ps-0">National ID</th>
+                            <td class="pe-0"><samp class="fs-6">{{ reviewed_user.id_number }}</samp></td>
+                        </tr>
+                        <tr class="border-bottom">
+                            <th class="ps-0">Phone Number</th>
+                            <td class="pe-0">{{ reviewed_user.phone_number }}</td>
+                        </tr>
+                        <tr class="border-bottom">
+                            <th class="ps-0">Registration Date</th>
+                            <td class="pe-0">{{ reviewed_user.date_joined|date:"M d, Y — H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th class="ps-0">Account Status</th>
+                            <td class="pe-0">
+                                {% if reviewed_user.is_active %}
+                                    <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Active</span>
+                                {% else %}
+                                    <span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>Deactivated</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- User's Listed Parcels (if Seller) -->
+        {% if reviewed_user.role == 'Seller' and user_parcels %}
+        <section class="card mb-4">
+            <div class="card-header bg-dark d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-geo-alt me-2"></i>Listed Properties</span>
+                <span class="badge bg-info rounded-pill">{{ user_parcels|length }}</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Parcel #</th>
+                                <th>Location</th>
+                                <th>Size</th>
+                                <th>Status</th>
+                                <th class="text-end pe-4">View</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for parcel in user_parcels %}
+                            <tr>
+                                <td class="ps-4 fw-semibold"><samp>{{ parcel.parcel_number }}</samp></td>
+                                <td class="text-muted small">{{ parcel.ward }}, {{ parcel.county }}</td>
+                                <td class="text-muted small">{{ parcel.land_size }} ha</td>
+                                <td>
+                                    <span class="badge {% if parcel.verification_status == 'Verified' %}bg-success{% elif parcel.verification_status == 'Fraudulent' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                        {{ parcel.verification_status|title }}
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-eye"></i>Open
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- User's Transactions (if Buyer) -->
+        {% if reviewed_user.role == 'Buyer' and user_transactions %}
+        <section class="card mb-4">
+            <div class="card-header bg-dark d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-clock-history me-2"></i>Transaction History</span>
+                <span class="badge bg-info rounded-pill">{{ user_transactions|length }}</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Tx ID</th>
+                                <th>Parcel</th>
+                                <th>Amount (KES)</th>
+                                <th>Status</th>
+                                <th class="text-end pe-4">View</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in user_transactions %}
+                            <tr>
+                                <td class="ps-4"><samp class="small text-muted">{{ tx.id|stringformat:"s"|slice:":8" }}...</samp></td>
+                                <td class="fw-semibold small">{{ tx.land_parcel.parcel_number }}</td>
+                                <td class="small">{{ tx.agreed_price }}</td>
+                                <td>
+                                    <span class="badge {% if tx.status == 'Completed' %}bg-success{% elif tx.status == 'Disputed' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                        {{ tx.status|title }}
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="{% url 'frontend:sign_contract' tx.id %}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-eye"></i>View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- No activity -->
+        {% if not user_parcels and not user_transactions %}
+        <section class="card mb-4">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox fs-1 d-block mb-3 text-muted"></i>
+                <h5 class="fw-semibold">No platform activity yet</h5>
+                <p class="text-muted mb-0">This {{ reviewed_user.role|lower }} has not listed properties or initiated transactions.</p>
+            </div>
+        </section>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar: Decision Panel -->
+    <div class="col-lg-4">
+        <section class="card sidebar-card mb-4">
+            <div class="card-header {% if reviewed_user.is_identity_verified %}bg-success{% else %}bg-warning{% endif %}">
+                <span><i class="bi bi-clipboard-check me-2"></i>Verification Decision</span>
+            </div>
+            <div class="card-body">
+                {% if reviewed_user.is_identity_verified %}
+                    <div class="text-center mb-4">
+                        <div class="icon-chip icon-chip-lg tone-accent mx-auto mb-3">
+                            <i class="bi bi-patch-check-fill"></i>
+                        </div>
+                        <h5 class="mb-2 text-success">Already Verified</h5>
+                        <p class="text-muted small mb-0">This user's identity has already been approved.</p>
+                    </div>
+                {% else %}
+                    <div class="text-center mb-4">
+                        <div class="icon-chip icon-chip-lg tone-warning mx-auto mb-3">
+                            <i class="bi bi-shield-exclamation"></i>
+                        </div>
+                        <h5 class="mb-2 text-warning">Awaiting Your Decision</h5>
+                        <p class="text-muted small mb-0">Review the details on this page, then approve or reject this user's identity claim.</p>
+                    </div>
+
+                    <div class="summary-box mb-4">
+                        <div class="summary-row">
+                            <span class="text-muted">Name</span>
+                            <strong>{{ reviewed_user.email|truncatechars:22 }}</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span class="text-muted">Role</span>
+                            <span class="badge {% if reviewed_user.role == 'Buyer' %}bg-info{% else %}bg-secondary{% endif %}">{{ reviewed_user.role }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="text-muted">ID Number</span>
+                            <samp>{{ reviewed_user.id_number }}</samp>
+                        </div>
+                        <div class="summary-row">
+                            <span class="text-muted">Phone</span>
+                            <span>{{ reviewed_user.phone_number }}</span>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info small mb-4">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Approving this user verifies their identity and grants them full access to {{ reviewed_user.role|lower }} features on Digiland.
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <form method="POST" action="{% url 'frontend:agent_approve_user' reviewed_user.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success btn-lg w-100"
+                                onclick="return confirm('Approve {{ reviewed_user.email }} as a verified {{ reviewed_user.role }}? This grants full platform access.')">
+                                <i class="bi bi-check-circle"></i>Approve Identity
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
+
+                <a href="{% url 'frontend:agent_approvals' %}" class="btn btn-outline-secondary w-100 mt-3">
+                    <i class="bi bi-arrow-left"></i>Back to Approvals
+                </a>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

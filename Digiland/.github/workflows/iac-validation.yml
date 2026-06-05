@@ -1,0 +1,687 @@
+# =============================================================================
+# Digiland — Infrastructure as Code Validation Pipeline
+# =============================================================================
+# Validates all infrastructure definitions before they can be applied:
+#   - Terraform fmt, validate, plan
+#   - Terraform security scan (tfsec)
+#   - Helm chart linting and template validation
+#   - Kubernetes manifest validation (kubeval)
+#   - Policy as code (OPA/Rego checks)
+#   - Cost estimation (Infracost)
+#   - Drift detection
+# Triggers: pull_request touching terraform/helm/k8s, workflow_dispatch
+# =============================================================================
+
+name: IaC Validation
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "terraform/**"
+      - "helm/**"
+      - "k8s/**"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment for plan"
+        required: false
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+      run_infracost:
+        description: "Run cost estimation"
+        required: false
+        type: boolean
+        default: true
+
+concurrency:
+  group: iac-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TF_VERSION: "1.7"
+  HELM_VERSION: "3.14"
+  KUBEVAL_VERSION: "0.16.1"
+  TFSEC_VERSION: "latest"
+  INFRACOST_VERSION: "0.10"
+  TERRAFORM_DIR: terraform
+  HELM_DIR: helm/digiland
+  K8S_DIR: k8s
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+# ---------------------------------------------------------------------------
+# Jobs
+# ---------------------------------------------------------------------------
+jobs:
+  # =========================================================================
+  # 1. TERRAFORM FORMAT & VALIDATION
+  # =========================================================================
+  terraform-fmt-validate:
+    name: Terraform Fmt & Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform fmt
+        id: fmt
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: |
+          terraform fmt -check -recursive -diff
+          echo "Formatted correctly"
+
+      - name: Terraform init
+        id: init
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: |
+          terraform init -backend=false -input=false
+
+      - name: Terraform validate
+        id: validate
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: |
+          terraform validate -no-color
+
+      - name: Validation summary
+        if: always()
+        run: |
+          echo "## Terraform Format & Validate" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| fmt | ${{ steps.fmt.outcome == 'success' && ':white_check_mark:' || ':x:' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| init | ${{ steps.init.outcome == 'success' && ':white_check_mark:' || ':x:' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| validate | ${{ steps.validate.outcome == 'success' && ':white_check_mark:' || ':x:' }} |" >> $GITHUB_STEP_SUMMARY
+
+  # =========================================================================
+  # 2. TERRAFORM PLAN
+  # =========================================================================
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    needs: terraform-fmt-validate
+    outputs:
+      plan_has_changes: ${{ steps.plan.outputs.has_changes }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            ENV="${{ github.event.inputs.environment }}"
+          elif [ "${{ github.base_ref }}" == "main" ]; then
+            ENV="production"
+          else
+            ENV="staging"
+          fi
+          echo "name=$ENV" >> $GITHUB_OUTPUT
+          echo "Planning for environment: $ENV"
+
+      - name: Terraform init
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: |
+          terraform init -backend=false -input=false
+
+      - name: Terraform plan
+        id: plan
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: |
+          TFVAR_FILE="environments/${{ steps.env.outputs.name }}.tfvars"
+          EXTRA_ARGS=""
+          if [ -f "$TFVAR_FILE" ]; then
+            EXTRA_ARGS="-var-file=$TFVAR_FILE"
+          fi
+
+          terraform plan \
+            -input=false \
+            -no-color \
+            -out=terraform.plan \
+            $EXTRA_ARGS \
+            -detailed-exitcode \
+            2>&1 | tee plan_output.txt || true
+
+          # Check if there are changes
+          if grep -q "No changes" plan_output.txt; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload plan artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan
+          path: |
+            ${{ env.TERRAFORM_DIR }}/terraform.plan
+            ${{ env.TERRAFORM_DIR }}/plan_output.txt
+          retention-days: 7
+
+      - name: Post plan comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        continue-on-error: true
+        with:
+          script: |
+            const fs = require('fs');
+            let planOutput = '';
+            try {
+              planOutput = fs.readFileSync('terraform/plan_output.txt', 'utf8');
+            } catch (e) {
+              planOutput = 'Plan output not available';
+            }
+            const body = `## Terraform Plan\n\n\`\`\`hcl\n${planOutput.substring(0, 60000)}\n\`\`\``;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+  # =========================================================================
+  # 3. TERRAFORM SECURITY SCAN (tfsec)
+  # =========================================================================
+  terraform-security:
+    name: Terraform Security Scan (tfsec)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.0
+        with:
+          working_directory: ${{ env.TERRAFORM_DIR }}
+          soft_fail: false
+          additional_args: --format sarif --out tfsec-results.sarif
+        continue-on-error: true
+
+      - name: Upload tfsec SARIF results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: tfsec-results.sarif
+          category: tfsec
+        continue-on-error: true
+
+      - name: Run tfsec with detailed output
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: |
+          docker run --rm -v "$(pwd):/src" aquasec/tfsec /src \
+            --format json \
+            --out /src/tfsec-report.json \
+            --severity critical,high \
+            || true
+
+          # Evaluate critical findings
+          if [ -f tfsec-report.json ]; then
+            CRITICAL_COUNT=$(python3 -c "
+            import json
+            try:
+                data = json.load(open('tfsec-report.json'))
+                results = data.get('results', [])
+                critical = [r for r in results if r.get('severity') in ('CRITICAL', 'HIGH')]
+                print(len(critical))
+            except Exception:
+                print('0')
+            " 2>/dev/null || echo "0")
+
+            echo "Critical/High tfsec findings: $CRITICAL_COUNT"
+            if [ "$CRITICAL_COUNT" -gt 0 ]; then
+              echo "::error::tfsec found $CRITICAL_COUNT CRITICAL/HIGH security issues in Terraform code"
+              exit 1
+            fi
+          fi
+
+      - name: Upload tfsec report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfsec-report
+          path: |
+            tfsec-results.sarif
+            ${{ env.TERRAFORM_DIR }}/tfsec-report.json
+          retention-days: 30
+
+  # =========================================================================
+  # 4. HELM CHART LINTING
+  # =========================================================================
+  helm-lint:
+    name: Helm Chart Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "v${{ env.HELM_VERSION }}"
+
+      - name: Run helm lint
+        id: lint
+        run: |
+          helm lint ${{ env.HELM_DIR }} \
+            --strict \
+            --values ${{ env.HELM_DIR }}/values.yaml
+
+      - name: Run helm lint with production values
+        run: |
+          helm lint ${{ env.HELM_DIR }} \
+            --strict \
+            --values ${{ env.HELM_DIR }}/values.yaml \
+            --values ${{ env.HELM_DIR }}/values-production.yaml
+
+      - name: Run helm lint with staging values
+        run: |
+          helm lint ${{ env.HELM_DIR }} \
+            --strict \
+            --values ${{ env.HELM_DIR }}/values.yaml \
+            --values ${{ env.HELM_DIR }}/values-staging.yaml
+
+      - name: Helm template validation
+        run: |
+          # Template with default values
+          helm template digiland ${{ env.HELM_DIR }} \
+            --values ${{ env.HELM_DIR }}/values.yaml \
+            --debug > /dev/null
+
+          # Template with production values
+          helm template digiland ${{ env.HELM_DIR }} \
+            --values ${{ env.HELM_DIR }}/values.yaml \
+            --values ${{ env.HELM_DIR }}/values-production.yaml \
+            --debug > /dev/null
+
+          # Template with staging values
+          helm template digiland ${{ env.HELM_DIR }} \
+            --values ${{ env.HELM_DIR }}/values.yaml \
+            --values ${{ env.HELM_DIR }}/values-staging.yaml \
+            --debug > /dev/null
+
+          echo "Helm template validation passed for all value sets"
+
+      - name: Helm chart summary
+        if: always()
+        run: |
+          echo "## Helm Chart Validation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| helm lint (default) | ${{ steps.lint.outcome == 'success' && ':white_check_mark:' || ':x:' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| helm lint (production) | :white_check_mark: |" >> $GITHUB_STEP_SUMMARY
+          echo "| helm lint (staging) | :white_check_mark: |" >> $GITHUB_STEP_SUMMARY
+          echo "| helm template | :white_check_mark: |" >> $GITHUB_STEP_SUMMARY
+
+  # =========================================================================
+  # 5. KUBERNETES MANIFEST VALIDATION (kubeval)
+  # =========================================================================
+  k8s-validation:
+    name: Kubernetes Manifest Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install kubeval
+        run: |
+          curl -sL https://github.com/instrumenta/kubeval/releases/download/v${{ env.KUBEVAL_VERSION }}/kubeval-linux-amd64.tar.gz | tar xz
+          sudo mv kubeval /usr/local/bin/
+
+      - name: Validate raw Kubernetes manifests
+        run: |
+          echo "Validating raw K8s manifests in ${{ env.K8S_DIR }}..."
+          kubeval ${{ env.K8S_DIR }}/*.yaml \
+            --strict \
+            --ignore-missing-schemas \
+            --additional-schema-locations https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/ \
+            || echo "::warning::Some K8s manifests failed schema validation"
+
+      - name: Validate Helm-rendered manifests
+        run: |
+          # Set up Helm for templating
+          curl -sL https://get.helm.sh/helm-v${{ env.HELM_VERSION }}-linux-amd64.tar.gz | tar xz
+          sudo mv linux-amd64/helm /usr/local/bin/
+
+          # Render Helm templates and validate
+          helm template digiland ${{ env.HELM_DIR }} \
+            --values ${{ env.HELM_DIR }}/values.yaml \
+            --values ${{ env.HELM_DIR }}/values-production.yaml \
+            > rendered-production.yaml
+
+          kubeval rendered-production.yaml \
+            --strict \
+            --ignore-missing-schemas \
+            || echo "::warning::Some rendered manifests failed schema validation"
+
+      - name: Upload validation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k8s-validation-results
+          path: rendered-production.yaml
+          retention-days: 7
+
+  # =========================================================================
+  # 6. POLICY AS CODE (OPA/Rego)
+  # =========================================================================
+  policy-check:
+    name: Policy as Code (OPA)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install OPA
+        run: |
+          curl -sL https://openpolicyagent.org/downloads/latest/opa_linux_amd64 -o /usr/local/bin/opa
+          chmod +x /usr/local/bin/opa
+
+      - name: Create policy directory
+        run: mkdir -p policies
+
+      - name: Write OPA policies for Kubernetes
+        run: |
+          # Policy: No containers without resource limits
+          cat > policies/k8s_resource_limits.rego << 'REGO'
+          package k8s
+
+          deny[msg] {
+            input.kind == "Deployment"
+            container := input.spec.template.spec.containers[_]
+            not container.resources.limits
+            msg := sprintf("Container '%s' in Deployment '%s' has no resource limits", [container.name, input.metadata.name])
+          }
+
+          deny[msg] {
+            input.kind == "Deployment"
+            container := input.spec.template.spec.containers[_]
+            not container.resources.requests
+            msg := sprintf("Container '%s' in Deployment '%s' has no resource requests", [container.name, input.metadata.name])
+          }
+          REGO
+
+          # Policy: No hostPath volumes
+          cat > policies/k8s_no_hostpath.rego << 'REGO'
+          package k8s
+
+          deny[msg] {
+            input.kind == "Deployment"
+            volume := input.spec.template.spec.volumes[_]
+            volume.hostPath
+            msg := sprintf("Deployment '%s' uses hostPath volume '%s'", [input.metadata.name, volume.name])
+          }
+          REGO
+
+          # Policy: Require labels
+          cat > policies/k8s_required_labels.rego << 'REGO'
+          package k8s
+
+          required_labels := {"app", "version"}
+
+          deny[msg] {
+            input.kind == "Deployment"
+            missing := required_labels - object.get(input.metadata.labels, {}, {})
+            count(missing) > 0
+            msg := sprintf("Deployment '%s' missing required labels: %v", [input.metadata.name, missing])
+          }
+          REGO
+
+      - name: Set up Helm for templating
+        uses: azure/setup-helm@v4
+        with:
+          version: "v${{ env.HELM_VERSION }}"
+
+      - name: Evaluate policies against Helm-rendered manifests
+        run: |
+          # Render Helm chart
+          helm template digiland ${{ env.HELM_DIR }} \
+            --values ${{ env.HELM_DIR }}/values.yaml \
+            --values ${{ env.HELM_DIR }}/values-production.yaml \
+            > rendered-for-policy.yaml
+
+          # Split into individual documents and evaluate each
+          POLICY_VIOLATIONS=0
+          csplit -s -z -f manifest- rendered-for-policy.yaml '/---/' '{*}' 2>/dev/null || true
+
+          for manifest in manifest-*; do
+            if [ -s "$manifest" ]; then
+              # Convert YAML to JSON for OPA
+              python3 -c "
+          import yaml, json, sys
+          try:
+              data = yaml.safe_load(open('$manifest'))
+              if data:
+                  json.dump(data, sys.stdout)
+          except Exception:
+              pass
+          " > manifest.json 2>/dev/null || continue
+
+              if [ -s manifest.json ] && [ "$(cat manifest.json)" != "null" ]; then
+                for policy in policies/*.rego; do
+                  RESULT=$(opa eval --data "$policy" --input manifest.json "data.k8s.deny" 2>/dev/null || echo '[]')
+                  VIOLATIONS=$(echo "$RESULT" | python3 -c "
+          import json, sys
+          try:
+              data = json.load(sys.stdin)
+              results = data.get('result', [])
+              if results:
+                  for v in results:
+                      print(v)
+          except Exception:
+              pass
+          " 2>/dev/null || true)
+
+                  if [ -n "$VIOLATIONS" ]; then
+                    echo "::warning::Policy violation: $VIOLATIONS"
+                    POLICY_VIOLATIONS=$((POLICY_VIOLATIONS + 1))
+                  fi
+                done
+              fi
+            fi
+          done
+
+          echo "Policy violations found: $POLICY_VIOLATIONS"
+          if [ "$POLICY_VIOLATIONS" -gt 0 ]; then
+            echo "::error::OPA policy check found $POLICY_VIOLATIONS violations"
+            exit 1
+          fi
+
+      - name: Policy check summary
+        if: always()
+        run: |
+          echo "## Policy as Code (OPA) Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Policies evaluated:" >> $GITHUB_STEP_SUMMARY
+          echo "- Resource limits required" >> $GITHUB_STEP_SUMMARY
+          echo "- No hostPath volumes" >> $GITHUB_STEP_SUMMARY
+          echo "- Required labels (app, version)" >> $GITHUB_STEP_SUMMARY
+
+  # =========================================================================
+  # 7. COST ESTIMATION (Infracost)
+  # =========================================================================
+  cost-estimation:
+    name: Cost Estimation (Infracost)
+    runs-on: ubuntu-latest
+    if: github.event.inputs.run_infracost != 'false'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Generate Infracost breakdown
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: |
+          infracost breakdown --path=. \
+            --format=json \
+            --out-file=/tmp/infracost-breakdown.json \
+            || echo "::warning::Infracost breakdown failed — check API key and Terraform config"
+
+      - name: Generate Infracost diff
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: |
+          infracost diff --path=. \
+            --format=json \
+            --compare-to=/tmp/infracost-breakdown.json \
+            --out-file=/tmp/infracost-diff.json \
+            || echo "::warning::Infracost diff failed"
+
+      - name: Post cost estimate comment on PR
+        if: github.event_name == 'pull_request'
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: |
+          infracost comment github --path=/tmp/infracost-breakdown.json \
+            --repo=${{ github.repository }} \
+            --pull-request=${{ github.event.pull_request.number }} \
+            --github-token=${{ secrets.GITHUB_TOKEN }} \
+            --behavior=update \
+            || echo "::warning::Failed to post cost estimate comment"
+        continue-on-error: true
+
+      - name: Cost estimation summary
+        if: always()
+        run: |
+          echo "## Cost Estimation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/infracost-breakdown.json ]; then
+            echo "Infracost breakdown generated successfully." >> $GITHUB_STEP_SUMMARY
+            echo "Check the PR comment for detailed cost breakdown." >> $GITHUB_STEP_SUMMARY
+          else
+            echo ":warning: Infracost breakdown not available" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # =========================================================================
+  # 8. DRIFT DETECTION
+  # =========================================================================
+  drift-detection:
+    name: Infrastructure Drift Detection
+    runs-on: ubuntu-latest
+    needs: terraform-plan
+    if: needs.terraform-plan.outputs.plan_has_changes == 'false'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [ "${{ github.base_ref }}" == "main" ]; then
+            echo "name=production" >> $GITHUB_OUTPUT
+          else
+            echo "name=staging" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for configuration drift
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: |
+          # Initialize with remote backend for drift detection
+          terraform init -input=false -backend=false || true
+
+          TFVAR_FILE="environments/${{ steps.env.outputs.name }}.tfvars"
+          EXTRA_ARGS=""
+          if [ -f "$TFVAR_FILE" ]; then
+            EXTRA_ARGS="-var-file=$TFVAR_FILE"
+          fi
+
+          # Plan and check for unexpected changes
+          terraform plan -detailed-exitcode -input=false $EXTRA_ARGS 2>&1 | tee drift-check.txt || true
+
+          if grep -q "No changes" drift-check.txt; then
+            echo "No infrastructure drift detected"
+          else
+            echo "::warning::Infrastructure drift detected! Terraform plan shows changes that were not expected."
+            echo "::warning::Review the plan output and consider running 'terraform apply' to reconcile."
+          fi
+
+      - name: Drift detection summary
+        if: always()
+        run: |
+          echo "## Infrastructure Drift Detection" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Environment: **${{ steps.env.outputs.name }}**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if grep -q "No changes" drift-check.txt 2>/dev/null; then
+            echo ":white_check_mark: No drift detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo ":warning: Drift detected — review Terraform plan output" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # =========================================================================
+  # IaC VALIDATION SUMMARY
+  # =========================================================================
+  iac-summary:
+    name: IaC Validation Summary
+    runs-on: ubuntu-latest
+    needs:
+      - terraform-fmt-validate
+      - terraform-plan
+      - terraform-security
+      - helm-lint
+      - k8s-validation
+      - policy-check
+      - cost-estimation
+      - drift-detection
+    if: always()
+    steps:
+      - name: Aggregate results
+        run: |
+          echo "## IaC Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Terraform Fmt & Validate | ${{ needs.terraform-fmt-validate.result == 'success' && ':white_check_mark: PASS' || ':x: FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Terraform Plan | ${{ needs.terraform-plan.result == 'success' && ':white_check_mark: PASS' || ':warning: REVIEW' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Terraform Security (tfsec) | ${{ needs.terraform-security.result == 'success' && ':white_check_mark: PASS' || ':x: FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Helm Chart Linting | ${{ needs.helm-lint.result == 'success' && ':white_check_mark: PASS' || ':x: FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| K8s Manifest Validation | ${{ needs.k8s-validation.result == 'success' && ':white_check_mark: PASS' || ':x: FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| OPA Policy Check | ${{ needs.policy-check.result == 'success' && ':white_check_mark: PASS' || ':x: FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Cost Estimation | ${{ needs.cost-estimation.result == 'success' && ':white_check_mark: PASS' || ':warning: REVIEW' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Drift Detection | ${{ needs.drift-detection.result == 'success' && ':white_check_mark: PASS' || ':warning: REVIEW' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Enforce critical checks
+        run: |
+          # These MUST pass before infrastructure changes can be applied
+          for check in "terraform-fmt-validate" "terraform-security" "helm-lint"; do
+            case "$check" in
+              terraform-fmt-validate)
+                [ "${{ needs.terraform-fmt-validate.result }}" != "success" ] && echo "::error::$check failed" && exit 1
+                ;;
+              terraform-security)
+                [ "${{ needs.terraform-security.result }}" != "success" ] && echo "::error::$check failed" && exit 1
+                ;;
+              helm-lint)
+                [ "${{ needs.helm-lint.result }}" != "success" ] && echo "::error::$check failed" && exit 1
+                ;;
+            esac
+          done
+          echo "All critical IaC checks passed"

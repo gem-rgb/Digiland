@@ -1,0 +1,78 @@
+{% extends 'frontend/base.html' %}
+
+
+{% block title %}{% if user.is_authenticated and user.role == 'Seller' %}My Parcels - Digiland{% else %}Marketplace - Digiland{% endif %}{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        {% if user.is_authenticated and user.role == 'Seller' %}
+        <span class="page-kicker"><i class="bi bi-geo-alt"></i>My Parcels</span>
+        <h2 class="page-title">Your registered properties</h2>
+        <p class="page-subtitle">Manage your listed parcels, track verification progress, and monitor escrow activity.</p>
+        {% else %}
+        <span class="page-kicker"><i class="bi bi-grid-3x3-gap"></i>Marketplace</span>
+        <h2 class="page-title">Available land parcels</h2>
+        <p class="page-subtitle">Browse verified property listings and review parcel details before entering escrow.</p>
+        {% endif %}
+    </div>
+    <div class="page-actions">
+        {% if user.is_authenticated %}
+        {% if user.role == 'Seller' or user.role == 'Agent' or user.role == 'Admin' %}
+        <a href="{% url 'frontend:parcel_upload' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i>Register New Parcel
+        </a>
+        {% endif %}
+        {% endif %}
+    </div>
+</section>
+
+<div class="row g-4">
+    {% for parcel in parcels %}
+    <div class="col-md-6 col-xl-4">
+        <article class="card listing-card">
+            <div class="card-header d-flex justify-content-between align-items-center gap-3">
+                <h5 class="mb-0">{{ parcel.parcel_number }}</h5>
+                <span class="badge listing-pill">{{ parcel.land_use_type }}</span>
+            </div>
+            {% if parcel.image %}
+                <img src="{{ parcel.image.url }}" class="listing-media" alt="Land Parcel Image">
+            {% else %}
+                <div class="listing-media-empty">
+                    <span><i class="bi bi-image me-2"></i>No image provided</span>
+                </div>
+            {% endif %}
+            <div class="card-body">
+                <ul class="info-list">
+                    <li><strong>Location:</strong> {{ parcel.county }}, {{ parcel.constituency }}</li>
+                    <li><strong>Size:</strong> {{ parcel.land_size }} Acres</li>
+                    <li>
+                        <strong>Verification:</strong>
+                        {% if parcel.verification_status == 'Verified' %}
+                            <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Verified</span>
+                        {% elif parcel.verification_status == 'Disputed' %}
+                            <span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>Disputed</span>
+                        {% else %}
+                            <span class="text-warning"><i class="bi bi-exclamation-circle-fill me-1"></i>Pending</span>
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+            <div class="card-footer bg-transparent border-0 pt-0">
+                <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}" class="btn btn-outline-primary w-100">
+                    {% if user == parcel.listed_by or user.role == 'Admin' %}Manage Listing{% else %}View Details and Buy{% endif %}
+                </a>
+            </div>
+        </article>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="surface-panel text-center py-5">
+            <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
+            <h4 class="mb-2">No land parcels available right now</h4>
+            <p class="text-muted mb-0">Listings will appear here once parcels are uploaded and reviewed.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

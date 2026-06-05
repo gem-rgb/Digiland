@@ -1,0 +1,30 @@
+{% extends 'frontend/base.html' %}
+{% block content %}
+<section class="page-header">
+    <div>
+        <span class="page-kicker"><i class="bi bi-pencil-square"></i>Parcel Update</span>
+        <h2 class="page-title">Edit {{ parcel.parcel_number }}</h2>
+        <p class="page-subtitle">Update listing details while the parcel remains in a reviewable verification status.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>Back to Parcel
+        </a>
+    </div>
+</section>
+
+<section class="card form-shell">
+    <div class="card-header bg-dark">
+        <span><i class="bi bi-sliders me-2"></i>Editable details</span>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-4">Saving changes restarts verification checks for this listing.</p>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary w-100 mt-3 btn-lg">Save Changes</button>
+            <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}" class="btn btn-outline-secondary w-100 mt-2">Cancel</a>
+        </form>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: digiland
+  labels:
+    name: digiland
+    environment: production
+    app.kubernetes.io/name: digiland
+    app.kubernetes.io/part-of: digiland-platform
+  annotations:
+    scheduler.alpha.kubernetes.io/defaultTolerations: '[{"operator": "Equal", "effect": "NoSchedule", "key": "dedicated", "value": "digiland"}]'

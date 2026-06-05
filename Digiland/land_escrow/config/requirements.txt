@@ -1,0 +1,93 @@
+﻿asgiref==3.11.1
+bandit==1.9.4
+boolean.py==5.0
+CacheControl==0.14.4
+certifi==2026.2.25
+charset-normalizer==3.4.6
+cloudinary==1.44.1
+colorama==0.4.6
+cyclonedx-python-lib==11.7.0
+defusedxml==0.7.1
+Django==6.0.3
+django-allauth==65.15.0
+django-allauth-ui==1.8.1
+django-cloudinary-storage==0.3.0
+django-cors-headers==4.9.0
+django-widget-tweaks==1.5.1
+djangorestframework==3.17.0
+filelock==3.25.2
+gunicorn==25.1.0
+idna==3.11
+license-expression==30.4.4
+markdown-it-py==4.0.0
+mdurl==0.1.2
+msgpack==1.1.2
+packageurl-python==0.17.6
+packaging==26.0
+pillow==12.1.1
+pip-api==0.0.34
+pip-requirements-parser==32.0.1
+pip_audit==2.10.0
+platformdirs==4.9.4
+py-serializable==2.1.0
+Pygments==2.19.2
+pyparsing==3.3.2
+python-decouple==3.8
+python-dotenv==1.2.2
+PyYAML==6.0.3
+requests==2.32.5
+rich==14.3.3
+six==1.17.0
+slippers==0.6.2
+sortedcontainers==2.4.0
+sqlparse==0.5.5
+stevedore==5.7.0
+tomli==2.4.0
+tomli_w==1.2.0
+typeguard==2.13.3
+typing_extensions==4.15.0
+tzdata==2025.3
+urllib3==2.6.3
+whitenoise==6.12.0
+
+# Additional dependencies for API integrations
+cryptography==44.0.0  # Updated: For secure token generation
+psutil==5.9.6  # For system monitoring (optional)
+
+# ── Security Dependencies ────────────────────────────────────────────────────
+argon2-cffi==23.1.0  # Argon2id password hashing (preferred over PBKDF2)
+bleach==6.1.0  # HTML sanitization for XSS prevention
+pyotp==2.9.0  # TOTP-based multi-factor authentication
+qrcode==7.4.2  # QR code generation for MFA setup
+django-axes==6.0.0  # Account lockout after failed login attempts
+
+# ── Production Dependencies ──────────────────────────────────────────────────
+
+# Database
+psycopg2-binary==2.9.10  # PostgreSQL adapter
+
+# Caching & Message Broker
+redis==5.2.1  # Redis client for cache and Celery broker
+hiredis==3.1.0  # C parser for Redis performance
+
+# Celery
+celery==5.4.0  # Distributed task queue
+django-celery-beat>=2.7.0  # Database-backed Celery Beat scheduler (supports Django 6.x via 2.8+)
+
+# REST Framework extensions
+djangorestframework-simplejwt==5.5.0  # JWT authentication for DRF
+django-filter==24.3  # Filtering support for DRF
+drf-spectacular==0.28.0  # OpenAPI 3 schema generation for DRF
+
+# Search (optional — only needed when Elasticsearch is configured)
+django-elasticsearch-dsl==8.0  # Elasticsearch DSL for Django
+elasticsearch-dsl==8.16.0  # Elasticsearch DSL client
+
+# Payment processing
+stripe==11.5.0  # Stripe Python SDK
+
+# Monitoring & observability
+sentry-sdk==2.20.0  # Error tracking and performance monitoring
+
+# Production WSGI
+gevent==24.11.1  # Async workers for gunicorn

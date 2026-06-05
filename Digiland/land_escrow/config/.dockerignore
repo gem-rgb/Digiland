@@ -1,0 +1,22 @@
+# Ignore virtual environments
+venv/
+.venv/
+env/
+.env
+
+# Ignored OS files (as requested)
+.DS_Store
+Thumbs.db
+
+# Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local sqlite db
+db.sqlite3
+
+# Ignore docker files
+Dockerfile
+.dockerignore

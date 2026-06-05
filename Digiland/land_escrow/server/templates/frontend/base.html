@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <title>{% block title %}Digiland{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'react/styles.css' %}">
+    <style>
+      body{font-family:'Manrope',system-ui,sans-serif;color:#1e293b;background:radial-gradient(circle at top left,rgba(16,185,129,.16),transparent 28%),radial-gradient(circle at top right,rgba(2,132,199,.08),transparent 24%),linear-gradient(180deg,#fcfbf8,#f4efe7);min-height:100vh}
+      .site-nav{background:rgba(255,255,255,.82)!important;backdrop-filter:blur(16px);border-bottom:1px solid hsl(218 22% 88%/.7)}
+      .site-brand,.navbar-brand{color:#1e293b!important;font-weight:800}
+      .brand-accent{color:#059669!important}
+      .nav-link{color:#334155!important;font-weight:600;font-size:.875rem}
+      .nav-link:hover{color:#059669!important;background:hsl(38 22% 95%);border-radius:9999px}
+      .card{background:rgba(255,255,255,.92)!important;border:1px solid hsl(218 22% 88%/.7)!important;border-radius:1.35rem!important;box-shadow:0 20px 60px -24px rgba(15,23,42,.12)!important;color:#1e293b!important}
+      .card-header{background:transparent!important;border-bottom:1px solid hsl(218 22% 88%/.5)!important}
+      .card-title,.card-header *{color:#1e293b!important}
+      .card-body,.card-body *:not(.btn):not(.badge){color:#334155!important}
+      .badge.bg-success{background:#059669!important}.badge.bg-warning{background:#d97706!important}.badge.bg-danger{background:#e11d48!important}.badge.bg-info{background:#0284c7!important}
+      .btn-primary{background:#059669!important;border-color:#059669!important;color:#fff!important;border-radius:9999px!important;font-weight:600}
+      .btn-primary:hover{background:#047857!important}
+      .btn-outline-primary{color:#059669!important;border-color:#059669!important;border-radius:9999px!important}
+      .btn-outline-secondary{border-color:hsl(218 22% 88%)!important;color:#334155!important;border-radius:9999px!important}
+      .btn-outline-danger{border-color:#e11d48!important;color:#e11d48!important;border-radius:9999px!important}
+      .form-control,.form-select{background:rgba(255,255,255,.95)!important;border:1px solid hsl(218 22% 88%)!important;color:#1e293b!important;border-radius:1rem!important}
+      .form-control:focus,.form-select:focus{border-color:#059669!important;box-shadow:0 0 0 3px rgba(5,150,105,.15)!important}
+      .form-label{color:#1e293b!important;font-weight:600;font-size:.8rem}
+      .form-text{color:#64748b!important}
+      .text-muted{color:#64748b!important}
+      .text-white{color:#1e293b!important}
+      .alert{border-radius:1rem!important}
+      .table{color:#334155!important;--bs-table-bg:transparent}
+      .table thead th{color:#1e293b!important;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;border-bottom-color:hsl(218 22% 88%)!important}
+      .table td{border-bottom-color:hsl(218 22% 88%/.5)!important}
+      .dropdown-menu{background:#fff!important;border:1px solid hsl(218 22% 88%)!important;border-radius:1rem!important}
+      .dropdown-item{color:#334155!important;border-radius:.5rem!important}
+      .dropdown-item:hover{background:hsl(38 22% 95%)!important}
+      .user-pill{background:rgba(255,255,255,.9)!important;border:1px solid hsl(218 22% 88%)!important;color:#334155!important;border-radius:9999px!important}
+      .staff-badge{background:#059669!important;color:#fff!important}
+      .welcome-banner{background:linear-gradient(135deg,#059669,#047857)!important;border-radius:1.35rem!important}
+      .welcome-banner .text-white{color:#fff!important}
+      .welcome-banner .opacity-75{color:rgba(255,255,255,.75)!important}
+      .restricted-notice{background:rgba(245,158,11,.08)!important;border:1px solid rgba(245,158,11,.25)!important;border-radius:1rem!important;color:#92400e!important}
+      h1,h2,h3,h4,h5,h6{color:#1e293b!important}
+      .status-pill{color:#334155!important}
+      .page-kicker{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.15em}
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+{% if user.is_authenticated and user.role == 'Agent' and not user.is_identity_verified %}
+<nav class="site-nav nav-locked fixed-top py-2">
+  <div class="container nav-shell nav-shell--locked">
+    <span class="brand-lockup brand-lockup--locked">
+      <i class="bi bi-shield-check fs-4"></i>
+      Digiland System
+    </span>
+    <span class="status-pill status-pill--warning">
+      <span class="status-dot"></span>
+      KYC Pending - Awaiting Admin Approval
+    </span>
+    <form method="post" action="{% url 'account_logout' %}" class="mb-0">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-sm btn-outline-danger fw-semibold rounded-pill px-3">
+        <i class="bi bi-box-arrow-right me-1"></i>Sign Out
+      </button>
+    </form>
+  </div>
+</nav>
+
+{% elif user.is_authenticated and user.role == 'Admin' %}
+<nav class="site-nav fixed-top py-3">
+  <div class="container nav-shell">
+    <a class="site-brand me-3" href="{% url 'frontend:agent_dashboard' %}">
+      <i class="bi bi-shield-check fs-4 brand-accent"></i>
+      Digiland
+      <span class="staff-badge">STAFF</span>
+    </a>
+    <ul class="navbar-nav flex-row gap-1 me-auto">
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'frontend:agent_dashboard' %}">
+          <i class="bi bi-speedometer2"></i>Command Centre
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'frontend:task_management' %}">
+          <i class="bi bi-kanban"></i>Tasks
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'frontend:parcel_list' %}">
+          <i class="bi bi-geo-alt"></i>Parcels
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'frontend:transactions' %}">
+          <i class="bi bi-clock-history"></i>Transactions
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'frontend:messages' %}">
+          <i class="bi bi-chat-dots"></i>Messages
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'frontend:admin_finance' %}">
+          <i class="bi bi-cash-stack"></i>Finance
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link nav-link-warning" href="/admin/" target="_blank" title="Django system admin panel">
+          <i class="bi bi-sliders"></i>System Admin
+        </a>
+      </li>
+    </ul>
+
+    <div class="dropdown">
+      <button class="user-pill dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-person-badge brand-accent"></i>
+        {{ user.email }}
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2 p-2">
+        <li class="dropdown-label">Admin</li>
+        <li><hr class="dropdown-divider my-1"></li>
+        <li>
+          <form method="post" action="{% url 'account_logout' %}">
+            {% csrf_token %}
+            <button class="dropdown-item text-danger fw-semibold rounded-2 py-2">
+              <i class="bi bi-box-arrow-right me-2"></i>Log Out
+            </button>
+          </form>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+{% elif user.is_authenticated and user.role == 'Agent' %}
+<nav class="site-nav fixed-top py-3">
+  <div class="container nav-shell">
+    <a class="site-brand me-3" href="{% url 'frontend:agent_dashboard' %}">
+      <i class="bi bi-shield-check fs-4 brand-accent"></i>
+      Digiland
+      <span class="staff-badge">STAFF</span>
+    </a>
+    <ul class="navbar-nav flex-row gap-1 me-auto">
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'frontend:agent_dashboard' %}">
+          <i class="bi bi-speedometer2"></i>Command Centre
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'frontend:task_management' %}">
+          <i class="bi bi-kanban"></i>My Pipeline
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'frontend:parcel_list' %}">
+          <i class="bi bi-geo-alt"></i>Parcels
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'frontend:transactions' %}">
+          <i class="bi bi-clock-history"></i>Transactions
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'frontend:messages' %}">
+          <i class="bi bi-chat-dots"></i>Messages
+        </a>
+      </li>
+    </ul>
+    <div class="dropdown">
+      <button class="user-pill dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-person-badge brand-accent"></i>
+        {{ user.email }}
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2 p-2">
+        <li class="dropdown-label">Agent</li>
+        <li><hr class="dropdown-divider my-1"></li>
+        <li>
+          <form method="post" action="{% url 'account_logout' %}">
+            {% csrf_token %}
+            <button class="dropdown-item text-danger fw-semibold rounded-2 py-2">
+              <i class="bi bi-box-arrow-right me-2"></i>Log Out
+            </button>
+          </form>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+{% else %}
+<nav class="site-nav navbar navbar-expand-lg fixed-top py-2">
+  <div class="container">
+    <a class="navbar-brand site-brand" href="{% url 'frontend:home' %}">
+      <i class="bi bi-shield-check fs-4 brand-accent"></i>
+      <span>Digiland System</span>
+    </a>
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#publicNav" aria-controls="publicNav" aria-expanded="false">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="publicNav">
+      <ul class="navbar-nav ms-auto align-items-center gap-1">
+        {% if user.is_authenticated %}
+        {% if user.role == 'Seller' %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'frontend:parcel_list' %}">
+            <i class="bi bi-geo-alt me-1"></i>My Parcels
+          </a>
+        </li>
+        {% else %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'frontend:parcel_list' %}">
+            <i class="bi bi-grid-3x3-gap me-1"></i>Marketplace
+          </a>
+        </li>
+        {% endif %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'frontend:transactions' %}">
+            <i class="bi bi-clock-history me-1"></i>Transactions
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'frontend:messages' %}">
+            <i class="bi bi-chat-dots me-1"></i>Messages
+          </a>
+        </li>
+        {% if user.role == 'Buyer' %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'frontend:recommendations' %}">
+            <i class="bi bi-stars me-1"></i>For You
+          </a>
+        </li>
+        {% if user.buyer_account_type == 'Joint' %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'frontend:joint_groups' %}">
+            <i class="bi bi-people me-1"></i>My Groups
+          </a>
+        </li>
+        {% endif %}
+        {% endif %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'frontend:price_prediction' %}">
+            <i class="bi bi-graph-up-arrow me-1"></i>Estimator
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'frontend:support' %}">
+            <i class="bi bi-life-preserver me-1"></i>Support
+          </a>
+        </li>
+        <li class="nav-item ms-2">
+          <div class="dropdown">
+            <button class="user-pill dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-person-circle brand-accent"></i>
+              {{ user.role }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2 p-2">
+              <li class="px-3 py-1 text-muted small">{{ user.email }}</li>
+              <li><hr class="dropdown-divider my-1"></li>
+              {% if user.role == 'Seller' %}
+              <li>
+                <a class="dropdown-item rounded-2 py-2" href="{% url 'frontend:parcel_upload' %}">
+                  <i class="bi bi-plus-circle me-2"></i>List a Property
+                </a>
+              </li>
+              {% endif %}
+              <li>
+                <form method="post" action="{% url 'account_logout' %}">
+                  {% csrf_token %}
+                  <button class="dropdown-item text-danger fw-semibold rounded-2 py-2">
+                    <i class="bi bi-box-arrow-right me-2"></i>Log Out
+                  </button>
+                </form>
+              </li>
+            </ul>
+          </div>
+        </li>
+        {% else %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'frontend:parcel_list' %}">Marketplace</a>
+        </li>
+        <li class="nav-item ms-2">
+          <a class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" href="{% url 'account_login' %}">Log In</a>
+        </li>
+        <li class="nav-item ms-1">
+          <a class="btn btn-sm btn-dark rounded-pill px-3 fw-semibold" href="{% url 'account_signup' %}">Sign Up</a>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+{% endif %}
+
+<div class="container py-4">
+    {% if messages %}
+    <div class="mb-3">
+      {% for msg in messages %}
+      <div class="alert alert-{% if msg.tags == 'success' %}success{% elif msg.tags == 'error' or msg.tags == 'warning' %}danger{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+        <i class="bi {% if msg.tags == 'success' %}bi-check-circle-fill{% elif msg.tags == 'error' or msg.tags == 'warning' %}bi-exclamation-triangle-fill{% else %}bi-info-circle-fill{% endif %} flex-shrink-0"></i>
+        <span>{{ msg }}</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% block content %}
+    {% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/main.js' %}"></script>
+<script>
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+    new bootstrap.Tooltip(el);
+  });
+</script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

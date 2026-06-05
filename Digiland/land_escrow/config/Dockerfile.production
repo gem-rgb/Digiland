@@ -1,0 +1,78 @@
+# =============================================================================
+# Digiland - Multi-stage Production Dockerfile
+# =============================================================================
+# Build: docker build -f config/Dockerfile.production -t digiland:prod .
+# Run:  docker run -e SECRET_KEY=... digiland:prod
+# =============================================================================
+
+# ─── Stage 1: Frontend Build ──────────────────────────────────────────────────
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /app/client
+
+# Install dependencies first (layer caching)
+COPY client/package.json client/package-lock.json ./
+RUN npm ci --only=production
+
+# Build the frontend
+COPY client/ ./
+RUN npm run build
+
+# ─── Stage 2: Python Dependencies ─────────────────────────────────────────────
+FROM python:3.12-slim AS python-builder
+
+# Install system dependencies for PostGIS/GDAL
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gdal-bin libgdal-dev libproj-dev libgeos-dev \
+    libpq-dev gcc g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python dependencies
+COPY config/requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# ─── Stage 3: Production Runtime ──────────────────────────────────────────────
+FROM python:3.12-slim AS production
+
+# Install minimal runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gdal-bin libgdal34 libproj25 libgeos-c1v5 \
+    libpq5 curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r digiland && useradd -r -g digiland -d /app -s /sbin/nologin digiland
+
+WORKDIR /app
+
+# Copy Python packages from builder
+COPY --from=python-builder /install /usr/local
+
+# Copy application code
+COPY --chown=digiland:digiland . .
+
+# Copy frontend build
+COPY --from=frontend-builder --chown=digiland:digiland /app/client/dist /app/client/dist
+
+# Collect static files
+ENV SECRET_KEY=build-time-secret
+ENV DEBUG=False
+ENV DJANGO_SETTINGS_MODULE=land_escrow.settings_production
+RUN python manage.py collectstatic --noinput 2>/dev/null || true
+
+# Switch to non-root user
+USER digiland
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=60s \
+    CMD curl -f http://localhost:8000/admin/ || exit 1
+
+# Expose port
+EXPOSE 8000
+
+# Run with gunicorn
+CMD ["gunicorn", "land_escrow.wsgi:application", \
+     "--config", "config/gunicorn.conf.py", \
+     "--bind", "0.0.0.0:8000"]

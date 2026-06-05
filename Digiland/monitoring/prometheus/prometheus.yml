@@ -1,0 +1,55 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+  # External labels applied to every metric — set via environment variable
+  # or hardcode for non-Helm deployments.
+  external_labels:
+    environment: 'production'
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+rule_files:
+  - /etc/prometheus/alerts/*.yml
+
+scrape_configs:
+  - job_name: 'digiland-web'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['web:8000']
+        labels:
+          service: 'digiland-web'
+
+  - job_name: 'celery-workers'
+    static_configs:
+      - targets: ['celery-worker:5555']
+        labels:
+          service: 'digiland-celery'
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: 'digiland-postgres'
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: 'digiland-redis'
+
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+        labels:
+          service: 'digiland-nginx'
+
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'digiland-node'

@@ -1,0 +1,74 @@
+{% extends 'frontend/base.html' %}
+{% block title %}Choose Buyer Account - Digiland{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <span class="page-kicker"><i class="bi bi-person-badge"></i>Buyer setup</span>
+    <h2 class="page-title">Choose how this buyer account will work</h2>
+    <p class="page-subtitle">
+      Select whether this account buys land alone or as part of a joint group with shared ownership.
+    </p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-outline-secondary" href="{% url 'frontend:escrow_acts' %}">
+      <i class="bi bi-journal-text me-1"></i>Review land laws
+    </a>
+    <a class="btn btn-outline-primary" href="{% url 'frontend:joint_laws' %}">
+      <i class="bi bi-people me-1"></i>Joint laws
+    </a>
+  </div>
+</section>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card h-100 border-info">
+      <div class="card-header bg-dark">
+        <i class="bi bi-person-check me-2"></i>Individual account
+      </div>
+      <div class="card-body d-flex flex-column">
+        <p class="text-muted">
+          Best for one buyer purchasing land in their own name. You can still browse, sign contracts, and pay through M-PESA.
+        </p>
+        <ul class="text-muted small ps-3">
+          <li>Single buyer ownership workflow</li>
+          <li>Contract signing and STK checkout</li>
+          <li>Simple marketplace browsing</li>
+        </ul>
+        <form method="post" class="mt-auto">
+          {% csrf_token %}
+          <input type="hidden" name="account_type" value="Individual">
+          <button type="submit" class="btn btn-primary btn-lg w-100">
+            Continue as individual buyer
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100 border-success">
+      <div class="card-header bg-dark">
+        <i class="bi bi-people me-2"></i>Joint buyer account
+      </div>
+      <div class="card-body d-flex flex-column">
+        <p class="text-muted">
+          Best for couples, families, chama groups, or investment groups buying land together under a group leader.
+        </p>
+        <ul class="text-muted small ps-3">
+          <li>Leader can add, remove, or replace co-buyers</li>
+          <li>Shared ownership percentages are recorded</li>
+          <li>Joint signing and split payment support</li>
+        </ul>
+        <form method="post" class="mt-auto">
+          {% csrf_token %}
+          <input type="hidden" name="account_type" value="Joint">
+          <button type="submit" class="btn btn-success btn-lg w-100">
+            Continue as joint buyer
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

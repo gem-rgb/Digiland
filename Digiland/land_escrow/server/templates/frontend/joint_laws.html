@@ -1,0 +1,87 @@
+{% extends 'frontend/base.html' %}
+{% block title %}Joint Purchase Laws - Digiland{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <span class="page-kicker"><i class="bi bi-people"></i>Joint buyer law</span>
+    <h2 class="page-title">Kenyan land rules for joint purchases</h2>
+    <p class="page-subtitle">
+      This page focuses on co-ownership, group purchase, and joint payment rules that matter when land is bought by more than one buyer.
+    </p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-outline-secondary" href="{% url 'frontend:buyer_account_choice' %}">
+      <i class="bi bi-person-badge me-1"></i>Buyer setup
+    </a>
+  </div>
+</section>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card h-100">
+      <div class="card-header bg-dark">
+        <i class="bi bi-journal-text me-2"></i>Joint purchase statutes
+      </div>
+      <div class="card-body">
+        {% for law in laws %}
+        <div class="border rounded-4 p-4 mb-3 {% if law.required %}border-success{% else %}border-warning{% endif %}">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+            <div>
+              <h5 class="mb-1">{{ law.title }}</h5>
+              <div class="text-muted small">{{ law.citation }}</div>
+            </div>
+            <span class="badge {% if law.required %}bg-success{% else %}bg-warning text-dark{% endif %}">
+              {% if law.required %}Core requirement{% else %}Applies when relevant{% endif %}
+            </span>
+          </div>
+          <p class="mb-2">{{ law.summary }}</p>
+          <div class="small text-muted mb-3">Applies to: {{ law.applies_to }}</div>
+          <a href="{{ law.official_url }}" class="btn btn-outline-secondary btn-sm" target="_blank" rel="noreferrer">
+            <i class="bi bi-box-arrow-up-right me-1"></i>Open official source
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card sidebar-card mb-4">
+      <div class="card-header bg-info">
+        <i class="bi bi-list-check me-2"></i>Joint purchase checklist
+      </div>
+      <div class="card-body">
+        <ul class="ps-3 mb-0">
+          {% for item in checklist %}
+          <li class="mb-2">{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <div class="card sidebar-card">
+      <div class="card-header bg-dark">
+        <i class="bi bi-bank me-2"></i>Joint bank account guidance
+      </div>
+      <div class="card-body">
+        <ul class="ps-3 mb-3">
+          {% for item in payment_guidance %}
+          <li class="mb-2">{{ item }}</li>
+          {% endfor %}
+        </ul>
+        <p class="small text-muted mb-3">
+          The platform can record a joint bank account for the group, but the bank mandate must still match the co-buyers who are authorised to operate it.
+        </p>
+        <a class="btn btn-primary w-100 mb-2" href="{% url 'frontend:create_joint_group' %}">
+          <i class="bi bi-plus-circle me-1"></i>Create joint group
+        </a>
+        <a class="btn btn-outline-secondary w-100" href="{% url 'frontend:joint_groups' %}">
+          <i class="bi bi-people me-1"></i>My joint groups
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

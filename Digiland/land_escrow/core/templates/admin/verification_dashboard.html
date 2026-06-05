@@ -1,0 +1,335 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">Home</a>
+&rsaquo; <a href="{% url 'admin:app_list' 'core' %}">Core</a>
+&rsaquo; Verification Dashboard
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <div class="module">
+        <h1>🏛️ Land Verification Dashboard</h1>
+        <p>Manage 7-day verification hiatus periods for land transactions</p>
+        
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>⏳ Awaiting Hiatus</h3>
+                <div class="stat-number">{{ awaiting_hiatus_count }}</div>
+                <p>Transactions ready to start verification period</p>
+            </div>
+            
+            <div class="stat-card">
+                <h3>🔄 In Hiatus</h3>
+                <div class="stat-number">{{ in_hiatus_count }}</div>
+                <p>Currently in 7-day verification period</p>
+            </div>
+            
+            <div class="stat-card deadline-passed">
+                <h3>⚠️ Deadline Passed</h3>
+                <div class="stat-number">{{ deadline_passed_count }}</div>
+                <p>Verification deadline has passed</p>
+            </div>
+            
+            <div class="stat-card verified">
+                <h3>✅ Verified</h3>
+                <div class="stat-number">{{ verified_count }}</div>
+                <p>Land verification completed</p>
+            </div>
+        </div>
+        
+        <!-- Awaiting Hiatus Section -->
+        <div class="section">
+            <h2>⏳ Transactions Awaiting Verification Hiatus</h2>
+            {% if awaiting_hiatus %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Buyer</th>
+                            <th>Seller</th>
+                            <th>Amount</th>
+                            <th>Land Parcel</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in awaiting_hiatus %}
+                        <tr>
+                            <td><code>{{ transaction.id|truncatechars:12 }}</code></td>
+                            <td>{{ transaction.buyer.email }}</td>
+                            <td>{{ transaction.seller.email }}</td>
+                            <td>KES {{ transaction.agreed_price|floatformat:2 }}</td>
+                            <td>{{ transaction.land_parcel.parcel_number }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="startHiatus({{ transaction.id }})">
+                                    Start Hiatus
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="no-data">No transactions awaiting verification hiatus.</p>
+            {% endif %}
+        </div>
+        
+        <!-- In Hiatus Section -->
+        <div class="section">
+            <h2>🔄 Transactions in Verification Hiatus</h2>
+            {% if in_hiatus %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Buyer</th>
+                            <th>Seller</th>
+                            <th>Amount</th>
+                            <th>Days Left</th>
+                            <th>Land Parcel</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in in_hiatus %}
+                        <tr>
+                            <td><code>{{ transaction.id|truncatechars:12 }}</code></td>
+                            <td>{{ transaction.buyer.email }}</td>
+                            <td>{{ transaction.seller.email }}</td>
+                            <td>KES {{ transaction.agreed_price|floatformat:2 }}</td>
+                            <td>
+                                <span class="days-left{% if transaction.days_left == 0 %} zero{% endif %}">
+                                    {{ transaction.days_left }} days
+                                </span>
+                            </td>
+                            <td>{{ transaction.land_parcel.parcel_number }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-success" onclick="completeVerification({{ transaction.id }})">
+                                    Complete Verification
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="no-data">No transactions currently in verification hiatus.</p>
+            {% endif %}
+        </div>
+        
+        <!-- Deadline Passed Section -->
+        <div class="section">
+            <h2>⚠️ Transactions with Passed Deadlines</h2>
+            {% if deadline_passed %}
+                <div class="alert alert-warning">
+                    <p><strong>Warning:</strong> These transactions have verification deadlines that have passed. Consider contacting parties or extending verification periods.</p>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Buyer</th>
+                            <th>Seller</th>
+                            <th>Amount</th>
+                            <th>Days Overdue</th>
+                            <th>Land Parcel</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in deadline_passed %}
+                        <tr class="overdue">
+                            <td><code>{{ transaction.id|truncatechars:12 }}</code></td>
+                            <td>{{ transaction.buyer.email }}</td>
+                            <td>{{ transaction.seller.email }}</td>
+                            <td>KES {{ transaction.agreed_price|floatformat:2 }}</td>
+                            <td>
+                                <span class="days-overdue">
+                                    {{ transaction.days_overdue }} days overdue
+                                </span>
+                            </td>
+                            <td>{{ transaction.land_parcel.parcel_number }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="extendHiatus({{ transaction.id }})">
+                                    Extend Hiatus
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="reversePayment({{ transaction.id }})">
+                                    Reverse Payment
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="no-data">No transactions with passed deadlines.</p>
+            {% endif %}
+        </div>
+        
+        <!-- Verified Section -->
+        <div class="section">
+            <h2>✅ Verified Transactions</h2>
+            {% if verified %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Buyer</th>
+                            <th>Seller</th>
+                            <th>Amount</th>
+                            <th>Verification Date</th>
+                            <th>Land Parcel</th>
+                            <th>Verification Agent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in verified %}
+                        <tr>
+                            <td><code>{{ transaction.id|truncatechars:12 }}</code></td>
+                            <td>{{ transaction.buyer.email }}</td>
+                            <td>{{ transaction.seller.email }}</td>
+                            <td>KES {{ transaction.agreed_price|floatformat:2 }}</td>
+                            <td>{{ transaction.land_verified_date|date:"Y-m-d" }}</td>
+                            <td>{{ transaction.land_parcel.parcel_number }}</td>
+                            <td>{{ transaction.verification_agent.get_full_name|default:"System" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="no-data">No verified transactions.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/main.js' %}"></script>
+<script>
+function startHiatus(transactionId) {
+    if (confirm('Start 7-day verification hiatus for this transaction?')) {
+        fetch('/admin/ajax-start-hiatus/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `transaction_id=${transactionId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while starting verification hiatus.');
+        });
+    }
+}
+
+function completeVerification(transactionId) {
+    if (confirm('Mark this transaction as verified? This will complete verification hiatus.')) {
+        fetch('/admin/ajax-complete-verification/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `transaction_id=${transactionId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while completing verification.');
+        });
+    }
+}
+
+function extendHiatus(transactionId) {
+    const days = prompt('Extend verification hiatus by how many days?', '7');
+    if (days && !isNaN(days)) {
+        fetch('/admin/ajax-extend-hiatus/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `transaction_id=${transactionId}&days=${days}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while extending verification hiatus.');
+        });
+    }
+}
+
+function reversePayment(transactionId) {
+    if (confirm('Reverse payment for this transaction? This action cannot be undone.')) {
+        fetch('/admin/ajax-reverse-payment/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `transaction_id=${transactionId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while reversing payment.');
+        });
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

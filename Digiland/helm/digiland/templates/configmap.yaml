@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "digiland.fullname" . }}-config
+  labels:
+    {{- include "digiland.labels" . | nindent 4 }}
+data:
+  DJANGO_SETTINGS_MODULE: {{ .Values.config.djangoSettingsModule | quote }}
+  DEBUG: {{ .Values.config.debug | quote }}
+  ALLOWED_HOSTS: {{ .Values.config.allowedHosts | quote }}
+  CELERY_TASK_ALWAYS_EAGER: {{ .Values.config.celeryTaskAlwaysEager | quote }}
+  USE_REDIS_CACHE: "true"

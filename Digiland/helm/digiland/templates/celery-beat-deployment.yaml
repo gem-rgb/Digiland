@@ -1,0 +1,33 @@
+{{- if .Values.celery.beat.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "digiland.fullname" . }}-celery-beat
+  labels:
+    {{- include "digiland.labels" . | nindent 4 }}
+    app: {{ include "digiland.name" . }}-celery-beat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "digiland.selectorLabels" . | nindent 6 }}
+      app: {{ include "digiland.name" . }}-celery-beat
+  template:
+    metadata:
+      labels:
+        {{- include "digiland.selectorLabels" . | nindent 8 }}
+        app: {{ include "digiland.name" . }}-celery-beat
+    spec:
+      serviceAccountName: {{ include "digiland.serviceAccountName" . }}
+      containers:
+        - name: celery-beat
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          command: ["celery", "-A", "land_escrow", "beat", "--loglevel=info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
+          envFrom:
+            - configMapRef:
+                name: {{ include "digiland.fullname" . }}-config
+            - secretRef:
+                name: {{ include "digiland.fullname" . }}-secrets
+          resources:
+            {{- toYaml .Values.celery.beat.resources | nindent 12 }}
+{{- end }}

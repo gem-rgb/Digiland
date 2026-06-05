@@ -1,0 +1,81 @@
+{% extends 'frontend/base.html' %}
+{% block title %}Kenyan Land Laws - Digiland{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <span class="page-kicker"><i class="bi bi-journal-check"></i>Legal References</span>
+    <h2 class="page-title">Kenyan land transfer law checklist</h2>
+    <p class="page-subtitle">
+      This page links to official Kenya Law publications used by the platform when preparing land sale and transfer documents.
+    </p>
+  </div>
+</section>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card h-100">
+      <div class="card-header bg-dark">
+        <i class="bi bi-book me-2"></i>Statutes used in the flow
+      </div>
+      <div class="card-body">
+        {% for law in laws %}
+        <div class="border rounded-4 p-4 mb-3 {% if law.required %}border-success{% else %}border-warning{% endif %}">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+            <div>
+              <h5 class="mb-1">{{ law.title }}</h5>
+              <div class="text-muted small">{{ law.citation }}</div>
+            </div>
+            <span class="badge {% if law.required %}bg-success{% else %}bg-warning text-dark{% endif %}">
+              {% if law.required %}Core requirement{% else %}Applies when relevant{% endif %}
+            </span>
+          </div>
+
+          <p class="mb-2">{{ law.summary }}</p>
+          <div class="small text-muted mb-3">Applies to: {{ law.applies_to }}</div>
+
+          <a href="{{ law.official_url }}" class="btn btn-outline-secondary btn-sm" target="_blank" rel="noreferrer">
+            <i class="bi bi-box-arrow-up-right me-1"></i>Open official Kenya Law source
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card sidebar-card mb-4">
+      <div class="card-header bg-info">
+        <i class="bi bi-list-check me-2"></i>Signing checklist
+      </div>
+      <div class="card-body">
+        <ul class="mb-0 ps-3">
+          {% for item in checklist %}
+          <li class="mb-2">{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <div class="card sidebar-card">
+      <div class="card-header bg-dark">
+        <i class="bi bi-shield-check me-2"></i>Important note
+      </div>
+      <div class="card-body">
+        <p class="small text-muted mb-3">
+          The platform can capture signatures and guide the workflow, but parties should still confirm the final transfer documents with a qualified Kenyan advocate or conveyancer.
+        </p>
+        <a class="btn btn-outline-success w-100 mb-2" href="{% url 'frontend:joint_laws' %}">
+          <i class="bi bi-people me-1"></i>Joint purchase laws
+        </a>
+        <a class="btn btn-outline-primary w-100 mb-2" href="{% url 'frontend:parcel_list' %}">
+          <i class="bi bi-grid-3x3-gap me-1"></i>Back to marketplace
+        </a>
+        <a class="btn btn-outline-secondary w-100" href="{% url 'frontend:home' %}">
+          <i class="bi bi-house me-1"></i>Home
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

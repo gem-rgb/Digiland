@@ -1,0 +1,191 @@
+/* ===================================================================
+   Digiland - CSS validity fixes
+
+   `land_escrow/static/css/main.css` contains selector typos that can
+   prevent important rules (notably CSS variables and scrollbar styling)
+   from applying. This file re-declares the required `:root` variables
+   and correct scrollbar selectors after `main.css`.
+   =================================================================== */
+
+:root {
+  --bg: #1a1714;
+  --bg-alt: #211e1b;
+  --primary: #1a1714;
+  --primary-soft: rgba(26, 23, 20, 0.24);
+  --surface: rgba(33, 30, 27, 0.84);
+  --surface-soft: rgba(33, 30, 27, 0.68);
+  --surface-strong: #2a2520;
+  --surface-contrast: #f5f0eb;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --accent: #10b981;
+  --accent-strong: #059669;
+  --accent-soft: rgba(16, 185, 129, 0.18);
+  --success: #10b981;
+  --success-soft: rgba(16, 185, 129, 0.16);
+  --warning: #f59e0b;
+  --warning-soft: rgba(245, 158, 11, 0.18);
+  --danger: #ef4444;
+  --danger-soft: rgba(239, 68, 68, 0.18);
+  --info: #38bdf8;
+  --info-soft: rgba(56, 189, 248, 0.18);
+  --purple: #8b5cf6;
+  --purple-soft: rgba(139, 92, 246, 0.18);
+  --text: #f5f0eb;
+  --text-soft: #c4b8ab;
+  --text-dim: #a09080;
+  --shadow-soft: 0 14px 36px rgba(0, 0, 0, 0.22);
+  --shadow-lg: 0 24px 50px rgba(0, 0, 0, 0.28);
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --content-width: 1280px;
+}
+
+/* Scrollbar styling (webkit) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #151210;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3d3530;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #5a4f48;
+}
+
+/* Shared layout and legacy-page normalization */
+.page-section {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.form-shell {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.form-shell-narrow {
+  max-width: 680px;
+}
+
+.form-shell form p {
+  margin: 0 0 1rem;
+}
+
+.form-shell form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-soft);
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.form-shell input:not([type="checkbox"]):not([type="radio"]),
+.form-shell select,
+.form-shell textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 14px;
+  padding: 0.72rem 0.95rem;
+}
+
+.form-shell input[type="file"] {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 14px;
+  border: 1px dashed rgba(148, 163, 184, 0.3);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.form-shell .helptext {
+  display: block;
+  margin-top: 0.4rem;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+.legacy-subtle-panel {
+  padding: 1rem 1.1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.signature-pad-wrap {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 14px;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.signature-pad {
+  width: 100%;
+  border-radius: 10px;
+}
+
+.onboarding-consent {
+  max-width: 400px;
+}
+
+.table-warning {
+  --bs-table-bg: rgba(245, 158, 11, 0.12);
+  --bs-table-striped-bg: rgba(245, 158, 11, 0.14);
+  --bs-table-hover-bg: rgba(245, 158, 11, 0.18);
+  --bs-table-color: #fef3c7;
+}
+
+/* Bootstrap utility normalization for dark UI consistency */
+.text-dark {
+  color: var(--text) !important;
+}
+
+.lead {
+  color: var(--text-soft);
+}
+
+.bg-light {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--text) !important;
+  border-color: rgba(148, 163, 184, 0.16) !important;
+}
+
+.badge.bg-light {
+  background: rgba(148, 163, 184, 0.2) !important;
+  color: var(--text) !important;
+}
+
+.badge.bg-warning.text-dark {
+  background: rgba(245, 158, 11, 0.2) !important;
+  color: #fcd34d !important;
+}
+
+.table .badge.bg-warning.text-dark {
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.shadow,
+.shadow-sm,
+.shadow-lg {
+  box-shadow: var(--shadow-soft) !important;
+}
+
+.border-primary,
+.border-info,
+.border-warning,
+.border-danger,
+.border-success {
+  border-color: rgba(148, 163, 184, 0.22) !important;
+}

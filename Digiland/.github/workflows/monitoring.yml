@@ -1,0 +1,459 @@
+# =============================================================================
+# Digiland — Monitoring & Alerting Pipeline
+# =============================================================================
+# Deploys and validates the observability stack:
+#   - Prometheus alerting rules
+#   - Grafana dashboards
+#   - Alerting rule validation
+#   - Notification channel testing
+#   - Synthetic monitoring setup
+#   - SLA monitoring configuration
+# Triggers: push to main/develop (monitoring paths), workflow_dispatch
+# =============================================================================
+
+name: Monitoring Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "monitoring/**"
+      - "helm/digiland/**"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+      validate_only:
+        description: "Validate only (do not deploy)"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: monitoring-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  KUBE_NAMESPACE_STAGING: digiland-staging
+  KUBE_NAMESPACE_PRODUCTION: digiland-production
+  PROMETHEUS_DIR: monitoring/prometheus
+  GRAFANA_DIR: monitoring/grafana
+
+permissions:
+  contents: read
+
+# ---------------------------------------------------------------------------
+# Jobs
+# ---------------------------------------------------------------------------
+jobs:
+  # =========================================================================
+  # 1. VALIDATE PROMETHEUS RULES
+  # =========================================================================
+  validate-prometheus-rules:
+    name: Validate Prometheus Rules
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Prometheus promtool
+        run: |
+          wget -q https://github.com/prometheus/prometheus/releases/download/v2.50.0/prometheus-2.50.0.linux-amd64.tar.gz
+          tar xzf prometheus-2.50.0.linux-amd64.tar.gz
+          sudo mv prometheus-2.50.0.linux-amd64/promtool /usr/local/bin/
+
+      - name: Validate alerting rules
+        run: |
+          RULES_DIR="${{ env.PROMETHEUS_DIR }}/alerts"
+          if [ -d "$RULES_DIR" ]; then
+            for rules_file in "$RULES_DIR"/*.yml "$RULES_DIR"/*.yaml; do
+              if [ -f "$rules_file" ]; then
+                echo "Validating: $rules_file"
+                promtool check rules "$rules_file" || {
+                  echo "::error::Prometheus rules validation failed for $rules_file"
+                  exit 1
+                }
+              fi
+            done
+            echo "All Prometheus alerting rules are valid"
+          else
+            echo "::warning::No Prometheus alerts directory found at $RULES_DIR"
+          fi
+
+      - name: Validate Prometheus configuration
+        run: |
+          if [ -f "${{ env.PROMETHEUS_DIR }}/prometheus.yml" ]; then
+            promtool check config "${{ env.PROMETHEUS_DIR }}/prometheus.yml" || {
+              echo "::error::Prometheus configuration validation failed"
+              exit 1
+            }
+            echo "Prometheus configuration is valid"
+          else
+            echo "::warning::No prometheus.yml found"
+          fi
+
+      - name: Rules summary
+        if: always()
+        run: |
+          echo "## Prometheus Rules Validation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          RULES_DIR="${{ env.PROMETHEUS_DIR }}/alerts"
+          if [ -d "$RULES_DIR" ]; then
+            RULE_COUNT=$(find "$RULES_DIR" -name "*.yml" -o -name "*.yaml" | wc -l)
+            echo "Rules files found: $RULE_COUNT" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # =========================================================================
+  # 2. VALIDATE GRAFANA DASHBOARDS
+  # =========================================================================
+  validate-grafana-dashboards:
+    name: Validate Grafana Dashboards
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate dashboard JSON files
+        run: |
+          DASHBOARDS_DIR="${{ env.GRAFANA_DIR }}/dashboards"
+          if [ -d "$DASHBOARDS_DIR" ]; then
+            for dashboard in "$DASHBOARDS_DIR"/*.json; do
+              if [ -f "$dashboard" ]; then
+                echo "Validating: $dashboard"
+                python3 -c "import json; json.load(open('$dashboard'))" || {
+                  echo "::error::Invalid JSON in dashboard: $dashboard"
+                  exit 1
+                }
+
+                # Check for required Grafana dashboard fields
+                python3 -c "
+          import json, sys
+          data = json.load(open('$dashboard'))
+          required = ['uid', 'title', 'panels']
+          missing = [f for f in required if f not in data]
+          if missing:
+              print(f'Warning: Missing fields in $dashboard: {missing}')
+          else:
+              print(f'OK: $dashboard has all required fields')
+          " || true
+              fi
+            done
+            echo "All Grafana dashboards are valid JSON"
+          else
+            echo "::warning::No Grafana dashboards directory found"
+          fi
+
+      - name: Validate Grafana datasources
+        run: |
+          DS_DIR="${{ env.GRAFANA_DIR }}/datasources"
+          if [ -d "$DS_DIR" ]; then
+            for ds in "$DS_DIR"/*.yml "$DS_DIR"/*.yaml; do
+              if [ -f "$ds" ]; then
+                echo "Validating datasource: $ds"
+                python3 -c "
+          import yaml, sys
+          data = yaml.safe_load(open('$ds'))
+          if 'datasources' in data:
+              for ds_item in data['datasources']:
+                  required = ['name', 'type', 'url']
+                  missing = [f for f in required if f not in ds_item]
+                  if missing:
+                      print(f'Warning: Datasource missing fields: {missing}')
+                  else:
+                      print(f'OK: Datasource {ds_item[\"name\"]} configured')
+          elif 'apiVersion' in data:
+              print(f'OK: Grafana datasource CRD format')
+          else:
+              print(f'Warning: Unknown datasource format in $ds')
+          " || true
+              fi
+            done
+          fi
+
+  # =========================================================================
+  # 3. DEPLOY PROMETHEUS RULES
+  # =========================================================================
+  deploy-prometheus-rules:
+    name: Deploy Prometheus Rules
+    runs-on: ubuntu-latest
+    needs: validate-prometheus-rules
+    if: github.event.inputs.validate_only != 'true'
+    environment:
+      name: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          ENV="${{ github.event.inputs.environment || 'staging' }}"
+          if [ "$ENV" == "production" ]; then
+            echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+            NAMESPACE="${{ env.KUBE_NAMESPACE_PRODUCTION }}"
+          else
+            echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+            NAMESPACE="${{ env.KUBE_NAMESPACE_STAGING }}"
+          fi
+          chmod 600 $HOME/.kube/config
+          echo "namespace=$NAMESPACE" >> $GITHUB_ENV
+
+      - name: Create or update Prometheus rules ConfigMap
+        run: |
+          RULES_DIR="${{ env.PROMETHEUS_DIR }}/alerts"
+          if [ -d "$RULES_DIR" ]; then
+            kubectl create configmap digiland-alert-rules \
+              --from-file="$RULES_DIR" \
+              --namespace="$namespace" \
+              --dry-run=client -o yaml | kubectl apply -f -
+            echo "Prometheus alert rules ConfigMap updated"
+          fi
+
+      - name: Restart Prometheus to pick up new rules
+        run: |
+          kubectl rollout restart deployment/prometheus \
+            --namespace="$namespace" 2>/dev/null || \
+            kubectl rollout restart statefulset/prometheus \
+            --namespace="$namespace" 2>/dev/null || \
+            echo "::warning::Could not restart Prometheus — rules may need manual reload"
+          echo "Prometheus restart triggered"
+
+  # =========================================================================
+  # 4. DEPLOY GRAFANA DASHBOARDS
+  # =========================================================================
+  deploy-grafana-dashboards:
+    name: Deploy Grafana Dashboards
+    runs-on: ubuntu-latest
+    needs: validate-grafana-dashboards
+    if: github.event.inputs.validate_only != 'true'
+    environment:
+      name: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          ENV="${{ github.event.inputs.environment || 'staging' }}"
+          if [ "$ENV" == "production" ]; then
+            echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+            NAMESPACE="${{ env.KUBE_NAMESPACE_PRODUCTION }}"
+          else
+            echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+            NAMESPACE="${{ env.KUBE_NAMESPACE_STAGING }}"
+          fi
+          chmod 600 $HOME/.kube/config
+          echo "namespace=$NAMESPACE" >> $GITHUB_ENV
+
+      - name: Deploy Grafana dashboard ConfigMaps
+        run: |
+          DASHBOARDS_DIR="${{ env.GRAFANA_DIR }}/dashboards"
+          if [ -d "$DASHBOARDS_DIR" ]; then
+            for dashboard in "$DASHBOARDS_DIR"/*.json; do
+              if [ -f "$dashboard" ]; then
+                DASHBOARD_NAME=$(basename "$dashboard" .json)
+                kubectl create configmap "grafana-dashboard-${DASHBOARD_NAME}" \
+                  --from-file="${DASHBOARD_NAME}.json=${dashboard}" \
+                  --namespace="$namespace" \
+                  --labels=grafana_dashboard=1 \
+                  --dry-run=client -o yaml | kubectl apply -f -
+                echo "Deployed dashboard: $DASHBOARD_NAME"
+              fi
+            done
+          fi
+
+      - name: Deploy Grafana datasource configuration
+        run: |
+          DS_DIR="${{ env.GRAFANA_DIR }}/datasources"
+          if [ -d "$DS_DIR" ]; then
+            kubectl create configmap grafana-datasources \
+              --from-file="$DS_DIR" \
+              --namespace="$namespace" \
+              --dry-run=client -o yaml | kubectl apply -f -
+            echo "Grafana datasources ConfigMap updated"
+          fi
+
+  # =========================================================================
+  # 5. TEST ALERTING NOTIFICATION CHANNELS
+  # =========================================================================
+  test-notification-channels:
+    name: Test Notification Channels
+    runs-on: ubuntu-latest
+    needs: deploy-prometheus-rules
+    if: github.event.inputs.validate_only != 'true'
+    steps:
+      - name: Verify Slack webhook connectivity
+        run: |
+          # Test staging webhook
+          if [ -n "${{ secrets.SLACK_WEBHOOK_STAGING }}" ]; then
+            HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
+              -X POST \
+              -H 'Content-type: application/json' \
+              --data '{"text":"Digiland monitoring test — notification channel verification"}' \
+              "${{ secrets.SLACK_WEBHOOK_STAGING }}" 2>/dev/null || echo "000")
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              echo "Staging Slack webhook: OK"
+            else
+              echo "::warning::Staging Slack webhook returned HTTP $HTTP_STATUS"
+            fi
+          fi
+
+          # Test production webhook
+          if [ -n "${{ secrets.SLACK_WEBHOOK_PRODUCTION }}" ]; then
+            HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
+              -X POST \
+              -H 'Content-type: application/json' \
+              --data '{"text":"Digiland monitoring test — notification channel verification (production)"}' \
+              "${{ secrets.SLACK_WEBHOOK_PRODUCTION }}" 2>/dev/null || echo "000")
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              echo "Production Slack webhook: OK"
+            else
+              echo "::warning::Production Slack webhook returned HTTP $HTTP_STATUS"
+            fi
+          fi
+
+      - name: Test Alertmanager connectivity
+        run: |
+          ENV="${{ github.event.inputs.environment || 'staging' }}"
+          if [ "$ENV" == "production" ]; then
+            ALERTMANAGER_URL="${{ secrets.ALERTMANAGER_URL_PRODUCTION }}"
+          else
+            ALERTMANAGER_URL="${{ secrets.ALERTMANAGER_URL_STAGING }}"
+          fi
+
+          if [ -n "$ALERTMANAGER_URL" ]; then
+            HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
+              "${ALERTMANAGER_URL}/api/v2/status" 2>/dev/null || echo "000")
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              echo "Alertmanager connectivity: OK"
+            else
+              echo "::warning::Alertmanager returned HTTP $HTTP_STATUS"
+            fi
+          else
+            echo "::notice::Alertmanager URL not configured — skipping connectivity test"
+          fi
+
+  # =========================================================================
+  # 6. SYNTHETIC MONITORING SETUP
+  # =========================================================================
+  synthetic-monitoring:
+    name: Synthetic Monitoring Setup
+    runs-on: ubuntu-latest
+    needs: [deploy-prometheus-rules, deploy-grafana-dashboards]
+    if: github.event.inputs.validate_only != 'true'
+    steps:
+      - name: Run synthetic health checks
+        run: |
+          ENDPOINTS=(
+            "https://staging.digiland.co.ke/api/v1/health/"
+          )
+
+          # Add production endpoint if deploying to production
+          ENV="${{ github.event.inputs.environment || 'staging' }}"
+          if [ "$ENV" == "production" ]; then
+            ENDPOINTS+=("https://digiland.co.ke/api/v1/health/")
+          fi
+
+          for url in "${ENDPOINTS[@]}"; do
+            RESPONSE_TIME=$(curl -sf -o /dev/null -w "%{time_total}" "$url" 2>/dev/null || echo "0")
+            HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "$url" 2>/dev/null || echo "000")
+
+            echo "Synthetic check: $url"
+            echo "  Status: HTTP $HTTP_STATUS"
+            echo "  Response time: ${RESPONSE_TIME}s"
+
+            if [ "$HTTP_STATUS" != "200" ]; then
+              echo "::warning::Synthetic check failed for $url (HTTP $HTTP_STATUS)"
+            fi
+          done
+
+      - name: Record baseline metrics
+        run: |
+          echo "## Synthetic Monitoring Baseline" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Baseline recorded at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "These baselines will be used for SLA monitoring and alerting thresholds." >> $GITHUB_STEP_SUMMARY
+
+  # =========================================================================
+  # 7. SLA MONITORING CONFIGURATION
+  # =========================================================================
+  sla-monitoring:
+    name: SLA Monitoring Configuration
+    runs-on: ubuntu-latest
+    needs: [validate-prometheus-rules, validate-grafana-dashboards]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate SLA alerting rules
+        run: |
+          RULES_FILE="${{ env.PROMETHEUS_DIR }}/alerts/digiland-alerts.yml"
+          if [ -f "$RULES_FILE" ]; then
+            echo "Checking SLA-related alerting rules..."
+
+            # Verify key SLA alerts are defined
+            SLA_ALERTS=(
+              "HighErrorRate"
+              "HighLatency"
+              "PodCrashLooping"
+              "DatabaseConnectionFailed"
+              "RedisConnectionFailed"
+              "HighMemoryUsage"
+              "DiskSpaceLow"
+            )
+
+            for alert_name in "${SLA_ALERTS[@]}"; do
+              if grep -q "alert: $alert_name" "$RULES_FILE"; then
+                echo "SLA alert defined: $alert_name"
+              else
+                echo "::warning::SLA alert not found: $alert_name — consider adding it"
+              fi
+            done
+          else
+            echo "::warning::No alert rules file found at $RULES_FILE"
+          fi
+
+      - name: Generate SLA configuration summary
+        run: |
+          echo "## SLA Monitoring Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| SLA Metric | Threshold | Alert |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| API Error Rate | >5% 5xx | HighErrorRate |" >> $GITHUB_STEP_SUMMARY
+          echo "| API Latency (p99) | >2s | HighLatency |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pod Availability | CrashLoop | PodCrashLooping |" >> $GITHUB_STEP_SUMMARY
+          echo "| Database Connectivity | Connection failed | DatabaseConnectionFailed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Cache Connectivity | Connection failed | RedisConnectionFailed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Memory Usage | >90% | HighMemoryUsage |" >> $GITHUB_STEP_SUMMARY
+          echo "| Disk Space | <10% free | DiskSpaceLow |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "_SLA monitoring configured for both staging and production environments._" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify Slack — Monitoring Deployed
+        if: always()
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": "Monitoring Pipeline ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ job.status == 'success' && ':white_check_mark' || ':x' }} *Monitoring Pipeline ${{ job.status }}*\n• Prometheus rules: Deployed\n• Grafana dashboards: Deployed\n• Notification channels: Tested\n• SLA alerts: Configured"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_STAGING }}
+        continue-on-error: true

@@ -1,0 +1,461 @@
+{% extends 'frontend/base.html' %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <span class="page-kicker"><i class="bi bi-shield-lock"></i>Payment Checkout</span>
+        <h2 class="page-title">Regulated escrow deposit</h2>
+        <p class="page-subtitle">Funds remain held in escrow until deed transfer and final agent authorization are complete.</p>
+    </div>
+</section>
+
+<div class="row g-4">
+            <!-- Order Summary -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-dark">
+                        <h5 class="mb-0"><i class="bi bi-receipt"></i> Escrow Invoice Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush mb-3">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span class="text-muted">Transaction ID</span>
+                                <strong>{{ transaction.id|stringformat:"s"|slice:":8"|upper }}</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span class="text-muted">Land Parcel</span>
+                                <strong>{{ transaction.land_parcel.parcel_number }}</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span class="text-muted">Beneficiary (Seller)</span>
+                                <strong>{{ transaction.seller.email }}</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span class="text-muted">Area Size</span>
+                                <strong>{{ transaction.land_parcel.land_size }} Hectares</strong>
+                            </li>
+                        </ul>
+                        
+                        <div class="legacy-subtle-panel text-center mt-4">
+                            <h6 class="text-muted text-uppercase mb-1">Total Agreed Escrow Deposit</h6>
+                            <h2 class="mb-0 text-success fw-bold">KES {{ transaction.agreed_price }}</h2>
+                        </div>
+
+                        {% if transaction.is_joint_purchase and transaction.joint_group and joint_breakdown %}
+                        <div class="mt-4">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <h6 class="fw-bold mb-0"><i class="bi bi-people"></i> Joint split</h6>
+                                <span class="badge bg-info">{{ transaction.joint_group.get_ownership_type_display }}</span>
+                            </div>
+                            <div class="card border-0" style="background: transparent;">
+                                <div class="card-body p-0">
+                                    <div class="list-group list-group-flush">
+                                        {% for row in joint_breakdown %}
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <div class="fw-semibold">{{ row.member.full_name }} {% if row.member.is_leader %}<span class="badge bg-secondary ms-1">Leader</span>{% endif %}</div>
+                                                <div class="small text-muted">{{ row.member.share_percentage }}%</div>
+                                            </div>
+                                            <strong>KES {{ row.amount }}</strong>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Methods -->
+            <div class="col-md-6">
+                <div class="card h-100 pb-0">
+                    <div class="card-header bg-primary">
+                        <h5 class="mb-0"><i class="bi bi-credit-card-2-front"></i> Select Payment Vector</h5>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <div class="alert alert-info border-info py-2 small mb-4">
+                            <i class="bi bi-info-circle-fill"></i> Funds will not map to the Seller. They are deposited into a holding account.
+                        </div>
+
+                        <!-- M-PESA Option -->
+                        <div class="form-check border rounded p-3 mb-3 d-flex align-items-center">
+                            <input class="form-check-input me-3" type="radio" name="paymentMethod" id="mpesa" checked>
+                            <label class="form-check-label w-100 d-flex justify-content-between align-items-center cursor-pointer" for="mpesa">
+                                <div>
+                                    <h6 class="mb-0 fw-bold">M-PESA Express (STK Push)</h6>
+                                    <small class="text-muted">Instant deposit via Safaricom</small>
+                                </div>
+                                <i class="bi bi-phone text-success fs-3"></i>
+                            </label>
+                        </div>
+
+                        <!-- Card Option -->
+                        <div class="form-check border rounded p-3 mb-4 d-flex align-items-center opacity-50">
+                            <input class="form-check-input me-3" type="radio" name="paymentMethod" id="card" disabled>
+                            <label class="form-check-label w-100 d-flex justify-content-between align-items-center" for="card">
+                                <div>
+                                    <h6 class="mb-0 fw-bold">Credit / Debit Card (Paystack)</h6>
+                                    <small class="text-muted">Currently undergoing maintenance</small>
+                                </div>
+                                <i class="bi bi-credit-card text-secondary fs-3"></i>
+                            </label>
+                        </div>
+
+                        {% if transaction.is_joint_purchase and transaction.joint_group and joint_breakdown %}
+                        <div class="alert alert-warning border-warning py-2 small mb-4">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            Joint purchases can be paid by the leader, by each member with split STK pushes, or from the joint bank account recorded for the group.
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Payment option</label>
+                            <select class="form-select" id="jointPaymentMode">
+                                <option value="leader_m_pesa" {% if joint_payment_method != 'Joint_Bank_Account' %}selected{% endif %}>Leader pays full amount with M-Pesa</option>
+                                <option value="split_m_pesa">Members pay individually (split STK)</option>
+                                <option value="joint_bank_account" {% if joint_payment_method == 'Joint_Bank_Account' %}selected{% endif %}>Pay from the joint bank account</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3 d-none" id="splitPaySection">
+                            <label class="form-label fw-bold">Pay as member</label>
+                            <select class="form-select" id="memberSelect">
+                                <option value="">— Select member —</option>
+                                {% for row in joint_breakdown %}
+                                    <option value="{{ row.member.id }}" data-phone="{{ row.member.phone_number }}" data-amount="{{ row.amount }}">
+                                        {{ row.member.full_name }} ({{ row.member.share_percentage }}% → KES {{ row.amount }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">This will send an STK push to the selected member’s phone for their share.</div>
+                        </div>
+
+                        <div class="mb-3 d-none" id="bankTransferSection">
+                            <div class="border rounded-3 p-3 bg-body-tertiary mb-3">
+                                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                    <div>
+                                        <h6 class="fw-bold mb-1"><i class="bi bi-bank me-1"></i>Joint bank account</h6>
+                                        <div class="small text-muted">{{ transaction.joint_group.bank_name|default:"Bank not yet configured" }}</div>
+                                        <div class="small text-muted">Account name: {{ transaction.joint_group.bank_account_name|default:"Not set" }}</div>
+                                        <div class="small text-muted">Account number: {{ transaction.joint_group.bank_account_number|default:"Not set" }}</div>
+                                        <div class="small text-muted">Branch: {{ transaction.joint_group.bank_branch|default:"Not set" }}</div>
+                                    </div>
+                                    <span class="badge bg-success">Manual bank transfer</span>
+                                </div>
+                                {% if not joint_bank_ready %}
+                                <div class="alert alert-warning py-2 small mb-0">
+                                    The group has not finished setting up a joint bank account yet. Ask the leader to add the bank details first.
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="mb-3">
+                                <label for="depositor_name" class="form-label fw-bold">Depositor name</label>
+                                <input type="text" class="form-control form-control-lg" id="depositor_name" name="depositor_name" value="{{ request.user.get_full_name|default:request.user.email }}">
+                            </div>
+                            <div class="mb-3">
+                                <label for="bank_reference" class="form-label fw-bold">Bank transfer reference</label>
+                                <input type="text" class="form-control form-control-lg" id="bank_reference" name="bank_reference" placeholder="Enter the transfer reference or slip number">
+                                <div class="form-text">Use the reference from the bank transfer so the escrow team can match the deposit.</div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- STK Push Form -->
+                        <div class="mt-auto" id="paymentFormSection">
+                            <form id="stkPushForm" method="POST" action="{% url 'frontend:process_payment' transaction.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="payment_method" id="payment_method" value="{% if joint_payment_method == 'Joint_Bank_Account' %}joint_bank_account{% else %}m_pesa{% endif %}">
+                                <input type="hidden" name="member_id" id="member_id">
+                                <input type="hidden" name="amount" id="amount">
+                                <div class="mb-3">
+                                    <label for="phone_number" class="form-label fw-bold"><i class="bi bi-telephone-fill text-success"></i> M-PESA Phone Number</label>
+                                    <input type="tel" class="form-control form-control-lg" id="phone_number" name="phone_number" 
+                                           value="{{ request.user.phone_number }}" 
+                                           placeholder="e.g. 0712345678 or 254712345678"
+                                           pattern="^(0[17]\d{8}|254[17]\d{8})$"
+                                           required>
+                                    <div class="form-text">Enter the Safaricom number to receive the STK Push prompt.</div>
+                                </div>
+                                <button type="submit" id="payBtn" class="btn btn-success btn-lg w-100 fw-bold shadow">
+                                    <i class="bi bi-shield-lock"></i> Send M-PESA STK Push
+                                </button>
+                            </form>
+                            <p class="text-center text-muted small mt-3"><i class="bi bi-lock"></i> 256-bit AES Encryption &bull; Safaricom Daraja API</p>
+                        </div>
+
+                        <div class="mt-auto d-none" id="bankWaitingSection">
+                            <div class="text-center py-4">
+                                <i class="bi bi-bank2 text-success" style="font-size: 3rem;"></i>
+                                <h5 class="fw-bold text-success mt-3 mb-2">Bank transfer recorded</h5>
+                                <p class="text-muted mb-2">We have saved the joint bank transfer details for this purchase.</p>
+                                <p class="text-muted small mb-3">Use the bank account shown above to complete the transfer and keep the reference number.</p>
+                                <div id="bankPaymentDetails" class="mb-3"></div>
+                                <a href="{% url 'frontend:transactions' %}" class="btn btn-primary btn-lg fw-bold">
+                                    <i class="bi bi-list-check"></i> View My Transactions
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- STK Push Waiting Section (hidden initially) -->
+                        <div class="mt-auto d-none" id="stkWaitingSection">
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-success mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <h5 class="fw-bold text-success mb-2">STK Push Sent!</h5>
+                                <p class="text-muted mb-1">A payment prompt has been sent to your phone.</p>
+                                <p class="text-muted small mb-3">Please check your phone and enter your M-PESA PIN to authorize the payment.</p>
+                                <div class="alert alert-warning py-2 small">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> 
+                                    Do not close this page. We are waiting for confirmation...
+                                </div>
+                                <div id="stkStatusMessage" class="mt-3"></div>
+                                <div id="stkCountdown" class="text-muted small mt-2">Checking payment status...</div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Success Section (hidden initially) -->
+                        <div class="mt-auto d-none" id="stkSuccessSection">
+                            <div class="text-center py-4">
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                                <h5 class="fw-bold text-success mt-3 mb-2">Payment Confirmed!</h5>
+                                <p class="text-muted mb-3">Your escrow deposit has been securely received.</p>
+                                <div id="paymentDetails" class="mb-3"></div>
+                                <a href="{% url 'frontend:transactions' %}" class="btn btn-primary btn-lg fw-bold">
+                                    <i class="bi bi-list-check"></i> View My Transactions
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Payment Failed Section (hidden initially) -->
+                        <div class="mt-auto d-none" id="stkFailedSection">
+                            <div class="text-center py-4">
+                                <i class="bi bi-x-circle-fill text-danger" style="font-size: 3rem;"></i>
+                                <h5 class="fw-bold text-danger mt-3 mb-2">Payment Failed</h5>
+                                <p id="failureMessage" class="text-muted mb-3">The payment was not completed.</p>
+                                <button onclick="resetPaymentForm()" class="btn btn-outline-success btn-lg fw-bold">
+                                    <i class="bi bi-arrow-clockwise"></i> Try Again
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+</div>
+
+<script>
+const CSRF_TOKEN = '{{ csrf_token }}';
+const TRANSACTION_ID = '{{ transaction.id }}';
+let pollInterval = null;
+let pollCount = 0;
+const MAX_POLLS = 40; // 40 polls at 3 seconds = 2 minutes timeout
+
+(function() {
+  var modeEl = document.getElementById('jointPaymentMode');
+  var splitSection = document.getElementById('splitPaySection');
+  var bankSection = document.getElementById('bankTransferSection');
+  var bankWaitingSection = document.getElementById('bankWaitingSection');
+  var memberSelect = document.getElementById('memberSelect');
+  var memberIdInput = document.getElementById('member_id');
+  var amountInput = document.getElementById('amount');
+  var phoneInput = document.getElementById('phone_number');
+  var paymentMethodInput = document.getElementById('payment_method');
+  var payBtn = document.getElementById('payBtn');
+  var depositorNameInput = document.getElementById('depositor_name');
+  var bankReferenceInput = document.getElementById('bank_reference');
+  if (!modeEl) return;
+
+  function syncMode() {
+    var split = (modeEl.value === 'split_m_pesa');
+    var bank = (modeEl.value === 'joint_bank_account');
+    if (splitSection) splitSection.classList.toggle('d-none', !split);
+    if (bankSection) bankSection.classList.toggle('d-none', !bank);
+    if (bankWaitingSection) bankWaitingSection.classList.add('d-none');
+    if (paymentMethodInput) paymentMethodInput.value = bank ? 'joint_bank_account' : 'm_pesa';
+    if (payBtn) {
+      payBtn.innerHTML = bank
+        ? '<i class="bi bi-bank"></i> Record Bank Transfer'
+        : '<i class="bi bi-shield-lock"></i> Send M-PESA STK Push';
+    }
+    if (phoneInput) {
+      phoneInput.required = !bank;
+      phoneInput.closest('.mb-3').classList.toggle('d-none', bank);
+    }
+    if (!split) {
+      if (memberIdInput) memberIdInput.value = '';
+      if (amountInput) amountInput.value = '';
+    }
+  }
+  modeEl.addEventListener('change', syncMode);
+  syncMode();
+
+  if (memberSelect) {
+    memberSelect.addEventListener('change', function() {
+      var opt = memberSelect.options[memberSelect.selectedIndex];
+      if (!opt || !opt.value) return;
+      if (memberIdInput) memberIdInput.value = opt.value;
+      if (amountInput) amountInput.value = opt.getAttribute('data-amount') || '';
+      var phone = opt.getAttribute('data-phone') || '';
+      if (phone && phoneInput) phoneInput.value = phone;
+    });
+  }
+})();
+
+document.getElementById('stkPushForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const paymentMethod = document.getElementById('payment_method').value;
+    const phoneEl = document.getElementById('phone_number');
+    const phone = phoneEl ? phoneEl.value.trim() : '';
+    const bankReference = document.getElementById('bank_reference');
+    const depositorName = document.getElementById('depositor_name');
+    if (paymentMethod !== 'joint_bank_account' && !phone) {
+        alert('Please enter your M-PESA phone number.');
+        return;
+    }
+    if (paymentMethod === 'joint_bank_account' && bankReference && !bankReference.value.trim()) {
+        alert('Please enter the bank transfer reference.');
+        return;
+    }
+    
+    // Disable button and show loading
+    const btn = document.getElementById('payBtn');
+    btn.disabled = true;
+    btn.innerHTML = paymentMethod === 'joint_bank_account'
+        ? '<span class="spinner-border spinner-border-sm me-2"></span> Recording bank transfer...'
+        : '<span class="spinner-border spinner-border-sm me-2"></span> Initiating STK Push...';
+    
+    // Send request to initiate STK Push
+    fetch('{% url "frontend:process_payment" transaction.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': CSRF_TOKEN,
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: new URLSearchParams({
+            'csrfmiddlewaretoken': CSRF_TOKEN,
+            'payment_method': paymentMethod,
+            'phone_number': phone,
+            'member_id': (document.getElementById('member_id') || {}).value || '',
+            'amount': (document.getElementById('amount') || {}).value || '',
+            'bank_reference': bankReference ? bankReference.value.trim() : '',
+            'depositor_name': depositorName ? depositorName.value.trim() : ''
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success' || data.status === 'stk_pushed') {
+            // Show waiting section
+            document.getElementById('paymentFormSection').classList.add('d-none');
+            document.getElementById('stkWaitingSection').classList.remove('d-none');
+            document.getElementById('bankWaitingSection').classList.add('d-none');
+            
+            // Start polling for payment status
+            if (data.checkout_request_id) {
+                startPolling(data.checkout_request_id);
+            } else {
+                // If no checkout_request_id (simulated), redirect after brief delay
+                setTimeout(() => {
+                    window.location.href = '{% url "frontend:transactions" %}';
+                }, 2000);
+            }
+        } else if (data.status === 'bank_pending') {
+            document.getElementById('paymentFormSection').classList.add('d-none');
+            document.getElementById('stkWaitingSection').classList.add('d-none');
+            document.getElementById('bankWaitingSection').classList.remove('d-none');
+            if (document.getElementById('bankPaymentDetails')) {
+                document.getElementById('bankPaymentDetails').innerHTML = `
+                    <div class="alert alert-success py-2 small">
+                        <strong>Reference:</strong> ${data.bank_reference || 'N/A'}<br>
+                        <strong>Escrow Reference:</strong> ${data.escrow_reference || 'N/A'}<br>
+                        <strong>Bank:</strong> ${data.bank_name || 'N/A'}<br>
+                        <strong>Account:</strong> ${data.bank_account_name || 'N/A'} (${data.bank_account_number || 'N/A'})
+                    </div>
+                `;
+            }
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = paymentMethod === 'joint_bank_account'
+                ? '<i class="bi bi-bank"></i> Record Bank Transfer'
+                : '<i class="bi bi-shield-lock"></i> Send M-PESA STK Push';
+            alert(data.message || 'Failed to initiate payment. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Payment error:', error);
+        btn.disabled = false;
+        btn.innerHTML = document.getElementById('payment_method').value === 'joint_bank_account'
+            ? '<i class="bi bi-bank"></i> Record Bank Transfer'
+            : '<i class="bi bi-shield-lock"></i> Send M-PESA STK Push';
+        alert('Network error. Please check your connection and try again.');
+    });
+});
+
+function startPolling(checkoutRequestId) {
+    pollCount = 0;
+    pollInterval = setInterval(() => {
+        pollCount++;
+        
+        if (pollCount > MAX_POLLS) {
+            clearInterval(pollInterval);
+            // Redirect to failure page on timeout
+            window.location.href = `{% url 'frontend:transaction_failed' transaction.id %}?reason=Payment+timed+out.+The+STK+Push+prompt+may+have+expired.`;
+            return;
+        }
+        
+        document.getElementById('stkCountdown').textContent = 
+            `Checking payment status... (${pollCount}/${MAX_POLLS})`;
+        
+        fetch(`/api/v1/mpesa/check-checkout-status/?checkout_request_id=${checkoutRequestId}&transaction_id=${TRANSACTION_ID}`, {
+            headers: { 'X-CSRFToken': CSRF_TOKEN }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.payment_status === 'completed') {
+                clearInterval(pollInterval);
+                showSuccess(data);
+            } else if (data.payment_status === 'failed') {
+                clearInterval(pollInterval);
+                // Redirect to failure page
+                var failMsg = data.message || 'Payment was declined or cancelled by the user.';
+                window.location.href = `{% url 'frontend:transaction_failed' transaction.id %}?reason=${encodeURIComponent(failMsg)}`;
+            }
+            // 'pending' status - continue polling
+        })
+        .catch(error => {
+            console.error('Poll error:', error);
+        });
+        
+    }, 3000); // Poll every 3 seconds
+}
+
+function showSuccess(data) {
+    document.getElementById('stkWaitingSection').classList.add('d-none');
+    document.getElementById('stkSuccessSection').classList.remove('d-none');
+    
+    if (data.escrow_reference) {
+        document.getElementById('paymentDetails').innerHTML = `
+            <div class="alert alert-success py-2 small">
+                <strong>Escrow Reference:</strong> ${data.escrow_reference}<br>
+                <strong>M-PESA Receipt:</strong> ${data.mpesa_receipt || 'N/A'}
+            </div>
+        `;
+    }
+}
+
+function showFailure(message) {
+    document.getElementById('stkWaitingSection').classList.add('d-none');
+    document.getElementById('stkFailedSection').classList.remove('d-none');
+    document.getElementById('failureMessage').textContent = message;
+}
+
+function resetPaymentForm() {
+    document.getElementById('stkFailedSection').classList.add('d-none');
+    document.getElementById('paymentFormSection').classList.remove('d-none');
+    document.getElementById('payBtn').disabled = false;
+    document.getElementById('payBtn').innerHTML = '<i class="bi bi-shield-lock"></i> Send M-PESA STK Push';
+}
+</script>
+{% endblock %}

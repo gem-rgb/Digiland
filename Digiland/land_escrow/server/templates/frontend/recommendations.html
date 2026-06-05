@@ -1,0 +1,249 @@
+{% extends 'frontend/base.html' %}
+{% load static %}
+
+{% block title %}Recommended For You - Digiland{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <span class="page-kicker"><i class="bi bi-stars"></i>AI-Powered</span>
+        <h2 class="page-title">Recommended for you</h2>
+        <p class="page-subtitle">Personalized land picks based on your browsing history, saved parcels, and location preferences.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'frontend:parcel_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-grid-3x3-gap"></i>Full Marketplace
+        </a>
+        <a href="{% url 'frontend:price_prediction' %}" class="btn btn-dark">
+            <i class="bi bi-graph-up-arrow"></i>Price Estimator
+        </a>
+    </div>
+</section>
+
+<!-- ─── RECOMMENDED FOR YOU ─── -->
+<section class="mb-5">
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <span class="rec-section-icon tone-accent"><i class="bi bi-magic"></i></span>
+        <div>
+            <h4 class="mb-0 fw-bold">
+                {% if rec_type == 'personalized' %}Tailored Picks{% else %}Trending Now{% endif %}
+            </h4>
+            <small class="text-muted">
+                {% if rec_type == 'personalized' %}
+                    Based on {{ recommended|length }} signals from your activity
+                {% else %}
+                    Most popular verified parcels on the platform
+                {% endif %}
+            </small>
+        </div>
+        {% if rec_type == 'personalized' %}
+        <span class="badge bg-success ms-auto px-3 py-2"><i class="bi bi-cpu me-1"></i>ML Personalized</span>
+        {% else %}
+        <span class="badge bg-info text-dark ms-auto px-3 py-2"><i class="bi bi-fire me-1"></i>Popular</span>
+        {% endif %}
+    </div>
+
+    {% if recommended %}
+    <div class="row g-3">
+        {% for item in recommended %}
+        {% with parcel=item.0 score=item.1 %}
+        <div class="col-sm-6 col-lg-4 col-xl-3">
+            <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}" class="rec-card">
+                <div class="rec-card__img">
+                    {% if parcel.image %}
+                    <img src="{{ parcel.image.url }}" alt="{{ parcel.parcel_number }}">
+                    {% else %}
+                    <div class="rec-card__placeholder">
+                        <i class="bi bi-geo-alt fs-1"></i>
+                    </div>
+                    {% endif %}
+                    {% if score > 0 %}
+                    <span class="rec-card__match">{{ score|floatformat:0 }}% match</span>
+                    {% endif %}
+                    <span class="rec-card__type">{{ parcel.land_use_type }}</span>
+                </div>
+                <div class="rec-card__body">
+                    <div class="rec-card__number">{{ parcel.parcel_number }}</div>
+                    <div class="rec-card__price">KES {{ parcel.displayed_price|floatformat:0 }}</div>
+                    <div class="rec-card__meta">
+                        <span><i class="bi bi-geo-alt me-1"></i>{{ parcel.ward }}, {{ parcel.county }}</span>
+                        <span><i class="bi bi-arrows-angle-expand me-1"></i>{{ parcel.land_size }} Acres</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state-card">
+        <i class="bi bi-search fs-1 d-block mb-3"></i>
+        <h5 class="fw-bold mb-2">No recommendations yet</h5>
+        <p class="text-muted mb-3">Browse a few parcels in the marketplace and we'll start building your personalized feed.</p>
+        <a href="{% url 'frontend:parcel_list' %}" class="btn btn-dark">
+            <i class="bi bi-grid-3x3-gap me-1"></i>Explore Marketplace
+        </a>
+    </div>
+    {% endif %}
+</section>
+
+<!-- ─── POPULAR IN COUNTY ─── -->
+{% if popular_parcels %}
+<section class="mb-5">
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <span class="rec-section-icon tone-info"><i class="bi bi-fire"></i></span>
+        <div>
+            <h4 class="mb-0 fw-bold">Popular in {{ popular_county }}</h4>
+            <small class="text-muted">Most viewed parcels in your preferred county</small>
+        </div>
+    </div>
+    <div class="row g-3">
+        {% for parcel in popular_parcels %}
+        <div class="col-sm-6 col-lg-4">
+            <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}" class="rec-card rec-card--compact">
+                <div class="rec-card__body">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="rec-rank">#{{ forloop.counter }}</span>
+                        <div>
+                            <div class="rec-card__number">{{ parcel.parcel_number }}</div>
+                            <div class="rec-card__price">KES {{ parcel.displayed_price|floatformat:0 }}</div>
+                            <div class="rec-card__meta">
+                                <span>{{ parcel.ward }}, {{ parcel.county }}</span>
+                                <span>{{ parcel.land_size }} Acres · {{ parcel.land_use_type }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- ─── RECENTLY VIEWED ─── -->
+{% if recently_viewed %}
+<section class="mb-5">
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <span class="rec-section-icon tone-purple"><i class="bi bi-clock-history"></i></span>
+        <div>
+            <h4 class="mb-0 fw-bold">Recently Viewed</h4>
+            <small class="text-muted">Continue where you left off</small>
+        </div>
+    </div>
+    <div class="row g-3">
+        {% for parcel in recently_viewed %}
+        <div class="col-sm-6 col-lg-4 col-xl-2">
+            <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}" class="rec-card rec-card--mini">
+                <div class="rec-card__img rec-card__img--sm">
+                    {% if parcel.image %}
+                    <img src="{{ parcel.image.url }}" alt="{{ parcel.parcel_number }}">
+                    {% else %}
+                    <div class="rec-card__placeholder"><i class="bi bi-geo-alt"></i></div>
+                    {% endif %}
+                </div>
+                <div class="rec-card__body">
+                    <div class="rec-card__number small">{{ parcel.parcel_number }}</div>
+                    <div class="rec-card__price small">KES {{ parcel.displayed_price|floatformat:0 }}</div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- ─── AI INSIGHTS ─── -->
+<section class="card mb-4">
+    <div class="card-header bg-dark">
+        <span><i class="bi bi-cpu me-2"></i>How Recommendations Work</span>
+    </div>
+    <div class="card-body">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="text-center mb-3">
+                    <span class="rec-section-icon tone-accent mx-auto"><i class="bi bi-eye"></i></span>
+                </div>
+                <h6 class="fw-bold text-center">Browsing Signals</h6>
+                <p class="text-muted small text-center mb-0">We analyze which parcels you view, how often, and for how long to understand your preferences.</p>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center mb-3">
+                    <span class="rec-section-icon tone-warning mx-auto"><i class="bi bi-heart"></i></span>
+                </div>
+                <h6 class="fw-bold text-center">Saved Favorites</h6>
+                <p class="text-muted small text-center mb-0">Parcels you save carry 3× the weight of views, helping us pinpoint your exact taste.</p>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center mb-3">
+                    <span class="rec-section-icon tone-info mx-auto"><i class="bi bi-graph-up"></i></span>
+                </div>
+                <h6 class="fw-bold text-center">Content Matching</h6>
+                <p class="text-muted small text-center mb-0">Our ML engine scores every available parcel by county, land use, price range, and size similarity.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+/* ─── Recommendation Cards ─── */
+.rec-section-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+}
+.rec-card {
+    display: block; text-decoration: none; color: inherit;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 16px; overflow: hidden;
+    transition: all .3s cubic-bezier(.4,0,.2,1);
+}
+.rec-card:hover {
+    border-color: rgba(16,185,129,.4); transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,.3); color: inherit;
+}
+.rec-card__img {
+    position: relative; height: 160px; overflow: hidden;
+    background: linear-gradient(135deg, rgba(16,185,129,.08), rgba(99,102,241,.08));
+}
+.rec-card__img img {
+    width: 100%; height: 100%; object-fit: cover;
+}
+.rec-card__img--sm { height: 90px; }
+.rec-card__placeholder {
+    height: 100%; display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,.2);
+}
+.rec-card__match {
+    position: absolute; top: 10px; left: 10px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff; font-size: .7rem; font-weight: 700;
+    padding: 4px 10px; border-radius: 8px;
+}
+.rec-card__type {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(0,0,0,.6); color: #e2e8f0;
+    font-size: .68rem; font-weight: 600;
+    padding: 3px 8px; border-radius: 6px;
+    backdrop-filter: blur(8px);
+}
+.rec-card__body { padding: 1rem; }
+.rec-card__number { font-weight: 700; font-size: .95rem; margin-bottom: 4px; }
+.rec-card__price { color: #10b981; font-weight: 800; font-size: 1.05rem; margin-bottom: 6px; }
+.rec-card__meta { display: flex; flex-direction: column; gap: 2px; font-size: .78rem; color: #94a3b8; }
+.rec-card--compact { border-radius: 14px; }
+.rec-card--compact .rec-card__body { padding: .85rem 1rem; }
+.rec-card--mini .rec-card__body { padding: .65rem .75rem; }
+.rec-rank {
+    width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+    background: rgba(16,185,129,.12); color: #10b981;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: .9rem;
+}
+.empty-state-card {
+    text-align: center; padding: 3rem 2rem;
+    background: rgba(255,255,255,.04); border: 1px dashed rgba(255,255,255,.15);
+    border-radius: 16px; color: #94a3b8;
+}
+</style>
+{% endblock %}

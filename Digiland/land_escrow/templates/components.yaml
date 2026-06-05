@@ -1,0 +1,5 @@
+# Slippers component registry
+# This file is required by the slippers package (used by allauth_ui).
+# Define reusable template components here if needed.
+# See: https://mitchel.me/slippers/docs/reference/components-yaml/
+components: {}

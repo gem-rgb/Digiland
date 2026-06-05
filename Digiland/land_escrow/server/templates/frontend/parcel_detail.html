@@ -1,0 +1,481 @@
+{% extends 'frontend/base.html' %}
+
+{% block title %}Parcel Details - Digiland{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <span class="page-kicker"><i class="bi bi-map"></i>Parcel profile</span>
+        <h2 class="page-title">{{ parcel.parcel_number }}</h2>
+        <p class="page-subtitle">Review parcel information, uploaded compliance documents, and the next available workflow actions.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'frontend:parcel_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>Back to Marketplace
+        </a>
+        {% if user.is_authenticated %}
+            {% if user.role == 'Admin' or user == parcel.listed_by %}
+                {% if parcel.verification_status == 'Awaiting_Documents' or parcel.verification_status == 'Pending' or parcel.verification_status == 'Disputed' %}
+                <a href="{% url 'frontend:parcel_edit' parcel.parcel_number %}" class="btn btn-dark">
+                    <i class="bi bi-pencil"></i>Edit Details
+                </a>
+                {% endif %}
+            {% endif %}
+        {% endif %}
+    </div>
+</section>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        {% if parcel.image %}
+        <div class="detail-media mb-4">
+            <img src="{{ parcel.image.url }}" alt="Property image">
+        </div>
+        {% endif %}
+
+        <section class="card mb-4">
+            <div class="card-header bg-dark d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-pin-map me-2"></i>Parcel overview</span>
+                <span class="badge {% if parcel.verification_status == 'Verified' %}bg-success{% elif parcel.verification_status == 'Disputed' or parcel.verification_status == 'Fraudulent' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                    {{ parcel.verification_status|title }}
+                </span>
+            </div>
+            <div class="card-body">
+                {% if parcel.verification_status == 'Awaiting_Documents' and user.is_authenticated and user == parcel.listed_by %}
+                <div class="alert alert-warning mb-4">
+                    <h5 class="mb-2"><i class="bi bi-shield-exclamation me-2"></i>Action required</h5>
+                    <p class="mb-0">Upload the required compliance documents to move this parcel into verification review.</p>
+                </div>
+                {% endif %}
+
+                <table class="table table-borderless detail-table mb-0">
+                    <tbody>
+                        <tr class="border-bottom">
+                            <th class="ps-0">Land Use Type</th>
+                            <td class="pe-0">{{ parcel.land_use_type }}</td>
+                        </tr>
+                        <tr class="border-bottom">
+                            <th class="ps-0">Full Location</th>
+                            <td class="pe-0">{{ parcel.ward }}, {{ parcel.constituency }}, {{ parcel.county }}</td>
+                        </tr>
+                        <tr class="border-bottom">
+                            <th class="ps-0">Total Area</th>
+                            <td class="pe-0">{{ parcel.land_size }} Acres</td>
+                        </tr>
+                        <tr class="border-bottom">
+                            <th class="ps-0">Registered Owner ID</th>
+                            <td class="pe-0">***{{ parcel.registered_owner_id|slice:"3:" }} (Protected)</td>
+                        </tr>
+                        <tr>
+                            <th class="ps-0">ArdhiSasa Sync</th>
+                            <td class="pe-0">
+                                {% if parcel.ardhisasa_last_synced %}
+                                    <span class="text-success"><i class="bi bi-check-circle me-1"></i>Synced {{ parcel.ardhisasa_last_synced|date:"M d, Y H:i" }}</span>
+                                {% else %}
+                                    <span class="text-muted"><i class="bi bi-clock me-1"></i>Pending synchronization</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        {% if user.role == 'Agent' or user.role == 'Admin' %}
+            {% if parcel.verification_status == 'Pending' %}
+            <section class="card mb-4 border-success">
+                <div class="card-header bg-success">
+                    <span><i class="bi bi-shield-check me-2"></i>Agent moderation oversight</span>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">Review the compliance file and decide whether this listing is ready to move into a verified state.</p>
+                    <form method="POST" action="{% url 'frontend:agent_verify_parcel' parcel.parcel_number %}" class="d-flex flex-wrap gap-2">
+                        {% csrf_token %}
+                        <button type="submit" name="verify_action" value="verify" class="btn btn-dark">
+                            <i class="bi bi-check-circle"></i>Approve Deed and Title
+                        </button>
+                        <button type="submit" name="verify_action" value="reject" class="btn btn-outline-danger">
+                            <i class="bi bi-x-circle"></i>Flag as Fraudulent
+                        </button>
+                    </form>
+                </div>
+            </section>
+            {% endif %}
+        {% endif %}
+
+        <section class="card">
+            <div class="card-header bg-dark d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-folder2-open me-2"></i>Compliance documents</span>
+                {% if user.is_authenticated %}
+                    {% if user.role == 'Admin' or user == parcel.listed_by %}
+                        {% if parcel.verification_status != 'Verified' %}
+                        <a href="{% url 'frontend:upload_document' parcel.parcel_number %}" class="btn btn-sm btn-light">
+                            <i class="bi bi-upload"></i>Upload Document
+                        </a>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if parcel.documents.all %}
+                <div class="doc-list">
+                    {% for doc in parcel.documents.all %}
+                    <div class="doc-row">
+                        <div>
+                            <div class="fw-semibold mb-1">
+                                <i class="bi bi-file-earmark-text text-info me-2"></i>{{ doc.get_document_type_display }}
+                                <span class="badge ms-2 {% if doc.verification_status == 'Match' %}bg-success{% elif doc.verification_status == 'Mismatch' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                    {{ doc.verification_status }}
+                                </span>
+                            </div>
+                            <div class="doc-meta">Uploaded {{ doc.uploaded_at|date:"M d, Y" }}</div>
+                        </div>
+                        {% if doc.file_url %}
+                        <a href="{{ doc.file_url.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-eye"></i>View
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No ownership or identity documents have been attached yet.</p>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+
+    <div class="col-lg-4">
+        {% if user.is_authenticated and user.role == 'Admin' %}
+        <section class="card sidebar-card">
+            <div class="card-header bg-warning">
+                <span><i class="bi bi-sliders me-2"></i>Admin record control</span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Administrative access to parcel editing, deletion, and escrow overrides.</p>
+                <div class="d-grid gap-2 mb-4">
+                    <span class="badge fs-6 p-2 {% if parcel.verification_status == 'Verified' %}bg-success{% elif parcel.verification_status == 'Fraudulent' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                        {{ parcel.verification_status|title }}
+                    </span>
+                    <a href="{% url 'frontend:parcel_edit' parcel.parcel_number %}" class="btn btn-warning">
+                        <i class="bi bi-pencil-square"></i>Edit Record
+                    </a>
+                    <a href="{% url 'frontend:parcel_delete' parcel.parcel_number %}" class="btn btn-outline-danger">
+                        <i class="bi bi-trash"></i>Terminate or Delete
+                    </a>
+                </div>
+
+                <div class="summary-box mb-4">
+                    <div class="summary-row">
+                        <span class="text-muted">Asking Price</span>
+                        <strong>KES {{ parcel.displayed_price }}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-muted">Size</span>
+                        <strong>{{ parcel.land_size }} Acres</strong>
+                    </div>
+                </div>
+
+                {% if parcel.verification_status == 'Verified' %}
+                <form action="{% url 'frontend:initiate_escrow' parcel.parcel_number %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-dark w-100">
+                        <i class="bi bi-lock-fill"></i>Initiate Escrow
+                    </button>
+                </form>
+                {% else %}
+                <button class="btn btn-secondary w-100" disabled>Parcel Not Yet Verified</button>
+                {% endif %}
+            </div>
+        </section>
+
+        {% elif user.is_authenticated and user.role == 'Agent' %}
+        <section class="card sidebar-card">
+            <div class="card-header bg-dark">
+                <span><i class="bi bi-shield-check me-2"></i>Agent review panel</span>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    {% if parcel.assigned_agent == user %}
+                        <div class="icon-chip icon-chip-lg tone-accent mx-auto mb-3">
+                            <i class="bi bi-person-check-fill"></i>
+                        </div>
+                        <h5 class="mb-2 text-success">Assigned to you</h5>
+                        <p class="text-muted small mb-0">This parcel is in your verification queue. Review compliance documents and submit your decision.</p>
+                    {% elif parcel.assigned_agent %}
+                        <div class="icon-chip icon-chip-lg tone-info mx-auto mb-3">
+                            <i class="bi bi-person-badge"></i>
+                        </div>
+                        <h5 class="mb-2 text-info">Assigned to another agent</h5>
+                        <p class="text-muted small mb-0">This parcel is being reviewed by {{ parcel.assigned_agent.email|truncatechars:25 }}.</p>
+                    {% else %}
+                        <div class="icon-chip icon-chip-lg tone-warning mx-auto mb-3">
+                            <i class="bi bi-person-dash"></i>
+                        </div>
+                        <h5 class="mb-2 text-warning">Unassigned</h5>
+                        <p class="text-muted small mb-0">This parcel has not been assigned to an agent for review yet.</p>
+                    {% endif %}
+                </div>
+
+                <div class="summary-box mb-4">
+                    <div class="summary-row">
+                        <span class="text-muted">Status</span>
+                        <span class="badge {% if parcel.verification_status == 'Verified' %}bg-success{% elif parcel.verification_status == 'Fraudulent' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                            {{ parcel.verification_status|title }}
+                        </span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-muted">Asking Price</span>
+                        <strong>KES {{ parcel.displayed_price }}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-muted">Size</span>
+                        <strong>{{ parcel.land_size }} Acres</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-muted">Owner ID</span>
+                        <strong>***{{ parcel.registered_owner_id|slice:"3:" }}</strong>
+                    </div>
+                </div>
+
+                {% if parcel.verification_status == 'Pending' and parcel.assigned_agent == user %}
+                <div class="d-grid gap-2 mb-3">
+                    <form method="POST" action="{% url 'frontend:agent_verify_parcel' parcel.parcel_number %}">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" name="verify_action" value="verify" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i>Approve — Verified
+                            </button>
+                            <button type="submit" name="verify_action" value="reject" class="btn btn-outline-danger"
+                                onclick="return confirm('Flag this parcel as fraudulent? This action cannot be easily undone.')">
+                                <i class="bi bi-x-circle"></i>Reject — Fraudulent
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+
+                <a href="{% url 'frontend:agent_dashboard' %}" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-arrow-left"></i>Back to Command Centre
+                </a>
+            </div>
+        </section>
+
+        {% elif user.is_authenticated and user == parcel.listed_by %}
+        <section class="card sidebar-card">
+            <div class="card-header bg-dark">
+                <span><i class="bi bi-bar-chart-steps me-2"></i>Listing status</span>
+            </div>
+            <div class="card-body">
+                <div class="status-track">
+                    <div class="status-step">
+                        <span class="status-marker {% if parcel.verification_status != 'Awaiting_Documents' %}is-complete{% else %}is-current{% endif %}">
+                            <i class="bi {% if parcel.verification_status != 'Awaiting_Documents' %}bi-check-lg{% else %}bi-1-circle{% endif %}"></i>
+                        </span>
+                        <div>
+                            <p class="fw-semibold mb-1">Submit compliance documents</p>
+                            <small class="text-muted">Title deed, ID, passport photo, and supporting consent files.</small>
+                        </div>
+                    </div>
+                    <div class="status-step">
+                        <span class="status-marker {% if parcel.verification_status == 'Verified' %}is-complete{% elif parcel.verification_status == 'Pending' %}is-current{% endif %}">
+                            <i class="bi {% if parcel.verification_status == 'Verified' %}bi-check-lg{% else %}bi-2-circle{% endif %}"></i>
+                        </span>
+                        <div>
+                            <p class="fw-semibold mb-1">Agent verification review</p>
+                            <small class="text-muted">Licensed staff cross-check the parcel before approval.</small>
+                        </div>
+                    </div>
+                    <div class="status-step">
+                        <span class="status-marker {% if parcel.verification_status == 'Verified' %}is-complete{% endif %}">
+                            <i class="bi bi-3-circle"></i>
+                        </span>
+                        <div>
+                            <p class="fw-semibold mb-1">Live on marketplace</p>
+                            <small class="text-muted">Your parcel becomes visible to qualified buyers.</small>
+                        </div>
+                    </div>
+                    <div class="status-step">
+                        <span class="status-marker">
+                            <i class="bi bi-4-circle"></i>
+                        </span>
+                        <div>
+                            <p class="fw-semibold mb-1">Receive payment</p>
+                            <small class="text-muted">Funds are released after the post-purchase review window.</small>
+                        </div>
+                    </div>
+                </div>
+
+                {% if parcel.verification_status == 'Awaiting_Documents' %}
+                <a href="{% url 'frontend:upload_document' parcel.parcel_number %}" class="btn btn-dark w-100 mt-4">
+                    <i class="bi bi-upload"></i>Upload Required Documents
+                </a>
+                {% elif parcel.verification_status == 'Pending' %}
+                <div class="alert alert-info mt-4 mb-0 status-callout">
+                    <i class="bi bi-hourglass-split fs-3 d-block mb-2"></i>
+                    <strong>Under review</strong>
+                    <p class="small mb-0 mt-1">Our agents are verifying your documents. This usually takes 1 to 3 business days.</p>
+                </div>
+                {% elif parcel.verification_status == 'Verified' %}
+                <div class="alert alert-success mt-4 mb-0 status-callout">
+                    <i class="bi bi-check-circle-fill fs-3 d-block mb-2"></i>
+                    <strong>Your listing is live</strong>
+                    <p class="small mb-0 mt-1">Buyers can now discover and purchase this property through Digiland.</p>
+                </div>
+                {% elif parcel.verification_status == 'Disputed' or parcel.verification_status == 'Fraudulent' %}
+                <div class="alert alert-danger mt-4 mb-0 status-callout">
+                    <i class="bi bi-x-octagon-fill fs-3 d-block mb-2"></i>
+                    <strong>Verification failed</strong>
+                    <p class="small mb-0 mt-1">Please review your documents, upload corrections, or contact support.</p>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        {% elif user.is_authenticated and user.role == 'Buyer' %}
+        <section class="card sidebar-card">
+            <div class="card-header bg-info d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-shield-lock me-2"></i>Purchase readiness</span>
+                <!-- Favorite Toggle -->
+                <form method="POST" action="{% url 'frontend:toggle_favorite' parcel.parcel_number %}" class="d-inline mb-0">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm {% if is_favorited %}btn-danger{% else %}btn-outline-light{% endif %} rounded-pill px-3" title="{% if is_favorited %}Remove from saved{% else %}Save parcel{% endif %}">
+                        <i class="bi {% if is_favorited %}bi-heart-fill{% else %}bi-heart{% endif %} me-1"></i>
+                        {% if is_favorited %}Saved{% else %}Save{% endif %}
+                    </button>
+                </form>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    {% if parcel.verification_status == 'Verified' %}
+                        <div class="icon-chip icon-chip-lg tone-accent mx-auto mb-3">
+                            <i class="bi bi-shield-fill-check"></i>
+                        </div>
+                        <h5 class="mb-2 text-success">Verified property</h5>
+                        <p class="text-muted small mb-0">This parcel has completed the Digiland verification flow and is ready for escrow.</p>
+                    {% else %}
+                        <div class="icon-chip icon-chip-lg tone-warning mx-auto mb-3">
+                            <i class="bi bi-shield-fill-exclamation"></i>
+                        </div>
+                        <h5 class="mb-2 text-warning">Awaiting verification</h5>
+                        <p class="text-muted small mb-0">This listing is not yet available for secure purchase.</p>
+                    {% endif %}
+                </div>
+
+                {% if parcel.verification_status == 'Verified' %}
+                <div class="summary-box mb-4">
+                    <div class="summary-row">
+                        <span class="text-muted">Asking Price</span>
+                        <strong>KES {{ parcel.displayed_price }}</strong>
+                    </div>
+                    {% if ai_price %}
+                    <div class="summary-row">
+                        <span class="text-muted"><i class="bi bi-cpu me-1"></i>AI Estimate</span>
+                        <strong class="text-info">KES {{ ai_price.total_value|floatformat:0 }}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-muted">Per Acre</span>
+                        <span class="small text-muted">KES {{ ai_price.price_per_acre|floatformat:0 }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="summary-row">
+                        <span class="text-muted">Size</span>
+                        <strong>{{ parcel.land_size }} Acres</strong>
+                    </div>
+                </div>
+
+                {% if ai_price %}
+                <div class="alert py-2 px-3 mb-3" style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:10px">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-graph-up-arrow text-success"></i>
+                        <small class="text-muted">
+                            AI confidence range: <strong class="text-light">KES {{ ai_price.confidence_low|floatformat:0 }} — {{ ai_price.confidence_high|floatformat:0 }}</strong>/acre
+                        </small>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="alert alert-info small mb-4">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Buyers receive a 7-day review window after payment to inspect the property and raise any valid dispute.
+                </div>
+
+                <div class="mb-3">
+                    <a class="btn btn-outline-primary btn-sm" href="{% url 'frontend:escrow_acts' %}">
+                        <i class="bi bi-journal-text me-1"></i>Read Kenyan land laws
+                    </a>
+                </div>
+
+                <form action="{% url 'frontend:initiate_escrow' parcel.parcel_number %}" method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Purchase mode</label>
+                        <select class="form-select" name="purchase_mode" id="purchase_mode">
+                            <option value="individual" selected>Individual purchase</option>
+                            {% if can_use_joint_purchase %}
+                            <option value="joint">Joint group purchase</option>
+                            {% endif %}
+                        </select>
+                        <div class="form-text">Choose “Joint group purchase” for chamas/couples buying together.</div>
+                    </div>
+
+                    {% if not can_use_joint_purchase %}
+                    <div class="alert alert-warning py-2 small">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        Joint group purchases are available after you choose the joint buyer account setup.
+                        <a href="{% url 'frontend:buyer_account_choice' %}">Set up joint account</a>.
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3" id="joint_group_wrap" style="display:none;">
+                        <label class="form-label fw-bold">Select joint group</label>
+                        <select class="form-select" name="joint_group_id">
+                            <option value="">— Select —</option>
+                            {% for g in joint_groups %}
+                                <option value="{{ g.id }}">{{ g.name }} ({{ g.members.count }} members)</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            Don’t have a group yet?
+                            <a href="{% url 'frontend:create_joint_group' %}">Create one</a>.
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-dark btn-lg w-100">
+                        <i class="bi bi-lock-fill"></i>Initiate Secure Escrow
+                    </button>
+                </form>
+                {% else %}
+                <button class="btn btn-secondary btn-lg w-100" disabled>Not Available for Purchase</button>
+                {% endif %}
+            </div>
+        </section>
+
+        {% else %}
+        <section class="card sidebar-card">
+            <div class="card-body text-center">
+                <i class="bi bi-person-lock fs-1 text-muted d-block mb-3"></i>
+                <h5 class="mb-2">Sign in required</h5>
+                <p class="text-muted small mb-4">You need a buyer account to initiate escrow on this property.</p>
+                <a href="{% url 'account_login' %}" class="btn btn-dark w-100">Sign In to Purchase</a>
+            </div>
+        </section>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  (function() {
+    var mode = document.getElementById('purchase_mode');
+    var wrap = document.getElementById('joint_group_wrap');
+    if (!mode || !wrap) return;
+    function sync() {
+      wrap.style.display = (mode.value === 'joint') ? 'block' : 'none';
+    }
+    mode.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+{% endblock %}

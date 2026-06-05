@@ -1,0 +1,128 @@
+groups:
+  - name: digiland-application
+    rules:
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate on Digiland"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency"
+          description: "P95 latency is {{ $value }}s (threshold: 5s)"
+
+      - alert: CeleryQueueBacklog
+        expr: celery_queue_length > 1000
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Celery queue backlog"
+          description: "Queue has {{ $value }} pending tasks"
+
+      - alert: DatabaseConnectionPoolExhausted
+        expr: django_db_connections_used / django_db_connections_max > 0.9
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection pool nearing exhaustion"
+
+      - alert: PaymentProcessingFailures
+        expr: rate(payment_transactions_failed_total[1h]) > 5
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Payment processing failures detected"
+          description: "{{ $value }} payment failures per hour (threshold: 5)"
+
+      # ── Authentication & Security Alerts ────────────────────────────────────
+
+      - alert: AuthFailureSpike
+        expr: rate(http_requests_total{status=~"401|403"}[5m]) > 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Spike in authentication failures"
+          description: "{{ $value }} auth failures per second (threshold: 10/s)"
+
+      - alert: BruteForceDetected
+        expr: increase(digiland_brute_force_events_total[15m]) > 3
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Brute-force attack detected"
+          description: "{{ $value }} brute-force lockouts in last 15 minutes"
+
+      - alert: MFAFailureSpike
+        expr: rate(digiland_mfa_failures_total[5m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Spike in MFA verification failures"
+          description: "{{ $value }} MFA failures per second"
+
+      - alert: SuspiciousActivity
+        expr: rate(digiland_fraud_score_events_total{score_threshold="high"}[1h]) > 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Suspicious user activity detected"
+          description: "{{ $value }} high-risk fraud score events per hour"
+
+      - alert: CeleryTaskFailureRate
+        expr: rate(celery_task_failed_total[5m]) / rate(celery_task_received_total[5m]) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Celery task failure rate"
+          description: "{{ $value | humanizePercentage }} of Celery tasks are failing (threshold: 10%)"
+
+      - alert: ZeroSuccessfulPayments
+        expr: increase(payment_transactions_successful_total[30m]) == 0
+        for: 30m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Zero successful payments in 30 minutes"
+          description: "No successful payment transactions in the last 30 minutes — possible gateway outage"
+
+  - name: digiland-infrastructure
+    rules:
+      - alert: HighMemoryUsage
+        expr: container_memory_usage_bytes / container_spec_memory_limit_bytes > 0.9
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container memory usage high"
+
+      - alert: PodCrashLooping
+        expr: rate(kube_pod_container_status_restarts_total[15m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pod {{ $labels.pod }} is crash looping"
+
+      - alert: PVCAlmostFull
+        expr: kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PVC {{ $labels.persistentvolumeclaim }} is {{ $value | humanizePercentage }} full"

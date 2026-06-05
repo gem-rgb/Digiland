@@ -1,0 +1,18 @@
+Digiland Land Escrow Platform has been deployed!
+
+Application URL: https://{{ .Values.ingress.hosts | first | default "digiland.co.ke" }}
+
+Components deployed:
+  - Web application ({{ .Values.replicaCount }} replicas)
+  {{- if .Values.celery.worker.enabled }}
+  - Celery workers ({{ .Values.celery.worker.replicaCount }} replicas)
+  {{- end }}
+  {{- if .Values.celery.beat.enabled }}
+  - Celery beat scheduler
+  {{- end }}
+
+To check deployment status:
+  kubectl get pods -n {{ .Release.Namespace }}
+
+To view application logs:
+  kubectl logs -f deployment/{{ include "digiland.fullname" . }} -n {{ .Release.Namespace }}

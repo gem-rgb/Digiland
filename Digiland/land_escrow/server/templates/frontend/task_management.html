@@ -1,0 +1,263 @@
+{% extends 'frontend/base.html' %}
+{% load static %}
+{% block title %}Task Management - Digiland{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <span class="page-kicker"><i class="bi bi-kanban"></i>Task Management</span>
+        <h2 class="page-title">Assignment workspace</h2>
+        <p class="page-subtitle">
+            {% if user.role == 'Admin' %}
+                Assign, reassign, and monitor parcel verification tasks from a single operational view.
+            {% else %}
+                Review your active verification workload and the tasks you have already completed.
+            {% endif %}
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'frontend:agent_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>Back to Command Centre
+        </a>
+    </div>
+</section>
+
+{% if user.role == 'Admin' %}
+<section class="card mb-4">
+    <div class="card-header bg-dark d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <div class="fw-bold"><i class="bi bi-person-lines-fill me-2"></i>Assignment control</div>
+            <p class="section-subtitle mt-1">Assign, reassign, or reclaim parcels from available agents.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            {% if all_pending_parcels %}
+            <span class="badge bg-warning text-dark rounded-pill">{{ all_pending_parcels|length }} pending</span>
+            {% endif %}
+            {% if unassigned_count %}
+            <span class="badge bg-danger rounded-pill">{{ unassigned_count }} unassigned</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if all_pending_parcels %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th class="ps-4 py-3">Parcel #</th>
+                        <th class="py-3">Seller</th>
+                        <th class="py-3">Location</th>
+                        <th class="py-3">Size</th>
+                        <th class="py-3">Assigned To</th>
+                        <th class="pe-4 py-3 text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for parcel in all_pending_parcels %}
+                    <tr class="{% if not parcel.assigned_agent %}table-warning{% endif %}">
+                        <td class="ps-4 py-3 fw-semibold"><samp>{{ parcel.parcel_number }}</samp></td>
+                        <td class="py-3 text-muted">{{ parcel.listed_by.email }}</td>
+                        <td class="py-3 text-muted">{{ parcel.ward }}, {{ parcel.county }}</td>
+                        <td class="py-3 text-muted">{{ parcel.land_size }} ha</td>
+                        <td class="py-3">
+                            {% if parcel.assigned_agent %}
+                            <span class="d-inline-flex align-items-center gap-2">
+                                <i class="bi bi-person-check-fill text-success"></i>
+                                <span class="small fw-semibold">{{ parcel.assigned_agent.email }}</span>
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark rounded-pill">
+                                <i class="bi bi-exclamation-triangle me-1"></i>Unassigned
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="pe-4 py-3">
+                            {% if verified_agents %}
+                            <form method="POST" action="{% url 'frontend:assign_task' %}" class="d-flex flex-wrap justify-content-end align-items-center gap-2">
+                                {% csrf_token %}
+                                <input type="hidden" name="parcel_number" value="{{ parcel.parcel_number }}">
+                                <input type="hidden" name="next" value="{% url 'frontend:task_management' %}">
+                                <select name="agent_id" class="form-select form-select-sm" required>
+                                    <option value="" disabled selected>
+                                        {% if parcel.assigned_agent %}Reassign to{% else %}Select agent{% endif %}
+                                    </option>
+                                    {% for agent in verified_agents %}
+                                    <option value="{{ agent.id }}" {% if parcel.assigned_agent.id == agent.id %}selected{% endif %}>
+                                        {{ agent.email }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-sm {% if parcel.assigned_agent %}btn-outline-secondary{% else %}btn-dark{% endif %}">
+                                    <i class="bi bi-send"></i>{% if parcel.assigned_agent %}Reassign{% else %}Assign{% endif %}
+                                </button>
+                            </form>
+                            {% endif %}
+                            {% if parcel.assigned_agent %}
+                            <div class="d-flex justify-content-end mt-2">
+                                <form method="POST" action="{% url 'frontend:unassign_task' parcel.parcel_number %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-link text-danger p-0" onclick="return confirm('Snatch back {{ parcel.parcel_number }} from {{ parcel.assigned_agent.email }}?')">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i>Unassign
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                            <p class="fw-semibold mb-0">No pending parcels requiring assignment.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-check2-all fs-1 d-block mb-3"></i>
+            <p class="fw-semibold mb-0">No pending parcels at the moment.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
+<div class="row g-4">
+    <div class="{% if user.role == 'Admin' %}col-lg-6{% else %}col-12{% endif %}">
+        <section class="card h-100">
+            <div class="card-header bg-dark d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-inbox me-2"></i>Allocated tasks</span>
+                {% if user.role == 'Admin' %}
+                <span class="badge bg-warning text-dark rounded-pill">{{ all_pending_parcels|length }}</span>
+                {% else %}
+                <span class="badge bg-warning text-dark rounded-pill">{{ pending_parcels|length }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th class="ps-4 py-3">Parcel #</th>
+                                <th class="py-3">Seller</th>
+                                {% if user.role == 'Admin' %}<th class="py-3">Assigned Agent</th>{% endif %}
+                                <th class="py-3">Size</th>
+                                <th class="pe-4 py-3 text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if user.role == 'Admin' %}
+                                {% for parcel in all_pending_parcels %}
+                                <tr>
+                                    <td class="ps-4 fw-semibold"><samp>{{ parcel.parcel_number }}</samp></td>
+                                    <td class="text-muted">{{ parcel.listed_by.email }}</td>
+                                    <td class="text-muted">
+                                        {% if parcel.assigned_agent %}
+                                        {{ parcel.assigned_agent.email }}
+                                        {% else %}
+                                        <span class="text-warning">Unassigned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-muted">{{ parcel.land_size }} ha</td>
+                                    <td class="pe-4 text-end">
+                                        <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}" class="btn btn-sm btn-dark">
+                                            <i class="bi bi-folder2-open"></i>Review
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                        <p class="fw-semibold mb-0">No allocated tasks.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                {% for parcel in pending_parcels %}
+                                <tr>
+                                    <td class="ps-4 fw-semibold"><samp>{{ parcel.parcel_number }}</samp></td>
+                                    <td class="text-muted">{{ parcel.listed_by.email }}</td>
+                                    <td class="text-muted">{{ parcel.land_size }} ha</td>
+                                    <td class="pe-4 text-end">
+                                        <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}" class="btn btn-sm btn-dark">
+                                            <i class="bi bi-folder2-open"></i>Review
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-5 text-muted">
+                                        <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                        <p class="fw-semibold mb-0">No parcels assigned to you yet.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="{% if user.role == 'Admin' %}col-lg-6{% else %}col-12{% endif %}">
+        <section class="card h-100">
+            <div class="card-header bg-info d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-check2-all me-2"></i>Completed tasks</span>
+                <span class="badge bg-light text-dark rounded-pill">{{ completed_parcels|length }}</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th class="ps-4 py-3">Parcel #</th>
+                                <th class="py-3">Seller</th>
+                                {% if user.role == 'Admin' %}<th class="py-3">Agent</th>{% endif %}
+                                <th class="py-3">Outcome</th>
+                                <th class="pe-4 py-3 text-end">View</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for parcel in completed_parcels %}
+                            <tr>
+                                <td class="ps-4 fw-semibold"><samp>{{ parcel.parcel_number }}</samp></td>
+                                <td class="text-muted">{{ parcel.listed_by.email }}</td>
+                                {% if user.role == 'Admin' %}
+                                <td class="text-muted">
+                                    {% if parcel.assigned_agent %}{{ parcel.assigned_agent.email }}{% else %}-{% endif %}
+                                </td>
+                                {% endif %}
+                                <td>
+                                    {% if parcel.verification_status == 'Verified' %}
+                                    <span class="badge bg-success">Approved</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                    {% endif %}
+                                </td>
+                                <td class="pe-4 text-end">
+                                    <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-eye"></i>View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="{% if user.role == 'Admin' %}5{% else %}4{% endif %}" class="text-center py-5 text-muted">
+                                    <i class="bi bi-journal-check fs-1 d-block mb-3"></i>
+                                    <p class="fw-semibold mb-0">No completed tasks yet.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

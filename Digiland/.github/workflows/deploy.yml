@@ -1,0 +1,564 @@
+# =============================================================================
+# Digiland — Deployment Pipeline
+# =============================================================================
+# Supports:
+#   - Rolling deployment to staging (auto on develop)
+#   - Blue-green deployment to production (auto on main)
+#   - Canary deployment option (manual trigger)
+#   - Health check verification at every stage
+#   - Automatic rollback on failure
+#   - Slack notifications on success/failure
+# =============================================================================
+
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types: [completed]
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+          - canary
+      image_tag:
+        description: "Docker image tag to deploy (default: latest SHA)"
+        required: false
+        type: string
+
+env:
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  KUBE_NAMESPACE_STAGING: digiland-staging
+  KUBE_NAMESPACE_PRODUCTION: digiland-production
+  DEPLOYMENT_NAME: digiland-web
+
+permissions:
+  contents: read
+  packages: read
+
+# ---------------------------------------------------------------------------
+# Jobs
+# ---------------------------------------------------------------------------
+jobs:
+  # =========================================================================
+  # DETERMINE DEPLOYMENT TARGET
+  # =========================================================================
+  prepare:
+    name: Determine Deployment Target
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    outputs:
+      environment: ${{ steps.resolve.outputs.environment }}
+      image_tag: ${{ steps.resolve.outputs.image_tag }}
+      namespace: ${{ steps.resolve.outputs.namespace }}
+    steps:
+      - name: Resolve deployment parameters
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            ENV="${{ github.event.inputs.environment }}"
+            TAG="${{ github.event.inputs.image_tag }}"
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            ENV="production"
+          elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+            ENV="staging"
+          else
+            ENV="none"
+          fi
+
+          # Default to current SHA if no tag specified
+          TAG="${TAG:-${{ github.sha }}}"
+
+          # Set namespace
+          case "$ENV" in
+            production|canary) NS="${{ env.KUBE_NAMESPACE_PRODUCTION }}" ;;
+            staging) NS="${{ env.KUBE_NAMESPACE_STAGING }}" ;;
+            *) NS="none" ;;
+          esac
+
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+          echo "image_tag=$TAG" >> $GITHUB_OUTPUT
+          echo "namespace=$NS" >> $GITHUB_OUTPUT
+
+          echo "Deploying to: $ENV"
+          echo "Image tag: $TAG"
+          echo "Namespace: $NS"
+
+  # =========================================================================
+  # ROLLING DEPLOYMENT — STAGING
+  # =========================================================================
+  deploy-staging:
+    name: Rolling Deploy → Staging
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: needs.prepare.outputs.environment == 'staging'
+    environment:
+      name: staging
+      url: https://staging.digiland.co.ke
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Pre-deploy — Run Django migrations
+        run: |
+          kubectl exec deployment/${{ env.DEPLOYMENT_NAME }} \
+            -n ${{ needs.prepare.outputs.namespace }} -- \
+            python manage.py migrate --noinput || echo "Migration via exec failed, will run on pod start"
+
+      - name: Rolling update — Apply new image
+        run: |
+          kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} \
+            web=${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.image_tag }} \
+            -n ${{ needs.prepare.outputs.namespace }}
+
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            --timeout=300s
+
+      - name: Post-deploy — Collect static files
+        run: |
+          kubectl exec deployment/${{ env.DEPLOYMENT_NAME }} \
+            -n ${{ needs.prepare.outputs.namespace }} -- \
+            python manage.py collectstatic --noinput || true
+
+      - name: Health check verification
+        run: |
+          STAGING_URL="https://staging.digiland.co.ke"
+          MAX_RETRIES=12
+          SLEEP_INTERVAL=10
+
+          for i in $(seq 1 $MAX_RETRIES); do
+            HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "${STAGING_URL}/api/v1/health/" 2>/dev/null || echo "000")
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              echo "✅ Staging health check PASSED (HTTP $HTTP_STATUS) on attempt $i"
+              exit 0
+            fi
+            echo "⏳ Staging health check attempt $i/$MAX_RETRIES — HTTP $HTTP_STATUS. Retrying in ${SLEEP_INTERVAL}s..."
+            sleep $SLEEP_INTERVAL
+          done
+
+          echo "❌ Staging health check FAILED after $MAX_RETRIES attempts"
+          exit 1
+
+      - name: Run smoke tests
+        run: |
+          STAGING_URL="https://staging.digiland.co.ke"
+          ENDPOINTS=("/api/v1/health/" "/admin/login/")
+
+          for endpoint in "${ENDPOINTS[@]}"; do
+            HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "${STAGING_URL}${endpoint}" 2>/dev/null || echo "000")
+            if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
+              echo "✅ Smoke test PASSED: ${endpoint} (HTTP $HTTP_STATUS)"
+            else
+              echo "⚠️  Smoke test WARNING: ${endpoint} (HTTP $HTTP_STATUS)"
+            fi
+          done
+
+      - name: Automatic rollback on failure
+        if: failure()
+        run: |
+          echo "🔄 Rolling back staging deployment due to failure..."
+          kubectl rollout undo deployment/${{ env.DEPLOYMENT_NAME }} \
+            -n ${{ needs.prepare.outputs.namespace }}
+
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            --timeout=120s
+
+          echo "✅ Rollback complete"
+
+      - name: Notify Slack — Staging Deploy
+        if: always()
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": "Staging Deployment ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ job.status == 'success' && ':white_check_mark' || ':x' }} *Staging Deployment ${{ job.status }}*\n• Image: `${{ needs.prepare.outputs.image_tag }}`\n• Strategy: Rolling Update\n• Commit: `${{ github.sha }}`\n• Actor: ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_STAGING }}
+        continue-on-error: true
+
+  # =========================================================================
+  # BLUE-GREEN DEPLOYMENT — PRODUCTION
+  # =========================================================================
+  deploy-production:
+    name: Blue-Green Deploy → Production
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: needs.prepare.outputs.environment == 'production'
+    environment:
+      name: production
+      url: https://digiland.co.ke
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Pre-deploy — Create database backup
+        run: |
+          BACKUP_TS=$(date +%Y%m%d_%H%M%S)
+          echo "Creating production database backup..."
+          kubectl exec deployment/digiland-db \
+            -n ${{ needs.prepare.outputs.namespace }} -- \
+            pg_dump -U digiland digiland > "backup_${BACKUP_TS}.sql" || {
+              echo "⚠️ Database backup failed. Aborting deployment."
+              exit 1
+            }
+          echo "✅ Database backup created: backup_${BACKUP_TS}.sql"
+
+      - name: Identify current deployment colour
+        id: colour
+        run: |
+          CURRENT=$(kubectl get service ${{ env.DEPLOYMENT_NAME }}-service \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            -o jsonpath='{.spec.selector.version}' 2>/dev/null || echo "blue")
+          NEXT=$([ "$CURRENT" = "blue" ] && echo "green" || echo "blue")
+          echo "current=$CURRENT" >> $GITHUB_OUTPUT
+          echo "next=$NEXT" >> $GITHUB_OUTPUT
+          echo "Current deployment: $CURRENT → Next deployment: $NEXT"
+
+      - name: Deploy ${{ steps.colour.outputs.next }} environment
+        run: |
+          NEXT_COLOUR="${{ steps.colour.outputs.next }}"
+          IMAGE="${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.image_tag }}"
+
+          # Create or update the next-colour deployment
+          cat <<EOF | kubectl apply -f -
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: ${{ env.DEPLOYMENT_NAME }}-\${NEXT_COLOUR}
+            namespace: ${{ needs.prepare.outputs.namespace }}
+            labels:
+              app: ${{ env.DEPLOYMENT_NAME }}
+              version: \${NEXT_COLOUR}
+          spec:
+            replicas: 3
+            selector:
+              matchLabels:
+                app: ${{ env.DEPLOYMENT_NAME }}
+                version: \${NEXT_COLOUR}
+            template:
+              metadata:
+                labels:
+                  app: ${{ env.DEPLOYMENT_NAME }}
+                  version: \${NEXT_COLOUR}
+              spec:
+                containers:
+                  - name: web
+                    image: \${IMAGE}
+                    ports:
+                      - containerPort: 8000
+                    readinessProbe:
+                      httpGet:
+                        path: /api/v1/health/
+                        port: 8000
+                      initialDelaySeconds: 10
+                      periodSeconds: 5
+                    livenessProbe:
+                      httpGet:
+                        path: /api/v1/health/
+                        port: 8000
+                      initialDelaySeconds: 30
+                      periodSeconds: 15
+                    resources:
+                      requests:
+                        cpu: 250m
+                        memory: 256Mi
+                      limits:
+                        cpu: 500m
+                        memory: 512Mi
+          EOF
+
+          # Wait for the new deployment to become ready
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }}-\${NEXT_COLOUR} \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            --timeout=300s
+
+          echo "✅ $NEXT_COLOUR deployment is ready"
+
+      - name: Run migrations on new deployment
+        run: |
+          NEXT_COLOUR="${{ steps.colour.outputs.next }}"
+          kubectl exec deployment/${{ env.DEPLOYMENT_NAME }}-\${NEXT_COLOUR} \
+            -n ${{ needs.prepare.outputs.namespace }} -- \
+            python manage.py migrate --noinput || echo "Migration warning"
+
+      - name: Health check — new deployment (internal)
+        run: |
+          NEXT_COLOUR="${{ steps.colour.outputs.next }}"
+          # Check the new pods directly before switching traffic
+          PODS=$(kubectl get pods -l app=${{ env.DEPLOYMENT_NAME }},version=${NEXT_COLOUR} \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            -o jsonpath='{.items[*].metadata.name}')
+
+          for pod in $PODS; do
+            STATUS=$(kubectl exec "$pod" \
+              -n ${{ needs.prepare.outputs.namespace }} -- \
+              curl -sf -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/health/ 2>/dev/null || echo "000")
+            if [ "$STATUS" != "200" ]; then
+              echo "❌ Pod $pod health check FAILED (HTTP $STATUS)"
+              exit 1
+            fi
+            echo "✅ Pod $pod health check PASSED"
+          done
+
+      - name: Switch traffic to ${{ steps.colour.outputs.next }}
+        run: |
+          NEXT_COLOUR="${{ steps.colour.outputs.next }}"
+          kubectl patch service ${{ env.DEPLOYMENT_NAME }}-service \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            -p "{\"spec\":{\"selector\":{\"app\":\"${{ env.DEPLOYMENT_NAME }}\",\"version\":\"${NEXT_COLOUR}\"}}}"
+
+          echo "✅ Traffic switched to $NEXT_COLOUR"
+
+      - name: Health check — production endpoint
+        run: |
+          PROD_URL="https://digiland.co.ke"
+          MAX_RETRIES=15
+          SLEEP_INTERVAL=10
+
+          for i in $(seq 1 $MAX_RETRIES); do
+            HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "${PROD_URL}/api/v1/health/" 2>/dev/null || echo "000")
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              echo "✅ Production health check PASSED (HTTP $HTTP_STATUS) on attempt $i"
+              exit 0
+            fi
+            echo "⏳ Production health check attempt $i/$MAX_RETRIES — HTTP $HTTP_STATUS. Retrying in ${SLEEP_INTERVAL}s..."
+            sleep $SLEEP_INTERVAL
+          done
+
+          echo "❌ Production health check FAILED after $MAX_RETRIES attempts"
+          exit 1
+
+      - name: Scale down old deployment
+        if: success()
+        run: |
+          CURRENT_COLOUR="${{ steps.colour.outputs.current }}"
+          kubectl scale deployment/${{ env.DEPLOYMENT_NAME }}-\${CURRENT_COLOUR} \
+            --replicas=0 \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            --timeout=60s || true
+          echo "✅ Old ($CURRENT_COLOUR) deployment scaled down"
+
+      - name: Automatic rollback on failure
+        if: failure()
+        run: |
+          CURRENT_COLOUR="${{ steps.colour.outputs.current }}"
+          NEXT_COLOUR="${{ steps.colour.outputs.next }}"
+          echo "🔄 ROLLING BACK — Switching traffic back to $CURRENT_COLOUR..."
+
+          kubectl patch service ${{ env.DEPLOYMENT_NAME }}-service \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            -p "{\"spec\":{\"selector\":{\"app\":\"${{ env.DEPLOYMENT_NAME }}\",\"version\":\"${CURRENT_COLOUR}\"}}}"
+
+          # Scale the next deployment back down
+          kubectl scale deployment/${{ env.DEPLOYMENT_NAME }}-\${NEXT_COLOUR} \
+            --replicas=0 \
+            -n ${{ needs.prepare.outputs.namespace }} || true
+
+          echo "✅ Rollback complete. Traffic restored to $CURRENT_COLOUR."
+
+      - name: Notify Slack — Production Deploy
+        if: always()
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": "Production Deployment ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ job.status == 'success' && ':white_check_mark' || ':x' }} *Production Deployment ${{ job.status }}*\n• Image: `${{ needs.prepare.outputs.image_tag }}`\n• Strategy: Blue-Green\n• Blue → Green switch: ${{ steps.colour.outputs.current }} → ${{ steps.colour.outputs.next }}\n• Commit: `${{ github.sha }}`\n• Actor: ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_PRODUCTION }}
+        continue-on-error: true
+
+  # =========================================================================
+  # CANARY DEPLOYMENT — PRODUCTION (OPTIONAL)
+  # =========================================================================
+  deploy-canary:
+    name: Canary Deploy → Production
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: needs.prepare.outputs.environment == 'canary'
+    environment:
+      name: canary
+      url: https://digiland.co.ke
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Deploy canary (1 replica = ~10% traffic)
+        run: |
+          IMAGE="${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.image_tag }}"
+
+          cat <<EOF | kubectl apply -f -
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: ${{ env.DEPLOYMENT_NAME }}-canary
+            namespace: ${{ needs.prepare.outputs.namespace }}
+            labels:
+              app: ${{ env.DEPLOYMENT_NAME }}
+              track: canary
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: ${{ env.DEPLOYMENT_NAME }}
+                track: canary
+            template:
+              metadata:
+                labels:
+                  app: ${{ env.DEPLOYMENT_NAME }}
+                  track: canary
+              spec:
+                containers:
+                  - name: web
+                    image: \${IMAGE}
+                    ports:
+                      - containerPort: 8000
+                    readinessProbe:
+                      httpGet:
+                        path: /api/v1/health/
+                        port: 8000
+                      initialDelaySeconds: 10
+                      periodSeconds: 5
+                    livenessProbe:
+                      httpGet:
+                        path: /api/v1/health/
+                        port: 8000
+                      initialDelaySeconds: 30
+                      periodSeconds: 15
+          EOF
+
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }}-canary \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            --timeout=180s
+
+      - name: Monitor canary for 5 minutes
+        run: |
+          echo "Monitoring canary deployment for 5 minutes..."
+          MONITOR_DURATION=300
+          CHECK_INTERVAL=30
+          ELAPSED=0
+          ERROR_COUNT=0
+          MAX_ERRORS=3
+
+          while [ $ELAPSED -lt $MONITOR_DURATION ]; do
+            # Check canary pod health
+            CANARY_PODS=$(kubectl get pods -l app=${{ env.DEPLOYMENT_NAME }},track=canary \
+              -n ${{ needs.prepare.outputs.namespace }} \
+              -o jsonpath='{.items[*].status.phase}')
+
+            for phase in $CANARY_PODS; do
+              if [ "$phase" != "Running" ]; then
+                ERROR_COUNT=$((ERROR_COUNT + 1))
+                echo "⚠️ Canary pod not running: $phase (errors: $ERROR_COUNT/$MAX_ERRORS)"
+              fi
+            done
+
+            if [ $ERROR_COUNT -ge $MAX_ERRORS ]; then
+              echo "❌ Canary health check failed too many times. Aborting."
+              exit 1
+            fi
+
+            echo "✅ Canary check passed at ${ELAPSED}s (errors: $ERROR_COUNT/$MAX_ERRORS)"
+            sleep $CHECK_INTERVAL
+            ELAPSED=$((ELAPSED + CHECK_INTERVAL))
+          done
+
+          echo "✅ Canary monitoring complete — no critical errors detected"
+
+      - name: Promote canary to full deployment
+        if: success()
+        run: |
+          IMAGE="${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.image_tag }}"
+
+          # Update the main deployment with the canary image
+          kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} \
+            web=$IMAGE \
+            -n ${{ needs.prepare.outputs.namespace }}
+
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} \
+            -n ${{ needs.prepare.outputs.namespace }} \
+            --timeout=300s
+
+          # Remove canary deployment
+          kubectl delete deployment/${{ env.DEPLOYMENT_NAME }}-canary \
+            -n ${{ needs.prepare.outputs.namespace }} --ignore-not-found=true
+
+          echo "✅ Canary promoted to full production deployment"
+
+      - name: Rollback canary on failure
+        if: failure()
+        run: |
+          echo "🔄 Removing canary deployment due to failure..."
+          kubectl delete deployment/${{ env.DEPLOYMENT_NAME }}-canary \
+            -n ${{ needs.prepare.outputs.namespace }} --ignore-not-found=true || true
+          echo "✅ Canary removed. Production traffic remains on stable deployment."
+
+      - name: Notify Slack — Canary Deploy
+        if: always()
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": "Canary Deployment ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ job.status == 'success' && ':white_check_mark' || ':x' }} *Canary Deployment ${{ job.status }}*\n• Image: `${{ needs.prepare.outputs.image_tag }}`\n• Strategy: Canary → Full Promote\n• Commit: `${{ github.sha }}`\n• Actor: ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_PRODUCTION }}
+        continue-on-error: true

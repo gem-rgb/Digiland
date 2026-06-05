@@ -1,0 +1,28 @@
+{% extends 'frontend/base.html' %}
+{% block content %}
+<section class="page-header">
+    <div>
+        <span class="page-kicker"><i class="bi bi-trash3"></i>Danger Zone</span>
+        <h2 class="page-title">Delete parcel {{ parcel.parcel_number }}</h2>
+        <p class="page-subtitle">This permanently removes the parcel and linked records.</p>
+    </div>
+</section>
+
+<section class="card form-shell form-shell-narrow">
+    <div class="card-header bg-danger">
+        <span><i class="bi bi-exclamation-triangle-fill me-2"></i>Irreversible action</span>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Deleting this parcel permanently removes linked escrow transactions, audit history, message links, and compliance documents.</p>
+        <div class="alert alert-warning text-start mt-4 mb-4">
+            <h5 class="mb-2"><i class="bi bi-shield-exclamation me-2"></i>Confirm before continuing</h5>
+            This operation cannot be undone once submitted.
+        </div>
+        <form method="POST" class="d-flex flex-wrap gap-2">
+            {% csrf_token %}
+            <a href="{% url 'frontend:parcel_detail' parcel.parcel_number %}" class="btn btn-outline-secondary flex-grow-1">Cancel</a>
+            <button type="submit" class="btn btn-danger flex-grow-1"><i class="bi bi-trash"></i>Delete Parcel</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,236 @@
+{% extends 'frontend/base.html' %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <span class="page-kicker"><i class="bi bi-exclamation-triangle"></i>Transaction Alert</span>
+        <h2 class="page-title">Transaction {{ status_label }}</h2>
+        <p class="page-subtitle">Reference: {{ transaction.id|stringformat:"s"|slice:":8"|upper }}</p>
+    </div>
+</section>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+
+        <!-- Status Hero Card -->
+        <div class="card border-0 shadow-lg mb-4">
+            <div class="card-body p-0">
+                <div class="text-center py-5 px-4
+                    {% if transaction.status == 'Reversed' %}bg-danger bg-opacity-10
+                    {% elif transaction.status == 'Refunded' %}bg-warning bg-opacity-10
+                    {% elif transaction.status == 'Disputed' %}bg-info bg-opacity-10
+                    {% else %}bg-secondary bg-opacity-10{% endif %}">
+
+                    {% if transaction.status == 'Reversed' %}
+                        <i class="bi bi-arrow-counterclockwise text-danger" style="font-size: 4rem;"></i>
+                        <h3 class="fw-bold text-danger mt-3">Payment Reversed</h3>
+                        <p class="text-muted lead mb-0">This transaction's payment has been reversed by an administrator. Funds are being returned to the buyer.</p>
+                    {% elif transaction.status == 'Refunded' %}
+                        <i class="bi bi-cash-stack text-warning" style="font-size: 4rem;"></i>
+                        <h3 class="fw-bold text-warning mt-3">Payment Refunded</h3>
+                        <p class="text-muted lead mb-0">The escrow deposit for this transaction has been fully refunded to the buyer's M-PESA account.</p>
+                    {% elif transaction.status == 'Disputed' %}
+                        <i class="bi bi-shield-exclamation text-info" style="font-size: 4rem;"></i>
+                        <h3 class="fw-bold text-info mt-3">Transaction Disputed</h3>
+                        <p class="text-muted lead mb-0">A formal dispute has been raised on this transaction. It is now under investigation by our escrow mediation team.</p>
+                    {% else %}
+                        <i class="bi bi-x-octagon text-secondary" style="font-size: 4rem;"></i>
+                        <h3 class="fw-bold text-secondary mt-3">Transaction Failed</h3>
+                        <p class="text-muted lead mb-0">This transaction could not be completed. Please review the details below.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Transaction Details -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-dark">
+                        <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Transaction Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="text-muted">Transaction ID</span>
+                                <strong>{{ transaction.id|stringformat:"s"|slice:":8"|upper }}...</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="text-muted">Land Parcel</span>
+                                <strong>{{ transaction.land_parcel.parcel_number }}</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="text-muted">Buyer</span>
+                                <strong>{{ transaction.buyer.email }}</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="text-muted">Seller</span>
+                                <strong>{{ transaction.seller.email }}</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="text-muted">Amount</span>
+                                <strong class="text-success">KES {{ transaction.agreed_price }}</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="text-muted">Escrow Reference</span>
+                                <strong>{{ transaction.escrow_reference|default:"N/A" }}</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="text-muted">Current Status</span>
+                                <span class="badge
+                                    {% if transaction.status == 'Reversed' %}bg-danger
+                                    {% elif transaction.status == 'Refunded' %}bg-warning text-dark
+                                    {% elif transaction.status == 'Disputed' %}bg-info
+                                    {% else %}bg-secondary{% endif %} p-2">
+                                    {{ transaction.get_status_display }}
+                                </span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span class="text-muted">Date Initiated</span>
+                                <strong>{{ transaction.created_at|date:"M d, Y H:i" }}</strong>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Failure Reason & Actions -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-dark">
+                        <h5 class="mb-0"><i class="bi bi-clipboard-x me-2"></i>Reason & Resolution</h5>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        {% if transaction.status == 'Reversed' %}
+                            <div class="alert alert-danger border-danger">
+                                <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill"></i> Reversal Details</h6>
+                                <p class="mb-1"><strong>Reason:</strong> {{ transaction.reversal_reason|default:"Administrative decision" }}</p>
+                                {% if transaction.reversal_reference %}
+                                    <p class="mb-1"><strong>Reversal Ref:</strong> {{ transaction.reversal_reference }}</p>
+                                {% endif %}
+                                {% if transaction.reversal_initiated_at %}
+                                    <p class="mb-0"><strong>Reversed On:</strong> {{ transaction.reversal_initiated_at|date:"M d, Y H:i" }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="legacy-subtle-panel mb-3">
+                                <h6 class="fw-bold"><i class="bi bi-question-circle"></i> What happens next?</h6>
+                                <ul class="mb-0 small">
+                                    <li>Your funds will be returned to the original M-PESA account within 24-48 hours.</li>
+                                    <li>You will receive an SMS confirmation from Safaricom once processed.</li>
+                                    <li>If you do not receive your refund within 48 hours, please contact support.</li>
+                                </ul>
+                            </div>
+
+                        {% elif transaction.status == 'Refunded' %}
+                            <div class="alert alert-warning border-warning">
+                                <h6 class="fw-bold mb-2"><i class="bi bi-cash-stack"></i> Refund Details</h6>
+                                <p class="mb-1"><strong>Reason:</strong> {{ reason|default:"The buyer exercised their right to a refund during the 7-day validation period." }}</p>
+                                {% if transaction.reversal_reference %}
+                                    <p class="mb-0"><strong>Refund Ref:</strong> {{ transaction.reversal_reference }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="legacy-subtle-panel mb-3">
+                                <h6 class="fw-bold"><i class="bi bi-question-circle"></i> What happens next?</h6>
+                                <ul class="mb-0 small">
+                                    <li>The escrow deposit has been released back to the buyer.</li>
+                                    <li>The land parcel is now available for new transactions.</li>
+                                    <li>Both parties may initiate a new escrow if they wish to renegotiate.</li>
+                                </ul>
+                            </div>
+
+                        {% elif transaction.status == 'Disputed' %}
+                            <div class="alert alert-info border-info">
+                                <h6 class="fw-bold mb-2"><i class="bi bi-shield-exclamation"></i> Dispute Details</h6>
+                                <p class="mb-1"><strong>Reason:</strong> {{ reason|default:"One or both parties have raised concerns about the legitimacy of this transaction." }}</p>
+                                <p class="mb-0"><strong>Status:</strong> Under investigation by the Digiland mediation team.</p>
+                            </div>
+                            <div class="legacy-subtle-panel mb-3">
+                                <h6 class="fw-bold"><i class="bi bi-question-circle"></i> What happens next?</h6>
+                                <ul class="mb-0 small">
+                                    <li>Escrow funds remain frozen until the dispute is resolved.</li>
+                                    <li>A Digiland agent will review all documentation and contact both parties.</li>
+                                    <li>Resolution typically takes 5-10 business days.</li>
+                                    <li>You may submit additional evidence via the support portal.</li>
+                                </ul>
+                            </div>
+
+                        {% else %}
+                            <div class="alert alert-secondary border-secondary">
+                                <h6 class="fw-bold mb-2"><i class="bi bi-x-octagon"></i> Failure Details</h6>
+                                <p class="mb-0"><strong>Reason:</strong> {{ reason|default:"The payment could not be processed. This may be due to insufficient funds, network timeout, or the STK Push prompt was declined." }}</p>
+                            </div>
+                            <div class="legacy-subtle-panel mb-3">
+                                <h6 class="fw-bold"><i class="bi bi-question-circle"></i> What you can do</h6>
+                                <ul class="mb-0 small">
+                                    <li>Ensure your M-PESA account has sufficient funds.</li>
+                                    <li>Check that your Safaricom line is active and has a network signal.</li>
+                                    <li>Try again from the contract page.</li>
+                                    <li>Contact support if the problem persists.</li>
+                                </ul>
+                            </div>
+                        {% endif %}
+
+                        <!-- Timeline -->
+                        <div class="mt-auto">
+                            <h6 class="fw-bold text-muted mb-3"><i class="bi bi-clock-history"></i> Transaction Timeline</h6>
+                            <div class="d-flex flex-column gap-2 small">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-circle-fill text-success me-2" style="font-size: 0.5rem;"></i>
+                                    <span>Escrow initiated — {{ transaction.created_at|date:"M d, Y H:i" }}</span>
+                                </div>
+                                {% if transaction.buyer_signature %}
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-circle-fill text-success me-2" style="font-size: 0.5rem;"></i>
+                                    <span>Buyer signed contract</span>
+                                </div>
+                                {% endif %}
+                                {% if transaction.seller_signature %}
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-circle-fill text-success me-2" style="font-size: 0.5rem;"></i>
+                                    <span>Seller signed contract</span>
+                                </div>
+                                {% endif %}
+                                {% if transaction.escrow_reference %}
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-circle-fill text-primary me-2" style="font-size: 0.5rem;"></i>
+                                    <span>Payment attempted — Ref: {{ transaction.escrow_reference }}</span>
+                                </div>
+                                {% endif %}
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-circle-fill text-danger me-2" style="font-size: 0.5rem;"></i>
+                                    <span class="fw-bold">{{ status_label }} — {{ transaction.updated_at|date:"M d, Y H:i" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="card border-0 shadow mt-4">
+            <div class="card-body text-center py-4">
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    <a href="{% url 'frontend:transactions' %}" class="btn btn-primary btn-lg fw-bold">
+                        <i class="bi bi-list-check"></i> View All Transactions
+                    </a>
+                    {% if transaction.status == 'Disputed' %}
+                        <a href="{% url 'frontend:support' %}" class="btn btn-outline-info btn-lg fw-bold">
+                            <i class="bi bi-headset"></i> Submit Evidence
+                        </a>
+                    {% endif %}
+                    {% if transaction.status != 'Reversed' and transaction.status != 'Refunded' %}
+                        <a href="{% url 'frontend:sign_contract' transaction.id %}" class="btn btn-outline-success btn-lg fw-bold">
+                            <i class="bi bi-file-earmark-text"></i> View Contract
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'frontend:support' %}" class="btn btn-outline-secondary btn-lg fw-bold">
+                        <i class="bi bi-envelope"></i> Contact Support
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Application Status - Digiland</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #dc2626;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0f172a;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            margin-top: 30px;
+        }
+        .reject-icon {
+            color: #dc2626;
+            font-size: 48px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .reason-box {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🛡️ Digiland System</div>
+        </div>
+        
+        <div class="content">
+            <div class="reject-icon">❌</div>
+            
+            <h2>Your Agent Application Status Update</h2>
+            
+            <p>Dear <strong>{{ agent.email }}</strong>,</p>
+            
+            <p>We regret to inform you that your agent application has been reviewed and could not be approved at this time.</p>
+            
+            <div class="reason-box">
+                <strong>Application Status: Rejected</strong>
+                <p>Your account has been deactivated and you will not be able to access the agent portal.</p>
+            </div>
+            
+            <p><strong>Common Reasons for Rejection:</strong></p>
+            <ul>
+                <li>Incomplete or invalid KYC documentation</li>
+                <li>Information provided could not be verified</li>
+                <li>Does not meet our agent qualification criteria</li>
+                <li>Professional references could not be confirmed</li>
+            </ul>
+            
+            <p><strong>Next Steps:</strong></p>
+            <p>If you believe this decision was made in error, or if you would like to submit a new application with updated documentation, please contact our support team.</p>
+            
+            <p><strong>Contact Information:</strong></p>
+            <ul>
+                <li>Email: support@digiland.com</li>
+                <li>Phone: +254 XXX XXX XXX</li>
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated message from the Digiland Land Escrow System.</p>
+            <p>© 2026 Digiland. All rights reserved.</p>
+            <p>We appreciate your interest in joining our agent network.</p>
+        </div>
+    </div>
+</body>
+</html>

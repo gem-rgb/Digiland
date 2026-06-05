@@ -1,0 +1,187 @@
+{% extends 'frontend/base.html' %}
+
+{% block title %}Messages - Digiland{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <span class="page-kicker"><i class="bi bi-chat-dots"></i>Messages</span>
+        <h2 class="page-title">{{ header }}</h2>
+        <p class="page-subtitle">Keep conversations organised across buyers, sellers, agents, and administrators.</p>
+    </div>
+</section>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        {% if mode == 'single' %}
+        <section class="card">
+            <div class="card-header bg-dark">
+                <span><i class="bi bi-envelope-open me-2"></i>Active threads</span>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for partner, msgs in threads.items %}
+                <div class="list-group-item px-4 py-4">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div class="d-flex gap-3 align-items-start">
+                            <span class="thread-avatar">{{ partner.email|first|upper }}</span>
+                            <div>
+                                <p class="fw-bold mb-1">{{ partner.email }}</p>
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <span class="badge bg-secondary rounded-pill">{{ partner.role }}</span>
+                                    <span class="text-muted small">{{ msgs.0.timestamp|date:"M d, Y" }}</span>
+                                </div>
+                                <p class="text-muted small fst-italic mt-2 mb-0">"{{ msgs.0.content|truncatechars:90 }}"</p>
+                            </div>
+                        </div>
+                        <span class="thread-count">{{ msgs|length }}</span>
+                    </div>
+                    <div class="thread-stack mt-4 ms-md-5 ps-md-3">
+                        {% for msg in msgs %}
+                        <div class="d-flex {% if msg.sender == user %}justify-content-end{% endif %}">
+                            <div class="thread-bubble {% if msg.sender == user %}thread-bubble-own{% endif %}">
+                                <div class="thread-meta">
+                                    {% if msg.sender == user %}You{% else %}{{ msg.sender.email }}{% endif %} · {{ msg.timestamp|date:"M d, H:i" }}
+                                </div>
+                                {{ msg.content }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                    <p class="fw-semibold mb-1">No messages in your inbox yet.</p>
+                    <small>Use the compose panel to start a conversation.</small>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        {% elif mode == 'dual' %}
+        <div class="row g-4">
+            <div class="col-md-6">
+                <section class="card h-100">
+                    <div class="card-header bg-info">
+                        <span><i class="bi bi-person-badge me-2"></i>Buyer threads</span>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for partner, msgs in buyer_threads.items %}
+                        <div class="list-group-item px-4 py-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2 gap-3">
+                                <div>
+                                    <p class="fw-bold mb-0 small">{{ partner.email }}</p>
+                                    <small class="text-muted">{{ msgs.0.timestamp|date:"M d, Y" }}</small>
+                                </div>
+                                <span class="thread-count">{{ msgs|length }}</span>
+                            </div>
+                            <div class="thread-stack">
+                                {% for msg in msgs %}
+                                <div class="d-flex {% if msg.sender == user %}justify-content-end{% endif %}">
+                                    <div class="thread-bubble {% if msg.sender == user %}thread-bubble-own{% endif %}">
+                                        {{ msg.content }}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-journal-x fs-3 d-block mb-2"></i>
+                            <small>No buyer threads yet.</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+            <div class="col-md-6">
+                <section class="card h-100">
+                    <div class="card-header bg-secondary">
+                        <span><i class="bi bi-house me-2"></i>Seller threads</span>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for partner, msgs in seller_threads.items %}
+                        <div class="list-group-item px-4 py-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2 gap-3">
+                                <div>
+                                    <p class="fw-bold mb-0 small">{{ partner.email }}</p>
+                                    <small class="text-muted">{{ msgs.0.timestamp|date:"M d, Y" }}</small>
+                                </div>
+                                <span class="thread-count">{{ msgs|length }}</span>
+                            </div>
+                            <div class="thread-stack">
+                                {% for msg in msgs %}
+                                <div class="d-flex {% if msg.sender == user %}justify-content-end{% endif %}">
+                                    <div class="thread-bubble {% if msg.sender == user %}thread-bubble-own{% endif %}">
+                                        {{ msg.content }}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-journal-x fs-3 d-block mb-2"></i>
+                            <small>No seller threads yet.</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        <section class="card compose-card sidebar-card">
+            <div class="card-header bg-dark">
+                <span><i class="bi bi-pencil-square me-2"></i>Compose message</span>
+            </div>
+            <div class="card-body">
+                {% if msg_error %}
+                <div class="alert alert-danger small mb-3">
+                    <i class="bi bi-exclamation-triangle me-1"></i>{{ msg_error }}
+                </div>
+                {% endif %}
+
+                {% if user.role in 'Buyer,Seller' %}
+                <div class="alert alert-info small mb-4">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Buyers and sellers can only message administrators or agents directly.
+                </div>
+                {% endif %}
+
+                <form method="POST" action="{% url 'frontend:send_message' %}">
+                    {% csrf_token %}
+
+                    {% if user.role == 'Admin' or user.role == 'Agent' %}
+                    <div class="mb-3">
+                        <label class="form-label">Recipient Email</label>
+                        <input type="email" name="receiver_email" class="form-control" placeholder="user@example.com" required title="Enter the registered email of the user you want to message">
+                        <div class="form-text">Type the exact signup email of any platform user.</div>
+                    </div>
+                    {% else %}
+                    <div class="mb-3">
+                        <label class="form-label">Send To</label>
+                        <select name="receiver_id" class="form-select" required>
+                            <option value="" disabled selected>Select a recipient</option>
+                            {% for recipient in allowed_recipients %}
+                            <option value="{{ recipient.id }}">{{ recipient.email }} ({{ recipient.role }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label">Message</label>
+                        <textarea name="content" class="form-control" rows="5" placeholder="Write your message here" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-dark w-100">
+                        <i class="bi bi-send"></i>Send Message
+                    </button>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

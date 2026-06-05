@@ -1,0 +1,227 @@
+/* =============================================================================
+   Digiland — Auth Stylesheet
+   Only auth-specific classes. Global design tokens come from main.css.
+   ============================================================================= */
+
+/* ── Auth Layout ────────────────────────────────────────────────────────────── */
+.auth-page body { background: #1a1714 !important; }
+
+/* Override page padding so auth pages fill the viewport */
+.auth-wrapper {
+  min-height: calc(100vh - 72px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+/* ── Auth Card ──────────────────────────────────────────────────────────────── */
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  /* glass-morphism inherits from .card in main.css;
+     override if auth uses its own element instead */
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Auth Header ────────────────────────────────────────────────────────────── */
+.auth-header {
+  text-align: center;
+  padding: 2.2rem 2rem 1.5rem;
+  background: rgba(26, 23, 20, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.auth-logo {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #1a1714 0%, #2a2520 100%);
+  border: 1px solid rgba(16,185,129,.35);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+  font-size: 1.75rem;
+  color: #10b981;
+}
+
+.auth-header h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #f5f0eb;
+  margin-bottom: 0.35rem;
+}
+
+.auth-header p {
+  color: rgba(245,240,235,.5);
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* ── Auth Body ──────────────────────────────────────────────────────────────── */
+.auth-body {
+  padding: 1.75rem 2rem 2rem;
+}
+
+/* ── Auth Form ──────────────────────────────────────────────────────────────── */
+.auth-form .form-group  { margin-bottom: 1.25rem; }
+
+.auth-form .form-label {
+  font-weight: 600;
+  color: rgba(245,240,235,.65);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.45rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auth-form .form-label a {
+  color: rgba(245,240,235,.4);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.8rem;
+  transition: color .15s;
+}
+
+.auth-form .form-label a:hover { color: #10b981; }
+
+/* form-control dark styling is in main.css; these are auth specifics */
+.auth-form .form-control {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+}
+
+.auth-form .btn {
+  width: 100%;
+  padding: 0.78rem;
+  font-weight: 700;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+}
+
+/* ── Auth Footer ────────────────────────────────────────────────────────────── */
+.auth-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255,255,255,.08);
+  color: rgba(245,240,235,.45);
+  font-size: 0.875rem;
+}
+
+.auth-footer a {
+  color: #10b981;
+  font-weight: 600;
+  transition: color .15s;
+}
+
+.auth-footer a:hover { color: #059669; text-decoration: underline; }
+
+/* ── Auth Alerts inside the form ────────────────────────────────────────────── */
+.auth-error {
+  background: rgba(239,68,68,.1);
+  border: 1px solid rgba(239,68,68,.3);
+  color: #fca5a5;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  font-size: 0.875rem;
+}
+
+.auth-success {
+  background: rgba(16,185,129,.1);
+  border: 1px solid rgba(16,185,129,.3);
+  color: #6ee7b7;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  font-size: 0.875rem;
+}
+
+/* ── Password Strength ──────────────────────────────────────────────────────── */
+.password-strength {
+  margin-top: 0.5rem;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255,255,255,.1);
+  transition: all .3s ease;
+}
+
+.password-strength.weak  { background: var(--danger);  width: 33%; }
+.password-strength.fair  { background: var(--warning); width: 66%; }
+.password-strength.strong{ background: var(--success); width: 100%; }
+
+/* ── Social Login Divider ───────────────────────────────────────────────────── */
+.social-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+  color: rgba(255,255,255,.25);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.social-divider::before,
+.social-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,.1);
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .auth-wrapper { padding: 1rem; }
+  .auth-header  { padding: 1.5rem 1.25rem 1.25rem; }
+  .auth-body    { padding: 1.25rem; }
+  .auth-header h1 { font-size: 1.35rem; }
+}
+
+/* ── Select / Dropdown Dark-Mode Fix ───────────────────────────────────────── */
+.auth-panel .form-select,
+.auth-panel-body .form-select,
+.auth-shell .form-select {
+  background-color: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f5f0eb;
+  /* Use a light-coloured SVG arrow so it's visible on dark bg */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23cbd5e1' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px 12px;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.5rem;
+}
+
+.auth-panel .form-select:focus,
+.auth-panel-body .form-select:focus,
+.auth-shell .form-select:focus {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: #10b981;
+  color: #f5f0eb;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.auth-panel .form-select option,
+.auth-panel-body .form-select option,
+.auth-shell .form-select option {
+  background: #211e1b;
+  color: #f5f0eb;
+  padding: 0.5rem;
+}
