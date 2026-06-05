@@ -458,3 +458,114 @@ body {
 .dark .hero-gradient-overlay {
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.85));
 }
+<<<<<<< HEAD
+=======
+
+/* ------------------------------------------------------------------ */
+/*  Hero Motion Enhancements                                           */
+/* ------------------------------------------------------------------ */
+
+.hero-grid-overlay {
+  background-image:
+    linear-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px);
+  background-size: 72px 72px;
+  background-position: center;
+  mask-image: radial-gradient(circle at center, black 42%, transparent 100%);
+  -webkit-mask-image: radial-gradient(circle at center, black 42%, transparent 100%);
+  pointer-events: none;
+}
+
+.dark .hero-grid-overlay {
+  background-image:
+    linear-gradient(rgba(110, 231, 183, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(110, 231, 183, 0.08) 1px, transparent 1px);
+}
+
+.hero-noise-overlay {
+  background-image: radial-gradient(rgba(15, 23, 42, 0.1) 0.6px, transparent 0.6px);
+  background-size: 7px 7px;
+  background-position: 0 0;
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+.dark .hero-noise-overlay {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.09) 0.6px, transparent 0.6px);
+  mix-blend-mode: screen;
+}
+
+.hero-ambient-fx {
+  will-change: opacity, scale, filter;
+  animation: hero-ambient-breathe 18s ease-in-out infinite both;
+}
+
+.hero-market-zone {
+  will-change: opacity, scale, filter;
+  animation: hero-market-zone-pulse 14s ease-in-out infinite both;
+}
+
+.hero-floating-indicator {
+  will-change: opacity, translate, scale, box-shadow, border-color, background-color;
+  animation-name: hero-indicator-float;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  animation-fill-mode: both;
+}
+
+.hero-right-card,
+.ecosystem-card {
+  will-change: transform, opacity, box-shadow, border-color, background-color;
+}
+
+@keyframes hero-ambient-breathe {
+  0%, 100% {
+    opacity: 0.45;
+    scale: 0.96;
+    filter: blur(44px);
+  }
+  50% {
+    opacity: 0.82;
+    scale: 1.05;
+    filter: blur(54px);
+  }
+}
+
+@keyframes hero-market-zone-pulse {
+  0%, 100% {
+    opacity: 0.42;
+    scale: 0.96;
+    filter: blur(26px);
+  }
+  50% {
+    opacity: 0.74;
+    scale: 1.08;
+    filter: blur(32px);
+  }
+}
+
+@keyframes hero-indicator-float {
+  0% {
+    translate: 0 0;
+    scale: 1;
+  }
+  100% {
+    translate: 0 -8px;
+    scale: 1.015;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-entrance-item,
+  .hero-ambient-fx,
+  .hero-market-zone,
+  .hero-floating-indicator,
+  .hero-right-card,
+  .ecosystem-card {
+    animation: none !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
+}
+>>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836

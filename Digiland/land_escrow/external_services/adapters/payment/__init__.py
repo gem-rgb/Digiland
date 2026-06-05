@@ -202,14 +202,22 @@ class StripeAdapter(PaymentProvider):
     """Stripe payment adapter using the official ``stripe`` Python SDK.
 
     Configuration (via Django settings):
+<<<<<<< HEAD
         ``STRIPE_API_KEY`` — Stripe secret key.
+=======
+        ``STRIPE_API_KEY`` or ``STRIPE_SECRET_KEY`` — Stripe secret key.
+>>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
     """
 
     PROVIDER_NAME = "stripe"
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(provider_name=self.PROVIDER_NAME, service_type="payment", **kwargs)
+<<<<<<< HEAD
         self._api_key: str = getattr(settings, "STRIPE_API_KEY", "")
+=======
+        self._api_key: str = getattr(settings, "STRIPE_API_KEY", "") or getattr(settings, "STRIPE_SECRET_KEY", "")
+>>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
         self._stripe_mod = None
 
     def _get_stripe(self):
@@ -251,7 +259,11 @@ class StripeAdapter(PaymentProvider):
     def validate_configuration(self) -> ValidationResult:
         errors = []
         if not self._api_key:
+<<<<<<< HEAD
             errors.append("STRIPE_API_KEY is not configured")
+=======
+            errors.append("STRIPE_API_KEY/STRIPE_SECRET_KEY is not configured")
+>>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
         return ValidationResult(is_valid=len(errors) == 0, errors=errors)
 
     # -- payment operations -----------------------------------------------

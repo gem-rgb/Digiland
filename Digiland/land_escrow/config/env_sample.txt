@@ -101,6 +101,16 @@ PAYSTACK_PUBLIC_KEY=pk_test_xxxxxxxxxxxxxxxxxxxx
 PAYSTACK_SECRET_KEY=sk_test_xxxxxxxxxxxxxxxxxxxx
 
 # =============================================================================
+<<<<<<< HEAD
+=======
+# Stripe (Optional payment gateway)
+# =============================================================================
+STRIPE_PUBLIC_KEY=pk_test_xxxxxxxxxxxxxxxxxxxx
+STRIPE_SECRET_KEY=sk_test_xxxxxxxxxxxxxxxxxxxx
+STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxxxxxxx
+
+# =============================================================================
+>>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
 # GavaConnect KRA API (Kenya Revenue Authority)
 # =============================================================================
 # App: Digiland — PIN Checker BY ID

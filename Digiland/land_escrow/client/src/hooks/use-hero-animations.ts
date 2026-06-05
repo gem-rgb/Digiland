@@ -6,9 +6,45 @@
  * Replaces the previous CSS-only animation approach with a more expressive,
  * choreographed motion system.
  */
+<<<<<<< HEAD
 import { useEffect, useRef, useCallback } from 'react';
 import anime from 'animejs';
 
+=======
+import { useEffect, useRef, useState } from 'react';
+import anime from 'animejs';
+
+function prefersReducedMotion() {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return false;
+  }
+
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function revealHeroElements(hero: HTMLElement) {
+  const selectors = [
+    '.hero-entrance-item',
+    '.hero-trust-item',
+    '.hero-right-card',
+    '.hero-stat-card',
+    '.hero-ambient-fx',
+    '.hero-market-chip',
+    '.hero-floating-indicator',
+  ];
+
+  selectors.forEach((selector) => {
+    hero.querySelectorAll<HTMLElement>(selector).forEach((element) => {
+      element.style.opacity = '1';
+      element.style.transform = 'none';
+      element.style.clipPath = 'none';
+      element.style.animation = 'none';
+      element.style.filter = 'none';
+    });
+  });
+}
+
+>>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
 /* ------------------------------------------------------------------ */
 /*  Master Hero Timeline                                               */
 /* ------------------------------------------------------------------ */
@@ -25,6 +61,7 @@ export function useHeroEntrance() {
   const hasPlayed = useRef(false);
 
   useEffect(() => {
+<<<<<<< HEAD
     if (!heroRef.current || hasPlayed.current) return;
     hasPlayed.current = true;
 
@@ -101,6 +138,137 @@ export function useHeroEntrance() {
       delay: anime.stagger(100, { start: 1300 }),
       easing: 'easeOutCubic',
     });
+=======
+    const hero = heroRef.current;
+    if (!hero || hasPlayed.current) return;
+
+    if (prefersReducedMotion()) {
+      hasPlayed.current = true;
+      revealHeroElements(hero);
+      return;
+    }
+
+    const play = () => {
+      if (hasPlayed.current) return;
+      hasPlayed.current = true;
+
+      const leftItems = hero.querySelectorAll('.hero-entrance-item');
+      anime({
+        targets: leftItems,
+        opacity: [0, 1],
+        translateY: [24, 0],
+        duration: 700,
+        delay: anime.stagger(120, { start: 180 }),
+        easing: 'easeOutCubic',
+      });
+
+      const badge = hero.querySelector('.hero-badge');
+      if (badge) {
+        anime({
+          targets: badge,
+          opacity: [0, 1],
+          scale: [0.9, 1],
+          duration: 520,
+          delay: 90,
+          easing: 'easeOutCubic',
+        });
+      }
+
+      const headline = hero.querySelector('.hero-headline');
+      if (headline) {
+        anime({
+          targets: headline,
+          opacity: [0, 1],
+          clipPath: ['inset(0 100% 0 0)', 'inset(0 0% 0 0)'],
+          duration: 820,
+          delay: 320,
+          easing: 'easeInOutQuart',
+        });
+      }
+
+      const trustItems = hero.querySelectorAll('.hero-trust-item');
+      anime({
+        targets: trustItems,
+        opacity: [0, 1],
+        translateX: [-12, 0],
+        duration: 480,
+        delay: anime.stagger(70, { start: 980 }),
+        easing: 'easeOutCubic',
+      });
+
+      const rightCards = hero.querySelectorAll('.hero-right-card');
+      anime({
+        targets: rightCards,
+        opacity: [0, 1],
+        translateX: [36, 0],
+        scale: [0.97, 1],
+        duration: 600,
+        delay: anime.stagger(130, { start: 460 }),
+        easing: 'easeOutCubic',
+      });
+
+      const statCards = hero.querySelectorAll('.hero-stat-card');
+      anime({
+        targets: statCards,
+        opacity: [0, 1],
+        translateY: [14, 0],
+        scale: [0.96, 1],
+        duration: 480,
+        delay: anime.stagger(90, { start: 1200 }),
+        easing: 'easeOutCubic',
+      });
+
+      const ambientFx = hero.querySelectorAll('.hero-ambient-fx');
+      anime({
+        targets: ambientFx,
+        opacity: [0, 1],
+        duration: 900,
+        delay: anime.stagger(120, { start: 80 }),
+        easing: 'easeOutCubic',
+      });
+
+      const marketChips = hero.querySelectorAll('.hero-market-chip');
+      anime({
+        targets: marketChips,
+        opacity: [0, 1],
+        translateY: [12, 0],
+        scale: [0.985, 1],
+        duration: 620,
+        delay: anime.stagger(120, { start: 900 }),
+        easing: 'easeOutCubic',
+      });
+
+      const floatingIndicators = hero.querySelectorAll('.hero-floating-indicator');
+      anime({
+        targets: floatingIndicators,
+        opacity: [0, 1],
+        duration: 560,
+        delay: anime.stagger(100, { start: 1180 }),
+        easing: 'easeOutCubic',
+      });
+    };
+
+    if (typeof IntersectionObserver === 'undefined') {
+      play();
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          play();
+          observer.disconnect();
+        }
+      },
+      {
+        threshold: 0.18,
+        rootMargin: '48px 0px -8% 0px',
+      }
+    );
+
+    observer.observe(hero);
+    return () => observer.disconnect();
+>>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
   }, []);
 
   return heroRef;
@@ -184,9 +352,12 @@ export function useJourneyCycler(sceneCount: number, interval = 3500) {
   return { activeScene, containerRef };
 }
 
+<<<<<<< HEAD
 // We need useState for the cycler hook
 import { useState } from 'react';
 
+=======
+>>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
 /* ------------------------------------------------------------------ */
 /*  Verification Timeline Animation                                    */
 /* ------------------------------------------------------------------ */
@@ -419,15 +590,29 @@ export function useHeroParticles() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
+<<<<<<< HEAD
     if (!canvas) return;
+=======
+    if (!canvas || prefersReducedMotion()) return;
+>>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     const resize = () => {
+<<<<<<< HEAD
       canvas.width = canvas.offsetWidth * window.devicePixelRatio;
       canvas.height = canvas.offsetHeight * window.devicePixelRatio;
       ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+=======
+      const pixelRatio = window.devicePixelRatio || 1;
+      const width = Math.max(1, Math.round(canvas.offsetWidth));
+      const height = Math.max(1, Math.round(canvas.offsetHeight));
+
+      canvas.width = Math.round(width * pixelRatio);
+      canvas.height = Math.round(height * pixelRatio);
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+>>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
     };
     resize();
     window.addEventListener('resize', resize);
@@ -496,7 +681,11 @@ export function useCtaHover() {
   const ctaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+<<<<<<< HEAD
     if (!ctaRef.current) return;
+=======
+    if (!ctaRef.current || prefersReducedMotion()) return;
+>>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
     const buttons = ctaRef.current.querySelectorAll('.hero-cta-btn');
 
     const handleEnter = (e: Event) => {

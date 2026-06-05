@@ -20,7 +20,11 @@ import { SellerPromotionsPage } from './pages/seller-promotions-page.js';
 import { PromotionTiersPage } from './pages/promotion-tiers-page.js';
 import { SponsoredAdsPage } from './pages/sponsored-ads-page.js';
 import { PaymentMethodSelector } from './components/checkout/payment-method-selector.js';
+<<<<<<< HEAD
 import { useHeroEntrance, useJourneyCycler, useTimelineAnimation, useProgressBars, useEscrowFlow, useAgentGrid, useHeroParticles, useCtaHover } from './hooks/use-hero-animations.js';
+=======
+import { HeroShowcase } from './components/landing/hero-showcase.js';
+>>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
 
 const bootstrap = readBootstrap();
 const kshFormatter = new Intl.NumberFormat('en-KE', {
@@ -1153,6 +1157,7 @@ function LandingPage() {
   const parcels = bootstrap.parcels || [];
   const stats = bootstrap.stats || [];
 
+<<<<<<< HEAD
   // ── Anime.js hooks ──
   const heroRef = useHeroEntrance();
   const { activeScene, containerRef: journeyContainerRef } = useJourneyCycler(6, 3500);
@@ -1217,6 +1222,8 @@ function LandingPage() {
     { icon: FileText, label: 'Inspection Report' },
   ];
 
+=======
+>>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
   return (
     <PublicShell
       title={bootstrap.title}
@@ -1226,6 +1233,7 @@ function LandingPage() {
       actions={bootstrap.actions}
     >
       <div className="space-y-8">
+<<<<<<< HEAD
         {/* ── HERO SECTION ── */}
         <section
           ref={heroRef}
@@ -1495,6 +1503,14 @@ function LandingPage() {
             </div>
           </div>
         </section>
+=======
+        <HeroShowcase
+          notice={bootstrap.notice}
+          stats={stats}
+          csrfToken={bootstrap.csrf_token}
+          isAuthenticated={Boolean(bootstrap.user)}
+        />
+>>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
 
         {/* ── HOW IT WORKS SECTION ── */}
         <section id="how-it-works" className="space-y-4">

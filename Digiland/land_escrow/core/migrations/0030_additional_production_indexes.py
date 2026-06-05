@@ -12,7 +12,10 @@
 #   - Transaction.created_at   — chronological ordering / cleanup jobs
 #   - LandParcel.verification_status — admin verification queue
 #   - LandParcel.listed_by     — seller's parcel listing page
+<<<<<<< HEAD
 #   - LandParcel.created_at    — chronological listing & cleanup
+=======
+>>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
 
 
 from django.db import migrations, models
@@ -55,6 +58,7 @@ class Migration(migrations.Migration):
             model_name='landparcel',
             index=models.Index(fields=['listed_by'], name='idx_landparcel_listed_by'),
         ),
+<<<<<<< HEAD
         migrations.AddIndex(
             model_name='landparcel',
             index=models.Index(
@@ -62,4 +66,6 @@ class Migration(migrations.Migration):
                 name='idx_landparcel_created_at',
             ),
         ),
+=======
+>>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
     ]
