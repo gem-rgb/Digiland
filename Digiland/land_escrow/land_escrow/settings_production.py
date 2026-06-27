@@ -23,8 +23,6 @@ SERVERLESS = bool(
     or os.getenv("RENDER")
 )
 
-SECRET_KEY = config("SECRET_KEY")  # No default — must be set in prod
-
 ALLOWED_HOSTS = [
     h.strip()
     for h in config("ALLOWED_HOSTS", default=".vercel.app,localhost,127.0.0.1").split(",")

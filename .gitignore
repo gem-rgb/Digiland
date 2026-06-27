@@ -5,6 +5,11 @@ Digiland/land_escrow/venv/
 Digiland/land_escrow/.venv/
 
 # Django env files
+/.env
+/.env.local
+/.env.development
+/.env.production
+/.env.test
 Digiland/land_escrow/.env
 Digiland/land_escrow/.env.*
 
@@ -23,4 +28,3 @@ Digiland/land_escrow/staticfiles/
 # Frontend build outputs
 Digiland/land_escrow/client/node_modules/
 Digiland/land_escrow/client/dist/
-

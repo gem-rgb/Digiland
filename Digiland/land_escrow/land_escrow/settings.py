@@ -10,10 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
-from pathlib import Path
+import logging
 import sys
+from pathlib import Path
 from urllib.parse import unquote, urlparse
+
 from decouple import config
+from django.core.exceptions import ImproperlyConfigured
 
 try:
     import dj_database_url
@@ -22,6 +25,7 @@ except ImportError:  # pragma: no cover - deployment installs the package
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+logger = logging.getLogger(__name__)
 
 
 def database_config_from_url(database_url, conn_max_age=60, ssl_require=False):
@@ -72,10 +76,21 @@ def database_config_from_url(database_url, conn_max_age=60, ssl_require=False):
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
+def _required_env(name):
+    """Load a required environment variable with a clear failure mode."""
+    value = config(name, default="").strip()
+    if not value and "test" not in sys.argv:
+        message = f"Missing environment variable: {name}"
+        logger.critical(message)
+        raise ImproperlyConfigured(
+            f"{message}. Set it in Vercel Project Settings -> Environment Variables "
+            f"or in your local .env file before starting the app."
+        )
+    return value
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
-# SECURITY: SECRET_KEY must be set via environment variable in production.
-# In development, a fixed default is acceptable but must NEVER be used in production.
-SECRET_KEY = config('SECRET_KEY')  # No default — must be explicitly set
+SECRET_KEY = _required_env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
