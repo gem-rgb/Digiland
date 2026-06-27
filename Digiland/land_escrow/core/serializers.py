@@ -62,8 +62,9 @@ class UserMinimalSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=10)
 
-    # SECURITY: Admin role cannot be self-assigned
-    VALID_ROLES = ['Buyer', 'Seller', 'Agent']
+    # SECURITY: Validate against the model's allowed roles.
+    # Admin self-assignment is blocked in the view so registration returns 403.
+    VALID_ROLES = [role for role, _ in User.ROLE_CHOICES]
 
     class Meta:
         model = User

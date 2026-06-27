@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import sys
 from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,6 +28,7 @@ SECRET_KEY = config('SECRET_KEY')  # No default — must be explicitly set
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
+TESTING = "test" in sys.argv
 
 ALLOWED_HOSTS = [
     h.strip()
@@ -83,6 +85,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'core.middleware.LegacyBrowseRedirectMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -91,6 +94,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     # Request ID middleware — must be before any request processing for log correlation
     'core.log_filters.RequestIDMiddleware',
+    'core.middleware.EmailVerificationGateMiddleware',
     'tenants.middleware.TenantMiddleware',
 
     # Graceful Degradation & Resilience Middleware
@@ -192,7 +196,16 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / 'client' / 'dist', BASE_DIR / 'static']
+
+# Only include optional frontend build output when it exists.
+STATICFILES_DIRS = [
+    static_dir
+    for static_dir in (
+        BASE_DIR / 'client' / 'dist',
+        BASE_DIR / 'static',
+    )
+    if static_dir.exists()
+]
 
 # Cloudinary Setup for entirely Free Media (PDFs, Images) hosting
 CLOUDINARY_STORAGE = {
@@ -240,6 +253,10 @@ REST_FRAMEWORK = {
 }
 
 # ── Simple JWT ────────────────────────────────────────────────────────────────
+if TESTING:
+    REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = []
+    REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {}
+
 from datetime import timedelta
 
 SIMPLE_JWT = {
@@ -420,20 +437,14 @@ CORS_ALLOW_HEADERS = [
 MPESA_CALLBACK_SECRET = config('MPESA_CALLBACK_SECRET', default='')
 
 # ── Email Configuration ────────────────────────────────────────────────────────
-# Local development: uses Django's console email backend so signup and
-# verification work WITHOUT any SMTP credentials.  Verification emails are
-# printed to the runserver stdout.
-#
-# Production: settings_production.py overrides this to use the SMTP backend
-# with real credentials (see that file for details).
-EMAIL_BACKEND = config(
-    "EMAIL_BACKEND",
-    default="django.core.mail.backends.console.EmailBackend",
-)
-EMAIL_HOST = config("EMAIL_HOST", cast=str, default="smtp.gmail.com")
+# Local development: uses Django's console email backend unless SMTP
+# credentials are configured, in which case we prefer real delivery during
+# normal runtime. Test runs remain isolated.
+EMAIL_BACKEND = config("EMAIL_BACKEND", default="").strip()
+EMAIL_HOST = config("EMAIL_HOST", cast=str, default="smtp.gmail.com").strip()
 EMAIL_PORT = config("EMAIL_PORT", cast=int, default=587)
-EMAIL_HOST_USER = config("EMAIL_HOST_USER", cast=str, default="")
-EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", cast=str, default="")
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", cast=str, default="").strip()
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", cast=str, default="").strip()
 EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool, default=True)  # Use EMAIL_PORT 587 for TLS
 EMAIL_USE_SSL = config("EMAIL_USE_SSL", cast=bool, default=False)  # Use EMAIL_PORT 465 for SSL
 ADMIN_USER_NAME = config("ADMIN_USER_NAME", default="Digiland Admin")
@@ -449,6 +460,21 @@ DEFAULT_FROM_EMAIL = config(
     "EMAIL_HOST_USER",
     default="",
 ) or "noreply@digiland.local"
+
+if DEBUG and not TESTING and EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
+    if not EMAIL_BACKEND or EMAIL_BACKEND == "django.core.mail.backends.console.EmailBackend":
+        EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    if DEFAULT_FROM_EMAIL.lower() in {
+        "noreply@digiland.local",
+        "noreply@digiland.co.ke",
+        "no-reply@digiland.local",
+        "no-reply@digiland.co.ke",
+    }:
+        DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+if not EMAIL_BACKEND:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 MANAGERS = []

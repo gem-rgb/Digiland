@@ -3,7 +3,6 @@ from rest_framework.routers import DefaultRouter
 
 from . import views
 from . import api_views
-from . import auth_views
 
 router = DefaultRouter()
 router.register(r'land-parcels', views.LandParcelViewSet)
@@ -44,6 +43,7 @@ urlpatterns = [
     path('mpesa/initiate', api_views.initiate_mpesa_payment_view, name='initiate-mpesa'),
     path('mpesa/status', api_views.query_mpesa_status_view, name='query-mpesa-status'),
     path('mpesa/callback', api_views.MpesaCallbackView.as_view(), name='mpesa-callback'),
+    path('mpesa/callback/', api_views.MpesaCallbackView.as_view(), name='mpesa-callback-slash'),
     path('mpesa/b2b', api_views.b2b_payment_view, name='b2b-payment'),
     path('mpesa/reverse', api_views.reverse_transaction_view, name='reverse-transaction'),
     path('mpesa/transaction-status', api_views.query_transaction_status_view, name='query-transaction-status'),
@@ -103,52 +103,6 @@ urlpatterns = [
     path('payments/stripe/create/', api_views.stripe_create_payment_intent, name='stripe-create-payment-intent'),
     path('payments/stripe/webhook/', api_views.stripe_webhook_view, name='stripe-webhook'),
 
-    # ==================== MFA & AUTH (Enhanced) ====================
-    path('auth/mfa/setup/', auth_views.mfa_setup_view, name='mfa-setup'),
-    path('auth/mfa/verify/', auth_views.mfa_verify_view, name='mfa-verify'),
-    path('auth/mfa/disable/', auth_views.mfa_disable_view, name='mfa-disable'),
-    path('auth/mfa/recovery-codes/', auth_views.mfa_regenerate_recovery_view, name='mfa-regenerate-recovery'),
-    path('auth/mfa/login-verify/', auth_views.mfa_login_verify_view, name='mfa-login-verify'),
-    path('auth/mfa/status/', auth_views.mfa_status_view, name='mfa-status'),
-
-    # ==================== DEVICE TRUST ====================
-    path('auth/devices/trust/', auth_views.device_trust_view, name='device-trust'),
-    path('auth/devices/', auth_views.trusted_device_list_view, name='device-list'),
-    path('auth/devices/<uuid:pk>/', auth_views.trusted_device_revoke_view, name='device-revoke'),
-
-    # ==================== SESSION MANAGEMENT ====================
-    path('auth/sessions/', auth_views.active_sessions_view, name='session-list'),
-    path('auth/sessions/revoke-all/', auth_views.active_session_revoke_view, name='session-revoke-all'),
-    path('auth/sessions/<uuid:pk>/', auth_views.session_detail_revoke_view, name='session-revoke'),
-
-    # ==================== OAUTH / SSO ====================
-    path('auth/oauth/providers/', auth_views.oauth_providers_list_view, name='oauth-providers-list'),
-    path('auth/oauth/<str:provider>/authorize/', auth_views.oauth_init_view, name='oauth-authorize'),
-    path('auth/oauth/<str:provider>/callback/', auth_views.oauth_callback_view, name='oauth-callback'),
-    path('auth/oauth/accounts/', auth_views.oauth_accounts_list_view, name='oauth-accounts-list'),
-    path('auth/oauth/accounts/<uuid:pk>/', auth_views.oauth_account_unlink_view, name='oauth-account-unlink'),
-    path('auth/oauth/admin/providers/', auth_views.oauth_provider_admin_list_view, name='oauth-admin-provider-list'),
-    path('auth/oauth/admin/providers/<uuid:pk>/', auth_views.oauth_provider_admin_detail_view, name='oauth-admin-provider-detail'),
-
-    # ==================== PASSWORD RESET ====================
-    path('auth/password-reset/request/', auth_views.reset_password_request_view, name='password-reset-request'),
-    path('auth/password-reset/confirm/', auth_views.reset_password_confirm_view, name='password-reset-confirm'),
-
-    # ==================== EMAIL VERIFICATION ====================
-    path('auth/email/verify/', auth_views.email_verify_view, name='email-verify'),
-
-    # ==================== STEP-UP AUTH ====================
-    path('auth/step-up/', auth_views.step_up_auth_view, name='step-up-auth'),
-
-    # ==================== CHANGE PASSWORD ====================
-    path('auth/change-password/', auth_views.change_password_view, name='change-password'),
-
-    # ==================== PERMISSIONS & RBAC ====================
-    path('auth/permissions/', auth_views.permissions_list_view, name='permissions-list'),
-    path('auth/roles/permissions/', auth_views.role_permissions_view, name='role-permissions'),
-    path('auth/roles/permissions/assign/', auth_views.role_permission_assign_view, name='role-permission-assign'),
-    path('auth/roles/permissions/<uuid:pk>/', auth_views.role_permission_remove_view, name='role-permission-remove'),
-
-    # ==================== LOGIN ATTEMPTS (Admin) ====================
-    path('auth/login-attempts/', auth_views.login_attempts_view, name='login-attempts'),
+    # ==================== PRICE PREDICTION ====================
+    path('price-prediction/', api_views.price_prediction_api, name='price-prediction-api'),
 ]

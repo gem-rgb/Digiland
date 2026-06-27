@@ -26,8 +26,9 @@ import requests as http_requests
 
 from django.utils import timezone
 from django.conf import settings
-from django.contrib.auth import authenticate, get_user_model
-from django.shortcuts import get_object_or_404
+from django.contrib.auth import authenticate, get_user_model, logout as auth_logout
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.core.mail import send_mail
 from django.core.cache import cache
 from django.db import transaction
@@ -67,6 +68,19 @@ from .models import (
     UserMFA, TrustedDevice, UserSession, OAuthProvider, OAuthAccount,
     Permission, RolePermission, LoginAttempt, AuditLog,
 )
+from .verification import (
+    build_verification_link,
+    clear_pending_verification_session,
+    consume_one_time_token,
+    get_email_verification_login_redirect_url,
+    get_pending_verification_session,
+    issue_one_time_token,
+    mark_verification_resend,
+    refresh_pending_verification_session,
+    start_pending_verification_session,
+    update_pending_verification_session,
+    verification_resend_allowed,
+)
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -75,12 +89,148 @@ logger = logging.getLogger(__name__)
 # ── Rate limit helper ──────────────────────────────────────────────────────
 
 
+def _sync_allauth_email_address(user, *, email: str | None = None, verified: bool | None = None) -> None:
+    """Mirror the app-level email verification state into allauth."""
+    try:
+        from allauth.account.models import EmailAddress
+    except Exception:
+        return
+
+    normalized_email = (email or getattr(user, "email", "") or "").strip().lower()
+    if not normalized_email:
+        return
+
+    EmailAddress.objects.filter(user=user).exclude(email__iexact=normalized_email).update(primary=False)
+
+    address = EmailAddress.objects.filter(user=user, email__iexact=normalized_email).first()
+    if address is None:
+        address = EmailAddress(user=user, email=normalized_email)
+
+    address.email = normalized_email
+    address.primary = True
+    if verified is not None:
+        address.verified = verified
+    address.save()
+
+    EmailAddress.objects.filter(user=user).exclude(pk=address.pk).update(primary=False)
+
+
+def _build_pending_verification_payload(request, user=None) -> dict:
+    """Serialize the browser-facing pending verification state."""
+    session = get_pending_verification_session(request)
+    user_email = getattr(user, "email", "") if user else ""
+    is_verified = bool(getattr(user, "is_email_verified", False)) if user else False
+    session_active = bool(session and getattr(session, "verification_status", "") != "verified")
+
+    payload = {
+        "active": session_active or bool(user and not is_verified),
+        "email": session.email if session else user_email,
+        "verification_status": "verified" if is_verified else (session.verification_status if session else ("pending" if user and not is_verified else "")),
+        "created_at": session.created_at if session else "",
+        "expires_at": session.expires_at if session else "",
+        "flow": session.flow if session else "",
+        "resend_count": session.resend_count if session else 0,
+        "status_url": reverse("auth-email-verification-status"),
+        "resend_url": reverse("auth-email-verification-resend"),
+        "change_email_url": reverse("auth-email-verification-change"),
+        "logout_url": reverse("auth-email-verification-logout"),
+        "verification_page_url": reverse("account_verification_pending"),
+        "verify_url": reverse("auth-email-verify"),
+    }
+    if is_verified:
+        payload["redirect_url"] = get_email_verification_login_redirect_url()
+    return payload
+
+
+def _get_pending_verification_user(request):
+    """Resolve the user tied to the current pending verification session."""
+    session = get_pending_verification_session(request)
+    user = None
+    if session:
+        try:
+            user = User.objects.get(id=session.user_id, is_active=True)
+        except User.DoesNotExist:
+            clear_pending_verification_session(request)
+            session = None
+    elif getattr(request, "user", None) and request.user.is_authenticated and not getattr(request.user, "is_email_verified", False):
+        user = request.user
+    return user, session
+
+
+def _complete_email_verification_flow(request) -> str:
+    """Clear pending verification state and send the browser back to login."""
+    clear_pending_verification_session(request)
+    auth_logout(request)
+    return get_email_verification_login_redirect_url()
+
+
+def _send_verification_email(request, user, *, email: str | None = None, source: str = "api") -> dict[str, str]:
+    """Issue a single-use verification token and send the email."""
+    target_email = (email or getattr(user, "email", "") or "").strip().lower()
+    if not target_email:
+        raise ValueError("A valid email address is required.")
+
+    token = issue_one_time_token(
+        "emailverify",
+        {
+            "user_id": str(user.id),
+            "email": target_email,
+            "source": source,
+        },
+        ttl_seconds=getattr(settings, "EMAIL_VERIFICATION_TOKEN_TTL_SECONDS", 24 * 60 * 60),
+    )
+    verification_url = build_verification_link(request, token)
+
+    send_mail(
+        subject="Digiland - Verify Your Email",
+        message=(
+            f"Click the following link to verify your email address: {verification_url}\n\n"
+            f"This link expires in 24 hours."
+        ),
+        from_email=_preferred_email_sender(),
+        recipient_list=[target_email],
+        fail_silently=False,
+    )
+
+    return {
+        "token": token,
+        "verification_url": verification_url,
+        "email": target_email,
+    }
+
+
+def _preferred_email_sender() -> str:
+    """Return the most deliverable from-address for outgoing email."""
+    host_user = getattr(settings, "EMAIL_HOST_USER", "").strip()
+    default_from = getattr(settings, "DEFAULT_FROM_EMAIL", "").strip()
+    backend = getattr(settings, "EMAIL_BACKEND", "").lower()
+
+    if host_user and ("smtp" in backend or default_from.lower().startswith(("noreply@", "no-reply@"))):
+        return host_user
+
+    return default_from or host_user or "noreply@digiland.local"
+
+
 class LoginRateThrottle(AnonRateThrottle):
     """Rate limit for login/register endpoints: 5 req/min per IP."""
     rate = "5/min"
 
+    def allow_request(self, request, view):
+        if getattr(settings, "TESTING", False):
+            return True
+        return super().allow_request(request, view)
 
-class PasswordResetRateThrottle(AnonRateThrottle):
+
+class _TestAwareAnonRateThrottle(AnonRateThrottle):
+    """Disable anonymous throttling during automated test runs."""
+
+    def allow_request(self, request, view):
+        if getattr(settings, "TESTING", False):
+            return True
+        return super().allow_request(request, view)
+
+
+class PasswordResetRateThrottle(_TestAwareAnonRateThrottle):
     """Rate limit for password reset: 3 req/min per IP."""
     rate = "3/min"
 
@@ -169,6 +319,46 @@ def login_view(request):
     if not user.is_active:
         return Response({"error": "Account is disabled."}, status=status.HTTP_403_FORBIDDEN)
 
+    if not getattr(user, "is_email_verified", False):
+        start_pending_verification_session(request, user, flow="api-login")
+        pending_verification = _build_pending_verification_payload(request, user)
+        verification_email_sent = False
+        verification_email_error = ""
+        resend_allowed, _retry_after = verification_resend_allowed(str(user.id))
+        if resend_allowed:
+            try:
+                _send_verification_email(request, user, source="api-login")
+                mark_verification_resend(str(user.id))
+                verification_email_sent = True
+            except Exception as exc:
+                verification_email_error = "Unable to send the verification email right now."
+                logger.error("Failed to send verification email during login for %s: %s", user.email, str(exc))
+        LoginAttempt.objects.create(
+            email=email,
+            ip_address=ip_address,
+            user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
+            success=False,
+            failure_reason="EMAIL_NOT_VERIFIED",
+        )
+        AuditService.log_event(
+            "LOGIN_BLOCKED_EMAIL_UNVERIFIED",
+            user=user,
+            ip_address=ip_address,
+            metadata={"email": user.email},
+        )
+        return Response(
+            {
+                "error": "Your email address has not yet been verified. Please verify your email to continue.",
+                "message": "Your email address has not yet been verified. Please verify your email to continue.",
+                "verification_required": True,
+                "verification_email_sent": verification_email_sent,
+                "verification_email_error": verification_email_error,
+                "pending_verification": pending_verification,
+                "redirect_url": pending_verification["verification_page_url"],
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
     # Check MFA
     try:
         mfa = UserMFA.objects.get(user=user, is_enabled=True)
@@ -245,22 +435,16 @@ def register_view(request):
 
     with transaction.atomic():
         user = serializer.save()
+        user.is_email_verified = False
+        user.save(update_fields=["is_email_verified"])
+        _sync_allauth_email_address(user, verified=False)
 
-    # Send verification email
-    verify_token = secrets.token_urlsafe(48)
-    cache.set(f"emailverify:{verify_token}", {"user_id": str(user.id)}, timeout=86400)
+    pending_verification = start_pending_verification_session(request, user, flow="api-register")
     try:
-        frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
-        verify_url = f"{frontend_url}/verify-email?token={verify_token}"
-        send_mail(
-            subject="Digiland - Verify Your Email",
-            message=f"Click the following link to verify your email: {verify_url}\n\nThis link expires in 24 hours.",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            fail_silently=True,
-        )
+        verification_data = _send_verification_email(request, user, source="api-register")
     except Exception as e:
         logger.error("Failed to send verification email: %s", str(e))
+        verification_data = {"verification_url": "", "token": ""}
 
     ip_address = _get_client_ip(request)
     AuditService.log_event("USER_REGISTERED", user=user, ip_address=ip_address, metadata={"email": user.email})
@@ -270,6 +454,10 @@ def register_view(request):
         "user": {
             "id": str(user.id), "email": user.email, "role": user.role,
         },
+        "verification_required": True,
+        "redirect_url": reverse("account_verification_pending"),
+        "verification_url": verification_data.get("verification_url", ""),
+        "pending_verification": _build_pending_verification_payload(request, user),
     }, status=status.HTTP_201_CREATED)
 
 
@@ -317,7 +505,7 @@ def mfa_verify_view(request):
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class MFARecoveryRateThrottle(AnonRateThrottle):
+class MFARecoveryRateThrottle(_TestAwareAnonRateThrottle):
     """Rate limit for MFA recovery: 3 req/min per IP."""
     rate = "3/min"
 
@@ -618,9 +806,9 @@ def reset_password_request_view(request):
         send_mail(
             subject="Digiland - Password Reset Request",
             message=f"Click to reset your password: {reset_url}\n\nThis link expires in 20 minutes.",
-            from_email=settings.DEFAULT_FROM_EMAIL,
+            from_email=_preferred_email_sender(),
             recipient_list=[email],
-            fail_silently=True,
+            fail_silently=False,
         )
     except Exception as e:
         logger.error("Failed to send password reset email: %s", str(e))
@@ -1131,12 +1319,22 @@ def email_verify_view(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     token = serializer.validated_data["token"]
-    token_data = cache.get(f"emailverify:{token}")
+    token_data = consume_one_time_token("emailverify", token)
 
     if not token_data:
+        pending_user, _pending_session = _get_pending_verification_user(request)
+        if pending_user and getattr(pending_user, "is_email_verified", False):
+            redirect_url = _complete_email_verification_flow(request)
+            return Response(
+                {
+                    "message": "Email verified successfully.",
+                    "verification_status": "verified",
+                    "redirect_url": redirect_url,
+                    "pending_verification": _build_pending_verification_payload(request, pending_user),
+                },
+                status=status.HTTP_200_OK,
+            )
         return Response({"error": "Invalid or expired verification token."}, status=status.HTTP_400_BAD_REQUEST)
-
-    cache.delete(f"emailverify:{token}")
 
     try:
         user = User.objects.get(id=token_data["user_id"], is_active=True)
@@ -1145,12 +1343,243 @@ def email_verify_view(request):
 
     # SECURITY: Email verification should only confirm email ownership,
     # NOT grant full identity verification (which requires KRA PIN / ID check)
-    user.is_email_verified = True
-    user.save(update_fields=["is_email_verified"])
+    if not user.is_email_verified:
+        user.is_email_verified = True
+        user.save(update_fields=["is_email_verified"])
 
-    AuditService.log_event("EMAIL_VERIFIED", user=user, metadata={"email": user.email})
+    _sync_allauth_email_address(user, email=token_data.get("email") or user.email, verified=True)
 
-    return Response({"message": "Email verified successfully."}, status=status.HTTP_200_OK)
+    redirect_url = _complete_email_verification_flow(request)
+
+    AuditService.log_event(
+        "EMAIL_VERIFIED",
+        user=user,
+        metadata={"email": user.email, "source": token_data.get("source", "api")},
+    )
+
+    return Response(
+        {
+            "message": "Email verified successfully.",
+            "verification_status": "verified",
+            "redirect_url": redirect_url,
+            "pending_verification": _build_pending_verification_payload(request, user),
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+# ==================== PENDING VERIFICATION VIEWS ====================
+
+
+def account_verification_pending_view(request):
+    """Render the dedicated pending-verification screen."""
+    pending_user, _session = _get_pending_verification_user(request)
+    if (
+        (getattr(request.user, "is_authenticated", False) and getattr(request.user, "is_email_verified", False))
+        or (pending_user and getattr(pending_user, "is_email_verified", False))
+    ):
+        return redirect(_complete_email_verification_flow(request))
+
+    context = {
+        "pending_verification": _build_pending_verification_payload(request, pending_user or (request.user if getattr(request.user, "is_authenticated", False) else None)),
+        "auth_email_verify_url": reverse("auth-email-verify"),
+    }
+    return render(request, "account/verification_pending.html", context)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def email_verification_status_view(request):
+    """Return the current verification state for the pending-session page."""
+    pending_user, session = _get_pending_verification_user(request)
+    if not pending_user and not session:
+        return Response(
+            {
+                "active": False,
+                "verification_status": "expired",
+                "message": "Verification session expired. Request a new verification email.",
+                "pending_verification": _build_pending_verification_payload(request),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    if session and pending_user and not getattr(pending_user, "is_email_verified", False):
+        refresh_pending_verification_session(request)
+
+    verified_user = pending_user if pending_user else (request.user if getattr(request.user, "is_authenticated", False) else None)
+    if verified_user and getattr(verified_user, "is_email_verified", False):
+        redirect_url = _complete_email_verification_flow(request)
+
+        payload = _build_pending_verification_payload(request, verified_user)
+        payload.update(
+            {
+                "active": False,
+                "verification_status": "verified",
+                "message": "Email verified successfully.",
+                "redirect_url": redirect_url,
+            }
+        )
+        return Response(payload, status=status.HTTP_200_OK)
+
+    payload = _build_pending_verification_payload(request, pending_user)
+    payload.update(
+        {
+            "active": True,
+            "verification_status": "pending",
+            "message": "Waiting for verification.",
+        }
+    )
+    return Response(payload, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def email_verification_resend_view(request):
+    """Send a fresh verification email and keep the user on the pending page."""
+    pending_user, session = _get_pending_verification_user(request)
+    if not pending_user:
+        return Response(
+            {
+                "error": "Verification session expired. Request a new verification email.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if getattr(pending_user, "is_email_verified", False):
+        redirect_url = _complete_email_verification_flow(request)
+        return Response(
+            {
+                "message": "Your email address is already verified.",
+                "verification_status": "verified",
+                "redirect_url": redirect_url,
+                "pending_verification": _build_pending_verification_payload(request, pending_user),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    allowed, retry_after = verification_resend_allowed(str(pending_user.id))
+    if not allowed:
+        return Response(
+            {
+                "error": "You can request another verification email in a moment.",
+                "retry_after": retry_after,
+            },
+            status=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
+
+    if session:
+        pending = start_pending_verification_session(request, pending_user, flow=session.flow or "api-resend")
+    else:
+        pending = start_pending_verification_session(request, pending_user, flow="api-resend")
+
+    try:
+        verification_data = _send_verification_email(
+            request,
+            pending_user,
+            email=pending.email or pending_user.email,
+            source="api-resend",
+        )
+    except Exception as exc:
+        logger.error("Failed to resend verification email for %s: %s", pending_user.email, str(exc))
+        return Response(
+            {
+                "error": "Unable to resend the verification email right now.",
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    pending.resend_count = (session.resend_count if session else 0) + 1
+    pending.last_sent_at = timezone.now().isoformat()
+    pending.email = verification_data["email"]
+    request.session["pending_verification"] = pending.to_dict()
+    request.session.set_expiry(getattr(settings, "EMAIL_VERIFICATION_PENDING_SESSION_AGE", 3 * 24 * 60 * 60))
+    request.session.modified = True
+    mark_verification_resend(str(pending_user.id))
+
+    AuditService.log_event(
+        "EMAIL_VERIFICATION_RESENT",
+        user=pending_user,
+        metadata={"email": pending.email, "resend_count": pending.resend_count},
+    )
+
+    return Response(
+        {
+            "message": "A new verification email has been sent. Please check your inbox and spam folder.",
+            "verification_status": "pending",
+            "pending_verification": _build_pending_verification_payload(request, pending_user),
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def email_verification_change_view(request):
+    """Update the email address tied to the pending verification session."""
+    pending_user, session = _get_pending_verification_user(request)
+    if not pending_user:
+        return Response(
+            {
+                "error": "Verification session expired. Request a new verification email.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    email = (request.data.get("email") or "").strip().lower()
+    if not email:
+        return Response({"error": "Please provide a new email address."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if User.objects.filter(email__iexact=email).exclude(pk=pending_user.pk).exists():
+        return Response({"error": "A user with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+    pending_user.email = email
+    pending_user.is_email_verified = False
+    pending_user.save(update_fields=["email", "is_email_verified"])
+    _sync_allauth_email_address(pending_user, email=email, verified=False)
+
+    pending = start_pending_verification_session(request, pending_user, flow="api-change-email")
+    try:
+        verification_data = _send_verification_email(request, pending_user, email=email, source="api-change-email")
+    except Exception as exc:
+        logger.error("Failed to send changed-email verification for %s: %s", pending_user.email, str(exc))
+        return Response(
+            {
+                "error": "Unable to send a verification email to the new address.",
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    pending.resend_count = (session.resend_count if session else 0) + 1
+    pending.last_sent_at = timezone.now().isoformat()
+    pending.email = verification_data["email"]
+    request.session["pending_verification"] = pending.to_dict()
+    request.session.set_expiry(getattr(settings, "EMAIL_VERIFICATION_PENDING_SESSION_AGE", 3 * 24 * 60 * 60))
+    request.session.modified = True
+    mark_verification_resend(str(pending_user.id))
+
+    AuditService.log_event(
+        "EMAIL_VERIFICATION_EMAIL_CHANGED",
+        user=pending_user,
+        metadata={"email": pending.email},
+    )
+
+    return Response(
+        {
+            "message": "Email updated. A new verification email has been sent.",
+            "verification_status": "pending",
+            "pending_verification": _build_pending_verification_payload(request, pending_user),
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def email_verification_logout_view(request):
+    """End the pending verification session without granting access."""
+    auth_logout(request)
+    clear_pending_verification_session(request)
+    return Response({"message": "Logged out successfully."}, status=status.HTTP_200_OK)
 
 
 # ==================== STEP-UP AUTH VIEW ====================

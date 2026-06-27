@@ -1676,3 +1676,38 @@ class LoginAttempt(models.Model):
     def __str__(self):
         status = "success" if self.success else "failed"
         return f"{self.email} ({status}) at {self.created_at}"
+
+
+class PricePredictionLog(models.Model):
+    """Logs every price prediction for monitoring and model improvement."""
+    prediction_id = models.CharField(max_length=100, unique=True, editable=False)
+    county = models.CharField(max_length=100)
+    constituency = models.CharField(max_length=100, blank=True)
+    town = models.CharField(max_length=100, blank=True)
+    land_use = models.CharField(max_length=50)
+    size_acres = models.DecimalField(max_digits=10, decimal_places=2)
+    has_road_access = models.BooleanField(default=True)
+    has_water = models.BooleanField(default=True)
+    has_electricity = models.BooleanField(default=True)
+    proximity_to_tarmac_km = models.FloatField(null=True, blank=True)
+    proximity_to_school_km = models.FloatField(null=True, blank=True)
+    proximity_to_hospital_km = models.FloatField(null=True, blank=True)
+    plot_grade = models.CharField(max_length=1, blank=True)
+    predicted_price_per_acre = models.DecimalField(max_digits=15, decimal_places=0)
+    predicted_total_value = models.DecimalField(max_digits=18, decimal_places=0)
+    confidence_low = models.DecimalField(max_digits=15, decimal_places=0)
+    confidence_high = models.DecimalField(max_digits=15, decimal_places=0)
+    confidence_label = models.CharField(max_length=50)
+    model_version = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['county', 'land_use'], name='idx_pred_county_lu'),
+            models.Index(fields=['created_at'], name='idx_pred_created'),
+        ]
+    
+    def __str__(self):
+        return f"Prediction {self.prediction_id[:8]}... {self.county} {self.land_use} KES {self.predicted_price_per_acre:,}/acre"

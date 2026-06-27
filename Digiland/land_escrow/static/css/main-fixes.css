@@ -18,11 +18,11 @@
   --surface-contrast: #f5f0eb;
   --border: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.15);
-  --accent: #10b981;
-  --accent-strong: #059669;
-  --accent-soft: rgba(16, 185, 129, 0.18);
-  --success: #10b981;
-  --success-soft: rgba(16, 185, 129, 0.16);
+  --accent: #059669;
+  --accent-strong: #047857;
+  --accent-soft: rgba(5, 150, 105, 0.18);
+  --success: #059669;
+  --success-soft: rgba(5, 150, 105, 0.16);
   --warning: #f59e0b;
   --warning-soft: rgba(245, 158, 11, 0.18);
   --danger: #ef4444;

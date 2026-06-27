@@ -119,8 +119,8 @@ export function AuthErrorState({
               onClick={onRetry}
               className={cn(
                 'inline-flex h-10 items-center justify-center gap-2 rounded-full',
-                'bg-emerald-700 px-5 text-sm font-semibold text-white',
-                'transition-colors hover:bg-emerald-800',
+                'bg-primary px-5 text-sm font-semibold text-primary-foreground',
+                'transition-colors hover:bg-primary/90',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
               )}
             >
@@ -131,7 +131,7 @@ export function AuthErrorState({
 
           {(kind === 'session_expired' || kind === 'invalid_credentials' || kind === 'mfa_required') ? (
             <a
-              href={signInHref ?? '/login/'}
+              href={signInHref ?? '/accounts/login/'}
               className={cn(
                 'inline-flex h-10 items-center justify-center gap-2 rounded-full',
                 'border border-border bg-white px-5 text-sm font-semibold text-foreground',

@@ -6,11 +6,6 @@
  * Replaces the previous CSS-only animation approach with a more expressive,
  * choreographed motion system.
  */
-<<<<<<< HEAD
-import { useEffect, useRef, useCallback } from 'react';
-import anime from 'animejs';
-
-=======
 import { useEffect, useRef, useState } from 'react';
 import anime from 'animejs';
 
@@ -44,7 +39,6 @@ function revealHeroElements(hero: HTMLElement) {
   });
 }
 
->>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
 /* ------------------------------------------------------------------ */
 /*  Master Hero Timeline                                               */
 /* ------------------------------------------------------------------ */
@@ -61,84 +55,6 @@ export function useHeroEntrance() {
   const hasPlayed = useRef(false);
 
   useEffect(() => {
-<<<<<<< HEAD
-    if (!heroRef.current || hasPlayed.current) return;
-    hasPlayed.current = true;
-
-    const hero = heroRef.current;
-
-    // ── Left side: staggered reveal ──
-    const leftItems = hero.querySelectorAll('.hero-entrance-item');
-    anime({
-      targets: leftItems,
-      opacity: [0, 1],
-      translateY: [28, 0],
-      duration: 700,
-      delay: anime.stagger(120, { start: 200 }),
-      easing: 'easeOutCubic',
-    });
-
-    // ── Badge: special pop-in ──
-    const badge = hero.querySelector('.hero-badge');
-    if (badge) {
-      anime({
-        targets: badge,
-        opacity: [0, 1],
-        scale: [0.6, 1],
-        duration: 500,
-        delay: 100,
-        easing: 'easeOutBack',
-      });
-    }
-
-    // ── Headline: character-by-character shimmer ──
-    const headline = hero.querySelector('.hero-headline');
-    if (headline) {
-      anime({
-        targets: headline,
-        opacity: [0, 1],
-        clipPath: ['inset(0 100% 0 0)', 'inset(0 0% 0 0)'],
-        duration: 900,
-        delay: 350,
-        easing: 'easeInOutQuart',
-      });
-    }
-
-    // ── Trust indicators: stagger from left ──
-    const trustItems = hero.querySelectorAll('.hero-trust-item');
-    anime({
-      targets: trustItems,
-      opacity: [0, 1],
-      translateX: [-16, 0],
-      duration: 500,
-      delay: anime.stagger(80, { start: 1100 }),
-      easing: 'easeOutCubic',
-    });
-
-    // ── Right side: cards fly in ──
-    const rightCards = hero.querySelectorAll('.hero-right-card');
-    anime({
-      targets: rightCards,
-      opacity: [0, 1],
-      translateX: [40, 0],
-      scale: [0.95, 1],
-      duration: 600,
-      delay: anime.stagger(150, { start: 500 }),
-      easing: 'easeOutCubic',
-    });
-
-    // ── Stat cards: count-up shimmer ──
-    const statCards = hero.querySelectorAll('.hero-stat-card');
-    anime({
-      targets: statCards,
-      opacity: [0, 1],
-      translateY: [16, 0],
-      scale: [0.92, 1],
-      duration: 500,
-      delay: anime.stagger(100, { start: 1300 }),
-      easing: 'easeOutCubic',
-    });
-=======
     const hero = heroRef.current;
     if (!hero || hasPlayed.current) return;
 
@@ -268,7 +184,6 @@ export function useHeroEntrance() {
 
     observer.observe(hero);
     return () => observer.disconnect();
->>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
   }, []);
 
   return heroRef;
@@ -352,12 +267,7 @@ export function useJourneyCycler(sceneCount: number, interval = 3500) {
   return { activeScene, containerRef };
 }
 
-<<<<<<< HEAD
-// We need useState for the cycler hook
-import { useState } from 'react';
 
-=======
->>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
 /* ------------------------------------------------------------------ */
 /*  Verification Timeline Animation                                    */
 /* ------------------------------------------------------------------ */
@@ -590,21 +500,12 @@ export function useHeroParticles() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-<<<<<<< HEAD
-    if (!canvas) return;
-=======
     if (!canvas || prefersReducedMotion()) return;
->>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     const resize = () => {
-<<<<<<< HEAD
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-=======
       const pixelRatio = window.devicePixelRatio || 1;
       const width = Math.max(1, Math.round(canvas.offsetWidth));
       const height = Math.max(1, Math.round(canvas.offsetHeight));
@@ -612,7 +513,6 @@ export function useHeroParticles() {
       canvas.width = Math.round(width * pixelRatio);
       canvas.height = Math.round(height * pixelRatio);
       ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
->>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
     };
     resize();
     window.addEventListener('resize', resize);
@@ -681,11 +581,7 @@ export function useCtaHover() {
   const ctaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-<<<<<<< HEAD
-    if (!ctaRef.current) return;
-=======
     if (!ctaRef.current || prefersReducedMotion()) return;
->>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
     const buttons = ctaRef.current.querySelectorAll('.hero-cta-btn');
 
     const handleEnter = (e: Event) => {

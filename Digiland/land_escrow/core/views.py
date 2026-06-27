@@ -61,9 +61,24 @@ def login_user(request):
     """
     serializer = LoginSerializer(data=request.data)
     if serializer.is_valid():
+        email = serializer.validated_data['email']
+        password = serializer.validated_data['password']
+        existing_user = User.objects.filter(email__iexact=email).first()
+        if existing_user and not existing_user.is_active:
+            AuditLog.objects.create(
+                user=existing_user,
+                action='LOGIN_FAILURE',
+                ip_address=_get_client_ip(request),
+                metadata={'email': email[:3] + '***', 'reason': 'account_disabled'},
+            )
+            return Response(
+                {"error": "Account is disabled. Contact support."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         user = authenticate(
-            email=serializer.validated_data['email'],
-            password=serializer.validated_data['password']
+            email=email,
+            password=password
         )
         if user:
             if not user.is_active:

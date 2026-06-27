@@ -20,11 +20,10 @@ import { SellerPromotionsPage } from './pages/seller-promotions-page.js';
 import { PromotionTiersPage } from './pages/promotion-tiers-page.js';
 import { SponsoredAdsPage } from './pages/sponsored-ads-page.js';
 import { PaymentMethodSelector } from './components/checkout/payment-method-selector.js';
-<<<<<<< HEAD
-import { useHeroEntrance, useJourneyCycler, useTimelineAnimation, useProgressBars, useEscrowFlow, useAgentGrid, useHeroParticles, useCtaHover } from './hooks/use-hero-animations.js';
-=======
 import { HeroShowcase } from './components/landing/hero-showcase.js';
->>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
+import { AnimatedWalkthrough } from './components/landing/animated-walkthrough.js';
+import { PremiumFooter } from './components/landing/premium-footer.js';
+import { PriceEstimatorSection } from './components/landing/price-estimator-section.js';
 
 const bootstrap = readBootstrap();
 const kshFormatter = new Intl.NumberFormat('en-KE', {
@@ -1157,419 +1156,93 @@ function LandingPage() {
   const parcels = bootstrap.parcels || [];
   const stats = bootstrap.stats || [];
 
-<<<<<<< HEAD
-  // ── Anime.js hooks ──
-  const heroRef = useHeroEntrance();
-  const { activeScene, containerRef: journeyContainerRef } = useJourneyCycler(6, 3500);
-  const timelineRef = useTimelineAnimation();
-  const progressRef = useProgressBars();
-  const escrowRef = useEscrowFlow();
-  const agentGridRef = useAgentGrid();
-  const particlesRef = useHeroParticles();
-  const ctaRef = useCtaHover();
-
-  // Transaction journey scenes for the animated right-side experience
-  const journeyScenes = [
-    { icon: Search, label: 'Buyer selects property', desc: 'Browse verified land listings', color: 'text-digiland-600' },
-    { icon: UserCheck, label: 'Seller verification completed', desc: 'Identity & documents confirmed', color: 'text-emerald-600' },
-    { icon: MapPin, label: 'Field agent verifies location', desc: 'On-site inspection & GPS mapping', color: 'text-blue-600' },
-    { icon: Lock, label: 'Escrow account activated', desc: 'Funds secured until transfer', color: 'text-amber-600' },
-    { icon: FileSignature, label: 'Ownership transfer initiated', desc: 'Legal documents processed', color: 'text-purple-600' },
-    { icon: CircleCheckBig, label: 'Transaction completed', desc: 'Title deed registered', color: 'text-digiland-600' },
-  ];
-
-  // Trust indicators beneath CTAs
-  const trustIndicators = [
-    { icon: UserCheck, label: 'Verified Sellers' },
-    { icon: CheckCircle2, label: 'Verified Properties' },
-    { icon: Lock, label: 'Escrow Protected' },
-    { icon: Camera, label: 'Field Inspections' },
-    { icon: Eye, label: 'Ownership Verification' },
-  ];
-
-  // Verification timeline items
-  const verificationSteps = [
-    { label: 'Seller Verification', status: 'complete' as const },
-    { label: 'Land Verification', status: 'complete' as const },
-    { label: 'Location Inspection', status: 'complete' as const },
-    { label: 'Escrow Secured', status: 'complete' as const },
-    { label: 'Ownership Transfer', status: 'active' as const },
-  ];
-
-  // Escrow flow steps
-  const escrowSteps = [
-    { label: 'Buyer Funds Escrow', icon: WalletCards },
-    { label: 'Verification Completed', icon: ShieldCheck },
-    { label: 'Ownership Confirmed', icon: CheckCircle2 },
-    { label: 'Funds Released', icon: Banknote },
-  ];
-
-  // Property tracking progress items
-  const trackingItems = [
-    { label: 'Property Verification', progress: 100 },
-    { label: 'Seller Verification', progress: 100 },
-    { label: 'Escrow Setup', progress: 100 },
-    { label: 'Transfer Processing', progress: 60 },
-    { label: 'Registration', progress: 0 },
-  ];
-
-  // Agent verification showcase items
-  const agentItems = [
-    { icon: UserCheck, label: 'Agent Assigned' },
-    { icon: MapPin, label: 'Location Confirmed' },
-    { icon: Eye, label: 'Boundary Verified' },
-    { icon: Camera, label: 'Photos Captured' },
-    { icon: FileText, label: 'Inspection Report' },
-  ];
-
-=======
->>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
   return (
-    <PublicShell
-      title={bootstrap.title}
-      subtitle={bootstrap.subtitle}
-      nav={bootstrap.nav}
-      user={bootstrap.user}
-      actions={bootstrap.actions}
-    >
-      <div className="space-y-8">
-<<<<<<< HEAD
-        {/* ── HERO SECTION ── */}
-        <section
-          ref={heroRef}
-          className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-[radial-gradient(circle_at_top_right,_rgba(16,185,129,0.15),_transparent_25%),linear-gradient(180deg,_rgba(255,255,255,0.92),_rgba(255,255,255,0.8))] p-6 shadow-soft sm:p-8 lg:p-10"
-        >
-          {/* Anime.js particle canvas */}
-          <canvas
-            ref={particlesRef}
-            className="pointer-events-none absolute inset-0 h-full w-full"
-            style={{ opacity: 0.6 }}
+    <div className="landing-page-wrapper">
+      <PublicShell
+        title={bootstrap.title}
+        subtitle={bootstrap.subtitle}
+        nav={bootstrap.nav}
+        user={bootstrap.user}
+        actions={bootstrap.actions}
+        hideFooter
+      >
+        <div className="space-y-8">
+          <HeroShowcase
+            notice={bootstrap.notice}
+            stats={stats}
+            csrfToken={bootstrap.csrf_token}
+            isAuthenticated={Boolean(bootstrap.user)}
           />
 
-          <div className="relative z-10 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-            {/* ── LEFT SIDE ── */}
-            <div className="space-y-6">
-              {/* Kicker Badge */}
-              <div className="hero-badge hero-entrance-item" style={{ opacity: 0 }}>
-                <Badge tone="outline" className="px-4 py-2 text-xs font-bold uppercase tracking-[0.2em]">
-                  {bootstrap.notice || 'Secure Land Escrow Platform'}
-                </Badge>
-              </div>
+          {/* ── PRICE ESTIMATOR SECTION ── */}
+          <PriceEstimatorSection
+            csrfToken={bootstrap.csrf_token}
+            isAuthenticated={Boolean(bootstrap.user)}
+          />
 
-              {/* Headline */}
-              <div className="hero-headline hero-entrance-item" style={{ opacity: 0 }}>
-                <h1 className="max-w-3xl text-4xl font-black tracking-tight text-foreground sm:text-5xl lg:text-[3.4rem] lg:leading-[1.1]">
-                  Buy Land With{' '}
-                  <span className="gradient-text">Confidence.</span>
-                </h1>
-              </div>
+          {/* ── ANIMATED WALKTHROUGH ── */}
+          <AnimatedWalkthrough />
 
-              {/* Sub-headlines */}
-              <div className="hero-entrance-item" style={{ opacity: 0 }}>
-                <p className="text-base font-semibold text-foreground/80 sm:text-lg">
-                  Every Seller Verified. Every Property Checked. Every Transaction Protected.
-                </p>
-              </div>
-
-              {/* Subheadline */}
-              <div className="hero-entrance-item" style={{ opacity: 0 }}>
-                <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base sm:leading-8">
-                  Digiland combines escrow protection, seller verification, and on-site property inspections
-                  to help buyers make informed land purchases with confidence.
-                </p>
-              </div>
-
-              {/* CTAs */}
-              <div ref={ctaRef} className="hero-entrance-item flex flex-wrap gap-3 pt-1" style={{ opacity: 0 }}>
-                <a
-                  href="/parcels/"
-                  className="hero-cta-btn inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 active:scale-[0.98]"
-                  style={{ boxShadow: '0 4px 14px rgba(5, 150, 105, 0.15)' }}
-                >
-                  Find Verified Land
-                  <ArrowRight className="h-4 w-4" />
-                </a>
-                <a
-                  href="#how-it-works"
-                  className="hero-cta-btn inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-white/80 px-6 text-sm font-bold text-foreground transition-colors hover:bg-muted active:scale-[0.98]"
-                >
-                  How Digiland Works
-                </a>
-              </div>
-
-              {/* Trust Indicators */}
-              <div className="hero-entrance-item pt-2" style={{ opacity: 0 }}>
-                <div className="flex flex-wrap gap-x-5 gap-y-2">
-                  {trustIndicators.map((item) => (
-                    <div key={item.label} className="hero-trust-item flex items-center gap-1.5 text-xs font-semibold text-muted-foreground" style={{ opacity: 0 }}>
-                      <item.icon className="h-3.5 w-3.5 text-emerald-600" />
-                      <span>{item.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Stats */}
-              {stats.length ? (
-                <div className="hero-entrance-item grid gap-3 pt-2 sm:grid-cols-2 xl:grid-cols-4" style={{ opacity: 0 }}>
-                  {stats.map((stat) => (
-                    <Card key={stat.label} className="hero-stat-card bg-white/90" style={{ opacity: 0 }}>
-                      <CardContent className="p-4">
-                        <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">{stat.label}</div>
-                        <div className="mt-2 text-2xl font-black tracking-tight text-foreground">{stat.value}</div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-
-            {/* ── RIGHT SIDE: Interactive Experience ── */}
-            <div className="space-y-5">
-              {/* Animated Transaction Journey */}
-              <Card className="hero-right-card bg-white/92 overflow-hidden" style={{ opacity: 0 }}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-bold">Transaction Journey</CardTitle>
-                  <CardDescription className="text-xs">See how every land purchase is protected</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-0">
-                  <div ref={journeyContainerRef} className="relative">
-                    {journeyScenes.map((scene, i) => (
-                      <div
-                        key={scene.label}
-                        className={`journey-scene ${i === activeScene ? '' : ''}`}
-                        style={{
-                          opacity: i === 0 ? 1 : 0,
-                          maxHeight: i === 0 ? '120px' : '0px',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <div className="flex items-start gap-3 rounded-xl bg-digiland-50/60 border border-digiland-100 p-3">
-                          <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm ${scene.color}`}>
-                            <scene.icon className="h-4 w-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-sm font-bold text-foreground leading-tight">{scene.label}</div>
-                            <div className="text-xs text-muted-foreground mt-0.5">{scene.desc}</div>
-                          </div>
-                          <div className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100">
-                            <CircleCheckBig className="h-3.5 w-3.5 text-emerald-600" />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {/* Scene indicators */}
-                    <div className="mt-3 flex justify-center gap-1.5">
-                      {journeyScenes.map((_, i) => (
-                        <div
-                          key={i}
-                          className="journey-indicator h-1.5 rounded-full"
-                          style={{
-                            width: i === 0 ? 24 : 6,
-                            backgroundColor: i === 0 ? '#059669' : '#a7f3d0',
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Verification Timeline */}
-              <Card className="hero-right-card bg-white/92" style={{ opacity: 0 }}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-bold">Verification Timeline</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div ref={timelineRef} className="space-y-0">
-                    {verificationSteps.map((step, i) => (
-                      <div key={step.label} className="flex items-start gap-3">
-                        <div className="flex flex-col items-center">
-                          <div className={`timeline-node flex h-6 w-6 items-center justify-center rounded-full ${
-                            step.status === 'complete'
-                              ? 'bg-emerald-100 text-emerald-600'
-                              : 'bg-amber-100 text-amber-600'
-                          }`} style={{ opacity: 0 }}>
-                            {step.status === 'complete' ? (
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                            ) : (
-                              <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                            )}
-                          </div>
-                          {i < verificationSteps.length - 1 && (
-                            <div className={`timeline-connector w-0.5 h-5 origin-top ${
-                              step.status === 'complete' ? 'bg-emerald-200' : 'bg-border'
-                            }`} style={{ transform: 'scaleY(0)' }} />
-                          )}
-                        </div>
-                        <div className={`timeline-label text-sm font-medium pb-4 ${
-                          step.status === 'active' ? 'text-foreground' : 'text-muted-foreground'
-                        }`} style={{ opacity: 0 }}>
-                          {step.label}
-                          {step.status === 'active' && (
-                            <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
-                              In Progress
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Escrow Trust Component */}
-              <Card className="hero-right-card bg-white/92" style={{ opacity: 0 }}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-bold">Escrow Protection</CardTitle>
-                  <CardDescription className="text-xs">Your money is safe until verification completes</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div ref={escrowRef} className="space-y-2">
-                    {escrowSteps.map((step, i) => (
-                      <div key={step.label}>
-                        <div className="escrow-step flex items-center gap-2" style={{ opacity: 0 }}>
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-digiland-50">
-                            <step.icon className="h-3.5 w-3.5 text-digiland-600" />
-                          </div>
-                          <span className="text-xs font-semibold text-foreground">{step.label}</span>
-                        </div>
-                        {i < escrowSteps.length - 1 && (
-                          <div className="escrow-arrow flex justify-start pl-2.5 py-0.5" style={{ opacity: 0 }}>
-                            <ArrowDown className="h-3 w-3 text-emerald-400" />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Property Tracking Experience */}
-              <Card className="hero-right-card bg-white/92" style={{ opacity: 0 }}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-bold">Transaction Tracker</CardTitle>
-                  <CardDescription className="text-xs">Real-time visibility into every step</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div ref={progressRef} className="space-y-3">
-                    {trackingItems.map((item) => (
-                      <div key={item.label}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-semibold text-foreground">{item.label}</span>
-                          <span className={`text-[10px] font-bold ${
-                            item.progress === 100 ? 'text-emerald-600' : item.progress > 0 ? 'text-amber-600' : 'text-muted-foreground'
-                          }`}>
-                            {item.progress === 100 ? 'Complete' : item.progress > 0 ? `${item.progress}%` : 'Pending'}
-                          </span>
-                        </div>
-                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                          <div
-                            className={`progress-fill h-full rounded-full ${
-                              item.progress === 100 ? 'bg-emerald-500' : item.progress > 0 ? 'bg-amber-400' : 'bg-transparent'
-                            }`}
-                            data-progress={item.progress}
-                            style={{ width: '0%' }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Agent Verification Showcase */}
-              <Card className="hero-right-card bg-gradient-to-br from-digiland-50/80 to-emerald-50/60 border-digiland-100" style={{ opacity: 0 }}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-digiland-600 text-white">
-                      <Users className="h-3.5 w-3.5" />
-                    </div>
-                    <CardTitle className="text-base font-bold">Field Agent Verification</CardTitle>
-                  </div>
-                  <CardDescription className="text-xs">Real people, real inspections, real proof</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div ref={agentGridRef} className="grid grid-cols-2 gap-2">
-                    {agentItems.map((item) => (
-                      <div key={item.label} className="agent-item flex items-center gap-1.5 rounded-lg bg-white/80 p-2" style={{ opacity: 0 }}>
-                        <item.icon className="h-3.5 w-3.5 shrink-0 text-digiland-600" />
-                        <span className="text-[11px] font-semibold text-foreground leading-tight">{item.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-=======
-        <HeroShowcase
-          notice={bootstrap.notice}
-          stats={stats}
-          csrfToken={bootstrap.csrf_token}
-          isAuthenticated={Boolean(bootstrap.user)}
-        />
->>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
-
-        {/* ── HOW IT WORKS SECTION ── */}
-        <section id="how-it-works" className="space-y-4">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <div className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-700">How it works</div>
-              <h2 className="text-2xl font-black tracking-tight text-foreground">Secure land transactions, step by step</h2>
-            </div>
-            <a href="/escrow-acts/" className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">Read the legal checklist</a>
-          </div>
-          <div className="grid gap-4 lg:grid-cols-3">
-            {[
-              {
-                title: 'List and verify',
-                body: 'Sellers upload parcel details and compliance documents. Licensed agents review the listing before it goes live. Every property is verified against official land records.',
-              },
-              {
-                title: 'Sign the contract',
-                body: 'Buyer and seller sign the land transfer agreement. Joint buyers can capture member signatures as well. Contracts are legally binding and digitally secured.',
-              },
-              {
-                title: 'Send payment',
-                body: 'Once the contract is complete, the buyer sees checkout and receives an M-Pesa STK prompt or joint bank instructions. Funds are held in escrow until ownership is confirmed.',
-              },
-            ].map((step, index) => (
-              <Card key={step.title} className="bg-white/92">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <Badge tone="outline">0{index + 1}</Badge>
-                    <Sparkles className="h-4 w-4 text-emerald-700" />
-                  </div>
-                  <CardTitle className="text-lg">{step.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm leading-7 text-foreground">{step.body}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-
-        {parcels.length ? (
-          <section className="space-y-4">
+          {/* ── HOW IT WORKS SECTION ── */}
+          <section id="how-it-works" className="space-y-4">
             <div className="flex items-end justify-between gap-3">
               <div>
-                <div className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-700">Marketplace</div>
-                <h2 className="text-2xl font-black tracking-tight text-foreground">Recent verified parcels</h2>
+                <div className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-700">How it works</div>
+                <h2 className="text-2xl font-black tracking-tight text-foreground">Secure land transactions, step by step</h2>
               </div>
-              <a href="/parcels/" className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">View all parcels</a>
+              <a href="/escrow-acts/" className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">Read the legal checklist</a>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {parcels.slice(0, 6).map((parcel) => (
-                <ListingCard key={parcel.parcel_number} parcel={parcel} />
+            <div className="grid gap-4 lg:grid-cols-3">
+              {[
+                {
+                  title: 'List and verify',
+                  body: 'Sellers upload parcel details and compliance documents. Licensed agents review the listing before it goes live. Every property is verified against official land records.',
+                },
+                {
+                  title: 'Sign the contract',
+                  body: 'Buyer and seller sign the land transfer agreement. Joint buyers can capture member signatures as well. Contracts are legally binding and digitally secured.',
+                },
+                {
+                  title: 'Send payment',
+                  body: 'Once the contract is complete, the buyer sees checkout and receives an M-Pesa STK prompt or joint bank instructions. Funds are held in escrow until ownership is confirmed.',
+                },
+              ].map((step, index) => (
+                <Card key={step.title} className="bg-white/92">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <Badge tone="outline">0{index + 1}</Badge>
+                      <Sparkles className="h-4 w-4 text-emerald-700" />
+                    </div>
+                    <CardTitle className="text-lg">{step.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm leading-7 text-foreground">{step.body}</p>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </section>
-        ) : null}
-      </div>
-    </PublicShell>
+
+          {parcels.length ? (
+            <section className="space-y-4">
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-700">Marketplace</div>
+                  <h2 className="text-2xl font-black tracking-tight text-foreground">Recent verified parcels</h2>
+                </div>
+                <a href="/parcels/" className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">View all parcels</a>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {parcels.slice(0, 6).map((parcel) => (
+                  <ListingCard key={parcel.parcel_number} parcel={parcel} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </div>
+      </PublicShell>
+      <PremiumFooter />
+    </div>
   );
 }
 

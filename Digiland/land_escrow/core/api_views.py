@@ -2247,3 +2247,300 @@ class AuditLogListView(generics.ListAPIView):
 
     def get_queryset(self):
         return AuditLog.objects.select_related('user').order_by('-timestamp')
+
+
+
+# ==================== PRICE PREDICTION ENDPOINTS ====================
+
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+
+
+class PricePredictionAnonThrottle(AnonRateThrottle):
+    """Throttle for anonymous users on price prediction: 10/min."""
+    rate = '10/min'
+
+
+class PricePredictionUserThrottle(UserRateThrottle):
+    """Throttle for authenticated users on price prediction: 30/min."""
+    rate = '30/min'
+
+
+def _get_confidence_label(r2_score):
+    """Derive a human-readable confidence label from the model R² score."""
+    if r2_score >= 0.85:
+        return 'High Confidence'
+    elif r2_score >= 0.70:
+        return 'Moderate Confidence'
+    elif r2_score >= 0.50:
+        return 'Low Confidence'
+    else:
+        return 'Very Low Confidence'
+
+
+def _get_market_position(price_per_acre):
+    """Derive a market position label from the predicted price per acre."""
+    if price_per_acre >= 100_000_000:
+        return 'Premium zone'
+    elif price_per_acre >= 20_000_000:
+        return 'High-value zone'
+    elif price_per_acre >= 5_000_000:
+        return 'Mid-market zone'
+    elif price_per_acre >= 1_000_000:
+        return 'Emerging zone'
+    else:
+        return 'Rural / remote zone'
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+@throttle_classes([PricePredictionAnonThrottle, PricePredictionUserThrottle])
+def price_prediction_api(request):
+    """
+    GET  /api/v1/price-prediction/  — Model info, available counties, constituencies, towns.
+         ?action=counties                     — List all counties
+         ?action=constituencies&county=X      — List constituencies for a county
+         ?action=towns&county=X&constituency=Y — List towns for a constituency
+
+    POST /api/v1/price-prediction/  — Predict land price.
+
+    Public endpoint (no auth required) for the landing page estimator.
+    Throttled: 10/min anonymous, 30/min authenticated.
+    """
+    from .services.price_prediction import (
+        predict_price, get_model_info, get_fallback_prediction,
+        get_constituencies_for_county, get_towns_for_constituency,
+        get_location_catalog,
+        resolve_location,
+        KENYA_COUNTIES, LAND_USE_TYPES, PLOT_GRADES, KENYA_LOCATIONS, MODEL_VERSION,
+    )
+
+    # ── GET: Return model metadata, reference data, or cascading location data ──
+    if request.method == 'GET':
+        action = request.query_params.get('action', '')
+
+        if action == 'locations':
+            query = request.query_params.get('query', '').strip()
+            try:
+                limit = int(request.query_params.get('limit', 60))
+            except (TypeError, ValueError):
+                limit = 60
+
+            locations = get_location_catalog(query=query, limit=limit)
+            return Response({
+                'query': query,
+                'count': len(locations),
+                'locations': locations,
+            })
+
+        # ── Cascading location data ──
+        if action == 'constituencies':
+            county = request.query_params.get('county', '').strip()
+            county, _, _ = resolve_location(county)
+            if not county or county not in KENYA_COUNTIES:
+                return Response({
+                    'error': f'Invalid county. Valid counties: {", ".join(sorted(KENYA_LOCATIONS.keys())[:10])}...',
+                    'error_code': 'INVALID_COUNTY',
+                }, status=status.HTTP_400_BAD_REQUEST)
+            constituencies = get_constituencies_for_county(county)
+            return Response({
+                'county': county,
+                'constituencies': constituencies,
+            })
+
+        if action == 'towns':
+            county = request.query_params.get('county', '').strip()
+            constituency = request.query_params.get('constituency', '').strip()
+            county, constituency, _ = resolve_location(county, constituency)
+            if not county or county not in KENYA_COUNTIES:
+                return Response({
+                    'error': 'Invalid county.',
+                    'error_code': 'INVALID_COUNTY',
+                }, status=status.HTTP_400_BAD_REQUEST)
+            towns = get_towns_for_constituency(county, constituency)
+            return Response({
+                'county': county,
+                'constituency': constituency,
+                'towns': towns,
+            })
+
+        # ── Default GET: Model info + counties ──
+        metadata = get_model_info()
+        return Response({
+            'model_info': {
+                'n_records': metadata.get('n_records', 0),
+                'n_counties': metadata.get('n_counties', 0),
+                'n_towns': metadata.get('n_towns', 0),
+                'algorithm': f'Ensemble (RF+GB), v{MODEL_VERSION}',
+                'cv_r2_mean': metadata.get('cv_r2_mean', 0),
+                'cv_r2_mean_rf': metadata.get('cv_r2_mean_rf', 0),
+                'cv_r2_mean_gb': metadata.get('cv_r2_mean_gb', 0),
+            },
+            'counties': KENYA_COUNTIES,
+            'land_use_types': LAND_USE_TYPES,
+            'plot_grades': PLOT_GRADES,
+        })
+
+    # ── POST: Run prediction ──
+    data = request.data
+
+    # ── Input validation ──
+    errors = {}
+
+    raw_county = str(data.get('county', '')).strip()
+    raw_constituency = str(data.get('constituency', '')).strip()
+    raw_town = str(data.get('town', '')).strip()
+
+    county, constituency, town = resolve_location(raw_county, raw_constituency, raw_town)
+    county = county or raw_county
+    constituency = constituency or raw_constituency
+    town = town or raw_town
+
+    if not raw_county:
+        errors['county'] = 'County is required.'
+    if not county:
+        errors['county'] = 'County is required.'
+    elif county not in KENYA_COUNTIES:
+        errors['county'] = f'Unknown county. Must be one of the {len(KENYA_COUNTIES)} Kenyan counties.'
+
+    if not constituency and county:
+        constituency = county  # Default to county name
+
+    if not town:
+        town = constituency  # Default town to constituency
+
+    land_use = str(data.get('land_use', '')).strip().title()
+    if not land_use:
+        errors['land_use'] = 'Land use type is required.'
+    elif land_use not in LAND_USE_TYPES:
+        errors['land_use'] = f'Invalid land use. Must be one of: {", ".join(LAND_USE_TYPES)}.'
+
+    size_acres = data.get('size_acres')
+    if size_acres is None:
+        errors['size_acres'] = 'Size in acres is required.'
+    else:
+        try:
+            size_acres = float(size_acres)
+            if size_acres <= 0:
+                errors['size_acres'] = 'Size must be greater than 0.'
+            elif size_acres > 10000:
+                errors['size_acres'] = 'Size must be 10,000 acres or less.'
+        except (TypeError, ValueError):
+            errors['size_acres'] = 'Size must be a valid number.'
+
+    def _coerce_request_bool(value, default=True):
+        if value is None:
+            return default
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return value != 0
+        normalized = str(value).strip().lower()
+        if not normalized:
+            return default
+        return normalized in {'1', 'true', 't', 'yes', 'y', 'on'}
+
+    has_road_access = _coerce_request_bool(data.get('has_road_access', True))
+    has_water = _coerce_request_bool(data.get('has_water', True))
+    has_electricity = _coerce_request_bool(data.get('has_electricity', True))
+
+    # New optional fields
+    proximity_to_tarmac_km = data.get('proximity_to_tarmac_km')
+    if proximity_to_tarmac_km is not None:
+        try:
+            proximity_to_tarmac_km = float(proximity_to_tarmac_km)
+            if proximity_to_tarmac_km < 0 or proximity_to_tarmac_km > 50:
+                errors['proximity_to_tarmac_km'] = 'Must be between 0 and 50 km.'
+        except (TypeError, ValueError):
+            errors['proximity_to_tarmac_km'] = 'Must be a valid number.'
+
+    proximity_to_school_km = data.get('proximity_to_school_km')
+    if proximity_to_school_km is not None:
+        try:
+            proximity_to_school_km = float(proximity_to_school_km)
+            if proximity_to_school_km < 0 or proximity_to_school_km > 50:
+                errors['proximity_to_school_km'] = 'Must be between 0 and 50 km.'
+        except (TypeError, ValueError):
+            errors['proximity_to_school_km'] = 'Must be a valid number.'
+
+    proximity_to_hospital_km = data.get('proximity_to_hospital_km')
+    if proximity_to_hospital_km is not None:
+        try:
+            proximity_to_hospital_km = float(proximity_to_hospital_km)
+            if proximity_to_hospital_km < 0 or proximity_to_hospital_km > 50:
+                errors['proximity_to_hospital_km'] = 'Must be between 0 and 50 km.'
+        except (TypeError, ValueError):
+            errors['proximity_to_hospital_km'] = 'Must be a valid number.'
+
+    plot_grade = str(data.get('plot_grade', '')).strip().upper()
+    if plot_grade and plot_grade not in PLOT_GRADES:
+        errors['plot_grade'] = f'Invalid plot grade. Must be one of: {", ".join(PLOT_GRADES)}.'
+
+    if errors:
+        return Response({'errors': errors, 'error_code': 'VALIDATION_ERROR'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # ── Run prediction ──
+    try:
+        result = predict_price(
+            county=county,
+            constituency=constituency,
+            land_use=land_use,
+            size_acres=size_acres,
+            has_road_access=has_road_access,
+            has_water=has_water,
+            has_electricity=has_electricity,
+            town=town,
+            proximity_to_tarmac_km=proximity_to_tarmac_km,
+            proximity_to_school_km=proximity_to_school_km,
+            proximity_to_hospital_km=proximity_to_hospital_km,
+            plot_grade=plot_grade or 'C',
+        )
+    except Exception as exc:
+        logger.error(f'Price prediction error: {exc}')
+        # Try fallback prediction
+        try:
+            result = get_fallback_prediction(county, land_use, size_acres)
+        except Exception:
+            return Response(
+                {'error': 'Prediction service unavailable. Please try again later.',
+                 'error_code': 'SERVICE_UNAVAILABLE'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+    # ── Handle model-unavailable case ──
+    if 'error' in result:
+        error_msg = result['error']
+        if 'not available' in error_msg.lower() or 'train' in error_msg.lower():
+            # Try fallback
+            try:
+                result = get_fallback_prediction(county, land_use, size_acres)
+            except Exception:
+                return Response(
+                    {'error': 'Price prediction model is not available. Please contact support.',
+                     'error_code': 'MODEL_UNAVAILABLE'},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+        else:
+            # Unknown location / encoding error → 422
+            return Response(
+                {'error': f'Could not generate prediction: {error_msg}',
+                 'error_code': 'PREDICTION_FAILED'},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+
+    # ── Enrich response with confidence label and market position ──
+    r2_score = result.get('model_accuracy', 0)
+    if isinstance(r2_score, float) and r2_score < 1:
+        # R² is stored as 0-1 fraction; convert to percentage for display
+        model_accuracy_pct = f'{r2_score * 100:.1f}%'
+    elif isinstance(r2_score, (int, float)):
+        model_accuracy_pct = f'{r2_score:.1f}%'
+    else:
+        model_accuracy_pct = 'N/A'
+
+    result['model_accuracy'] = model_accuracy_pct
+    result['confidence_label'] = _get_confidence_label(r2_score if isinstance(r2_score, float) else 0)
+    result['market_position'] = _get_market_position(result.get('price_per_acre', 0))
+    result['model_version'] = result.get('model_version', MODEL_VERSION)
+    result['prediction_id'] = result.get('prediction_id', '')
+
+    return Response(result, status=status.HTTP_200_OK)

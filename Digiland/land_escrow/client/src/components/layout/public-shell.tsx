@@ -32,6 +32,7 @@ interface PublicShellProps {
   children: ReactNode;
   footer?: ReactNode;
   className?: string;
+  hideFooter?: boolean;
 }
 
 export function PublicShell({
@@ -45,6 +46,7 @@ export function PublicShell({
   children,
   footer,
   className,
+  hideFooter,
 }: PublicShellProps) {
   const displayName = user?.full_name || user?.email || 'Visitor';
 
@@ -125,8 +127,8 @@ export function PublicShell({
         {children}
       </main>
 
-      {/* Footer - always visible */}
-      <footer className="border-t border-border/60 bg-white/80 backdrop-blur-xl py-6 mt-auto">
+      {/* Footer */}
+      {!hideFooter && <footer className="border-t border-border/60 bg-white/80 backdrop-blur-xl py-6 mt-auto">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {footer ? footer : (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -143,7 +145,7 @@ export function PublicShell({
             </div>
           )}
         </div>
-      </footer>
+      </footer>}
     </div>
   );
 }

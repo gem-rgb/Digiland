@@ -18,13 +18,17 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
 from core import admin_urls
 from land_escrow.health_views import health_check
 
 urlpatterns = [
     path('health/', health_check, name='health-check'),
+    path('browse', RedirectView.as_view(url='/parcels/', permanent=False)),
+    path('browse/', RedirectView.as_view(url='/parcels/', permanent=False)),
     path('admin/', admin.site.urls),
     path('admin/', include(admin_urls)),
+    path('api/v1/auth/', include('core.auth_urls')),
     path('accounts/', include('allauth.urls')),
     path('api/v1/', include('core.urls')),
     path('api/v1/admin/control-plane/', include('admin_control_plane.urls')),

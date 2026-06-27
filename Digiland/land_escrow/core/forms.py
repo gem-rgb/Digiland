@@ -475,17 +475,24 @@ class AgentRatingForm(forms.Form):
 class PricePredictionForm(forms.Form):
     county = forms.ChoiceField(
         choices=[],
-        widget=forms.Select(attrs={'class': 'form-select'}),
+        widget=forms.Select(attrs={'class': 'form-select', 'data-action': 'load-constituencies'}),
         label='County',
     )
-    constituency = forms.CharField(
+    constituency = forms.ChoiceField(
+        choices=[],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select', 'data-action': 'load-towns'}),
+        label='Constituency',
+        help_text='Select a constituency within the chosen county.',
+    )
+    town = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'e.g. Westlands',
+            'placeholder': 'e.g. Karen, Westlands, Kitengela',
         }),
-        label='Constituency',
-        help_text='Leave blank to use the selected county as the fallback location.',
+        label='Town / Neighborhood',
+        help_text='Specific town or neighborhood for a more precise estimate.',
     )
     land_use = forms.ChoiceField(
         choices=[],
@@ -518,14 +525,61 @@ class PricePredictionForm(forms.Form):
         label='Electricity access',
         help_text='Tick if the parcel has power connectivity.',
     )
+    proximity_to_tarmac_km = forms.FloatField(
+        required=False,
+        min_value=0,
+        max_value=50,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Distance to tarmac road (km)',
+            'step': '0.5',
+        }),
+        label='Distance to tarmac road (km)',
+        help_text='Optional. Leave blank for auto-estimate.',
+    )
+    proximity_to_school_km = forms.FloatField(
+        required=False,
+        min_value=0,
+        max_value=50,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Distance to nearest school (km)',
+            'step': '0.5',
+        }),
+        label='Distance to nearest school (km)',
+        help_text='Optional. Leave blank for auto-estimate.',
+    )
+    proximity_to_hospital_km = forms.FloatField(
+        required=False,
+        min_value=0,
+        max_value=50,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Distance to nearest hospital (km)',
+            'step': '0.5',
+        }),
+        label='Distance to nearest hospital (km)',
+        help_text='Optional. Leave blank for auto-estimate.',
+    )
+    plot_grade = forms.ChoiceField(
+        choices=[('', 'Auto-detect'), ('A', 'A — Premium'), ('B', 'B — Good'), ('C', 'C — Average'), ('D', 'D — Developing')],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Plot grade',
+        help_text='Optional. Leave as Auto-detect for automatic grading.',
+    )
 
-    def __init__(self, *args, counties=None, land_use_types=None, **kwargs):
+    def __init__(self, *args, counties=None, land_use_types=None, constituencies=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         if counties is not None:
-            self.fields['county'].choices = [(county, county) for county in counties]
+            self.fields['county'].choices = [('', '-- Select County --')] + [(county, county) for county in counties]
         if land_use_types is not None:
             self.fields['land_use'].choices = [(value, value) for value in land_use_types]
+        if constituencies is not None:
+            self.fields['constituency'].choices = [('', '-- Select Constituency --')] + [(c, c) for c in constituencies]
+        else:
+            self.fields['constituency'].choices = [('', '-- Select County first --')]
 
 
 def _split_popup_targets(raw_value):

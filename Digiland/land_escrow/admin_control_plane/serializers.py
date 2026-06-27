@@ -16,6 +16,7 @@ FinancialActionSerializer      : Financial operation input validation.
 AdminIPRangeSerializer         : IP range CRUD.
 """
 
+from decimal import Decimal
 import re
 from rest_framework import serializers
 from django.utils import timezone
@@ -255,7 +256,7 @@ class FinancialActionSerializer(serializers.Serializer):
     amount = serializers.DecimalField(
         max_digits=14,
         decimal_places=2,
-        min_value=0.01,
+        min_value=Decimal('0.01'),
         help_text='Amount in KES.',
     )
     recipient_id = serializers.UUIDField(

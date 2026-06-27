@@ -15,6 +15,7 @@ django-cloudinary-storage==0.3.0
 django-cors-headers==4.9.0
 django-widget-tweaks==1.5.1
 djangorestframework==3.17.0
+joblib>=1.4.0,<2
 filelock==3.25.2
 gunicorn==25.1.0
 idna==3.11
@@ -24,6 +25,8 @@ mdurl==0.1.2
 msgpack==1.1.2
 packageurl-python==0.17.6
 packaging==26.0
+numpy>=2.2.0,<3
+pandas>=2.2.0,<3
 pillow==12.1.1
 pip-api==0.0.34
 pip-requirements-parser==32.0.1
@@ -85,6 +88,9 @@ elasticsearch-dsl==8.16.0  # Elasticsearch DSL client
 
 # Payment processing
 stripe==11.5.0  # Stripe Python SDK
+
+# Machine learning / prediction engine
+scikit-learn>=1.5.0,<2  # Land valuation model and training pipeline
 
 # Monitoring & observability
 sentry-sdk==2.20.0  # Error tracking and performance monitoring

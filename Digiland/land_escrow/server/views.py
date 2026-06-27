@@ -1,3 +1,4 @@
+from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -37,6 +38,7 @@ from .react_data import (
     serialize_user,
 )
 from core.services.popup_ads import build_popup_ads_payload, build_seller_promotions_dashboard, record_popup_event
+from .public_pages import PUBLIC_PAGES
 
 def is_seller_or_agent(user):
     if not user.is_authenticated:
@@ -77,6 +79,30 @@ def render_react_shell(request, page, title, subtitle='', **extra):
         bootstrap['popup_ads'] = {'enabled': False, 'page': page, 'candidates': {}, 'primary': None}
     bootstrap.update(extra)
     return render(request, 'frontend/react_shell.html', {'react_bootstrap': bootstrap})
+
+
+def public_marketing_page(request, page_key):
+    page = PUBLIC_PAGES.get(page_key)
+    if not page:
+        raise Http404(f'Unknown public page: {page_key}')
+
+    extra = {
+        'actions': page.get('actions', []),
+    }
+    content = page.get('content')
+    if content is not None:
+        extra['content'] = content
+    content_key = page.get('content_key')
+    if content_key:
+        extra['content_key'] = content_key
+
+    return render_react_shell(
+        request,
+        'content',
+        page['title'],
+        page['subtitle'],
+        **extra,
+    )
 
 
 def is_joint_buyer(user):
@@ -174,7 +200,7 @@ def home(request):
             {'label': 'Status', 'value': 'Live', 'tone': 'default'},
         ],
         actions=[
-            {'label': 'Create account', 'href': '/accounts/signup/', 'tone': 'default'},
+            {'label': 'Get Started', 'href': '/accounts/signup/', 'tone': 'default'},
             {'label': 'Sign in', 'href': '/accounts/login/', 'tone': 'outline'},
         ],
     )

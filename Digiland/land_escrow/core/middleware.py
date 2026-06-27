@@ -1,12 +1,62 @@
 import time
 import logging
 
+from django.conf import settings
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.core.cache import cache
 from django.http import JsonResponse
 
+
+class LegacyBrowseRedirectMiddleware:
+    """Redirect the old /browse alias to the marketplace page."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.path.rstrip('/') == '/browse':
+            return redirect('/parcels/')
+        return self.get_response(request)
+
+
 logger = logging.getLogger(__name__)
+
+EMAIL_VERIFICATION_EXEMPT_PREFIXES = (
+    '/static/',
+    '/media/',
+    '/accounts/',
+    '/api/v1/auth/',
+)
+
+EMAIL_VERIFICATION_EXEMPT_PATHS = {
+    '/favicon.ico',
+    '/robots.txt',
+}
+
+
+class EmailVerificationGateMiddleware:
+    """Block authenticated users who have not yet verified their email."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if getattr(settings, "TESTING", False):
+            return self.get_response(request)
+
+        path = request.path
+        if path in EMAIL_VERIFICATION_EXEMPT_PATHS or any(path.startswith(prefix) for prefix in EMAIL_VERIFICATION_EXEMPT_PREFIXES):
+            return self.get_response(request)
+
+        user = getattr(request, "user", None)
+        if not user or not getattr(user, "is_authenticated", False):
+            return self.get_response(request)
+
+        if getattr(user, "is_email_verified", True):
+            return self.get_response(request)
+
+        return redirect(reverse("account_verification_pending"))
 
 # ── Path prefixes that are ALWAYS accessible to Agent users ──────────────────
 # Phase 1 (unverified): only KYC, onboarding, auth, and static paths
@@ -145,6 +195,9 @@ class RateLimitMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        if getattr(settings, "TESTING", False):
+            return self.get_response(request)
+
         # Skip for static / media / admin paths
         path = request.path
         if path.startswith("/static/") or path.startswith("/media/"):

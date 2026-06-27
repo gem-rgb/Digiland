@@ -1,207 +1,952 @@
-county,constituency,land_use,size_acres,price_per_acre,distance_to_nairobi_km,has_road_access,has_water,has_electricity
-Nairobi,Westlands,Commercial,0.25,350000000,0,1,1,1
-Nairobi,Westlands,Commercial,0.5,280000000,0,1,1,1
-Nairobi,Westlands,Residential,0.5,200000000,0,1,1,1
-Nairobi,Langata,Residential,0.25,150000000,8,1,1,1
-Nairobi,Langata,Residential,1.0,120000000,10,1,1,1
-Nairobi,Karen,Residential,1.0,80000000,15,1,1,1
-Nairobi,Karen,Residential,2.0,70000000,18,1,1,1
-Nairobi,Karen,Residential,5.0,55000000,20,1,1,1
-Nairobi,Kilimani,Commercial,0.25,400000000,3,1,1,1
-Nairobi,Kilimani,Residential,0.5,250000000,3,1,1,1
-Nairobi,Upper Hill,Commercial,0.5,500000000,2,1,1,1
-Nairobi,Upper Hill,Commercial,0.25,450000000,2,1,1,1
-Nairobi,Dagoretti,Residential,0.5,60000000,12,1,1,1
-Nairobi,Dagoretti,Agricultural,2.0,40000000,15,1,1,1
-Nairobi,Embakasi,Residential,0.25,35000000,14,1,1,1
-Nairobi,Embakasi,Commercial,0.5,50000000,14,1,1,1
-Nairobi,Kasarani,Residential,0.5,30000000,16,1,1,1
-Nairobi,Kasarani,Residential,0.25,35000000,14,1,1,1
-Nairobi,Ruaraka,Residential,0.25,45000000,10,1,1,1
-Nairobi,Roysambu,Residential,0.5,28000000,15,1,1,1
-Kiambu,Ruiru,Residential,0.25,15000000,25,1,1,1
-Kiambu,Ruiru,Residential,0.5,12000000,28,1,1,1
-Kiambu,Ruiru,Commercial,0.5,20000000,25,1,1,1
-Kiambu,Juja,Residential,0.25,8000000,35,1,1,1
-Kiambu,Juja,Residential,0.5,6500000,38,1,1,1
-Kiambu,Juja,Agricultural,5.0,4000000,40,1,1,1
-Kiambu,Thika,Residential,0.5,7000000,42,1,1,1
-Kiambu,Thika,Commercial,0.25,12000000,40,1,1,1
-Kiambu,Thika,Agricultural,2.0,5000000,45,1,1,0
-Kiambu,Limuru,Residential,1.0,10000000,30,1,1,1
-Kiambu,Limuru,Agricultural,5.0,6000000,35,1,1,0
-Kiambu,Kikuyu,Residential,0.5,18000000,20,1,1,1
-Kiambu,Kikuyu,Agricultural,2.0,12000000,22,1,1,1
-Kiambu,Gatundu,Agricultural,2.0,3500000,55,1,0,1
-Kiambu,Gatundu,Residential,0.5,5000000,50,1,1,1
-Kajiado,Kitengela,Residential,0.125,8000000,30,1,1,1
-Kajiado,Kitengela,Residential,0.25,6500000,32,1,1,1
-Kajiado,Kitengela,Commercial,0.5,12000000,28,1,1,1
-Kajiado,Ongata Rongai,Residential,0.25,10000000,22,1,1,1
-Kajiado,Ongata Rongai,Residential,0.5,8000000,25,1,1,1
-Kajiado,Ngong,Residential,0.25,12000000,20,1,1,1
-Kajiado,Ngong,Residential,0.5,9000000,22,1,1,1
-Kajiado,Kiserian,Residential,0.5,5000000,30,1,1,1
-Kajiado,Kiserian,Agricultural,2.0,3500000,35,1,0,0
-Kajiado,Kajiado Town,Agricultural,5.0,1200000,80,1,0,0
-Kajiado,Kajiado Town,Residential,1.0,2000000,75,1,1,0
-Kajiado,Namanga,Agricultural,10.0,500000,160,1,0,0
-Kajiado,Loitokitok,Agricultural,20.0,350000,200,0,0,0
-Machakos,Syokimau,Residential,0.25,10000000,18,1,1,1
-Machakos,Syokimau,Commercial,0.5,15000000,16,1,1,1
-Machakos,Athi River,Residential,0.25,6000000,25,1,1,1
-Machakos,Athi River,Commercial,0.5,10000000,22,1,1,1
-Machakos,Mlolongo,Residential,0.25,5000000,20,1,1,1
-Machakos,Machakos Town,Residential,0.5,3500000,60,1,1,1
-Machakos,Machakos Town,Commercial,0.25,5000000,58,1,1,1
-Machakos,Kangundo,Agricultural,5.0,800000,70,1,0,0
-Machakos,Yatta,Agricultural,10.0,400000,100,0,0,0
-Nakuru,Nakuru Town,Commercial,0.5,15000000,160,1,1,1
-Nakuru,Nakuru Town,Residential,0.25,8000000,155,1,1,1
-Nakuru,Nakuru Town,Residential,0.5,6000000,158,1,1,1
-Nakuru,Naivasha,Residential,0.5,4000000,90,1,1,1
-Nakuru,Naivasha,Agricultural,5.0,2500000,95,1,1,0
-Nakuru,Naivasha,Commercial,0.25,7000000,88,1,1,1
-Nakuru,Gilgil,Residential,1.0,2000000,120,1,1,0
-Nakuru,Gilgil,Agricultural,10.0,1200000,125,1,0,0
-Nakuru,Njoro,Agricultural,5.0,1500000,175,1,0,0
-Nakuru,Subukia,Agricultural,10.0,800000,180,1,0,0
-Nakuru,Molo,Agricultural,5.0,1800000,190,1,1,0
-Mombasa,Nyali,Residential,0.25,40000000,480,1,1,1
-Mombasa,Nyali,Commercial,0.5,55000000,480,1,1,1
-Mombasa,Bamburi,Residential,0.25,25000000,485,1,1,1
-Mombasa,Kisauni,Residential,0.5,15000000,490,1,1,1
-Mombasa,Likoni,Residential,0.5,8000000,485,1,1,1
-Mombasa,Changamwe,Commercial,1.0,20000000,478,1,1,1
-Mombasa,Mvita,Commercial,0.25,60000000,482,1,1,1
-Kilifi,Malindi,Residential,0.5,5000000,560,1,1,1
-Kilifi,Malindi,Commercial,0.25,8000000,558,1,1,1
-Kilifi,Watamu,Residential,1.0,3500000,540,1,1,0
-Kilifi,Kilifi Town,Residential,0.5,4000000,520,1,1,1
-Kilifi,Kilifi Town,Agricultural,5.0,1500000,525,1,0,0
-Kilifi,Mtwapa,Residential,0.25,12000000,500,1,1,1
-Kwale,Diani,Residential,0.5,8000000,510,1,1,1
-Kwale,Diani,Commercial,0.25,15000000,508,1,1,1
-Kwale,Ukunda,Residential,0.5,4000000,515,1,1,0
-Kwale,Kwale Town,Agricultural,5.0,600000,530,1,0,0
-Kisumu,Kisumu Central,Commercial,0.5,15000000,340,1,1,1
-Kisumu,Kisumu Central,Residential,0.25,8000000,338,1,1,1
-Kisumu,Kisumu Central,Residential,0.5,6000000,340,1,1,1
-Kisumu,Nyando,Agricultural,5.0,1200000,350,1,0,0
-Kisumu,Muhoroni,Agricultural,10.0,800000,360,1,0,0
-Uasin Gishu,Eldoret,Commercial,0.5,12000000,310,1,1,1
-Uasin Gishu,Eldoret,Residential,0.25,6000000,308,1,1,1
-Uasin Gishu,Eldoret,Residential,0.5,4500000,312,1,1,1
-Uasin Gishu,Eldoret,Agricultural,5.0,2500000,320,1,1,0
-Uasin Gishu,Kapseret,Residential,1.0,3000000,315,1,1,0
-Uasin Gishu,Moiben,Agricultural,10.0,1500000,340,1,0,0
-Laikipia,Nanyuki,Residential,1.0,3500000,200,1,1,1
-Laikipia,Nanyuki,Commercial,0.5,6000000,198,1,1,1
-Laikipia,Nanyuki,Residential,5.0,2500000,205,1,1,0
-Laikipia,Rumuruti,Agricultural,10.0,800000,240,1,0,0
-Laikipia,Doldol,Agricultural,20.0,300000,260,0,0,0
-Nyandarua,Ol Kalou,Agricultural,5.0,1200000,140,1,0,0
-Nyandarua,Engineer,Agricultural,10.0,900000,150,1,0,0
-Nyandarua,Kinangop,Agricultural,5.0,1500000,130,1,1,0
-Nyeri,Nyeri Town,Residential,0.5,4000000,150,1,1,1
-Nyeri,Nyeri Town,Commercial,0.25,7000000,148,1,1,1
-Nyeri,Othaya,Agricultural,5.0,2000000,165,1,1,0
-Nyeri,Karatina,Residential,0.5,3000000,140,1,1,1
-Murang_a,Murang_a Town,Residential,0.5,3500000,80,1,1,1
-Murang_a,Murang_a Town,Commercial,0.25,5000000,78,1,1,1
-Murang_a,Kenol,Residential,0.5,2500000,75,1,1,1
-Murang_a,Kangema,Agricultural,5.0,1500000,100,1,0,0
-Kirinyaga,Kerugoya,Residential,0.5,2500000,115,1,1,1
-Kirinyaga,Kerugoya,Commercial,0.25,4000000,113,1,1,1
-Kirinyaga,Wanguru,Agricultural,5.0,1200000,130,1,1,0
-Embu,Embu Town,Residential,0.5,3000000,130,1,1,1
-Embu,Embu Town,Commercial,0.25,5000000,128,1,1,1
-Embu,Runyenjes,Agricultural,5.0,1500000,145,1,0,0
-Meru,Meru Town,Residential,0.5,3000000,220,1,1,1
-Meru,Meru Town,Commercial,0.25,5000000,218,1,1,1
-Meru,Nkubu,Residential,1.0,2000000,230,1,1,0
-Meru,Timau,Agricultural,10.0,1200000,250,1,0,0
-Tharaka Nithi,Chuka,Residential,0.5,2000000,195,1,1,1
-Tharaka Nithi,Chuka,Agricultural,5.0,800000,200,1,0,0
-Isiolo,Isiolo Town,Residential,0.5,1500000,270,1,1,1
-Isiolo,Isiolo Town,Commercial,0.25,2500000,268,1,1,1
-Isiolo,Merti,Agricultural,20.0,150000,350,0,0,0
-Marsabit,Marsabit Town,Residential,1.0,800000,560,1,1,0
-Marsabit,Moyale,Commercial,0.5,1200000,780,1,1,0
-Marsabit,Loiyangalani,Agricultural,20.0,100000,600,0,0,0
-Samburu,Maralal,Residential,1.0,700000,350,1,1,0
-Samburu,Maralal,Agricultural,10.0,250000,360,0,0,0
-Turkana,Lodwar,Residential,1.0,500000,750,1,1,0
-Turkana,Lodwar,Commercial,0.5,800000,748,1,1,0
-Turkana,Kakuma,Agricultural,20.0,100000,800,0,0,0
-West Pokot,Kapenguria,Residential,1.0,800000,380,1,1,0
-West Pokot,Kapenguria,Agricultural,10.0,300000,390,1,0,0
-Baringo,Kabarnet,Residential,1.0,1200000,290,1,1,0
-Baringo,Eldama Ravine,Agricultural,5.0,800000,250,1,0,0
-Baringo,Marigat,Agricultural,10.0,400000,300,1,0,0
-Elgeyo Marakwet,Iten,Residential,1.0,1500000,340,1,1,0
-Elgeyo Marakwet,Kapsowar,Agricultural,5.0,600000,360,1,0,0
-Nandi,Kapsabet,Residential,0.5,2000000,330,1,1,1
-Nandi,Kapsabet,Agricultural,5.0,1200000,335,1,0,0
-Trans Nzoia,Kitale,Residential,0.5,3000000,370,1,1,1
-Trans Nzoia,Kitale,Commercial,0.25,5000000,368,1,1,1
-Trans Nzoia,Kitale,Agricultural,5.0,2000000,375,1,1,0
-Bungoma,Bungoma Town,Residential,0.5,2500000,400,1,1,1
-Bungoma,Bungoma Town,Commercial,0.25,4000000,398,1,1,1
-Bungoma,Webuye,Agricultural,5.0,1000000,385,1,0,0
-Kakamega,Kakamega Town,Residential,0.5,2500000,380,1,1,1
-Kakamega,Kakamega Town,Commercial,0.25,4000000,378,1,1,1
-Kakamega,Mumias,Agricultural,5.0,1200000,400,1,0,0
-Vihiga,Mbale,Residential,0.5,2000000,370,1,1,1
-Vihiga,Mbale,Agricultural,2.0,1500000,375,1,0,0
-Busia,Busia Town,Residential,0.5,1800000,440,1,1,1
-Busia,Busia Town,Commercial,0.25,3000000,438,1,1,1
-Busia,Malaba,Commercial,0.5,2500000,450,1,1,0
-Siaya,Siaya Town,Residential,0.5,1500000,370,1,1,1
-Siaya,Bondo,Agricultural,5.0,600000,380,1,0,0
-Homa Bay,Homa Bay Town,Residential,0.5,1800000,380,1,1,1
-Homa Bay,Homa Bay Town,Commercial,0.25,3000000,378,1,1,1
-Migori,Migori Town,Residential,0.5,1500000,400,1,1,1
-Migori,Migori Town,Agricultural,5.0,800000,410,1,0,0
-Nyamira,Nyamira Town,Residential,0.5,2000000,330,1,1,1
-Nyamira,Nyamira Town,Agricultural,5.0,1200000,340,1,0,0
-Kisii,Kisii Town,Residential,0.5,3000000,320,1,1,1
-Kisii,Kisii Town,Commercial,0.25,5000000,318,1,1,1
-Kisii,Ogembo,Agricultural,5.0,1500000,330,1,0,0
-Kericho,Kericho Town,Residential,0.5,2500000,280,1,1,1
-Kericho,Kericho Town,Commercial,0.25,4000000,278,1,1,1
-Kericho,Litein,Agricultural,5.0,1500000,290,1,0,0
-Bomet,Bomet Town,Residential,0.5,2000000,260,1,1,1
-Bomet,Bomet Town,Agricultural,5.0,1000000,270,1,0,0
-Narok,Narok Town,Residential,0.5,2500000,150,1,1,1
-Narok,Narok Town,Commercial,0.25,4000000,148,1,1,1
-Narok,Narok Town,Agricultural,5.0,1200000,155,1,0,0
-Narok,Maasai Mara,Agricultural,20.0,500000,220,0,0,0
-Lamu,Lamu Town,Residential,0.5,3000000,600,1,1,0
-Lamu,Mpeketoni,Agricultural,10.0,400000,580,1,0,0
-Tana River,Hola,Agricultural,10.0,200000,400,1,0,0
-Tana River,Garsen,Agricultural,20.0,150000,430,0,0,0
-Garissa,Garissa Town,Residential,1.0,1500000,370,1,1,0
-Garissa,Garissa Town,Commercial,0.5,2500000,368,1,1,0
-Garissa,Dadaab,Agricultural,20.0,100000,500,0,0,0
-Wajir,Wajir Town,Residential,1.0,800000,640,1,1,0
-Wajir,Wajir Town,Commercial,0.5,1200000,638,1,1,0
-Mandera,Mandera Town,Residential,1.0,600000,900,1,1,0
-Mandera,Mandera Town,Commercial,0.5,1000000,898,1,1,0
-Taita Taveta,Voi,Residential,0.5,2000000,330,1,1,1
-Taita Taveta,Voi,Commercial,0.25,3500000,328,1,1,1
-Taita Taveta,Taveta,Agricultural,10.0,500000,380,1,0,0
-Makueni,Wote,Residential,0.5,1500000,170,1,1,0
-Makueni,Wote,Agricultural,5.0,600000,180,1,0,0
-Makueni,Sultan Hamud,Agricultural,10.0,400000,150,1,0,0
-Kitui,Kitui Town,Residential,0.5,1500000,180,1,1,0
-Kitui,Kitui Town,Commercial,0.25,2500000,178,1,1,0
-Kitui,Mwingi,Agricultural,10.0,300000,220,1,0,0
-Kitui,Mutomo,Agricultural,20.0,150000,260,0,0,0
-Tharaka Nithi,Marimanti,Agricultural,10.0,400000,230,1,0,0
-Nyandarua,Ol Joro Orok,Agricultural,10.0,1000000,120,1,0,0
-Nyeri,Mukurweini,Agricultural,2.0,2500000,155,1,1,0
-Kiambu,Karuri,Residential,0.25,20000000,18,1,1,1
-Kajiado,Isinya,Residential,0.5,3000000,50,1,1,0
-Kajiado,Isinya,Agricultural,5.0,1500000,55,1,0,0
-Nakuru,Rongai,Agricultural,5.0,1000000,200,1,0,0
+county,constituency,town,land_use,size_acres,price_per_acre,distance_to_nairobi_km,latitude,longitude,proximity_to_tarmac_km,proximity_to_school_km,proximity_to_hospital_km,plot_grade,has_road_access,has_water,has_electricity,year
+Nairobi,Westlands,Westlands,Residential,5.0,118582050,0,-1.27,36.8,0.2072,0.2438,0.67,A,1,0,0,2025
+Nairobi,Westlands,Westlands,Commercial,0.25,562657716,0,-1.27,36.8,0.2248,0.2408,0.8979,A,0,0,1,2024
+Nairobi,Westlands,Westlands,Agricultural,10.0,23300671,0,-1.27,36.8,0.2083,0.3369,0.8735,A,0,1,1,2023
+Nairobi,Westlands,Westlands,Residential,2.0,146617840,0,-1.27,36.8,0.1754,0.2483,0.8516,A,1,0,0,2025
+Nairobi,Westlands,Westlands,Commercial,0.5,580956178,0,-1.27,36.8,0.1884,0.3204,0.8646,A,1,1,1,2025
+Nairobi,Westlands,Westlands,Agricultural,1.0,60562404,0,-1.27,36.8,0.2046,0.3222,0.9097,A,0,1,0,2025
+Nairobi,Westlands,Westlands,Residential,0.125,215353237,0,-1.27,36.8,0.1852,0.3187,0.7666,A,0,0,0,2025
+Nairobi,Westlands,Westlands,Commercial,1.0,411718685,0,-1.27,36.8,0.189,0.3597,0.6843,A,0,1,1,2024
+Nairobi,Westlands,Westlands,Agricultural,10.0,24848376,0,-1.27,36.8,0.1905,0.3595,0.8093,A,0,0,1,2024
+Nairobi,Westlands,Westlands,Residential,2.0,190850395,0,-1.27,36.8,0.1689,0.2922,0.7852,A,0,1,1,2024
+Nairobi,Westlands,Westlands,Commercial,0.5,570484534,0,-1.27,36.8,0.1759,0.2849,0.6917,A,1,1,0,2025
+Nairobi,Westlands,Westlands,Agricultural,20.0,41461243,0,-1.27,36.8,0.1792,0.2689,0.8216,A,1,1,0,2025
+Nairobi,Westlands,Westlands,Residential,0.125,287020732,0,-1.27,36.8,0.204,0.2718,0.9192,A,1,0,1,2023
+Nairobi,Westlands,Westlands,Commercial,1.0,630751447,0,-1.27,36.8,0.1899,0.348,0.7845,A,1,1,1,2024
+Nairobi,Westlands,Westlands,Agricultural,2.0,38795873,0,-1.27,36.8,0.1783,0.3487,0.9151,A,1,1,0,2023
+Nairobi,Westlands,Parklands,Residential,0.125,280259805,0,-1.26,36.81,0.2692,0.4946,0.9628,A,0,1,1,2025
+Nairobi,Westlands,Parklands,Commercial,0.125,521846108,0,-1.26,36.81,0.2518,0.4805,0.9357,A,1,1,1,2025
+Nairobi,Westlands,Parklands,Agricultural,1.0,43478596,0,-1.26,36.81,0.2932,0.5723,1.0201,A,0,1,1,2024
+Nairobi,Westlands,Parklands,Residential,0.125,259594989,0,-1.26,36.81,0.2978,0.5729,1.161,A,1,0,0,2024
+Nairobi,Westlands,Parklands,Commercial,0.25,438615420,0,-1.26,36.81,0.3595,0.5112,1.0874,A,1,0,1,2024
+Nairobi,Westlands,Parklands,Agricultural,2.0,25978909,0,-1.26,36.81,0.2972,0.5839,1.0125,A,0,0,1,2024
+Nairobi,Westlands,Parklands,Residential,0.125,265271103,0,-1.26,36.81,0.3468,0.4492,1.0378,A,0,0,1,2024
+Nairobi,Westlands,Parklands,Commercial,0.125,441496287,0,-1.26,36.81,0.2875,0.5343,0.92,A,1,1,1,2025
+Nairobi,Westlands,Parklands,Agricultural,5.0,46524092,0,-1.26,36.81,0.3007,0.4265,0.9396,A,1,0,1,2023
+Nairobi,Westlands,Spring Valley,Residential,0.125,280767316,0,-1.28,36.79,0.5308,0.6425,1.3522,A,1,0,1,2025
+Nairobi,Westlands,Spring Valley,Commercial,0.5,261068198,0,-1.28,36.79,0.4564,0.7074,1.1246,A,0,1,0,2025
+Nairobi,Westlands,Spring Valley,Agricultural,5.0,42027250,0,-1.28,36.79,0.4667,0.6819,1.4303,A,0,1,0,2025
+Nairobi,Westlands,Spring Valley,Residential,0.25,201809833,0,-1.28,36.79,0.5091,0.9071,1.2396,A,1,1,0,2025
+Nairobi,Westlands,Spring Valley,Commercial,0.25,302572057,0,-1.28,36.79,0.5364,0.8534,1.1298,A,0,0,1,2023
+Nairobi,Westlands,Spring Valley,Agricultural,20.0,45667302,0,-1.28,36.79,0.5622,0.9221,0.9719,A,1,1,0,2025
+Nairobi,Westlands,Spring Valley,Residential,5.0,157240349,0,-1.28,36.79,0.5403,0.7624,0.9786,A,1,1,1,2024
+Nairobi,Westlands,Spring Valley,Commercial,1.0,242334795,0,-1.28,36.79,0.4386,0.745,1.3749,A,1,1,1,2024
+Nairobi,Westlands,Loresho,Residential,0.5,87971794,0,-1.31,36.78,0.7236,1.0322,1.7901,B,1,1,1,2023
+Nairobi,Westlands,Loresho,Commercial,0.125,182806690,0,-1.31,36.78,0.8245,0.9019,1.6253,B,1,1,1,2025
+Nairobi,Westlands,Loresho,Agricultural,1.0,57831256,0,-1.31,36.78,0.9436,1.1683,1.5739,B,1,1,1,2024
+Nairobi,Westlands,Loresho,Residential,5.0,79184773,0,-1.31,36.78,0.6807,0.9682,1.7642,B,1,0,1,2024
+Nairobi,Westlands,Loresho,Commercial,0.25,163922965,0,-1.31,36.78,0.8495,0.986,1.4653,B,1,1,0,2024
+Nairobi,Westlands,Loresho,Agricultural,2.0,43747452,0,-1.31,36.78,0.8382,0.8374,1.7712,B,1,1,1,2024
+Nairobi,Westlands,Loresho,Residential,0.25,100857159,0,-1.31,36.78,0.6633,0.9658,1.5779,B,0,0,0,2024
+Nairobi,Westlands,Loresho,Commercial,0.25,195588080,0,-1.31,36.78,0.9233,1.1114,1.3313,B,1,0,0,2025
+Nairobi,Westlands,Muthaiga,Residential,5.0,190921092,0,-1.25,36.83,0.1195,0.3115,0.59,A,0,0,1,2025
+Nairobi,Westlands,Muthaiga,Commercial,1.0,742716283,0,-1.25,36.83,0.099,0.2711,0.4494,A,1,1,1,2025
+Nairobi,Westlands,Muthaiga,Agricultural,5.0,36718264,0,-1.25,36.83,0.0928,0.3048,0.4277,A,1,1,0,2024
+Nairobi,Westlands,Muthaiga,Residential,0.25,289632328,0,-1.25,36.83,0.1133,0.2867,0.554,A,0,0,1,2024
+Nairobi,Westlands,Muthaiga,Commercial,0.125,848042778,0,-1.25,36.83,0.1181,0.2903,0.5495,A,1,0,0,2025
+Nairobi,Westlands,Muthaiga,Agricultural,20.0,30814790,0,-1.25,36.83,0.1119,0.3269,0.5681,A,1,1,0,2024
+Nairobi,Westlands,Muthaiga,Residential,0.25,486354319,0,-1.25,36.83,0.1147,0.2618,0.452,A,1,1,1,2023
+Nairobi,Westlands,Muthaiga,Commercial,0.5,659967374,0,-1.25,36.83,0.0833,0.2423,0.5079,A,1,1,1,2025
+Nairobi,Westlands,Muthaiga,Agricultural,5.0,26460435,0,-1.25,36.83,0.1049,0.2686,0.4947,A,0,1,0,2024
+Nairobi,Westlands,Kileleshwa,Residential,0.125,249315840,0,-1.27,36.82,0.1692,0.3383,0.8301,A,0,1,1,2025
+Nairobi,Westlands,Kileleshwa,Commercial,0.125,540602667,0,-1.27,36.82,0.2074,0.3397,0.628,A,1,1,1,2025
+Nairobi,Westlands,Kileleshwa,Agricultural,5.0,56145623,0,-1.27,36.82,0.1896,0.3007,0.6555,A,1,0,1,2024
+Nairobi,Westlands,Kileleshwa,Residential,1.0,245765860,0,-1.27,36.82,0.2187,0.3559,0.6356,A,0,1,1,2025
+Nairobi,Westlands,Kileleshwa,Commercial,1.0,351797109,0,-1.27,36.82,0.1961,0.3301,0.7196,A,1,1,1,2025
+Nairobi,Westlands,Kileleshwa,Agricultural,10.0,24743434,0,-1.27,36.82,0.2077,0.3456,0.7156,A,1,0,1,2024
+Nairobi,Westlands,Kileleshwa,Residential,2.0,195617838,0,-1.27,36.82,0.1993,0.3352,0.5861,A,0,1,1,2025
+Nairobi,Westlands,Kileleshwa,Commercial,0.25,477641178,0,-1.27,36.82,0.204,0.2822,0.687,A,0,1,1,2024
+Nairobi,Westlands,Kileleshwa,Agricultural,5.0,33083720,0,-1.27,36.82,0.1773,0.2981,0.7629,A,0,0,0,2025
+Nairobi,Westlands,Nyari,Residential,2.0,156629295,0,-1.26,36.78,0.4253,0.6546,1.2327,A,1,1,0,2024
+Nairobi,Westlands,Nyari,Commercial,0.5,413844864,0,-1.26,36.78,0.4881,0.699,1.2308,A,0,1,1,2025
+Nairobi,Westlands,Nyari,Agricultural,10.0,24144314,0,-1.26,36.78,0.5898,0.6673,1.3489,A,0,1,1,2023
+Nairobi,Westlands,Nyari,Residential,2.0,174729200,0,-1.26,36.78,0.572,0.9568,1.3832,A,1,1,0,2024
+Nairobi,Westlands,Nyari,Commercial,0.125,432624188,0,-1.26,36.78,0.4348,0.664,1.2016,A,1,1,0,2025
+Nairobi,Westlands,Nyari,Agricultural,10.0,28557853,0,-1.26,36.78,0.4467,0.7247,1.6747,A,1,0,0,2025
+Nairobi,Westlands,Nyari,Residential,2.0,215635767,0,-1.26,36.78,0.4143,0.6931,1.3846,A,1,1,1,2025
+Nairobi,Westlands,Nyari,Commercial,0.5,311340582,0,-1.26,36.78,0.5196,0.9246,1.6407,A,1,0,1,2025
+Nairobi,Westlands,Ridgeways,Residential,2.0,82152263,0,-1.25,36.79,0.8551,0.9078,1.469,B,0,1,1,2025
+Nairobi,Westlands,Ridgeways,Commercial,0.25,224545997,0,-1.25,36.79,0.6692,0.9392,1.68,B,1,1,0,2025
+Nairobi,Westlands,Ridgeways,Agricultural,1.0,59489343,0,-1.25,36.79,0.7855,0.9258,1.6728,B,1,1,0,2025
+Nairobi,Westlands,Ridgeways,Residential,1.0,113788350,0,-1.25,36.79,0.8392,0.9994,1.7583,B,1,0,1,2023
+Nairobi,Westlands,Ridgeways,Commercial,0.125,216068197,0,-1.25,36.79,0.8348,0.8957,1.554,B,1,1,1,2023
+Nairobi,Westlands,Ridgeways,Agricultural,20.0,14253385,0,-1.25,36.79,0.6893,1.1731,1.6501,B,1,0,1,2025
+Nairobi,Westlands,Ridgeways,Residential,5.0,78218696,0,-1.25,36.79,0.8026,1.1517,2.0621,B,1,1,0,2024
+Nairobi,Westlands,Ridgeways,Commercial,0.5,142354908,0,-1.25,36.79,0.908,1.032,1.9152,B,1,0,1,2023
+Nairobi,Westlands,Rosslyn,Residential,0.25,256773934,0,-1.24,36.78,0.7154,0.7164,1.4298,A,1,0,1,2025
+Nairobi,Westlands,Rosslyn,Commercial,1.0,255039222,0,-1.24,36.78,0.7154,0.7985,1.2222,A,1,1,1,2025
+Nairobi,Westlands,Rosslyn,Agricultural,20.0,28508431,0,-1.24,36.78,0.5146,0.9187,1.782,A,1,0,1,2025
+Nairobi,Westlands,Rosslyn,Residential,0.125,287943181,0,-1.24,36.78,0.6862,0.7616,1.39,A,1,0,1,2025
+Nairobi,Westlands,Rosslyn,Commercial,1.0,333802675,0,-1.24,36.78,0.5842,0.6715,1.5802,A,0,0,1,2025
+Nairobi,Westlands,Rosslyn,Agricultural,1.0,57555510,0,-1.24,36.78,0.5149,0.81,1.5396,A,1,1,0,2024
+Nairobi,Westlands,Rosslyn,Residential,0.25,197168874,0,-1.24,36.78,0.5907,0.7213,1.3532,A,0,1,1,2025
+Nairobi,Westlands,Rosslyn,Commercial,0.125,389875745,0,-1.24,36.78,0.5518,0.9478,1.6142,A,1,0,1,2025
+Nairobi,Westlands,Gigiri,Residential,1.0,221874517,0,-1.25,36.8,0.2394,0.2754,0.7147,A,0,0,1,2025
+Nairobi,Westlands,Gigiri,Commercial,1.0,374747952,0,-1.25,36.8,0.2323,0.2743,0.6717,A,1,1,1,2025
+Nairobi,Westlands,Gigiri,Agricultural,20.0,25488112,0,-1.25,36.8,0.1709,0.2517,0.6306,A,0,0,0,2025
+Nairobi,Westlands,Gigiri,Residential,0.125,294227230,0,-1.25,36.8,0.1741,0.2559,0.6095,A,1,1,1,2024
+Nairobi,Westlands,Gigiri,Commercial,0.5,490080168,0,-1.25,36.8,0.2197,0.2806,0.5076,A,1,1,0,2024
+Nairobi,Westlands,Gigiri,Agricultural,1.0,58938812,0,-1.25,36.8,0.1893,0.3349,0.4833,A,1,1,1,2025
+Nairobi,Westlands,Gigiri,Residential,2.0,155887805,0,-1.25,36.8,0.214,0.2966,0.6287,A,1,1,0,2025
+Nairobi,Westlands,Gigiri,Commercial,0.5,499231222,0,-1.25,36.8,0.1712,0.3536,0.553,A,0,0,1,2024
+Nairobi,Westlands,Runda,Residential,1.0,149908322,0,-1.24,36.77,0.8129,1.2419,2.1813,A,0,1,1,2025
+Nairobi,Westlands,Runda,Commercial,1.0,253332314,0,-1.24,36.77,0.7823,1.0733,1.8901,A,1,1,1,2025
+Nairobi,Westlands,Runda,Agricultural,5.0,46752515,0,-1.24,36.77,0.7855,1.2781,2.1134,A,1,0,1,2023
+Nairobi,Westlands,Runda,Residential,2.0,159147077,0,-1.24,36.77,0.8173,1.2415,2.2504,A,0,0,1,2024
+Nairobi,Westlands,Runda,Commercial,0.25,287293151,0,-1.24,36.77,0.7202,1.0438,2.1288,A,0,1,0,2023
+Nairobi,Westlands,Runda,Agricultural,1.0,54140267,0,-1.24,36.77,0.7747,1.0146,1.6508,A,1,1,1,2024
+Nairobi,Westlands,Runda,Residential,1.0,220557583,0,-1.24,36.77,0.9174,1.2103,1.9664,A,1,0,1,2023
+Nairobi,Westlands,Runda,Commercial,0.125,312631140,0,-1.24,36.77,0.6659,1.252,1.6525,A,1,1,1,2025
+Nairobi,Westlands,Runda,Agricultural,5.0,66157959,0,-1.24,36.77,0.7777,1.3407,1.6915,A,1,1,1,2024
+Nairobi,Westlands,Hardy,Residential,5.0,74413733,0,-1.26,36.77,0.9814,1.4496,1.6761,B,1,1,0,2024
+Nairobi,Westlands,Hardy,Commercial,1.0,95985691,0,-1.26,36.77,0.9728,1.6468,1.8981,B,0,1,1,2023
+Nairobi,Westlands,Hardy,Agricultural,2.0,35475472,0,-1.26,36.77,1.1001,1.7209,2.1768,B,1,1,1,2024
+Nairobi,Westlands,Hardy,Residential,0.5,101568495,0,-1.26,36.77,1.1381,1.4205,2.2101,B,1,1,0,2024
+Nairobi,Westlands,Hardy,Commercial,0.25,205927800,0,-1.26,36.77,1.1716,1.6977,1.814,B,1,1,1,2025
+Nairobi,Westlands,Hardy,Agricultural,2.0,30935076,0,-1.26,36.77,0.8278,1.6446,2.3774,B,1,1,1,2023
+Nairobi,Westlands,Hardy,Residential,0.125,142278957,0,-1.26,36.77,1.027,1.251,1.6421,B,0,1,1,2025
+Nairobi,Westlands,Hardy,Commercial,0.25,154069371,0,-1.26,36.77,0.8862,1.5074,1.8761,B,0,0,1,2025
+Nairobi,Dagoretti North,Kilimani,Residential,0.125,354261765,0,-1.28,36.83,0.0803,0.1841,0.4422,A,1,1,1,2024
+Nairobi,Dagoretti North,Kilimani,Commercial,0.25,805936409,0,-1.28,36.83,0.0892,0.2047,0.5336,A,0,0,1,2023
+Nairobi,Dagoretti North,Kilimani,Agricultural,5.0,43347166,0,-1.28,36.83,0.1029,0.2168,0.4835,A,1,0,0,2025
+Nairobi,Dagoretti North,Kilimani,Residential,0.125,417504513,0,-1.28,36.83,0.0975,0.1685,0.4871,A,1,0,1,2025
+Nairobi,Dagoretti North,Kilimani,Commercial,1.0,619419405,0,-1.28,36.83,0.0846,0.2008,0.5812,A,1,0,1,2024
+Nairobi,Dagoretti North,Kilimani,Agricultural,5.0,35601057,0,-1.28,36.83,0.0861,0.2207,0.4151,A,1,1,0,2024
+Nairobi,Dagoretti North,Kilimani,Residential,5.0,315863661,0,-1.28,36.83,0.105,0.2291,0.5254,A,1,1,1,2025
+Nairobi,Dagoretti North,Kilimani,Commercial,0.25,1015236458,0,-1.28,36.83,0.0985,0.163,0.4737,A,1,1,1,2024
+Nairobi,Dagoretti North,Kilimani,Agricultural,5.0,43462379,0,-1.28,36.83,0.1117,0.2317,0.4899,A,1,1,1,2024
+Nairobi,Dagoretti North,Kilimani,Residential,2.0,186867170,0,-1.28,36.83,0.0937,0.2171,0.5009,A,1,1,0,2023
+Nairobi,Dagoretti North,Kilimani,Commercial,0.25,923916572,0,-1.28,36.83,0.0955,0.222,0.5358,A,1,1,1,2024
+Nairobi,Dagoretti North,Kilimani,Agricultural,1.0,63877260,0,-1.28,36.83,0.1063,0.2325,0.5747,A,1,0,0,2024
+Nairobi,Dagoretti North,Lavington,Residential,0.5,240978673,0,-1.29,36.84,0.2167,0.2502,0.6141,A,1,1,1,2025
+Nairobi,Dagoretti North,Lavington,Commercial,0.5,671061097,0,-1.29,36.84,0.1939,0.2834,0.567,A,1,1,1,2025
+Nairobi,Dagoretti North,Lavington,Agricultural,2.0,71796040,0,-1.29,36.84,0.223,0.3009,0.6095,A,1,1,0,2023
+Nairobi,Dagoretti North,Lavington,Residential,5.0,153041851,0,-1.29,36.84,0.2265,0.3325,0.6742,A,0,0,1,2024
+Nairobi,Dagoretti North,Lavington,Commercial,0.25,802554320,0,-1.29,36.84,0.2227,0.2681,0.5374,A,0,0,1,2025
+Nairobi,Dagoretti North,Lavington,Agricultural,10.0,44088538,0,-1.29,36.84,0.2002,0.2902,0.5189,A,0,1,1,2025
+Nairobi,Dagoretti North,Lavington,Residential,0.25,374973905,0,-1.29,36.84,0.2277,0.3421,0.5484,A,0,0,1,2025
+Nairobi,Dagoretti North,Lavington,Commercial,0.25,734410623,0,-1.29,36.84,0.188,0.2432,0.4928,A,1,0,1,2024
+Nairobi,Dagoretti North,Lavington,Agricultural,20.0,26222287,0,-1.29,36.84,0.1868,0.2575,0.4892,A,1,0,0,2023
+Nairobi,Dagoretti North,Lavington,Residential,1.0,186321431,0,-1.29,36.84,0.2268,0.3059,0.6545,A,0,1,1,2023
+Nairobi,Dagoretti North,Lavington,Commercial,1.0,323464144,0,-1.29,36.84,0.1689,0.3486,0.6232,A,0,0,0,2025
+Nairobi,Dagoretti North,Lavington,Agricultural,1.0,59321613,0,-1.29,36.84,0.175,0.3202,0.6056,A,1,1,0,2024
+Nairobi,Dagoretti North,Hurlingham,Residential,0.5,212059234,0,-1.29,36.83,0.1054,0.3577,0.4507,A,1,1,1,2024
+Nairobi,Dagoretti North,Hurlingham,Commercial,0.125,593433546,0,-1.29,36.83,0.0853,0.2823,0.4677,A,0,0,1,2025
+Nairobi,Dagoretti North,Hurlingham,Agricultural,2.0,35214274,0,-1.29,36.83,0.1177,0.2444,0.4403,A,1,1,1,2023
+Nairobi,Dagoretti North,Hurlingham,Residential,0.25,391280330,0,-1.29,36.83,0.1059,0.2743,0.5724,A,1,0,1,2024
+Nairobi,Dagoretti North,Hurlingham,Commercial,0.125,1111978421,0,-1.29,36.83,0.0955,0.3568,0.4992,A,1,0,1,2025
+Nairobi,Dagoretti North,Hurlingham,Agricultural,10.0,18431908,0,-1.29,36.83,0.0872,0.2753,0.4205,A,1,0,0,2024
+Nairobi,Dagoretti North,Hurlingham,Residential,0.5,274785302,0,-1.29,36.83,0.1148,0.2823,0.5996,A,1,1,1,2024
+Nairobi,Dagoretti North,Hurlingham,Commercial,0.5,609832725,0,-1.29,36.83,0.0864,0.2437,0.5697,A,1,0,1,2025
+Nairobi,Dagoretti North,Dagoretti Corner,Residential,5.0,41935054,0,-1.34,36.85,0.521,0.8573,1.7693,B,0,0,1,2024
+Nairobi,Dagoretti North,Dagoretti Corner,Commercial,0.5,67449504,0,-1.34,36.85,0.4052,0.6995,1.5106,B,0,0,1,2024
+Nairobi,Dagoretti North,Dagoretti Corner,Agricultural,20.0,10676939,0,-1.34,36.85,0.44,0.6834,1.2444,B,1,1,0,2025
+Nairobi,Dagoretti North,Dagoretti Corner,Residential,0.25,107441591,0,-1.34,36.85,0.413,0.8135,1.7348,B,1,0,1,2024
+Nairobi,Dagoretti North,Dagoretti Corner,Commercial,0.25,131840926,0,-1.34,36.85,0.4278,0.8929,1.2158,B,1,1,1,2023
+Nairobi,Dagoretti North,Dagoretti Corner,Agricultural,20.0,13349294,0,-1.34,36.85,0.5434,0.7932,1.4465,B,1,1,0,2023
+Nairobi,Dagoretti North,Dagoretti Corner,Residential,1.0,64976942,0,-1.34,36.85,0.5756,0.8897,1.5839,B,0,1,1,2025
+Nairobi,Dagoretti North,Dagoretti Corner,Commercial,0.25,143470718,0,-1.34,36.85,0.4324,0.9391,1.3353,B,0,1,1,2025
+Nairobi,Langata,Karen,Residential,2.0,101821375,0,-1.44,36.77,1.0134,1.5015,2.6024,A,1,0,1,2023
+Nairobi,Langata,Karen,Commercial,0.25,220416791,0,-1.44,36.77,0.8325,1.7691,3.3252,A,1,1,1,2023
+Nairobi,Langata,Karen,Agricultural,5.0,55211540,0,-1.44,36.77,1.1827,1.4898,3.3656,A,1,1,1,2025
+Nairobi,Langata,Karen,Residential,5.0,84139691,0,-1.44,36.77,0.8575,1.7169,2.7832,A,1,1,0,2024
+Nairobi,Langata,Karen,Commercial,0.5,134261539,0,-1.44,36.77,0.8992,1.2581,2.7483,A,0,0,1,2024
+Nairobi,Langata,Karen,Agricultural,10.0,47600479,0,-1.44,36.77,0.8759,1.2956,3.5952,A,1,1,1,2025
+Nairobi,Langata,Karen,Residential,1.0,122794724,0,-1.44,36.77,0.9412,1.2303,2.9939,A,1,0,1,2025
+Nairobi,Langata,Karen,Commercial,1.0,92623478,0,-1.44,36.77,0.8181,1.2307,3.0742,A,0,0,0,2024
+Nairobi,Langata,Karen,Agricultural,5.0,43897324,0,-1.44,36.77,0.8475,1.785,2.8727,A,0,1,1,2025
+Nairobi,Langata,Karen,Residential,0.5,111162702,0,-1.44,36.77,1.0854,1.6824,3.0232,A,1,0,1,2023
+Nairobi,Langata,Karen,Commercial,0.25,194428269,0,-1.44,36.77,0.9197,1.4018,3.3939,A,1,0,1,2025
+Nairobi,Langata,Karen,Agricultural,20.0,25807635,0,-1.44,36.77,0.9231,1.7393,3.4465,A,1,1,0,2023
+Nairobi,Langata,Langata,Residential,5.0,60531911,0,-1.39,36.82,0.5167,0.6946,2.1032,B,1,1,1,2025
+Nairobi,Langata,Langata,Commercial,1.0,65056387,0,-1.39,36.82,0.4303,0.861,1.9283,B,1,0,1,2023
+Nairobi,Langata,Langata,Agricultural,20.0,14694668,0,-1.39,36.82,0.5324,0.8082,1.851,B,1,1,0,2024
+Nairobi,Langata,Langata,Residential,0.25,136089380,0,-1.39,36.82,0.4529,0.7949,2.3659,B,1,1,1,2025
+Nairobi,Langata,Langata,Commercial,0.5,75197887,0,-1.39,36.82,0.4634,0.7516,2.347,B,0,1,0,2024
+Nairobi,Langata,Langata,Agricultural,5.0,21894543,0,-1.39,36.82,0.4293,0.6535,2.3643,B,1,1,1,2024
+Nairobi,Langata,Langata,Residential,0.125,92522496,0,-1.39,36.82,0.5392,0.6839,2.0925,B,1,0,1,2025
+Nairobi,Langata,Langata,Commercial,0.25,109951677,0,-1.39,36.82,0.4201,0.8866,1.6041,B,1,1,1,2024
+Nairobi,Langata,Langata,Agricultural,20.0,18444161,0,-1.39,36.82,0.4574,0.7313,1.6473,B,0,1,1,2025
+Nairobi,Langata,South B,Residential,0.125,79147399,0,-1.37,36.87,0.3405,0.5868,0.8145,B,0,1,1,2025
+Nairobi,Langata,South B,Commercial,1.0,90488033,0,-1.37,36.87,0.3123,0.5857,0.934,B,0,1,1,2023
+Nairobi,Langata,South B,Agricultural,10.0,15448859,0,-1.37,36.87,0.2535,0.4325,0.9836,B,1,1,1,2024
+Nairobi,Langata,South B,Residential,0.5,59276266,0,-1.37,36.87,0.3166,0.4811,0.9711,B,0,0,0,2024
+Nairobi,Langata,South B,Commercial,0.5,68775549,0,-1.37,36.87,0.2683,0.5508,1.1816,B,1,0,0,2024
+Nairobi,Langata,South B,Agricultural,5.0,14720594,0,-1.37,36.87,0.2592,0.5372,1.1692,B,1,0,1,2025
+Nairobi,Langata,South B,Residential,5.0,59239622,0,-1.37,36.87,0.2974,0.491,1.1955,B,1,1,1,2024
+Nairobi,Langata,South B,Commercial,0.5,110759335,0,-1.37,36.87,0.3306,0.5746,0.8327,B,1,1,1,2024
+Nairobi,Langata,South C,Residential,1.0,68728764,0,-1.39,36.85,0.3044,0.4329,1.1418,B,1,1,0,2025
+Nairobi,Langata,South C,Commercial,1.0,64713561,0,-1.39,36.85,0.3016,0.4914,0.8231,B,0,1,0,2025
+Nairobi,Langata,South C,Agricultural,10.0,6878148,0,-1.39,36.85,0.2908,0.5401,1.0165,B,1,0,0,2024
+Nairobi,Langata,South C,Residential,0.125,85159814,0,-1.39,36.85,0.3574,0.5292,0.9681,B,0,1,0,2025
+Nairobi,Langata,South C,Commercial,1.0,88461503,0,-1.39,36.85,0.3432,0.4237,1.1971,B,1,0,0,2025
+Nairobi,Langata,South C,Agricultural,10.0,6634817,0,-1.39,36.85,0.3053,0.5064,1.1293,B,1,0,0,2024
+Nairobi,Langata,South C,Residential,0.25,75838590,0,-1.39,36.85,0.3138,0.5872,1.1556,B,0,0,1,2023
+Nairobi,Langata,South C,Commercial,0.25,95154292,0,-1.39,36.85,0.2883,0.4469,0.8869,B,0,0,1,2023
+Nairobi,Langata,Nairobi West,Residential,0.125,99261540,0,-1.35,36.86,0.2255,0.2684,0.5753,B,1,0,1,2025
+Nairobi,Langata,Nairobi West,Commercial,0.25,186698765,0,-1.35,36.86,0.2045,0.2456,0.4689,B,0,1,1,2024
+Nairobi,Langata,Nairobi West,Agricultural,10.0,8126777,0,-1.35,36.86,0.2279,0.2761,0.5415,B,1,1,0,2025
+Nairobi,Langata,Nairobi West,Residential,1.0,76440629,0,-1.35,36.86,0.2117,0.3507,0.5694,B,1,1,1,2024
+Nairobi,Langata,Nairobi West,Commercial,0.125,181797460,0,-1.35,36.86,0.2244,0.3105,0.5343,B,1,0,1,2023
+Nairobi,Langata,Nairobi West,Agricultural,2.0,9724758,0,-1.35,36.86,0.1694,0.3599,0.4958,B,1,0,1,2025
+Nairobi,Langata,Nairobi West,Residential,0.25,88972230,0,-1.35,36.86,0.2119,0.277,0.4719,B,1,0,0,2024
+Nairobi,Langata,Nairobi West,Commercial,1.0,129059227,0,-1.35,36.86,0.1637,0.3437,0.5483,B,1,1,1,2024
+Nairobi,Kasarani,Roysambu,Residential,0.125,30748847,0,-1.21,36.9,0.5667,0.7998,2.1237,C,1,1,1,2024
+Nairobi,Kasarani,Roysambu,Commercial,0.5,35617364,0,-1.21,36.9,0.4339,0.8705,1.9907,C,1,1,1,2024
+Nairobi,Kasarani,Roysambu,Agricultural,20.0,4398040,0,-1.21,36.9,0.4013,0.684,2.1046,C,1,1,1,2025
+Nairobi,Kasarani,Roysambu,Residential,0.125,40198223,0,-1.21,36.9,0.4966,0.7961,1.6053,C,0,1,1,2025
+Nairobi,Kasarani,Roysambu,Commercial,1.0,24931766,0,-1.21,36.9,0.5612,0.9311,1.6856,C,1,0,1,2025
+Nairobi,Kasarani,Roysambu,Agricultural,1.0,6187698,0,-1.21,36.9,0.5919,0.7869,1.7946,C,0,1,0,2025
+Nairobi,Kasarani,Roysambu,Residential,5.0,22341746,0,-1.21,36.9,0.4759,0.8169,1.6449,C,1,1,1,2025
+Nairobi,Kasarani,Roysambu,Commercial,0.125,51645963,0,-1.21,36.9,0.579,0.9341,1.7838,C,0,1,1,2025
+Nairobi,Kasarani,Kasarani,Residential,5.0,21775060,0,-1.19,36.88,0.6505,1.1715,2.3145,C,1,0,0,2025
+Nairobi,Kasarani,Kasarani,Commercial,0.25,36574935,0,-1.19,36.88,0.9071,0.9557,2.8965,C,1,1,1,2023
+Nairobi,Kasarani,Kasarani,Agricultural,5.0,6305857,0,-1.19,36.88,0.6713,0.8929,2.076,C,1,1,1,2025
+Nairobi,Kasarani,Kasarani,Residential,2.0,15760434,0,-1.19,36.88,0.797,0.9423,2.9411,C,1,0,1,2024
+Nairobi,Kasarani,Kasarani,Commercial,1.0,23224139,0,-1.19,36.88,0.7258,0.952,2.7839,C,1,0,1,2024
+Nairobi,Kasarani,Kasarani,Agricultural,2.0,6128652,0,-1.19,36.88,0.6824,0.875,2.4488,C,1,0,0,2024
+Nairobi,Kasarani,Kasarani,Residential,2.0,17079524,0,-1.19,36.88,0.6439,0.9655,2.7792,C,0,0,1,2025
+Nairobi,Kasarani,Kasarani,Commercial,0.25,29410523,0,-1.19,36.88,0.7791,0.9684,2.4842,C,0,0,0,2024
+Nairobi,Kasarani,Githurai,Residential,0.125,24583972,0,-1.17,36.92,1.2041,0.9583,3.4099,C,1,1,1,2024
+Nairobi,Kasarani,Githurai,Commercial,1.0,25041461,0,-1.17,36.92,1.3924,1.1789,2.641,C,1,0,1,2025
+Nairobi,Kasarani,Githurai,Agricultural,5.0,6280364,0,-1.17,36.92,1.3955,0.9121,3.343,C,1,0,1,2025
+Nairobi,Kasarani,Githurai,Residential,0.5,17930249,0,-1.17,36.92,1.477,1.0833,2.9261,C,1,1,1,2025
+Nairobi,Kasarani,Githurai,Commercial,0.5,21040809,0,-1.17,36.92,1.3516,0.8617,2.9078,C,0,1,1,2023
+Nairobi,Kasarani,Githurai,Agricultural,10.0,3656929,0,-1.17,36.92,1.5262,1.1163,2.8314,C,1,1,1,2025
+Nairobi,Kasarani,Githurai,Residential,2.0,11625071,0,-1.17,36.92,1.5379,1.058,3.1761,C,1,0,0,2023
+Nairobi,Kasarani,Githurai,Commercial,0.5,21525500,0,-1.17,36.92,1.5451,0.9783,2.8694,C,1,0,0,2025
+Nairobi,Starehe,Nairobi CBD,Residential,5.0,274461751,0,-1.31,36.84,0.0,0.1176,0.257,A,1,0,0,2024
+Nairobi,Starehe,Nairobi CBD,Commercial,0.5,1226508651,0,-1.31,36.84,0.0,0.0818,0.3253,A,1,1,1,2025
+Nairobi,Starehe,Nairobi CBD,Agricultural,1.0,58326041,0,-1.31,36.84,0.0,0.1024,0.355,A,1,1,0,2024
+Nairobi,Starehe,Nairobi CBD,Residential,0.25,722319652,0,-1.31,36.84,0.0,0.0972,0.2405,A,1,0,1,2025
+Nairobi,Starehe,Nairobi CBD,Commercial,0.25,1448431229,0,-1.31,36.84,0.0,0.0983,0.2715,A,1,1,0,2025
+Nairobi,Starehe,Nairobi CBD,Agricultural,10.0,26331309,0,-1.31,36.84,0.0,0.1125,0.3247,A,1,1,1,2024
+Nairobi,Starehe,Nairobi CBD,Residential,0.5,482391592,0,-1.31,36.84,0.0,0.0955,0.3116,A,1,1,1,2023
+Nairobi,Starehe,Nairobi CBD,Commercial,1.0,1659540551,0,-1.31,36.84,0.0,0.0875,0.341,A,1,1,1,2024
+Nairobi,Starehe,Nairobi CBD,Agricultural,20.0,17951751,0,-1.31,36.84,0.0,0.1074,0.2899,A,1,0,0,2025
+Nairobi,Kamukunji,Eastleigh,Residential,1.0,114132972,0,-1.26,36.87,0.1735,0.2949,0.5485,B,0,0,1,2024
+Nairobi,Kamukunji,Eastleigh,Commercial,1.0,364134302,0,-1.26,36.87,0.1633,0.3263,0.5093,B,0,0,1,2024
+Nairobi,Kamukunji,Eastleigh,Agricultural,10.0,6573066,0,-1.26,36.87,0.2253,0.2927,0.5988,B,1,1,0,2024
+Nairobi,Kamukunji,Eastleigh,Residential,0.25,211649837,0,-1.26,36.87,0.2228,0.3376,0.5611,B,1,1,1,2024
+Nairobi,Kamukunji,Eastleigh,Commercial,0.5,364464324,0,-1.26,36.87,0.2012,0.348,0.563,B,1,0,1,2025
+Nairobi,Kamukunji,Eastleigh,Agricultural,2.0,15423999,0,-1.26,36.87,0.18,0.3254,0.5657,B,1,1,1,2023
+Nairobi,Kamukunji,Eastleigh,Residential,5.0,91894515,0,-1.26,36.87,0.2215,0.2883,0.55,B,0,1,1,2023
+Nairobi,Kamukunji,Eastleigh,Commercial,0.5,418958654,0,-1.26,36.87,0.2108,0.3237,0.57,B,1,1,1,2023
+Nairobi,Embakasi South,Syokimau,Residential,2.0,6842577,0,-1.34,36.97,0.8522,1.7115,3.346,C,1,1,1,2024
+Nairobi,Embakasi South,Syokimau,Commercial,0.125,17649282,0,-1.34,36.97,1.1967,1.4567,3.5948,C,1,1,0,2023
+Nairobi,Embakasi South,Syokimau,Agricultural,2.0,3550324,0,-1.34,36.97,1.0658,1.5893,2.4621,C,1,1,1,2024
+Nairobi,Embakasi South,Syokimau,Residential,5.0,6616373,0,-1.34,36.97,0.8531,1.3357,3.216,C,1,0,1,2023
+Nairobi,Embakasi South,Syokimau,Commercial,0.125,16964703,0,-1.34,36.97,0.8357,1.6836,2.5238,C,1,0,1,2024
+Nairobi,Embakasi South,Syokimau,Agricultural,5.0,3266952,0,-1.34,36.97,1.0122,1.2051,3.18,C,0,1,1,2025
+Nairobi,Embakasi South,Syokimau,Residential,1.0,8377167,0,-1.34,36.97,1.1586,1.284,2.5478,C,0,1,1,2024
+Nairobi,Embakasi South,Syokimau,Commercial,1.0,13285334,0,-1.34,36.97,1.0885,1.371,3.5295,C,1,1,0,2024
+Nairobi,Embakasi North,Umoja,Residential,0.125,50998660,0,-1.24,36.92,0.2465,0.5796,1.1819,C,1,0,1,2025
+Nairobi,Embakasi North,Umoja,Commercial,1.0,36585415,0,-1.24,36.92,0.278,0.4774,1.1356,C,0,1,0,2023
+Nairobi,Embakasi North,Umoja,Agricultural,10.0,5040760,0,-1.24,36.92,0.2715,0.408,0.8242,C,1,1,1,2023
+Nairobi,Embakasi North,Umoja,Residential,1.0,35455054,0,-1.24,36.92,0.3139,0.4555,0.924,C,1,1,1,2023
+Nairobi,Embakasi North,Umoja,Commercial,0.25,67905911,0,-1.24,36.92,0.2772,0.4875,1.1814,C,0,0,1,2025
+Nairobi,Embakasi North,Umoja,Agricultural,2.0,6200126,0,-1.24,36.92,0.3289,0.4239,1.0832,C,0,1,1,2024
+Nairobi,Embakasi North,Umoja,Residential,5.0,22523862,0,-1.24,36.92,0.33,0.5747,1.0932,C,1,0,1,2024
+Nairobi,Embakasi North,Umoja,Commercial,0.125,46708291,0,-1.24,36.92,0.2492,0.491,0.944,C,0,1,0,2025
+Nairobi,Embakasi Central,Kayole,Residential,1.0,31104697,0,-1.22,36.94,0.5482,0.6408,1.7152,C,0,0,1,2025
+Nairobi,Embakasi Central,Kayole,Commercial,0.125,46197805,0,-1.22,36.94,0.5828,0.877,1.4516,C,1,0,0,2025
+Nairobi,Embakasi Central,Kayole,Agricultural,5.0,5540791,0,-1.22,36.94,0.4105,0.7114,1.5095,C,1,0,1,2023
+Nairobi,Embakasi Central,Kayole,Residential,0.125,42347229,0,-1.22,36.94,0.4016,0.7042,1.5383,C,0,1,0,2024
+Nairobi,Embakasi Central,Kayole,Commercial,0.5,39312119,0,-1.22,36.94,0.5093,0.8947,1.2903,C,0,0,1,2025
+Nairobi,Embakasi Central,Kayole,Agricultural,10.0,2674232,0,-1.22,36.94,0.4753,0.8762,1.3845,C,1,1,1,2024
+Nairobi,Embakasi Central,Kayole,Residential,0.25,39718722,0,-1.22,36.94,0.5843,0.9271,1.5119,C,0,1,0,2025
+Nairobi,Embakasi Central,Kayole,Commercial,0.5,37058671,0,-1.22,36.94,0.4125,0.852,1.2784,C,1,1,1,2024
+Nairobi,Embakasi East,Ruai,Residential,0.5,9749255,0,-1.17,36.97,1.6597,1.7622,4.4479,D,1,1,1,2024
+Nairobi,Embakasi East,Ruai,Commercial,0.125,12281120,0,-1.17,36.97,1.8466,1.812,3.3919,D,0,1,1,2025
+Nairobi,Embakasi East,Ruai,Agricultural,2.0,3814063,0,-1.17,36.97,2.1689,2.3747,3.834,D,1,1,1,2025
+Nairobi,Embakasi East,Ruai,Residential,0.125,11102193,0,-1.17,36.97,1.7999,1.9696,4.4862,D,0,1,0,2024
+Nairobi,Embakasi East,Ruai,Commercial,0.25,9244667,0,-1.17,36.97,2.3501,1.6672,4.1378,D,0,1,0,2024
+Nairobi,Embakasi East,Ruai,Agricultural,1.0,3268713,0,-1.17,36.97,1.8652,1.6342,3.9376,D,0,1,1,2025
+Nairobi,Embakasi East,Ruai,Residential,0.25,14957272,0,-1.17,36.97,2.3266,1.82,3.9136,D,1,1,1,2024
+Nairobi,Embakasi East,Ruai,Commercial,0.25,10284130,0,-1.17,36.97,1.8238,1.7098,3.5191,D,1,0,0,2025
+Nairobi,Embakasi East,Kamulu,Residential,2.0,4139318,0,-1.14,37.0,3.3377,2.344,5.1313,D,1,1,0,2025
+Nairobi,Embakasi East,Kamulu,Commercial,0.5,5732885,0,-1.14,37.0,3.5898,2.5294,5.5337,D,0,0,0,2025
+Nairobi,Embakasi East,Kamulu,Agricultural,2.0,2620270,0,-1.14,37.0,3.5957,2.2194,5.693,D,0,1,0,2025
+Nairobi,Embakasi East,Kamulu,Residential,1.0,6176676,0,-1.14,37.0,3.4968,2.0282,5.4011,D,1,1,0,2025
+Nairobi,Embakasi East,Kamulu,Commercial,0.25,9012610,0,-1.14,37.0,2.5083,2.2326,4.4376,D,0,1,1,2024
+Nairobi,Embakasi East,Kamulu,Agricultural,20.0,1542784,0,-1.14,37.0,3.4419,2.0596,4.2954,D,1,1,1,2024
+Nairobi,Embakasi East,Kamulu,Residential,5.0,7049134,0,-1.14,37.0,2.8747,2.101,4.6035,D,1,1,1,2024
+Nairobi,Embakasi East,Kamulu,Commercial,0.25,11813499,0,-1.14,37.0,3.0744,2.8896,5.2274,D,1,1,1,2024
+Nairobi,Embakasi East,Joska,Residential,0.5,4384917,0,-1.11,37.02,5.8976,3.5384,5.7398,D,1,0,1,2023
+Nairobi,Embakasi East,Joska,Commercial,0.125,6658926,0,-1.11,37.02,4.6623,2.4934,5.6323,D,1,1,1,2023
+Nairobi,Embakasi East,Joska,Agricultural,5.0,1803246,0,-1.11,37.02,4.5304,2.6994,4.9627,D,1,0,1,2025
+Nairobi,Embakasi East,Joska,Residential,0.5,4846035,0,-1.11,37.02,5.7635,2.8215,5.7008,D,1,0,1,2023
+Nairobi,Embakasi East,Joska,Commercial,1.0,5130025,0,-1.11,37.02,4.0402,2.7134,5.0513,D,1,1,0,2025
+Nairobi,Embakasi East,Joska,Agricultural,5.0,1973620,0,-1.11,37.02,5.2273,2.9793,4.8744,D,1,1,1,2023
+Nairobi,Embakasi East,Joska,Residential,5.0,2591124,0,-1.11,37.02,5.4441,3.276,5.4366,D,1,0,0,2024
+Nairobi,Embakasi East,Joska,Commercial,0.5,3638730,0,-1.11,37.02,4.1753,3.3887,6.3002,D,0,0,1,2023
+Nairobi,Embakasi West,Donholm,Residential,1.0,32044795,0,-1.26,36.9,0.2877,0.4978,1.0644,B,0,0,0,2025
+Nairobi,Embakasi West,Donholm,Commercial,0.125,92031703,0,-1.26,36.9,0.2716,0.5674,1.0257,B,1,0,1,2023
+Nairobi,Embakasi West,Donholm,Agricultural,2.0,14647276,0,-1.26,36.9,0.3064,0.5682,1.1274,B,1,0,1,2025
+Nairobi,Embakasi West,Donholm,Residential,1.0,61585843,0,-1.26,36.9,0.3425,0.4069,1.0285,B,1,1,1,2024
+Nairobi,Embakasi West,Donholm,Commercial,0.25,112592256,0,-1.26,36.9,0.2908,0.5977,0.9742,B,1,0,1,2025
+Nairobi,Embakasi West,Donholm,Agricultural,2.0,10974933,0,-1.26,36.9,0.2791,0.4552,0.9833,B,0,1,1,2024
+Nairobi,Embakasi West,Donholm,Residential,0.125,83409490,0,-1.26,36.9,0.331,0.5879,1.17,B,1,1,1,2023
+Nairobi,Embakasi West,Donholm,Commercial,0.125,122308845,0,-1.26,36.9,0.2968,0.4344,0.9612,B,1,1,1,2025
+Nairobi,Dagoretti South,Kawangware,Residential,2.0,27155954,0,-1.35,36.84,0.4673,0.5794,0.8081,C,1,0,1,2024
+Nairobi,Dagoretti South,Kawangware,Commercial,0.5,56264147,0,-1.35,36.84,0.439,0.5548,0.9283,C,1,1,1,2024
+Nairobi,Dagoretti South,Kawangware,Agricultural,10.0,5243810,0,-1.35,36.84,0.3798,0.4112,1.1166,C,0,1,1,2024
+Nairobi,Dagoretti South,Kawangware,Residential,0.125,51821443,0,-1.35,36.84,0.4533,0.5674,0.8998,C,1,0,1,2023
+Nairobi,Dagoretti South,Kawangware,Commercial,1.0,39226301,0,-1.35,36.84,0.429,0.4484,0.9955,C,1,0,1,2024
+Nairobi,Dagoretti South,Kawangware,Agricultural,10.0,4541283,0,-1.35,36.84,0.4302,0.457,0.9546,C,1,1,1,2025
+Nairobi,Dagoretti South,Kawangware,Residential,0.25,45076708,0,-1.35,36.84,0.4021,0.5729,1.1869,C,1,0,0,2024
+Nairobi,Dagoretti South,Kawangware,Commercial,0.125,55147897,0,-1.35,36.84,0.434,0.5419,0.9102,C,0,0,1,2025
+Nairobi,Dagoretti South,Uthiru,Residential,1.0,32435360,0,-1.37,36.8,0.8029,1.7997,2.9665,C,1,0,1,2025
+Nairobi,Dagoretti South,Uthiru,Commercial,0.5,29717743,0,-1.37,36.8,0.9301,1.3661,2.6561,C,1,0,1,2024
+Nairobi,Dagoretti South,Uthiru,Agricultural,5.0,7878009,0,-1.37,36.8,0.9278,1.284,2.0255,C,1,0,0,2025
+Nairobi,Dagoretti South,Uthiru,Residential,1.0,26200723,0,-1.37,36.8,0.876,1.6359,2.2224,C,0,1,1,2025
+Nairobi,Dagoretti South,Uthiru,Commercial,1.0,43389402,0,-1.37,36.8,0.839,1.2768,2.2587,C,1,1,1,2025
+Nairobi,Dagoretti South,Uthiru,Agricultural,20.0,4975292,0,-1.37,36.8,0.9228,1.6729,2.3313,C,0,1,1,2024
+Nairobi,Dagoretti South,Uthiru,Residential,0.5,27760685,0,-1.37,36.8,0.9889,1.3167,2.1198,C,1,0,0,2025
+Nairobi,Dagoretti South,Uthiru,Commercial,1.0,35981021,0,-1.37,36.8,1.1571,1.792,2.1432,C,1,1,0,2024
+Kiambu,Ruiru,Ruiru Town,Residential,5.0,7503011,25,-1.27,36.93,0.4419,1.1094,2.061,B,0,0,1,2023
+Kiambu,Ruiru,Ruiru Town,Commercial,0.25,34713103,25,-1.27,36.93,0.4767,0.8151,1.7595,B,1,0,1,2024
+Kiambu,Ruiru,Ruiru Town,Agricultural,5.0,5407022,25,-1.27,36.93,0.4453,1.1508,1.8497,B,1,1,1,2023
+Kiambu,Ruiru,Ruiru Town,Residential,0.125,18082373,25,-1.27,36.93,0.5193,0.9351,2.3104,B,1,0,1,2024
+Kiambu,Ruiru,Ruiru Town,Commercial,0.25,33723788,25,-1.27,36.93,0.4457,1.0909,1.705,B,1,0,0,2025
+Kiambu,Ruiru,Ruiru Town,Agricultural,1.0,5402321,25,-1.27,36.93,0.5069,0.8194,2.3957,B,0,0,1,2025
+Kiambu,Ruiru,Ruiru Town,Residential,5.0,7905960,25,-1.27,36.93,0.5404,0.8822,2.1486,B,1,0,0,2023
+Kiambu,Ruiru,Ruiru Town,Commercial,0.125,29375844,25,-1.27,36.93,0.421,1.0875,1.6942,B,1,1,0,2023
+Kiambu,Ruiru,Ruiru Town,Agricultural,1.0,10245630,25,-1.27,36.93,0.482,0.8641,2.0385,B,1,1,1,2025
+Kiambu,Ruiru,Membley,Residential,0.25,18958625,25,-1.25,36.94,0.7981,1.1798,2.2236,B,1,0,0,2023
+Kiambu,Ruiru,Membley,Commercial,0.125,35150961,25,-1.25,36.94,0.6719,0.8699,1.6316,B,0,0,0,2024
+Kiambu,Ruiru,Membley,Agricultural,5.0,5937099,25,-1.25,36.94,0.6843,1.0589,1.8629,B,1,1,0,2025
+Kiambu,Ruiru,Membley,Residential,1.0,17761226,25,-1.25,36.94,0.7861,1.1343,2.1519,B,0,1,1,2023
+Kiambu,Ruiru,Membley,Commercial,1.0,27960987,25,-1.25,36.94,0.691,0.9664,2.0726,B,1,1,0,2023
+Kiambu,Ruiru,Membley,Agricultural,20.0,3011774,25,-1.25,36.94,0.9515,0.8523,2.3363,B,0,0,1,2025
+Kiambu,Ruiru,Membley,Residential,0.125,24135241,25,-1.25,36.94,0.878,1.0895,1.7792,B,1,0,1,2025
+Kiambu,Ruiru,Membley,Commercial,0.5,30571388,25,-1.25,36.94,0.8452,0.8595,2.2612,B,1,1,1,2024
+Kiambu,Juja,Juja,Residential,2.0,5393201,25,-1.22,36.98,1.9933,1.7927,4.7522,C,1,0,1,2025
+Kiambu,Juja,Juja,Commercial,0.125,10990919,25,-1.22,36.98,1.6704,1.9988,3.7057,C,1,0,1,2024
+Kiambu,Juja,Juja,Agricultural,10.0,2294615,25,-1.22,36.98,2.3705,2.11,4.6242,C,0,1,0,2025
+Kiambu,Juja,Juja,Residential,2.0,4483002,25,-1.22,36.98,2.0481,2.0958,3.957,C,1,1,1,2024
+Kiambu,Juja,Juja,Commercial,0.5,8819577,25,-1.22,36.98,1.8336,2.0176,4.3234,C,0,1,0,2025
+Kiambu,Juja,Juja,Agricultural,1.0,5146639,25,-1.22,36.98,1.6966,2.2818,3.5449,C,1,1,1,2024
+Kiambu,Juja,Juja,Residential,0.25,12658222,25,-1.22,36.98,1.9604,2.1268,4.7299,C,0,1,1,2025
+Kiambu,Juja,Juja,Commercial,0.25,15362813,25,-1.22,36.98,2.2249,2.3281,4.3069,C,0,1,1,2025
+Kiambu,Thika Town,Thika Town,Residential,0.25,13229100,25,-1.27,37.03,0.5959,0.9331,1.6574,B,0,0,1,2025
+Kiambu,Thika Town,Thika Town,Commercial,0.5,12007983,25,-1.27,37.03,0.5025,0.9098,1.5287,B,1,0,1,2025
+Kiambu,Thika Town,Thika Town,Agricultural,5.0,3557088,25,-1.27,37.03,0.5345,0.954,1.5901,B,1,1,0,2024
+Kiambu,Thika Town,Thika Town,Residential,0.25,9954232,25,-1.27,37.03,0.5334,0.7736,1.6487,B,1,0,0,2024
+Kiambu,Thika Town,Thika Town,Commercial,0.5,12275967,25,-1.27,37.03,0.4534,0.8914,1.7901,B,1,0,0,2023
+Kiambu,Thika Town,Thika Town,Agricultural,5.0,2451610,25,-1.27,37.03,0.5232,0.8562,1.5371,B,0,1,0,2024
+Kiambu,Thika Town,Thika Town,Residential,0.25,14348094,25,-1.27,37.03,0.5853,0.764,1.774,B,1,0,1,2024
+Kiambu,Thika Town,Thika Town,Commercial,0.5,16066141,25,-1.27,37.03,0.4451,0.8428,1.6257,B,0,1,0,2025
+Kiambu,Kiambu Town,Kiambu Town,Residential,0.5,25173999,25,-1.32,36.88,0.5365,0.4374,0.8695,B,1,1,1,2024
+Kiambu,Kiambu Town,Kiambu Town,Commercial,0.125,39108446,25,-1.32,36.88,0.5419,0.431,0.8615,B,1,1,0,2024
+Kiambu,Kiambu Town,Kiambu Town,Agricultural,5.0,6135603,25,-1.32,36.88,0.4146,0.5415,1.0102,B,1,1,1,2025
+Kiambu,Kiambu Town,Kiambu Town,Residential,0.25,24903946,25,-1.32,36.88,0.5327,0.4662,0.9174,B,1,0,1,2024
+Kiambu,Kiambu Town,Kiambu Town,Commercial,1.0,36206163,25,-1.32,36.88,0.5227,0.5242,1.1836,B,1,1,0,2024
+Kiambu,Kiambu Town,Kiambu Town,Agricultural,5.0,4898310,25,-1.32,36.88,0.5541,0.5029,1.0035,B,1,0,0,2023
+Kiambu,Kiambu Town,Kiambu Town,Residential,1.0,18025396,25,-1.32,36.88,0.5076,0.4015,0.8262,B,1,0,1,2024
+Kiambu,Kiambu Town,Kiambu Town,Commercial,0.25,52687572,25,-1.32,36.88,0.5293,0.588,1.0988,B,1,0,1,2025
+Kiambu,Kabete,Kikuyu,Residential,0.25,19560923,25,-1.37,36.78,0.5643,0.5822,0.9631,B,1,0,0,2024
+Kiambu,Kabete,Kikuyu,Commercial,1.0,36458045,25,-1.37,36.78,0.5512,0.5171,1.0804,B,1,0,1,2025
+Kiambu,Kabete,Kikuyu,Agricultural,1.0,8684242,25,-1.37,36.78,0.4763,0.5644,0.8123,B,1,0,1,2024
+Kiambu,Kabete,Kikuyu,Residential,0.25,27644973,25,-1.37,36.78,0.5355,0.5828,1.118,B,0,0,1,2025
+Kiambu,Kabete,Kikuyu,Commercial,0.5,27370633,25,-1.37,36.78,0.5095,0.417,0.884,B,0,1,0,2025
+Kiambu,Kabete,Kikuyu,Agricultural,5.0,5274541,25,-1.37,36.78,0.4229,0.5342,1.0269,B,1,1,0,2025
+Kiambu,Kabete,Kikuyu,Residential,0.125,37105040,25,-1.37,36.78,0.4196,0.5451,0.9949,B,1,1,1,2024
+Kiambu,Kabete,Kikuyu,Commercial,0.5,22611388,25,-1.37,36.78,0.4657,0.5319,1.0774,B,1,0,0,2024
+Kiambu,Limuru,Limuru Town,Residential,0.25,13615882,25,-1.35,36.73,1.0959,0.9744,2.8401,B,1,0,1,2024
+Kiambu,Limuru,Limuru Town,Commercial,0.25,27767850,25,-1.35,36.73,1.0582,0.8328,2.2806,B,1,1,1,2024
+Kiambu,Limuru,Limuru Town,Agricultural,2.0,5954900,25,-1.35,36.73,1.0527,1.1251,2.5789,B,0,1,1,2025
+Kiambu,Limuru,Limuru Town,Residential,2.0,7473007,25,-1.35,36.73,0.957,1.1566,2.5896,B,0,0,1,2025
+Kiambu,Limuru,Limuru Town,Commercial,0.5,11075848,25,-1.35,36.73,1.1927,1.0737,2.7572,B,1,0,1,2024
+Kiambu,Limuru,Limuru Town,Agricultural,2.0,5406662,25,-1.35,36.73,0.9435,0.8875,2.4876,B,0,1,1,2025
+Kiambu,Limuru,Limuru Town,Residential,0.125,16957398,25,-1.35,36.73,1.1526,0.816,2.6485,B,0,1,1,2024
+Kiambu,Limuru,Limuru Town,Commercial,0.125,23740691,25,-1.35,36.73,1.0615,0.9461,2.6533,B,1,1,1,2025
+Kiambu,Gatundu South,Gatundu,Residential,0.125,6911325,25,-1.47,36.93,1.9857,2.0834,4.0029,C,1,1,1,2025
+Kiambu,Gatundu South,Gatundu,Commercial,0.25,5176918,25,-1.47,36.93,2.2536,2.1289,3.8634,C,0,1,0,2023
+Kiambu,Gatundu South,Gatundu,Agricultural,5.0,1915506,25,-1.47,36.93,1.6345,2.0588,3.4578,C,1,1,0,2025
+Kiambu,Gatundu South,Gatundu,Residential,5.0,3789537,25,-1.47,36.93,2.3754,2.1101,4.6056,C,1,0,0,2025
+Kiambu,Gatundu South,Gatundu,Commercial,0.5,5915152,25,-1.47,36.93,1.7142,2.0661,4.428,C,0,1,1,2024
+Kiambu,Gatundu South,Gatundu,Agricultural,20.0,1409189,25,-1.47,36.93,1.9084,1.6869,3.5238,C,0,1,1,2025
+Kiambu,Gatundu South,Gatundu,Residential,2.0,4576830,25,-1.47,36.93,2.0251,2.2019,3.3491,C,1,1,0,2025
+Kiambu,Gatundu South,Gatundu,Commercial,0.25,9142830,25,-1.47,36.93,2.2999,2.1581,3.8863,C,1,0,1,2024
+Kiambu,Karuri,Karuri,Residential,1.0,32568736,25,-1.29,36.85,0.4268,0.7927,1.3395,B,1,1,1,2025
+Kiambu,Karuri,Karuri,Commercial,0.125,49482293,25,-1.29,36.85,0.4236,0.6423,1.5927,B,1,1,0,2025
+Kiambu,Karuri,Karuri,Agricultural,5.0,6550466,25,-1.29,36.85,0.5224,0.9574,1.4385,B,0,1,1,2025
+Kiambu,Karuri,Karuri,Residential,0.25,36485549,25,-1.29,36.85,0.4689,0.8658,1.6415,B,1,1,1,2024
+Kiambu,Karuri,Karuri,Commercial,0.125,43985713,25,-1.29,36.85,0.5101,0.8631,1.6241,B,1,1,0,2024
+Kiambu,Karuri,Karuri,Agricultural,2.0,7825641,25,-1.29,36.85,0.4526,0.7587,1.5654,B,1,1,1,2025
+Kiambu,Karuri,Karuri,Residential,5.0,23144734,25,-1.29,36.85,0.564,0.8449,1.4634,B,1,1,1,2025
+Kiambu,Karuri,Karuri,Commercial,0.25,61509308,25,-1.29,36.85,0.523,0.8557,1.4158,B,1,1,0,2025
+Machakos,Mavoko,Athi River,Residential,5.0,3095927,60,-1.72,37.46,1.0071,1.6422,2.4823,C,0,1,1,2024
+Machakos,Mavoko,Athi River,Commercial,0.125,12248066,60,-1.72,37.46,1.1852,1.4729,2.8847,C,1,1,1,2025
+Machakos,Mavoko,Athi River,Agricultural,1.0,2175772,60,-1.72,37.46,1.1827,1.7257,3.3758,C,1,0,0,2025
+Machakos,Mavoko,Athi River,Residential,2.0,3446467,60,-1.72,37.46,1.0726,1.7379,3.4344,C,1,0,1,2024
+Machakos,Mavoko,Athi River,Commercial,1.0,7051242,60,-1.72,37.46,1.1822,1.5099,2.4117,C,0,1,1,2024
+Machakos,Mavoko,Athi River,Agricultural,5.0,1579754,60,-1.72,37.46,0.9414,1.7366,2.7229,C,0,1,1,2025
+Machakos,Mavoko,Athi River,Residential,5.0,4872936,60,-1.72,37.46,0.8811,1.3498,3.1423,C,1,1,0,2025
+Machakos,Mavoko,Athi River,Commercial,0.25,10187930,60,-1.72,37.46,1.1832,1.7088,2.8454,C,0,0,1,2023
+Machakos,Mavoko,Mlolongo,Residential,0.5,8559192,60,-1.67,37.41,0.4561,0.8888,2.0613,C,1,1,1,2025
+Machakos,Mavoko,Mlolongo,Commercial,0.125,16217593,60,-1.67,37.41,0.4914,0.8481,2.0146,C,1,1,0,2025
+Machakos,Mavoko,Mlolongo,Agricultural,5.0,1969678,60,-1.67,37.41,0.5097,0.8949,1.9771,C,0,0,1,2025
+Machakos,Mavoko,Mlolongo,Residential,2.0,5488704,60,-1.67,37.41,0.4901,1.0286,2.3834,C,0,1,1,2024
+Machakos,Mavoko,Mlolongo,Commercial,0.25,22707912,60,-1.67,37.41,0.5477,0.9892,1.6078,C,1,1,1,2024
+Machakos,Mavoko,Mlolongo,Agricultural,10.0,1774284,60,-1.67,37.41,0.5124,1.0271,1.9187,C,1,1,1,2025
+Machakos,Mavoko,Mlolongo,Residential,5.0,3666713,60,-1.67,37.41,0.4721,1.023,2.248,C,0,0,1,2025
+Machakos,Mavoko,Mlolongo,Commercial,0.5,8500063,60,-1.67,37.41,0.4349,1.1121,1.8841,C,0,1,1,2025
+Machakos,Mavoko,Syokimau,Residential,5.0,7296566,60,-1.64,37.44,1.1473,1.5843,3.5143,C,1,1,0,2024
+Machakos,Mavoko,Syokimau,Commercial,1.0,11867519,60,-1.64,37.44,0.9165,1.3605,3.1736,C,1,1,0,2024
+Machakos,Mavoko,Syokimau,Agricultural,5.0,4300483,60,-1.64,37.44,1.1417,1.275,2.6816,C,1,1,1,2024
+Machakos,Mavoko,Syokimau,Residential,0.5,7407309,60,-1.64,37.44,1.0194,1.2158,2.8764,C,1,0,0,2023
+Machakos,Mavoko,Syokimau,Commercial,0.125,15983391,60,-1.64,37.44,0.9773,1.2758,3.0321,C,1,0,1,2024
+Machakos,Mavoko,Syokimau,Agricultural,2.0,3323219,60,-1.64,37.44,0.909,1.4669,3.5635,C,1,1,1,2025
+Machakos,Mavoko,Syokimau,Residential,5.0,8954136,60,-1.64,37.44,1.0135,1.7454,2.978,C,1,1,1,2024
+Machakos,Mavoko,Syokimau,Commercial,0.25,16234994,60,-1.64,37.44,1.1392,1.4063,2.963,C,1,0,0,2023
+Machakos,Machakos Town,Machakos Town,Residential,0.125,5409718,60,-1.92,37.56,0.895,1.0193,1.7509,C,1,1,0,2025
+Machakos,Machakos Town,Machakos Town,Commercial,1.0,3831679,60,-1.92,37.56,0.7167,1.1058,2.328,C,0,1,1,2024
+Machakos,Machakos Town,Machakos Town,Agricultural,5.0,1392917,60,-1.92,37.56,0.8438,1.0471,1.8177,C,1,1,1,2024
+Machakos,Machakos Town,Machakos Town,Residential,2.0,2017937,60,-1.92,37.56,0.68,0.9754,1.6066,C,1,0,1,2025
+Machakos,Machakos Town,Machakos Town,Commercial,0.125,6452205,60,-1.92,37.56,0.8933,0.9321,2.2748,C,1,0,1,2025
+Machakos,Machakos Town,Machakos Town,Agricultural,2.0,970532,60,-1.92,37.56,0.905,0.8488,2.2145,C,1,0,1,2025
+Machakos,Machakos Town,Machakos Town,Residential,0.25,3797338,60,-1.92,37.56,0.8531,0.8834,1.9113,C,1,0,1,2025
+Machakos,Machakos Town,Machakos Town,Commercial,0.5,4707840,60,-1.92,37.56,0.7356,0.9442,1.6417,C,0,1,1,2023
+Machakos,Kangundo,Kangundo,Residential,5.0,508110,60,-2.02,37.61,5.5783,2.4107,6.5344,D,0,1,1,2024
+Machakos,Kangundo,Kangundo,Commercial,1.0,933359,60,-2.02,37.61,5.9393,3.3115,6.5922,D,0,1,0,2025
+Machakos,Kangundo,Kangundo,Agricultural,5.0,413789,60,-2.02,37.61,5.5134,3.3666,7.8039,D,1,1,0,2025
+Machakos,Kangundo,Kangundo,Residential,0.25,905617,60,-2.02,37.61,5.0855,2.9881,8.2134,D,1,1,0,2025
+Machakos,Kangundo,Kangundo,Commercial,0.5,1101484,60,-2.02,37.61,4.8988,3.3833,8.1331,D,1,1,1,2023
+Machakos,Kangundo,Kangundo,Agricultural,10.0,152202,60,-2.02,37.61,4.4776,3.2652,8.5065,D,1,0,0,2025
+Machakos,Kangundo,Kangundo,Residential,2.0,632770,60,-2.02,37.61,4.644,2.5155,8.5085,D,0,1,1,2024
+Machakos,Kangundo,Kangundo,Commercial,0.125,1239678,60,-2.02,37.61,5.6726,3.1895,8.0826,D,0,1,0,2023
+Machakos,Kangundo,Tala,Residential,5.0,427366,60,-2.07,37.59,5.8568,3.9649,7.8978,D,0,0,1,2025
+Machakos,Kangundo,Tala,Commercial,0.125,1237842,60,-2.07,37.59,5.058,3.828,9.0703,D,1,1,1,2023
+Machakos,Kangundo,Tala,Agricultural,1.0,507039,60,-2.07,37.59,4.4975,3.6755,6.9725,D,1,0,1,2024
+Machakos,Kangundo,Tala,Residential,5.0,695907,60,-2.07,37.59,4.2082,3.9094,8.1599,D,1,1,1,2025
+Machakos,Kangundo,Tala,Commercial,0.5,1171376,60,-2.07,37.59,5.6897,3.3773,8.4264,D,1,1,1,2025
+Machakos,Kangundo,Tala,Agricultural,5.0,413087,60,-2.07,37.59,4.895,3.3559,8.7242,D,1,0,1,2024
+Machakos,Kangundo,Tala,Residential,0.5,764139,60,-2.07,37.59,4.0434,3.9507,8.6071,D,1,1,1,2024
+Kajiado,Kajiado East,Kitengela,Residential,0.5,7494789,60,-2.4,37.03,0.906,1.7338,2.6998,C,1,1,1,2024
+Kajiado,Kajiado East,Kitengela,Commercial,0.5,12303241,60,-2.4,37.03,0.8692,1.6954,3.2275,C,0,0,1,2025
+Kajiado,Kajiado East,Kitengela,Agricultural,20.0,2047521,60,-2.4,37.03,1.1687,1.4006,3.4558,C,0,1,0,2024
+Kajiado,Kajiado East,Kitengela,Residential,1.0,7292426,60,-2.4,37.03,1.111,1.4295,2.7657,C,1,1,0,2025
+Kajiado,Kajiado East,Kitengela,Commercial,0.125,13520812,60,-2.4,37.03,1.1884,1.6517,3.0903,C,1,0,1,2025
+Kajiado,Kajiado East,Kitengela,Agricultural,1.0,2105283,60,-2.4,37.03,0.9597,1.251,3.0022,C,0,0,0,2025
+Kajiado,Kajiado East,Kitengela,Residential,5.0,4918923,60,-2.4,37.03,1.0943,1.3477,2.486,C,0,1,1,2024
+Kajiado,Kajiado East,Kitengela,Commercial,1.0,9679990,60,-2.4,37.03,1.0376,1.2145,2.7658,C,1,0,1,2024
+Kajiado,Kajiado East,Kitengela,Agricultural,5.0,2373108,60,-2.4,37.03,0.9495,1.6546,3.4233,C,1,1,0,2025
+Kajiado,Kajiado East,Isinya,Residential,0.125,2615000,60,-2.5,37.08,3.3651,2.7661,5.9309,D,0,1,0,2024
+Kajiado,Kajiado East,Isinya,Commercial,0.5,1757794,60,-2.5,37.08,2.5696,3.2385,4.8441,D,1,0,1,2024
+Kajiado,Kajiado East,Isinya,Agricultural,20.0,443605,60,-2.5,37.08,2.958,3.5342,4.9598,D,1,0,0,2025
+Kajiado,Kajiado East,Isinya,Residential,5.0,1206985,60,-2.5,37.08,2.6774,2.8568,7.1439,D,1,1,1,2025
+Kajiado,Kajiado East,Isinya,Commercial,0.125,3132727,60,-2.5,37.08,3.255,2.4477,7.0134,D,1,1,0,2025
+Kajiado,Kajiado East,Isinya,Agricultural,5.0,630309,60,-2.5,37.08,3.5739,3.0015,6.7485,D,1,0,1,2025
+Kajiado,Kajiado East,Isinya,Residential,5.0,1684804,60,-2.5,37.08,2.8101,2.8714,5.1294,D,1,1,1,2025
+Kajiado,Kajiado East,Isinya,Commercial,1.0,2410771,60,-2.5,37.08,2.7749,3.1264,5.878,D,1,1,1,2025
+Kajiado,Kajiado North,Ngong,Residential,0.25,20245564,60,-2.4,36.88,0.5048,0.6833,1.7974,B,0,1,1,2024
+Kajiado,Kajiado North,Ngong,Commercial,0.25,27495164,60,-2.4,36.88,0.5679,0.6866,1.2177,B,1,0,0,2025
+Kajiado,Kajiado North,Ngong,Agricultural,5.0,7098590,60,-2.4,36.88,0.4548,0.8893,1.2641,B,1,1,1,2025
+Kajiado,Kajiado North,Ngong,Residential,0.25,20213228,60,-2.4,36.88,0.4052,0.6654,1.6679,B,1,1,1,2025
+Kajiado,Kajiado North,Ngong,Commercial,0.25,34939841,60,-2.4,36.88,0.4387,0.6503,1.6587,B,1,1,1,2024
+Kajiado,Kajiado North,Ngong,Agricultural,1.0,5750511,60,-2.4,36.88,0.5909,0.7806,1.5702,B,1,0,1,2024
+Kajiado,Kajiado North,Ngong,Residential,5.0,8842938,60,-2.4,36.88,0.4626,0.8357,1.6455,B,1,0,1,2025
+Kajiado,Kajiado North,Ngong,Commercial,0.125,34954426,60,-2.4,36.88,0.547,0.8185,1.5097,B,1,1,0,2025
+Kajiado,Kajiado North,Kiserian,Residential,5.0,6735959,60,-2.45,36.86,1.3767,1.7514,3.2279,C,0,1,1,2024
+Kajiado,Kajiado North,Kiserian,Commercial,0.25,11389166,60,-2.45,36.86,1.5278,1.4358,2.7882,C,1,0,1,2025
+Kajiado,Kajiado North,Kiserian,Agricultural,1.0,3083214,60,-2.45,36.86,1.7443,1.6779,3.262,C,1,1,0,2024
+Kajiado,Kajiado North,Kiserian,Residential,0.125,10241592,60,-2.45,36.86,1.5672,1.2959,3.0604,C,1,1,0,2025
+Kajiado,Kajiado North,Kiserian,Commercial,0.125,12740789,60,-2.45,36.86,1.6272,1.4517,2.7714,C,1,1,1,2025
+Kajiado,Kajiado North,Kiserian,Agricultural,10.0,1223732,60,-2.45,36.86,1.4986,1.4992,3.3689,C,0,1,1,2025
+Kajiado,Kajiado North,Kiserian,Residential,2.0,5500452,60,-2.45,36.86,1.3468,1.5284,3.1437,C,0,1,1,2023
+Kajiado,Kajiado North,Kiserian,Commercial,0.25,10957019,60,-2.45,36.86,1.3791,1.7522,2.4588,C,0,1,0,2025
+Kajiado,Kajiado North,Ongata Rongai,Residential,1.0,10510482,60,-2.42,36.83,0.9492,1.0997,1.8882,C,0,0,1,2025
+Kajiado,Kajiado North,Ongata Rongai,Commercial,0.125,10288922,60,-2.42,36.83,0.7337,0.8538,2.1557,C,0,0,1,2024
+Kajiado,Kajiado North,Ongata Rongai,Agricultural,5.0,2101624,60,-2.42,36.83,0.8093,0.8351,2.1793,C,1,0,0,2025
+Kajiado,Kajiado North,Ongata Rongai,Residential,2.0,8138215,60,-2.42,36.83,0.7532,0.8519,2.0501,C,1,0,1,2025
+Kajiado,Kajiado North,Ongata Rongai,Commercial,1.0,12562633,60,-2.42,36.83,0.8401,0.8472,2.2785,C,0,1,1,2023
+Kajiado,Kajiado North,Ongata Rongai,Agricultural,20.0,2281863,60,-2.42,36.83,0.7301,1.1161,1.8462,C,1,0,1,2023
+Kajiado,Kajiado North,Ongata Rongai,Residential,2.0,7406278,60,-2.42,36.83,0.9063,0.8776,2.2671,C,1,0,1,2025
+Kajiado,Kajiado North,Ongata Rongai,Commercial,1.0,16380100,60,-2.42,36.83,0.7472,1.1136,1.9312,C,1,1,1,2025
+Kajiado,Kajiado Central,Kajiado Town,Residential,5.0,830389,60,-2.6,36.93,1.8654,2.9162,5.5916,D,1,1,1,2023
+Kajiado,Kajiado Central,Kajiado Town,Commercial,0.125,2252220,60,-2.6,36.93,1.9117,2.5952,5.7292,D,0,0,1,2025
+Kajiado,Kajiado Central,Kajiado Town,Agricultural,5.0,493764,60,-2.6,36.93,2.3606,2.2161,4.6046,D,1,0,1,2024
+Kajiado,Kajiado Central,Kajiado Town,Residential,0.125,1372009,60,-2.6,36.93,1.7233,2.3401,4.9669,D,0,0,0,2025
+Kajiado,Kajiado Central,Kajiado Town,Commercial,0.5,1805380,60,-2.6,36.93,2.1797,2.4594,5.4274,D,0,1,1,2025
+Kajiado,Kajiado Central,Kajiado Town,Agricultural,20.0,276459,60,-2.6,36.93,1.6825,2.7662,5.4911,D,1,0,1,2024
+Kajiado,Kajiado Central,Kajiado Town,Residential,0.125,1651903,60,-2.6,36.93,1.9529,2.1177,4.2986,D,1,1,1,2024
+Kajiado,Kajiado Central,Kajiado Town,Commercial,0.5,1269845,60,-2.6,36.93,2.3546,2.804,5.1482,D,1,1,0,2025
+Mombasa,Nyali,Nyali,Residential,0.25,62368257,480,-4.1,39.69,0.1685,0.4108,0.9706,A,1,0,1,2024
+Mombasa,Nyali,Nyali,Commercial,0.25,143824836,480,-4.1,39.69,0.1759,0.5517,1.1237,A,1,1,1,2024
+Mombasa,Nyali,Nyali,Agricultural,1.0,24376459,480,-4.1,39.69,0.1964,0.5369,1.0841,A,1,1,0,2025
+Mombasa,Nyali,Nyali,Residential,1.0,52622513,480,-4.1,39.69,0.2334,0.4661,1.1443,A,1,0,1,2024
+Mombasa,Nyali,Nyali,Commercial,0.5,84073749,480,-4.1,39.69,0.2084,0.4255,0.8412,A,0,1,1,2024
+Mombasa,Nyali,Nyali,Agricultural,1.0,17849494,480,-4.1,39.69,0.2038,0.5948,0.9535,A,1,1,1,2024
+Mombasa,Nyali,Nyali,Residential,0.5,60926192,480,-4.1,39.69,0.1738,0.5339,1.0957,A,1,1,1,2024
+Mombasa,Nyali,Nyali,Commercial,1.0,67035094,480,-4.1,39.69,0.2079,0.5371,1.0386,A,1,0,0,2024
+Mombasa,Nyali,Nyali,Agricultural,10.0,6679484,480,-4.1,39.69,0.2248,0.5514,1.0644,A,1,0,0,2025
+Mombasa,Nyali,Bamburi,Residential,1.0,31956446,480,-4.08,39.71,0.5826,0.7375,1.766,B,1,1,0,2024
+Mombasa,Nyali,Bamburi,Commercial,1.0,52292517,480,-4.08,39.71,0.5705,0.66,1.7406,B,1,1,1,2025
+Mombasa,Nyali,Bamburi,Agricultural,1.0,8317661,480,-4.08,39.71,0.518,0.8401,1.6271,B,1,1,0,2023
+Mombasa,Nyali,Bamburi,Residential,1.0,28097500,480,-4.08,39.71,0.568,0.6894,1.7985,B,1,1,1,2024
+Mombasa,Nyali,Bamburi,Commercial,0.25,42747880,480,-4.08,39.71,0.4169,0.8455,1.4495,B,0,0,1,2024
+Mombasa,Nyali,Bamburi,Agricultural,10.0,7961938,480,-4.08,39.71,0.4769,0.7122,1.4549,B,1,1,1,2024
+Mombasa,Nyali,Bamburi,Residential,0.125,43288843,480,-4.08,39.71,0.5956,0.8218,1.6229,B,1,0,1,2025
+Mombasa,Nyali,Bamburi,Commercial,0.125,61080792,480,-4.08,39.71,0.4559,0.8054,1.514,B,1,0,1,2025
+Mombasa,Nyali,Shanzu,Residential,2.0,15604126,480,-4.07,39.73,0.925,0.8211,1.8748,B,1,1,1,2025
+Mombasa,Nyali,Shanzu,Commercial,0.125,46073682,480,-4.07,39.73,0.9157,0.8141,2.3383,B,1,1,1,2025
+Mombasa,Nyali,Shanzu,Agricultural,5.0,6566247,480,-4.07,39.73,1.1236,1.0497,1.8295,B,1,0,1,2023
+Mombasa,Nyali,Shanzu,Residential,0.125,26183302,480,-4.07,39.73,1.0966,1.0415,2.3281,B,0,1,0,2024
+Mombasa,Nyali,Shanzu,Commercial,0.25,38078327,480,-4.07,39.73,0.8132,1.1936,2.3739,B,1,0,1,2024
+Mombasa,Nyali,Shanzu,Agricultural,20.0,6252203,480,-4.07,39.73,1.055,0.8843,2.1875,B,0,1,1,2024
+Mombasa,Nyali,Shanzu,Residential,0.5,16849365,480,-4.07,39.73,1.1793,1.169,1.7869,B,0,1,0,2024
+Mombasa,Nyali,Shanzu,Commercial,1.0,28673558,480,-4.07,39.73,1.1847,1.0732,1.6328,B,0,1,0,2024
+Mombasa,Mvita,Mombasa CBD,Residential,2.0,90376675,480,-4.13,39.67,0.0,0.2123,0.4782,A,1,1,1,2024
+Mombasa,Mvita,Mombasa CBD,Commercial,0.25,366498418,480,-4.13,39.67,0.0,0.2265,0.4024,A,1,0,1,2024
+Mombasa,Mvita,Mombasa CBD,Agricultural,1.0,7727513,480,-4.13,39.67,0.0,0.2075,0.5788,A,1,0,1,2023
+Mombasa,Mvita,Mombasa CBD,Residential,0.25,153951941,480,-4.13,39.67,0.0,0.2053,0.5934,A,1,1,0,2023
+Mombasa,Mvita,Mombasa CBD,Commercial,0.125,349591855,480,-4.13,39.67,0.0,0.2323,0.554,A,0,1,1,2025
+Mombasa,Mvita,Mombasa CBD,Agricultural,5.0,5563440,480,-4.13,39.67,0.0,0.1742,0.4139,A,1,0,0,2025
+Mombasa,Mvita,Mombasa CBD,Residential,0.25,124620537,480,-4.13,39.67,0.0,0.2172,0.4207,A,0,1,0,2024
+Mombasa,Mvita,Mombasa CBD,Commercial,0.125,268331729,480,-4.13,39.67,0.0,0.1912,0.4303,A,1,1,0,2025
+Mombasa,Changamwe,Changamwe,Residential,0.5,22916649,480,-4.15,39.62,0.5562,1.1142,2.0321,B,1,1,1,2024
+Mombasa,Changamwe,Changamwe,Commercial,0.125,45208661,480,-4.15,39.62,0.4606,0.8221,2.3976,B,1,1,0,2025
+Mombasa,Changamwe,Changamwe,Agricultural,1.0,5571189,480,-4.15,39.62,0.5109,1.187,2.1286,B,1,0,1,2024
+Mombasa,Changamwe,Changamwe,Residential,0.5,18938104,480,-4.15,39.62,0.428,0.8772,2.1758,B,1,1,1,2025
+Mombasa,Changamwe,Changamwe,Commercial,0.25,46033758,480,-4.15,39.62,0.5992,0.8148,1.6448,B,0,1,1,2025
+Mombasa,Changamwe,Changamwe,Agricultural,1.0,6170103,480,-4.15,39.62,0.5482,0.8932,1.6576,B,0,1,1,2025
+Mombasa,Changamwe,Changamwe,Residential,5.0,11084544,480,-4.15,39.62,0.4344,0.82,1.8459,B,1,1,1,2025
+Mombasa,Changamwe,Changamwe,Commercial,0.125,36657912,480,-4.15,39.62,0.4441,1.1218,1.941,B,0,1,1,2024
+Mombasa,Likoni,Likoni,Residential,5.0,5984951,480,-4.17,39.64,1.6585,1.5559,2.8026,C,1,1,1,2025
+Mombasa,Likoni,Likoni,Commercial,0.125,9777656,480,-4.17,39.64,1.28,1.6746,3.1586,C,1,0,1,2024
+Mombasa,Likoni,Likoni,Agricultural,10.0,1166008,480,-4.17,39.64,1.7321,1.4497,3.3689,C,0,1,0,2023
+Mombasa,Likoni,Likoni,Residential,1.0,7527952,480,-4.17,39.64,1.2226,1.308,2.9999,C,0,1,1,2025
+Mombasa,Likoni,Likoni,Commercial,0.125,9558214,480,-4.17,39.64,1.2574,1.4171,3.3134,C,1,0,0,2023
+Mombasa,Likoni,Likoni,Agricultural,20.0,1101540,480,-4.17,39.64,1.7063,1.7469,2.997,C,1,1,0,2023
+Mombasa,Likoni,Likoni,Residential,0.25,8998277,480,-4.17,39.64,1.655,1.226,3.2885,C,0,1,0,2024
+Mombasa,Likoni,Likoni,Commercial,0.25,8273198,480,-4.17,39.64,1.4514,1.6483,3.478,C,0,1,0,2024
+Mombasa,Kisauni,Kisauni,Residential,0.25,18723739,480,-4.07,39.75,0.9884,1.4906,3.4686,C,1,0,1,2024
+Mombasa,Kisauni,Kisauni,Commercial,0.25,16143055,480,-4.07,39.75,0.9079,1.4015,2.4385,C,1,0,1,2024
+Mombasa,Kisauni,Kisauni,Agricultural,20.0,1383454,480,-4.07,39.75,1.0415,1.6737,3.1656,C,0,1,1,2024
+Mombasa,Kisauni,Kisauni,Residential,2.0,9785743,480,-4.07,39.75,0.8866,1.4841,2.9553,C,1,1,0,2025
+Mombasa,Kisauni,Kisauni,Commercial,0.125,21396116,480,-4.07,39.75,0.8596,1.5442,2.4061,C,1,0,1,2025
+Mombasa,Kisauni,Kisauni,Agricultural,1.0,3614982,480,-4.07,39.75,1.1285,1.4715,2.6886,C,1,1,0,2024
+Mombasa,Kisauni,Kisauni,Residential,2.0,8591704,480,-4.07,39.75,0.8064,1.6014,2.5942,C,1,1,0,2024
+Mombasa,Kisauni,Kisauni,Commercial,1.0,16880734,480,-4.07,39.75,1.1159,1.4223,2.9572,C,1,0,1,2025
+Nakuru,Nakuru Town East,Milimani,Residential,5.0,6240403,160,-0.45,36.12,0.3238,0.5225,1.0301,B,1,0,1,2024
+Nakuru,Nakuru Town East,Milimani,Commercial,0.25,19802488,160,-0.45,36.12,0.3466,0.4222,0.9462,B,0,1,1,2025
+Nakuru,Nakuru Town East,Milimani,Agricultural,20.0,1644713,160,-0.45,36.12,0.2802,0.5079,1.0596,B,1,1,1,2025
+Nakuru,Nakuru Town East,Milimani,Residential,5.0,9142903,160,-0.45,36.12,0.2721,0.536,0.9109,B,1,1,0,2024
+Nakuru,Nakuru Town East,Milimani,Commercial,0.125,24344596,160,-0.45,36.12,0.3479,0.4904,0.9473,B,1,1,1,2025
+Nakuru,Nakuru Town East,Milimani,Agricultural,1.0,2992534,160,-0.45,36.12,0.2598,0.4224,0.8592,B,1,0,1,2025
+Nakuru,Nakuru Town East,Milimani,Residential,0.25,17932070,160,-0.45,36.12,0.2816,0.4888,1.0579,B,1,1,0,2025
+Nakuru,Nakuru Town East,Milimani,Commercial,0.5,13135837,160,-0.45,36.12,0.3187,0.5574,0.9945,B,0,1,1,2024
+Nakuru,Nakuru Town East,Section 58,Residential,5.0,4259186,160,-0.44,36.14,0.452,0.795,1.7824,C,1,1,1,2025
+Nakuru,Nakuru Town East,Section 58,Commercial,0.125,7951784,160,-0.44,36.14,0.4351,0.8666,1.7428,C,0,1,1,2025
+Nakuru,Nakuru Town East,Section 58,Agricultural,2.0,1685591,160,-0.44,36.14,0.5414,0.853,1.7868,C,0,1,1,2024
+Nakuru,Nakuru Town East,Section 58,Residential,0.25,8494125,160,-0.44,36.14,0.4291,0.7866,1.3921,C,1,0,1,2024
+Nakuru,Nakuru Town East,Section 58,Commercial,0.125,13541355,160,-0.44,36.14,0.5508,0.9581,1.6001,C,1,1,1,2025
+Nakuru,Nakuru Town East,Section 58,Agricultural,20.0,1269660,160,-0.44,36.14,0.4234,0.6479,1.5705,C,1,0,0,2023
+Nakuru,Nakuru Town East,Section 58,Residential,0.25,6832847,160,-0.44,36.14,0.4556,0.6472,1.523,C,0,0,1,2024
+Nakuru,Nakuru Town East,Section 58,Commercial,1.0,9254363,160,-0.44,36.14,0.4112,0.8534,1.4385,C,1,1,1,2025
+Nakuru,Nakuru Town West,London Estate,Residential,5.0,3559962,160,-0.47,36.1,0.668,1.0911,1.9554,C,1,0,0,2025
+Nakuru,Nakuru Town West,London Estate,Commercial,1.0,6110952,160,-0.47,36.1,0.8279,0.8344,1.7662,C,0,1,1,2025
+Nakuru,Nakuru Town West,London Estate,Agricultural,10.0,1436770,160,-0.47,36.1,0.8444,0.9093,1.7399,C,1,0,1,2024
+Nakuru,Nakuru Town West,London Estate,Residential,1.0,4141898,160,-0.47,36.1,0.9044,1.1338,1.8431,C,1,0,0,2025
+Nakuru,Nakuru Town West,London Estate,Commercial,1.0,5631844,160,-0.47,36.1,0.8531,0.9151,1.7435,C,1,0,1,2025
+Nakuru,Nakuru Town West,London Estate,Agricultural,2.0,1649903,160,-0.47,36.1,0.7795,0.9032,2.1487,C,1,1,1,2024
+Nakuru,Nakuru Town West,London Estate,Residential,5.0,3484960,160,-0.47,36.1,0.7875,1.0773,1.8859,C,1,1,0,2025
+Nakuru,Nakuru Town West,London Estate,Commercial,0.125,8386182,160,-0.47,36.1,0.8044,1.1066,1.7466,C,1,1,1,2025
+Nakuru,Naivasha,Naivasha,Residential,0.125,5318761,160,-0.6,35.92,0.8633,0.945,2.0275,C,0,0,1,2025
+Nakuru,Naivasha,Naivasha,Commercial,0.5,5828748,160,-0.6,35.92,0.6728,0.8618,1.7769,C,0,1,1,2024
+Nakuru,Naivasha,Naivasha,Agricultural,2.0,2053098,160,-0.6,35.92,0.8968,0.9669,2.3328,C,1,1,1,2025
+Nakuru,Naivasha,Naivasha,Residential,0.125,6311364,160,-0.6,35.92,0.8312,1.1054,1.8736,C,1,1,1,2025
+Nakuru,Naivasha,Naivasha,Commercial,0.5,3753192,160,-0.6,35.92,0.6817,0.8314,2.1527,C,1,0,1,2024
+Nakuru,Naivasha,Naivasha,Agricultural,1.0,1324366,160,-0.6,35.92,0.659,0.8476,1.8024,C,1,1,0,2025
+Nakuru,Naivasha,Naivasha,Residential,0.125,3913657,160,-0.6,35.92,0.8546,0.8117,1.7164,C,0,0,0,2025
+Nakuru,Naivasha,Naivasha,Commercial,0.5,6854132,160,-0.6,35.92,0.6717,1.0313,1.6112,C,1,0,1,2024
+Nakuru,Bahati,Bahati,Residential,0.25,2367542,160,-0.5,36.17,2.3364,2.281,3.9595,D,1,0,1,2025
+Nakuru,Bahati,Bahati,Commercial,0.25,2561300,160,-0.5,36.17,1.6903,2.3877,3.3978,D,1,0,1,2024
+Nakuru,Bahati,Bahati,Agricultural,1.0,998843,160,-0.5,36.17,1.9078,1.9656,4.3779,D,1,0,0,2023
+Nakuru,Bahati,Bahati,Residential,5.0,1779019,160,-0.5,36.17,2.2728,1.9805,4.2866,D,1,1,0,2024
+Nakuru,Bahati,Bahati,Commercial,0.25,2642643,160,-0.5,36.17,1.9158,2.156,4.7641,D,1,1,1,2025
+Nakuru,Bahati,Bahati,Agricultural,2.0,798093,160,-0.5,36.17,2.1802,1.8228,4.3416,D,1,0,1,2023
+Nakuru,Bahati,Bahati,Residential,2.0,1625067,160,-0.5,36.17,2.39,2.0091,3.4358,D,1,1,1,2025
+Nakuru,Bahati,Bahati,Commercial,1.0,1309704,160,-0.5,36.17,1.6546,2.1425,4.7553,D,0,1,1,2023
+Kisumu,Kisumu Central,Milimani,Residential,1.0,11555731,340,-0.15,34.77,0.2991,0.4932,0.9174,B,1,0,1,2025
+Kisumu,Kisumu Central,Milimani,Commercial,1.0,13614161,340,-0.15,34.77,0.2916,0.583,0.9535,B,0,0,1,2025
+Kisumu,Kisumu Central,Milimani,Agricultural,5.0,3437939,340,-0.15,34.77,0.2597,0.4861,0.925,B,1,0,0,2025
+Kisumu,Kisumu Central,Milimani,Residential,1.0,10271689,340,-0.15,34.77,0.3425,0.5013,0.9566,B,0,1,1,2025
+Kisumu,Kisumu Central,Milimani,Commercial,1.0,15065581,340,-0.15,34.77,0.2554,0.4733,1.1238,B,1,1,1,2023
+Kisumu,Kisumu Central,Milimani,Agricultural,20.0,1180543,340,-0.15,34.77,0.3193,0.4495,1.0592,B,1,0,0,2024
+Kisumu,Kisumu Central,Milimani,Residential,2.0,5422598,340,-0.15,34.77,0.3189,0.4845,1.0059,B,1,1,0,2025
+Kisumu,Kisumu Central,Milimani,Commercial,1.0,14704585,340,-0.15,34.77,0.337,0.42,1.07,B,1,1,1,2024
+Kisumu,Kisumu Central,Tom Mboya Estate,Residential,0.5,4971197,340,-0.16,34.76,0.5271,0.9517,1.2452,C,1,1,0,2025
+Kisumu,Kisumu Central,Tom Mboya Estate,Commercial,0.25,8533587,340,-0.16,34.76,0.5688,0.6703,1.4021,C,0,1,1,2025
+Kisumu,Kisumu Central,Tom Mboya Estate,Agricultural,1.0,2650146,340,-0.16,34.76,0.46,0.8523,1.388,C,1,1,1,2025
+Kisumu,Kisumu Central,Tom Mboya Estate,Residential,1.0,4719869,340,-0.16,34.76,0.5725,0.8246,1.3278,C,1,1,1,2023
+Kisumu,Kisumu Central,Tom Mboya Estate,Commercial,1.0,9471622,340,-0.16,34.76,0.412,0.7042,1.4775,C,1,1,1,2025
+Kisumu,Kisumu Central,Tom Mboya Estate,Agricultural,2.0,1708679,340,-0.16,34.76,0.4407,0.772,1.6942,C,1,0,1,2025
+Kisumu,Kisumu Central,Tom Mboya Estate,Residential,5.0,2663756,340,-0.16,34.76,0.4621,0.7953,1.7948,C,1,0,0,2023
+Kisumu,Kisumu Central,Tom Mboya Estate,Commercial,1.0,5939839,340,-0.16,34.76,0.4352,0.9128,1.7783,C,0,0,0,2025
+Kisumu,Kisumu West,Mamboleo,Residential,1.0,3296481,340,-0.18,34.73,1.7381,1.603,3.4629,C,0,1,1,2023
+Kisumu,Kisumu West,Mamboleo,Commercial,1.0,5146207,340,-0.18,34.73,1.6974,1.7698,3.5179,C,1,0,0,2025
+Kisumu,Kisumu West,Mamboleo,Agricultural,5.0,1316698,340,-0.18,34.73,1.6835,1.6464,3.5226,C,0,1,1,2025
+Kisumu,Kisumu West,Mamboleo,Residential,0.25,4057312,340,-0.18,34.73,1.4248,1.7692,2.7798,C,0,1,1,2025
+Kisumu,Kisumu West,Mamboleo,Commercial,1.0,3162311,340,-0.18,34.73,1.3849,1.5872,3.4863,C,0,0,1,2024
+Kisumu,Kisumu West,Mamboleo,Agricultural,1.0,2480442,340,-0.18,34.73,1.3856,1.7751,2.8354,C,1,1,1,2024
+Kisumu,Kisumu West,Mamboleo,Residential,5.0,3145310,340,-0.18,34.73,1.3533,1.2542,3.3872,C,1,1,1,2024
+Kisumu,Kisumu West,Mamboleo,Commercial,0.25,5600776,340,-0.18,34.73,1.6736,1.3644,2.4961,C,1,0,1,2025
+Kisumu,Nyando,Ahero,Residential,1.0,1216353,340,-0.25,34.8,3.2382,3.0076,5.6445,D,1,1,1,2025
+Kisumu,Nyando,Ahero,Commercial,0.5,902813,340,-0.25,34.8,2.8808,3.154,5.5529,D,0,0,1,2025
+Kisumu,Nyando,Ahero,Agricultural,1.0,443822,340,-0.25,34.8,2.8924,3.5273,5.8836,D,0,1,1,2023
+Kisumu,Nyando,Ahero,Residential,5.0,499300,340,-0.25,34.8,2.8722,2.8528,6.8032,D,0,1,1,2023
+Kisumu,Nyando,Ahero,Commercial,0.25,949862,340,-0.25,34.8,2.7141,3.4222,4.9195,D,0,1,1,2023
+Kisumu,Nyando,Ahero,Agricultural,20.0,251293,340,-0.25,34.8,2.9222,3.504,5.8889,D,0,0,1,2023
+Kisumu,Nyando,Ahero,Residential,5.0,684666,340,-0.25,34.8,2.8585,2.9176,5.2959,D,0,0,1,2024
+Uasin Gishu,Ainabkoi,Elgon View,Residential,0.25,10241342,310,0.6,35.25,0.4524,0.5235,1.1629,B,0,1,1,2023
+Uasin Gishu,Ainabkoi,Elgon View,Commercial,0.5,13273836,310,0.6,35.25,0.4424,0.4767,0.9693,B,1,0,1,2025
+Uasin Gishu,Ainabkoi,Elgon View,Agricultural,20.0,1063063,310,0.6,35.25,0.5879,0.5934,1.0393,B,0,0,1,2025
+Uasin Gishu,Ainabkoi,Elgon View,Residential,5.0,7127690,310,0.6,35.25,0.5784,0.4082,0.8717,B,0,1,1,2025
+Uasin Gishu,Ainabkoi,Elgon View,Commercial,0.25,14073486,310,0.6,35.25,0.4234,0.4088,0.8511,B,1,1,0,2025
+Uasin Gishu,Ainabkoi,Elgon View,Agricultural,5.0,2595495,310,0.6,35.25,0.4626,0.5785,0.9262,B,1,0,1,2025
+Uasin Gishu,Ainabkoi,Elgon View,Residential,1.0,7979033,310,0.6,35.25,0.446,0.4072,0.9041,B,0,1,1,2023
+Uasin Gishu,Ainabkoi,Elgon View,Commercial,1.0,10226644,310,0.6,35.25,0.4986,0.5692,1.1468,B,1,1,0,2025
+Uasin Gishu,Ainabkoi,Pioneer,Residential,0.125,6084799,310,0.58,35.26,0.8522,0.885,2.3984,C,0,0,1,2025
+Uasin Gishu,Ainabkoi,Pioneer,Commercial,0.125,9808499,310,0.58,35.26,0.6483,1.0725,2.1445,C,1,1,0,2025
+Uasin Gishu,Ainabkoi,Pioneer,Agricultural,10.0,855373,310,0.58,35.26,0.7936,1.0513,1.8155,C,1,0,1,2024
+Uasin Gishu,Ainabkoi,Pioneer,Residential,5.0,3143905,310,0.58,35.26,0.9464,1.0277,1.7691,C,1,1,1,2025
+Uasin Gishu,Ainabkoi,Pioneer,Commercial,0.125,8902666,310,0.58,35.26,0.7217,0.896,2.2167,C,0,1,1,2025
+Uasin Gishu,Ainabkoi,Pioneer,Agricultural,10.0,848066,310,0.58,35.26,0.6786,0.9963,1.9459,C,1,0,1,2025
+Uasin Gishu,Ainabkoi,Pioneer,Residential,0.5,4336849,310,0.58,35.26,0.7642,0.9074,2.0803,C,1,0,0,2024
+Uasin Gishu,Ainabkoi,Pioneer,Commercial,0.125,8998755,310,0.58,35.26,0.7883,0.8897,2.149,C,1,1,1,2023
+Uasin Gishu,Ainabkoi,Eldoret Town,Residential,0.25,7937131,310,0.57,35.27,0.276,0.5968,1.0737,B,1,1,0,2023
+Uasin Gishu,Ainabkoi,Eldoret Town,Commercial,0.5,6803832,310,0.57,35.27,0.291,0.4189,1.0643,B,1,0,0,2023
+Uasin Gishu,Ainabkoi,Eldoret Town,Agricultural,20.0,1465009,310,0.57,35.27,0.3343,0.5686,0.8181,B,1,1,1,2025
+Uasin Gishu,Ainabkoi,Eldoret Town,Residential,1.0,6437441,310,0.57,35.27,0.356,0.5743,0.8749,B,0,1,1,2025
+Uasin Gishu,Ainabkoi,Eldoret Town,Commercial,0.25,9671623,310,0.57,35.27,0.2416,0.5312,0.9841,B,1,0,1,2023
+Uasin Gishu,Ainabkoi,Eldoret Town,Agricultural,10.0,1934166,310,0.57,35.27,0.3209,0.5381,0.958,B,1,1,1,2025
+Uasin Gishu,Ainabkoi,Eldoret Town,Residential,0.5,4193189,310,0.57,35.27,0.2977,0.429,0.8967,B,0,0,1,2024
+Uasin Gishu,Ainabkoi,Eldoret Town,Commercial,0.25,9564574,310,0.57,35.27,0.2934,0.497,0.8079,B,1,0,1,2025
+Kilifi,Malindi,Malindi,Residential,1.0,3438656,520,-3.61,39.9,0.5426,1.1918,2.2789,C,0,1,1,2023
+Kilifi,Malindi,Malindi,Commercial,0.5,7852970,520,-3.61,39.9,0.4464,0.8243,1.6152,C,1,1,1,2025
+Kilifi,Malindi,Malindi,Agricultural,20.0,779328,520,-3.61,39.9,0.4694,1.079,1.6166,C,0,1,1,2024
+Kilifi,Malindi,Malindi,Residential,0.5,6034456,520,-3.61,39.9,0.5707,1.0861,1.9748,C,1,1,1,2025
+Kilifi,Malindi,Malindi,Commercial,0.5,8475651,520,-3.61,39.9,0.5942,0.8648,1.7658,C,1,1,1,2024
+Kilifi,Malindi,Malindi,Agricultural,1.0,1422880,520,-3.61,39.9,0.4607,0.8838,1.6376,C,0,0,1,2024
+Kilifi,Malindi,Malindi,Residential,0.125,6369513,520,-3.61,39.9,0.4675,0.8456,1.7814,C,0,1,0,2025
+Kilifi,Malindi,Malindi,Commercial,0.25,12532905,520,-3.61,39.9,0.5707,1.1495,2.0834,C,1,1,1,2025
+Kilifi,Bahari,Mtwapa,Residential,0.125,25558084,520,-3.64,39.91,0.3133,0.5564,1.179,B,1,1,1,2023
+Kilifi,Bahari,Mtwapa,Commercial,0.125,22305847,520,-3.64,39.91,0.3314,0.4997,1.1482,B,0,0,0,2025
+Kilifi,Bahari,Mtwapa,Agricultural,2.0,4609912,520,-3.64,39.91,0.2694,0.5618,0.9365,B,1,0,1,2024
+Kilifi,Bahari,Mtwapa,Residential,2.0,9979231,520,-3.64,39.91,0.3036,0.5574,0.8552,B,0,1,1,2024
+Kilifi,Bahari,Mtwapa,Commercial,1.0,23391106,520,-3.64,39.91,0.2575,0.402,1.1225,B,1,1,1,2024
+Kilifi,Bahari,Mtwapa,Agricultural,1.0,4212202,520,-3.64,39.91,0.317,0.5805,0.8231,B,1,1,0,2025
+Kilifi,Bahari,Mtwapa,Residential,5.0,14785356,520,-3.64,39.91,0.3448,0.5443,0.9255,B,1,1,1,2025
+Kilifi,Bahari,Mtwapa,Commercial,0.5,16802999,520,-3.64,39.91,0.3053,0.5577,1.0608,B,0,1,1,2024
+Kilifi,Bahari,Watamu,Residential,5.0,2755204,520,-3.6,39.93,1.434,1.6313,3.4559,C,1,1,1,2023
+Kilifi,Bahari,Watamu,Commercial,0.5,3372281,520,-3.6,39.93,1.524,1.3552,3.3987,C,1,0,1,2023
+Kilifi,Bahari,Watamu,Agricultural,5.0,1152531,520,-3.6,39.93,1.2286,1.5906,2.5497,C,1,0,0,2025
+Kilifi,Bahari,Watamu,Residential,0.5,2946228,520,-3.6,39.93,1.7625,1.5993,3.4134,C,0,0,0,2025
+Kilifi,Bahari,Watamu,Commercial,0.25,5443917,520,-3.6,39.93,1.3486,1.3967,3.0988,C,0,1,1,2025
+Kilifi,Bahari,Watamu,Agricultural,5.0,938430,520,-3.6,39.93,1.3289,1.2468,3.2122,C,0,1,1,2024
+Kilifi,Bahari,Watamu,Residential,1.0,2882967,520,-3.6,39.93,1.7586,1.4937,3.5679,C,1,0,0,2024
+Kwale,Msambweni,Diani,Residential,0.25,11200788,510,-4.27,39.48,0.2655,0.4947,1.0986,B,0,1,0,2025
+Kwale,Msambweni,Diani,Commercial,0.5,14305329,510,-4.27,39.48,0.2541,0.461,0.9498,B,0,1,0,2024
+Kwale,Msambweni,Diani,Agricultural,5.0,2625574,510,-4.27,39.48,0.2659,0.5638,0.9955,B,1,0,1,2025
+Kwale,Msambweni,Diani,Residential,0.125,10910792,510,-4.27,39.48,0.2853,0.5669,1.1335,B,0,0,1,2024
+Kwale,Msambweni,Diani,Commercial,0.25,26101291,510,-4.27,39.48,0.336,0.5329,0.9639,B,1,1,1,2025
+Kwale,Msambweni,Diani,Agricultural,2.0,3233408,510,-4.27,39.48,0.2599,0.405,1.052,B,1,0,1,2024
+Kwale,Msambweni,Diani,Residential,5.0,8615564,510,-4.27,39.48,0.3549,0.5044,1.1002,B,1,1,0,2025
+Kwale,Msambweni,Diani,Commercial,0.125,19019764,510,-4.27,39.48,0.3465,0.4888,1.1228,B,1,0,0,2024
+Kwale,Msambweni,Ukunda,Residential,2.0,2612854,510,-4.25,39.47,0.8089,0.9528,1.6728,C,1,1,1,2024
+Kwale,Msambweni,Ukunda,Commercial,0.125,5334887,510,-4.25,39.47,0.6589,1.1844,1.7452,C,0,0,1,2025
+Kwale,Msambweni,Ukunda,Agricultural,1.0,1422698,510,-4.25,39.47,0.6566,0.8958,2.0776,C,0,0,1,2025
+Kwale,Msambweni,Ukunda,Residential,0.25,3695320,510,-4.25,39.47,0.7949,0.963,1.787,C,1,0,0,2024
+Kwale,Msambweni,Ukunda,Commercial,0.125,6309301,510,-4.25,39.47,0.7702,0.8336,2.1086,C,1,1,0,2025
+Kwale,Msambweni,Ukunda,Agricultural,2.0,1281263,510,-4.25,39.47,0.8176,0.8167,2.2501,C,0,1,0,2025
+Kwale,Msambweni,Ukunda,Residential,2.0,2762348,510,-4.25,39.47,0.7616,0.9406,2.1058,C,1,0,1,2025
+Laikipia,Laikipia East,Nanyuki,Residential,2.0,1854319,200,0.4,36.75,0.9058,1.09,2.3991,C,0,0,1,2023
+Laikipia,Laikipia East,Nanyuki,Commercial,1.0,5993283,200,0.4,36.75,0.8665,0.9092,2.1298,C,1,1,1,2025
+Laikipia,Laikipia East,Nanyuki,Agricultural,5.0,1216798,200,0.4,36.75,0.7925,1.1606,2.1382,C,1,1,0,2025
+Laikipia,Laikipia East,Nanyuki,Residential,1.0,3127574,200,0.4,36.75,0.8124,1.157,2.2528,C,1,1,1,2025
+Laikipia,Laikipia East,Nanyuki,Commercial,1.0,5256860,200,0.4,36.75,0.863,0.8034,1.9702,C,1,1,1,2024
+Laikipia,Laikipia East,Nanyuki,Agricultural,2.0,1057813,200,0.4,36.75,0.8363,0.9213,2.1742,C,0,0,0,2024
+Laikipia,Laikipia East,Nanyuki,Residential,0.25,5554884,200,0.4,36.75,0.955,1.0554,1.6888,C,1,0,1,2025
+Laikipia,Laikipia East,Nanyuki,Commercial,0.5,5766617,200,0.4,36.75,0.6609,0.8513,1.652,C,1,1,1,2025
+Laikipia,Laikipia West,Rumuruti,Residential,0.5,697439,200,0.45,36.7,3.5638,3.2133,6.2747,D,1,1,1,2025
+Laikipia,Laikipia West,Rumuruti,Commercial,1.0,687314,200,0.45,36.7,2.8883,2.5461,6.0439,D,1,1,1,2024
+Laikipia,Laikipia West,Rumuruti,Agricultural,10.0,148027,200,0.45,36.7,2.4062,2.6335,4.9963,D,1,1,0,2024
+Laikipia,Laikipia West,Rumuruti,Residential,2.0,620139,200,0.45,36.7,2.7951,2.4754,6.3007,D,1,0,1,2025
+Laikipia,Laikipia West,Rumuruti,Commercial,0.125,928108,200,0.45,36.7,2.686,2.809,4.9306,D,1,1,1,2024
+Laikipia,Laikipia West,Rumuruti,Agricultural,5.0,224409,200,0.45,36.7,2.5498,3.5694,7.0001,D,0,0,1,2023
+Laikipia,Laikipia West,Rumuruti,Residential,1.0,575534,200,0.45,36.7,3.1514,2.4789,6.4262,D,1,0,0,2024
+Nyeri,Nyeri Town,Nyeri Town,Residential,2.0,3563443,150,-0.67,37.03,0.5248,0.7851,1.4785,B,1,1,1,2025
+Nyeri,Nyeri Town,Nyeri Town,Commercial,1.0,9016058,150,-0.67,37.03,0.4385,0.6729,1.5571,B,1,0,1,2024
+Nyeri,Nyeri Town,Nyeri Town,Agricultural,1.0,2434682,150,-0.67,37.03,0.5242,0.6995,1.2826,B,1,1,0,2024
+Nyeri,Nyeri Town,Nyeri Town,Residential,0.125,7138106,150,-0.67,37.03,0.5551,0.6872,1.3852,B,1,1,1,2024
+Nyeri,Nyeri Town,Nyeri Town,Commercial,0.5,6350451,150,-0.67,37.03,0.5119,0.6575,1.4063,B,1,1,1,2024
+Nyeri,Nyeri Town,Nyeri Town,Agricultural,2.0,1564493,150,-0.67,37.03,0.5385,0.9126,1.5397,B,0,0,0,2025
+Nyeri,Nyeri Town,Nyeri Town,Residential,0.5,5271763,150,-0.67,37.03,0.4007,0.7114,1.3382,B,1,0,1,2023
+Nyeri,Nyeri Town,Nyeri Town,Commercial,0.25,10995520,150,-0.67,37.03,0.598,0.7561,1.2442,B,1,1,1,2024
+Nyeri,Mathira,Karatina,Residential,0.125,4396369,150,-0.7,37.01,0.8796,0.9136,1.7752,C,0,1,1,2024
+Nyeri,Mathira,Karatina,Commercial,0.5,3271782,150,-0.7,37.01,0.8084,1.071,1.9031,C,1,1,0,2025
+Nyeri,Mathira,Karatina,Agricultural,1.0,1150765,150,-0.7,37.01,1.1196,1.0493,1.947,C,0,1,1,2024
+Nyeri,Mathira,Karatina,Residential,5.0,1467155,150,-0.7,37.01,1.0398,1.1908,1.7956,C,0,1,1,2024
+Nyeri,Mathira,Karatina,Commercial,0.125,4540792,150,-0.7,37.01,0.912,0.8506,2.0066,C,1,1,0,2024
+Nyeri,Mathira,Karatina,Agricultural,20.0,714965,150,-0.7,37.01,1.1005,1.058,2.0073,C,0,0,1,2023
+Nyeri,Mathira,Karatina,Residential,1.0,2701673,150,-0.7,37.01,1.0325,1.0552,2.2325,C,0,1,1,2025
+Murang_a,Murang_a Town,Murang_a Town,Residential,5.0,1721885,80,-1.12,37.27,0.8228,1.1742,1.8993,C,0,0,1,2024
+Murang_a,Murang_a Town,Murang_a Town,Commercial,0.125,5430796,80,-1.12,37.27,0.7764,0.987,1.9272,C,0,1,1,2024
+Murang_a,Murang_a Town,Murang_a Town,Agricultural,10.0,654184,80,-1.12,37.27,0.9096,1.0051,2.1149,C,1,0,0,2024
+Murang_a,Murang_a Town,Murang_a Town,Residential,0.5,2457588,80,-1.12,37.27,0.7369,1.1262,2.1468,C,0,0,0,2024
+Murang_a,Murang_a Town,Murang_a Town,Commercial,0.5,4362364,80,-1.12,37.27,0.8864,0.9127,1.8773,C,1,0,1,2025
+Murang_a,Murang_a Town,Murang_a Town,Agricultural,10.0,1113748,80,-1.12,37.27,0.9169,0.891,2.1787,C,1,1,0,2025
+Murang_a,Murang_a Town,Murang_a Town,Residential,0.25,5327368,80,-1.12,37.27,0.7402,0.8751,2.2161,C,1,1,1,2024
+Murang_a,Murang_a Town,Murang_a Town,Commercial,1.0,4225107,80,-1.12,37.27,0.6431,1.1242,2.2674,C,1,1,1,2023
+Murang_a,Kandara,Kenol,Residential,0.5,2399139,80,-1.07,37.25,1.5405,1.2193,2.567,C,1,1,1,2024
+Murang_a,Kandara,Kenol,Commercial,0.5,2962245,80,-1.07,37.25,1.2382,1.4319,2.9697,C,1,1,1,2024
+Murang_a,Kandara,Kenol,Agricultural,5.0,887291,80,-1.07,37.25,1.6134,1.4932,2.624,C,1,1,0,2025
+Murang_a,Kandara,Kenol,Residential,0.125,3206199,80,-1.07,37.25,1.2066,1.3961,3.4918,C,1,0,0,2024
+Murang_a,Kandara,Kenol,Commercial,1.0,2025801,80,-1.07,37.25,1.278,1.3234,2.9186,C,0,1,1,2025
+Murang_a,Kandara,Kenol,Agricultural,10.0,523654,80,-1.07,37.25,1.7947,1.4674,3.3895,C,1,0,0,2024
+Murang_a,Kandara,Kenol,Residential,2.0,2234166,80,-1.07,37.25,1.3727,1.7286,2.9476,C,1,1,1,2025
+Baringo,Baringo Central,Kabarnet,Residential,5.0,697657,290,0.59,36.02,2.0942,1.9457,3.8155,D,1,0,1,2024
+Baringo,Baringo Central,Kabarnet,Commercial,0.25,1206123,290,0.59,36.02,2.0302,2.1333,3.3068,D,0,1,0,2023
+Baringo,Baringo Central,Kabarnet,Agricultural,2.0,372817,290,0.59,36.02,2.2236,1.9281,3.4637,D,1,1,0,2025
+Baringo,Baringo Central,Kabarnet,Residential,0.25,1127130,290,0.59,36.02,2.2846,1.9173,3.2172,D,1,0,1,2024
+Baringo,Baringo Central,Kabarnet,Commercial,0.125,1155972,290,0.59,36.02,2.1709,1.9502,3.9533,D,0,1,1,2023
+Baringo,Baringo Central,Kabarnet,Agricultural,5.0,276664,290,0.59,36.02,1.6621,2.2109,4.2838,D,0,0,0,2025
+Baringo,Baringo Central,Kabarnet,Residential,0.25,940171,290,0.59,36.02,2.1078,2.0183,4.2601,D,0,1,1,2024
+Elgeyo Marakwet,Keiyo North,Iten,Residential,5.0,914244,340,0.62,35.45,1.7573,1.4248,2.6862,C,1,0,0,2025
+Elgeyo Marakwet,Keiyo North,Iten,Commercial,0.125,1696071,340,0.62,35.45,1.258,1.7012,3.1969,C,0,0,1,2023
+Elgeyo Marakwet,Keiyo North,Iten,Agricultural,2.0,661290,340,0.62,35.45,1.437,1.4567,2.6789,C,1,1,1,2025
+Elgeyo Marakwet,Keiyo North,Iten,Residential,0.125,1618635,340,0.62,35.45,1.6891,1.59,2.8428,C,0,1,1,2024
+Elgeyo Marakwet,Keiyo North,Iten,Commercial,0.125,3633574,340,0.62,35.45,1.7533,1.5415,2.7023,C,1,1,1,2025
+Elgeyo Marakwet,Keiyo North,Iten,Agricultural,1.0,1133575,340,0.62,35.45,1.5812,1.7304,2.7816,C,1,1,1,2025
+Elgeyo Marakwet,Keiyo North,Iten,Residential,5.0,1111776,340,0.62,35.45,1.5525,1.793,2.6791,C,1,1,1,2025
+Nandi,Aldai,Kapsabet,Residential,2.0,1118905,330,0.28,35.1,1.4992,1.3212,2.8509,C,0,0,1,2023
+Nandi,Aldai,Kapsabet,Commercial,0.125,3332062,330,0.28,35.1,1.6722,1.2238,3.3501,C,1,1,1,2023
+Nandi,Aldai,Kapsabet,Agricultural,10.0,472446,330,0.28,35.1,1.744,1.599,2.698,C,0,0,1,2024
+Nandi,Aldai,Kapsabet,Residential,5.0,1251605,330,0.28,35.1,1.495,1.7722,2.4625,C,0,1,1,2025
+Nandi,Aldai,Kapsabet,Commercial,0.25,3366861,330,0.28,35.1,1.4557,1.4802,2.597,C,0,0,1,2024
+Nandi,Aldai,Kapsabet,Agricultural,2.0,592929,330,0.28,35.1,1.6688,1.248,3.5671,C,0,0,0,2025
+Nandi,Aldai,Kapsabet,Residential,1.0,1739431,330,0.28,35.1,1.4892,1.6572,2.9129,C,1,1,1,2023
+Trans Nzoia,Kwanza,Kitale,Residential,0.125,4392556,370,1.17,34.9,0.7852,0.9501,2.0848,C,1,1,0,2024
+Trans Nzoia,Kwanza,Kitale,Commercial,0.125,4323882,370,1.17,34.9,0.7598,0.9618,1.9327,C,1,0,1,2025
+Trans Nzoia,Kwanza,Kitale,Agricultural,10.0,941570,370,1.17,34.9,0.9349,0.9539,2.0525,C,1,1,1,2024
+Trans Nzoia,Kwanza,Kitale,Residential,0.25,4525941,370,1.17,34.9,0.7578,0.8231,1.9083,C,1,1,1,2025
+Trans Nzoia,Kwanza,Kitale,Commercial,1.0,4007502,370,1.17,34.9,0.8465,0.9045,1.9644,C,0,0,1,2025
+Trans Nzoia,Kwanza,Kitale,Agricultural,2.0,895920,370,1.17,34.9,0.9334,0.9591,2.0689,C,1,1,1,2025
+Trans Nzoia,Kwanza,Kitale,Residential,0.125,3360267,370,1.17,34.9,0.8507,0.9531,1.8464,C,0,1,1,2024
+Trans Nzoia,Kwanza,Kitale,Commercial,1.0,4496859,370,1.17,34.9,0.7261,0.8838,2.1986,C,1,1,0,2025
+Bungoma,Bungoma Town,Bungoma Town,Residential,5.0,1384963,400,0.69,34.46,0.8494,1.0932,1.7365,C,1,1,0,2025
+Bungoma,Bungoma Town,Bungoma Town,Commercial,0.5,2136851,400,0.69,34.46,0.7043,1.1,2.2473,C,0,1,1,2025
+Bungoma,Bungoma Town,Bungoma Town,Agricultural,2.0,934100,400,0.69,34.46,0.7338,0.9511,1.8214,C,1,1,1,2025
+Bungoma,Bungoma Town,Bungoma Town,Residential,0.5,1459838,400,0.69,34.46,0.8529,1.1157,1.6335,C,0,1,1,2024
+Bungoma,Bungoma Town,Bungoma Town,Commercial,0.25,4587253,400,0.69,34.46,0.7478,0.9718,1.8966,C,0,1,1,2025
+Bungoma,Bungoma Town,Bungoma Town,Agricultural,5.0,1010762,400,0.69,34.46,0.7457,0.8401,1.9655,C,1,1,1,2023
+Bungoma,Bungoma Town,Bungoma Town,Residential,5.0,1527190,400,0.69,34.46,0.8805,0.8994,1.9615,C,1,1,0,2025
+Kakamega,Kakamega Town,Kakamega Town,Residential,5.0,2321969,380,0.33,34.67,0.6453,0.9441,1.6366,C,1,1,0,2025
+Kakamega,Kakamega Town,Kakamega Town,Commercial,0.5,3386439,380,0.33,34.67,0.9413,0.9904,2.1267,C,0,1,1,2024
+Kakamega,Kakamega Town,Kakamega Town,Agricultural,1.0,1033936,380,0.33,34.67,0.8015,0.8511,2.2375,C,0,0,0,2025
+Kakamega,Kakamega Town,Kakamega Town,Residential,0.5,3364239,380,0.33,34.67,0.813,0.8973,1.7363,C,1,1,1,2025
+Kakamega,Kakamega Town,Kakamega Town,Commercial,0.125,3300914,380,0.33,34.67,0.8701,1.0664,2.3612,C,1,0,1,2024
+Kakamega,Kakamega Town,Kakamega Town,Agricultural,1.0,1442762,380,0.33,34.67,0.8243,1.1695,1.6517,C,1,1,1,2024
+Kakamega,Kakamega Town,Kakamega Town,Residential,0.5,2703768,380,0.33,34.67,0.8987,0.8894,1.6926,C,1,1,1,2025
+Busia,Busia Town,Busia Town,Residential,0.125,2338158,440,0.56,33.96,1.388,1.4281,3.2843,C,1,1,0,2025
+Busia,Busia Town,Busia Town,Commercial,0.5,1815976,440,0.56,33.96,1.6779,1.5119,3.1219,C,1,1,1,2024
+Busia,Busia Town,Busia Town,Agricultural,2.0,685212,440,0.56,33.96,1.608,1.2885,2.7401,C,0,1,1,2024
+Busia,Busia Town,Busia Town,Residential,5.0,1363272,440,0.56,33.96,1.7981,1.6239,2.9739,C,1,1,1,2025
+Busia,Busia Town,Busia Town,Commercial,0.25,2823378,440,0.56,33.96,1.6396,1.6863,3.2405,C,1,0,1,2025
+Busia,Busia Town,Busia Town,Agricultural,1.0,1233724,440,0.56,33.96,1.2955,1.2129,2.8707,C,1,1,1,2025
+Busia,Busia Town,Busia Town,Residential,1.0,1929453,440,0.56,33.96,1.3171,1.7138,2.8725,C,1,1,1,2024
+Siaya,Siaya Town,Siaya Town,Residential,0.25,1383985,370,-0.08,34.22,2.0617,1.9535,3.9719,D,1,1,0,2024
+Siaya,Siaya Town,Siaya Town,Commercial,0.25,1317445,370,-0.08,34.22,2.2284,2.2867,3.8025,D,1,0,1,2025
+Siaya,Siaya Town,Siaya Town,Agricultural,10.0,258203,370,-0.08,34.22,2.0123,1.8708,3.8941,D,0,0,1,2025
+Siaya,Siaya Town,Siaya Town,Residential,0.25,1280522,370,-0.08,34.22,2.1222,1.9003,4.3069,D,1,0,0,2025
+Siaya,Siaya Town,Siaya Town,Commercial,0.125,1691246,370,-0.08,34.22,1.6661,1.9914,4.2701,D,1,1,0,2024
+Siaya,Siaya Town,Siaya Town,Agricultural,20.0,256914,370,-0.08,34.22,1.9072,2.4,4.3244,D,1,1,1,2023
+Siaya,Siaya Town,Siaya Town,Residential,0.5,907859,370,-0.08,34.22,1.6158,2.0448,4.0583,D,0,0,1,2024
+Homa Bay,Homa Bay Town,Homa Bay Town,Residential,2.0,1445670,380,-0.77,34.41,1.7794,1.7386,2.6168,C,1,1,1,2023
+Homa Bay,Homa Bay Town,Homa Bay Town,Commercial,0.25,2315456,380,-0.77,34.41,1.3541,1.6518,2.5015,C,1,0,0,2025
+Homa Bay,Homa Bay Town,Homa Bay Town,Agricultural,1.0,993673,380,-0.77,34.41,1.7677,1.5117,3.3394,C,1,1,1,2023
+Homa Bay,Homa Bay Town,Homa Bay Town,Residential,5.0,1493400,380,-0.77,34.41,1.5064,1.6128,3.1951,C,0,1,1,2025
+Homa Bay,Homa Bay Town,Homa Bay Town,Commercial,0.125,2854114,380,-0.77,34.41,1.4154,1.2771,3.1468,C,0,0,1,2025
+Homa Bay,Homa Bay Town,Homa Bay Town,Agricultural,1.0,736980,380,-0.77,34.41,1.7641,1.2859,2.6445,C,0,1,0,2025
+Homa Bay,Homa Bay Town,Homa Bay Town,Residential,5.0,1361741,380,-0.77,34.41,1.563,1.4518,2.5842,C,1,1,0,2025
+Migori,Migori Town,Migori Town,Residential,1.0,808691,400,-1.41,34.42,1.8635,1.6712,4.6548,D,1,0,0,2025
+Migori,Migori Town,Migori Town,Commercial,0.5,1019274,400,-1.41,34.42,2.2262,1.6988,4.0424,D,1,0,0,2024
+Migori,Migori Town,Migori Town,Agricultural,5.0,436430,400,-1.41,34.42,1.6793,1.6384,3.7088,D,1,0,1,2024
+Migori,Migori Town,Migori Town,Residential,1.0,928171,400,-1.41,34.42,2.0738,1.8072,4.2987,D,1,1,1,2025
+Migori,Migori Town,Migori Town,Commercial,0.25,1652004,400,-1.41,34.42,2.222,2.1426,3.8692,D,0,1,0,2025
+Migori,Migori Town,Migori Town,Agricultural,10.0,227511,400,-1.41,34.42,2.3051,2.2512,3.6883,D,1,1,1,2024
+Migori,Migori Town,Migori Town,Residential,0.125,1175272,400,-1.41,34.42,1.7321,1.6459,4.3895,D,1,0,0,2025
+Kisii,Kisii Town,Kisii Town,Residential,2.0,2609094,320,-1.03,34.78,0.7993,1.074,2.1414,C,1,0,1,2025
+Kisii,Kisii Town,Kisii Town,Commercial,0.125,6611047,320,-1.03,34.78,0.7182,1.0956,2.3607,C,1,1,1,2025
+Kisii,Kisii Town,Kisii Town,Agricultural,20.0,807880,320,-1.03,34.78,0.6959,0.9468,1.7067,C,0,1,0,2025
+Kisii,Kisii Town,Kisii Town,Residential,0.5,2723723,320,-1.03,34.78,0.8125,1.1066,1.6943,C,1,0,1,2025
+Kisii,Kisii Town,Kisii Town,Commercial,0.5,3406035,320,-1.03,34.78,0.9469,1.0062,2.3147,C,0,0,1,2025
+Kisii,Kisii Town,Kisii Town,Agricultural,10.0,704208,320,-1.03,34.78,0.7519,1.089,1.9217,C,1,0,0,2024
+Kisii,Kisii Town,Kisii Town,Residential,0.125,2697643,320,-1.03,34.78,0.6898,1.0627,1.7809,C,1,0,1,2023
+Kisii,Kisii Town,Kisii Town,Commercial,1.0,3829707,320,-1.03,34.78,0.7806,0.8559,2.1977,C,1,1,1,2025
+Nyamira,Nyamira Town,Nyamira Town,Residential,0.125,1778351,330,-0.78,34.95,1.7406,1.2962,2.6388,C,1,0,0,2024
+Nyamira,Nyamira Town,Nyamira Town,Commercial,1.0,2549927,330,-0.78,34.95,1.6507,1.6682,2.8799,C,1,0,1,2025
+Nyamira,Nyamira Town,Nyamira Town,Agricultural,10.0,375273,330,-0.78,34.95,1.2312,1.6979,2.9156,C,1,1,0,2023
+Nyamira,Nyamira Town,Nyamira Town,Residential,2.0,1631607,330,-0.78,34.95,1.5067,1.3497,3.3201,C,1,0,1,2024
+Nyamira,Nyamira Town,Nyamira Town,Commercial,0.5,2514864,330,-0.78,34.95,1.5014,1.3087,3.5911,C,0,1,0,2025
+Nyamira,Nyamira Town,Nyamira Town,Agricultural,20.0,447874,330,-0.78,34.95,1.2106,1.3198,3.4372,C,0,0,1,2024
+Nyamira,Nyamira Town,Nyamira Town,Residential,1.0,1591450,330,-0.78,34.95,1.5863,1.3826,2.7231,C,1,1,0,2024
+Kericho,Kericho Town,Kericho Town,Residential,0.5,2153431,280,-0.52,35.32,0.7429,0.9141,1.8241,C,1,0,1,2023
+Kericho,Kericho Town,Kericho Town,Commercial,0.125,3469508,280,-0.52,35.32,0.8865,0.8521,1.8885,C,0,1,1,2025
+Kericho,Kericho Town,Kericho Town,Agricultural,5.0,851890,280,-0.52,35.32,0.674,1.0518,2.0815,C,1,1,0,2025
+Kericho,Kericho Town,Kericho Town,Residential,0.125,3491480,280,-0.52,35.32,0.8149,0.9372,2.1803,C,1,1,0,2025
+Kericho,Kericho Town,Kericho Town,Commercial,0.25,4215995,280,-0.52,35.32,0.9107,1.0241,1.8779,C,0,0,1,2025
+Kericho,Kericho Town,Kericho Town,Agricultural,5.0,850691,280,-0.52,35.32,0.647,1.0397,2.1574,C,1,1,0,2025
+Kericho,Kericho Town,Kericho Town,Residential,0.25,2713273,280,-0.52,35.32,0.8104,1.0054,1.66,C,1,0,1,2025
+Bomet,Bomet Town,Bomet Town,Residential,1.0,1283080,260,-1.03,35.4,1.3307,1.618,3.455,D,1,1,1,2024
+Bomet,Bomet Town,Bomet Town,Commercial,1.0,1296055,260,-1.03,35.4,1.3344,1.5201,2.7502,D,1,0,1,2024
+Bomet,Bomet Town,Bomet Town,Agricultural,2.0,502392,260,-1.03,35.4,1.326,1.2697,3.1784,D,0,0,1,2025
+Bomet,Bomet Town,Bomet Town,Residential,5.0,1019647,260,-1.03,35.4,1.5669,1.3948,2.4687,D,1,0,1,2025
+Bomet,Bomet Town,Bomet Town,Commercial,0.125,2488124,260,-1.03,35.4,1.6669,1.6683,2.5277,D,0,1,0,2025
+Bomet,Bomet Town,Bomet Town,Agricultural,10.0,373277,260,-1.03,35.4,1.3224,1.5779,3.4299,D,0,1,1,2024
+Bomet,Bomet Town,Bomet Town,Residential,1.0,1100966,260,-1.03,35.4,1.311,1.7174,2.6266,D,0,1,1,2023
+Narok,Narok Town,Narok Town,Residential,1.0,2795457,150,-1.63,35.97,1.3127,1.2861,2.9117,C,0,0,1,2025
+Narok,Narok Town,Narok Town,Commercial,1.0,3878210,150,-1.63,35.97,1.4267,1.2124,3.3919,C,1,0,1,2025
+Narok,Narok Town,Narok Town,Agricultural,1.0,1015487,150,-1.63,35.97,1.675,1.5254,3.3819,C,1,0,1,2025
+Narok,Narok Town,Narok Town,Residential,5.0,1591333,150,-1.63,35.97,1.3463,1.5261,2.7209,C,0,1,1,2024
+Narok,Narok Town,Narok Town,Commercial,0.125,3343385,150,-1.63,35.97,1.3346,1.336,2.8625,C,0,1,0,2024
+Narok,Narok Town,Narok Town,Agricultural,5.0,1023884,150,-1.63,35.97,1.3017,1.2661,2.5221,C,0,1,1,2025
+Narok,Narok Town,Narok Town,Residential,0.5,2636793,150,-1.63,35.97,1.3068,1.5183,3.1195,C,1,0,1,2025
+Narok,Narok Town,Narok Town,Commercial,1.0,2265118,150,-1.63,35.97,1.597,1.7597,3.3729,C,1,0,1,2023
+Meru,Meru Town,Meru Town,Residential,5.0,2662470,220,0.03,37.77,0.7829,1.1187,2.3811,C,1,1,1,2023
+Meru,Meru Town,Meru Town,Commercial,0.125,4018429,220,0.03,37.77,0.7528,0.9977,1.985,C,1,1,0,2023
+Meru,Meru Town,Meru Town,Agricultural,10.0,831621,220,0.03,37.77,0.8124,0.997,2.029,C,1,0,1,2024
+Meru,Meru Town,Meru Town,Residential,0.25,4634631,220,0.03,37.77,0.7153,0.8011,2.3951,C,1,1,1,2025
+Meru,Meru Town,Meru Town,Commercial,0.125,5361073,220,0.03,37.77,0.8892,0.8557,1.9683,C,1,0,0,2024
+Meru,Meru Town,Meru Town,Agricultural,20.0,659225,220,0.03,37.77,0.8653,0.951,1.6211,C,1,0,1,2023
+Meru,Meru Town,Meru Town,Residential,1.0,2880915,220,0.03,37.77,0.7569,0.8316,1.6617,C,1,1,0,2025
+Meru,Meru Town,Meru Town,Commercial,1.0,3379492,220,0.03,37.77,0.7479,1.1126,2.1562,C,0,1,1,2024
+Embu,Embu Town,Embu Town,Residential,0.5,1821058,130,-0.74,37.6,0.7756,1.1793,1.9634,C,0,1,1,2023
+Embu,Embu Town,Embu Town,Commercial,0.5,4342554,130,-0.74,37.6,0.9529,0.8501,1.7695,C,1,1,1,2025
+Embu,Embu Town,Embu Town,Agricultural,20.0,553808,130,-0.74,37.6,0.7928,1.0611,1.9241,C,1,1,1,2023
+Embu,Embu Town,Embu Town,Residential,1.0,1854905,130,-0.74,37.6,0.9109,0.8112,1.8258,C,1,1,0,2023
+Embu,Embu Town,Embu Town,Commercial,0.125,5163525,130,-0.74,37.6,0.7261,1.1907,2.0518,C,1,1,1,2025
+Embu,Embu Town,Embu Town,Agricultural,20.0,755069,130,-0.74,37.6,0.9468,1.0001,1.8516,C,1,0,0,2025
+Embu,Embu Town,Embu Town,Residential,1.0,2792688,130,-0.74,37.6,0.8984,0.8601,2.0697,C,1,1,0,2025
+Kirinyaga,Kirinyaga Central,Kerugoya,Residential,1.0,2018859,115,-0.75,37.25,1.1811,0.8926,1.7725,C,1,0,0,2023
+Kirinyaga,Kirinyaga Central,Kerugoya,Commercial,0.25,5092730,115,-0.75,37.25,0.9366,1.1141,1.8712,C,0,1,1,2025
+Kirinyaga,Kirinyaga Central,Kerugoya,Agricultural,5.0,992989,115,-0.75,37.25,1.0428,1.1832,2.0535,C,1,0,1,2024
+Kirinyaga,Kirinyaga Central,Kerugoya,Residential,1.0,2287876,115,-0.75,37.25,0.9996,0.9819,1.7358,C,0,1,1,2025
+Kirinyaga,Kirinyaga Central,Kerugoya,Commercial,0.5,1780240,115,-0.75,37.25,0.9893,0.9024,2.3013,C,0,0,0,2025
+Kirinyaga,Kirinyaga Central,Kerugoya,Agricultural,2.0,1012564,115,-0.75,37.25,1.0722,0.9763,2.01,C,1,1,1,2024
+Kirinyaga,Kirinyaga Central,Kerugoya,Residential,2.0,2139070,115,-0.75,37.25,1.0482,1.0575,2.1928,C,1,1,1,2025
+Makueni,Makueni Town,Wote,Residential,0.25,1239149,170,-2.35,37.83,1.7784,2.2993,4.2706,D,1,0,0,2025
+Makueni,Makueni Town,Wote,Commercial,0.5,1064890,170,-2.35,37.83,2.338,2.2146,3.5192,D,1,1,1,2025
+Makueni,Makueni Town,Wote,Agricultural,5.0,359204,170,-2.35,37.83,2.0361,2.3588,3.4328,D,1,1,0,2023
+Makueni,Makueni Town,Wote,Residential,0.25,1333023,170,-2.35,37.83,1.9787,1.6433,4.5888,D,0,1,1,2024
+Makueni,Makueni Town,Wote,Commercial,1.0,855559,170,-2.35,37.83,2.297,2.0198,4.2714,D,1,0,0,2024
+Makueni,Makueni Town,Wote,Agricultural,5.0,412892,170,-2.35,37.83,2.3536,1.9853,4.0568,D,0,1,1,2024
+Makueni,Makueni Town,Wote,Residential,0.25,1966967,170,-2.35,37.83,1.7588,2.1782,4.1256,D,1,1,1,2025
+Kitui,Kitui Town,Kitui Town,Residential,0.25,1411420,180,-1.87,38.23,1.4752,1.2885,3.4372,D,1,1,1,2024
+Kitui,Kitui Town,Kitui Town,Commercial,0.125,2333429,180,-1.87,38.23,1.5806,1.5833,3.0941,D,1,0,1,2025
+Kitui,Kitui Town,Kitui Town,Agricultural,1.0,457065,180,-1.87,38.23,1.7714,1.783,3.0922,D,1,1,1,2024
+Kitui,Kitui Town,Kitui Town,Residential,0.125,1294178,180,-1.87,38.23,1.7994,1.4484,2.8221,D,1,0,1,2023
+Kitui,Kitui Town,Kitui Town,Commercial,1.0,1024252,180,-1.87,38.23,1.5257,1.4289,3.4141,D,1,0,0,2024
+Kitui,Kitui Town,Kitui Town,Agricultural,10.0,252785,180,-1.87,38.23,1.2538,1.2099,3.519,D,1,1,1,2023
+Kitui,Kitui Town,Kitui Town,Residential,0.125,1221489,180,-1.87,38.23,1.3739,1.4524,2.6675,D,1,1,0,2025
+Garissa,Garissa Town,Garissa Town,Residential,1.0,861742,370,-0.65,39.75,1.7448,2.1159,4.4554,D,0,1,1,2025
+Garissa,Garissa Town,Garissa Town,Commercial,1.0,1000132,370,-0.65,39.75,1.6771,1.9318,3.5865,D,1,0,0,2024
+Garissa,Garissa Town,Garissa Town,Agricultural,10.0,166612,370,-0.65,39.75,1.3022,2.0577,3.888,D,0,1,1,2025
+Garissa,Garissa Town,Garissa Town,Residential,2.0,881602,370,-0.65,39.75,1.5818,2.3819,3.4779,D,0,1,1,2025
+Garissa,Garissa Town,Garissa Town,Commercial,0.5,1268140,370,-0.65,39.75,1.7058,2.1019,3.6164,D,1,0,1,2025
+Garissa,Garissa Town,Garissa Town,Agricultural,20.0,133641,370,-0.65,39.75,1.5709,2.0349,4.7558,D,1,0,0,2025
+Garissa,Garissa Town,Garissa Town,Residential,2.0,690560,370,-0.65,39.75,1.7387,1.8375,4.0567,D,1,0,1,2024
+Isiolo,Isiolo Town,Isiolo Town,Residential,0.25,941816,270,0.5,37.66,1.6185,2.3878,4.5871,D,1,0,0,2023
+Isiolo,Isiolo Town,Isiolo Town,Commercial,0.125,1588580,270,0.5,37.66,1.8891,2.2707,3.8253,D,1,0,0,2023
+Isiolo,Isiolo Town,Isiolo Town,Agricultural,10.0,257863,270,0.5,37.66,2.1068,1.9607,3.4578,D,1,1,1,2024
+Isiolo,Isiolo Town,Isiolo Town,Residential,0.5,629573,270,0.5,37.66,1.9871,2.0912,4.0744,D,0,1,1,2025
+Isiolo,Isiolo Town,Isiolo Town,Commercial,0.25,1571436,270,0.5,37.66,1.773,1.8919,4.6377,D,0,0,1,2025
+Isiolo,Isiolo Town,Isiolo Town,Agricultural,1.0,372480,270,0.5,37.66,1.8788,2.0412,3.6709,D,0,1,1,2024
+Isiolo,Isiolo Town,Isiolo Town,Residential,5.0,773413,270,0.5,37.66,2.1739,2.3695,3.3646,D,1,1,1,2024
+Taita Taveta,Voi,Voi,Residential,2.0,1660407,330,-3.9,38.37,1.1264,1.0492,2.0858,C,1,1,1,2024
+Taita Taveta,Voi,Voi,Commercial,1.0,2641197,330,-3.9,38.37,0.9012,0.9639,2.0831,C,1,1,1,2025
+Taita Taveta,Voi,Voi,Agricultural,20.0,392112,330,-3.9,38.37,1.0628,0.9488,2.2236,C,0,0,1,2024
+Taita Taveta,Voi,Voi,Residential,0.125,2118853,330,-3.9,38.37,0.8265,0.9134,1.7697,C,1,1,0,2024
+Taita Taveta,Voi,Voi,Commercial,0.25,3199896,330,-3.9,38.37,0.9687,1.1025,1.8542,C,0,1,1,2023
+Taita Taveta,Voi,Voi,Agricultural,5.0,456005,330,-3.9,38.37,1.0406,1.0365,1.7891,C,0,1,0,2023
+Taita Taveta,Voi,Voi,Residential,0.125,3062226,330,-3.9,38.37,0.9611,1.1583,2.3344,C,1,1,1,2024
+Turkana,Turkana Central,Lodwar,Residential,0.125,365625,750,2.64,35.57,2.815,2.4957,8.8788,D,0,1,1,2024
+Turkana,Turkana Central,Lodwar,Commercial,1.0,475611,750,2.64,35.57,2.8487,3.1416,6.4937,D,1,1,1,2025
+Turkana,Turkana Central,Lodwar,Agricultural,1.0,239167,750,2.64,35.57,3.2689,3.3747,9.0117,D,0,1,1,2024
+Turkana,Turkana Central,Lodwar,Residential,2.0,280954,750,2.64,35.57,2.4901,2.7952,8.3608,D,1,1,0,2023
+Turkana,Turkana Central,Lodwar,Commercial,1.0,261618,750,2.64,35.57,3.4654,3.559,7.7225,D,0,0,1,2025
+Turkana,Turkana Central,Lodwar,Agricultural,10.0,115249,750,2.64,35.57,2.9792,2.5102,8.8518,D,1,0,1,2024
+Turkana,Turkana Central,Lodwar,Residential,5.0,232336,750,2.64,35.57,3.5661,2.4723,6.442,D,1,1,1,2024
+Marsabit,Marsabit Town,Marsabit Town,Residential,0.25,870073,560,2.63,38.13,2.776,3.5333,6.5004,D,1,1,1,2025
+Marsabit,Marsabit Town,Marsabit Town,Commercial,0.25,750655,560,2.63,38.13,2.6436,2.8802,4.9647,D,0,0,1,2024
+Marsabit,Marsabit Town,Marsabit Town,Agricultural,10.0,119086,560,2.63,38.13,2.6887,3.4729,5.2489,D,1,1,1,2025
+Marsabit,Marsabit Town,Marsabit Town,Residential,0.125,600862,560,2.63,38.13,2.8763,2.917,5.601,D,1,0,0,2024
+Marsabit,Marsabit Town,Marsabit Town,Commercial,1.0,485772,560,2.63,38.13,3.1129,3.0355,5.9847,D,0,1,1,2024
+Marsabit,Marsabit Town,Marsabit Town,Agricultural,10.0,78560,560,2.63,38.13,2.6865,3.0386,5.4611,D,0,0,0,2025
+Marsabit,Marsabit Town,Marsabit Town,Residential,2.0,419650,560,2.63,38.13,2.6052,2.6443,6.3286,D,1,0,0,2025
+Samburu,Samburu East,Maralal,Residential,5.0,357879,350,1.28,36.88,3.488,2.6863,5.5563,D,1,0,1,2024
+Samburu,Samburu East,Maralal,Commercial,0.125,663718,350,1.28,36.88,3.5692,3.4575,5.2097,D,1,1,1,2024
+Samburu,Samburu East,Maralal,Agricultural,1.0,243427,350,1.28,36.88,3.0807,3.5885,6.8049,D,1,1,1,2023
+Samburu,Samburu East,Maralal,Residential,2.0,356476,350,1.28,36.88,2.8209,3.0549,6.3922,D,1,1,0,2024
+Samburu,Samburu East,Maralal,Commercial,0.5,477986,350,1.28,36.88,3.4826,3.1149,5.0706,D,0,0,1,2025
+Samburu,Samburu East,Maralal,Agricultural,20.0,136167,350,1.28,36.88,2.6932,3.2892,7.1359,D,0,1,1,2023
+Samburu,Samburu East,Maralal,Residential,0.5,303307,350,1.28,36.88,3.0539,3.4949,7.1696,D,0,1,1,2024
+West Pokot,West Pokot,Kapenguria,Residential,2.0,349348,380,1.37,35.42,2.6287,3.0954,6.4844,D,1,0,1,2025
+West Pokot,West Pokot,Kapenguria,Commercial,0.125,768481,380,1.37,35.42,3.2226,2.9596,5.1605,D,1,1,1,2025
+West Pokot,West Pokot,Kapenguria,Agricultural,5.0,255930,380,1.37,35.42,2.7396,3.1117,4.9277,D,1,0,0,2023
+West Pokot,West Pokot,Kapenguria,Residential,0.5,355482,380,1.37,35.42,3.0024,3.5502,6.1458,D,1,1,0,2025
+West Pokot,West Pokot,Kapenguria,Commercial,0.125,865104,380,1.37,35.42,3.5195,2.6985,6.4284,D,0,1,1,2024
+West Pokot,West Pokot,Kapenguria,Agricultural,10.0,132220,380,1.37,35.42,3.2147,2.787,6.1876,D,1,0,0,2024
+West Pokot,West Pokot,Kapenguria,Residential,5.0,324975,380,1.37,35.42,2.9534,2.62,6.6778,D,0,1,0,2024
+Wajir,Wajir Town,Wajir Town,Residential,1.0,478768,640,2.15,40.52,2.9599,3.5537,5.9071,D,1,1,1,2024
+Wajir,Wajir Town,Wajir Town,Commercial,0.125,940796,640,2.15,40.52,2.5527,3.0519,6.1574,D,1,1,1,2024
+Wajir,Wajir Town,Wajir Town,Agricultural,5.0,193946,640,2.15,40.52,3.407,2.5016,5.4484,D,1,0,1,2025
+Wajir,Wajir Town,Wajir Town,Residential,5.0,382999,640,2.15,40.52,3.1015,3.013,6.5207,D,1,1,1,2025
+Wajir,Wajir Town,Wajir Town,Commercial,0.25,942634,640,2.15,40.52,3.1539,3.263,7.0477,D,1,1,0,2025
+Wajir,Wajir Town,Wajir Town,Agricultural,10.0,140853,640,2.15,40.52,2.5243,2.4296,6.0139,D,0,0,0,2025
+Wajir,Wajir Town,Wajir Town,Residential,1.0,457206,640,2.15,40.52,3.386,3.2176,6.8624,D,0,1,1,2025
+Mandera,Mandera Town,Mandera Town,Residential,2.0,204966,900,4.53,42.17,5.3993,4.4007,9.9219,D,0,0,0,2024
+Mandera,Mandera Town,Mandera Town,Commercial,0.5,447036,900,4.53,42.17,4.8338,4.8497,8.1119,D,1,1,1,2025
+Mandera,Mandera Town,Mandera Town,Agricultural,10.0,108503,900,4.53,42.17,5.8162,4.7095,8.5572,D,1,1,0,2025
+Mandera,Mandera Town,Mandera Town,Residential,5.0,276985,900,4.53,42.17,5.0501,5.0261,8.698,D,0,0,1,2024
+Mandera,Mandera Town,Mandera Town,Commercial,0.25,597530,900,4.53,42.17,4.6059,4.7879,11.6646,D,1,0,1,2024
+Mandera,Mandera Town,Mandera Town,Agricultural,10.0,159059,900,4.53,42.17,4.2588,4.6482,11.8208,D,1,1,1,2025
+Mandera,Mandera Town,Mandera Town,Residential,0.5,363717,900,4.53,42.17,4.9989,5.3586,9.2946,D,1,0,0,2024
+Lamu,Lamu Town,Lamu Town,Residential,0.25,3388203,600,-2.17,41.05,1.6535,1.452,2.4772,D,1,1,0,2024
+Lamu,Lamu Town,Lamu Town,Commercial,0.5,2283202,600,-2.17,41.05,1.3927,1.6192,2.8532,D,1,0,1,2025
+Lamu,Lamu Town,Lamu Town,Agricultural,20.0,411643,600,-2.17,41.05,1.5171,1.674,2.5032,D,0,1,1,2025
+Lamu,Lamu Town,Lamu Town,Residential,0.125,3033598,600,-2.17,41.05,1.5279,1.2432,2.6224,D,1,0,1,2024
+Lamu,Lamu Town,Lamu Town,Commercial,1.0,2025206,600,-2.17,41.05,1.681,1.4633,3.1506,D,0,1,1,2025
+Lamu,Lamu Town,Lamu Town,Agricultural,1.0,743872,600,-2.17,41.05,1.2135,1.6928,2.7479,D,0,1,0,2023
+Lamu,Lamu Town,Lamu Town,Residential,0.5,1590816,600,-2.17,41.05,1.5107,1.5667,2.7747,D,1,1,0,2025
+Tana River,Tana River,Hola,Residential,2.0,88928,400,-1.33,40.08,4.6761,4.5218,9.3382,D,1,0,1,2024
+Tana River,Tana River,Hola,Commercial,0.125,179202,400,-1.33,40.08,4.1458,5.896,11.6173,D,1,1,1,2025
+Tana River,Tana River,Hola,Agricultural,1.0,92995,400,-1.33,40.08,4.2589,5.4467,8.4162,D,0,1,1,2025
+Tana River,Tana River,Hola,Residential,1.0,151374,400,-1.33,40.08,4.1107,5.5472,11.2455,D,1,1,1,2025
+Tana River,Tana River,Hola,Commercial,1.0,144816,400,-1.33,40.08,4.8537,4.2755,9.7518,D,1,1,0,2025
+Tana River,Tana River,Hola,Agricultural,20.0,52971,400,-1.33,40.08,4.4543,5.495,11.5533,D,1,0,1,2024
+Tana River,Tana River,Hola,Residential,2.0,100902,400,-1.33,40.08,4.3612,4.0874,9.3987,D,1,0,1,2023
+Tharaka Nithi,Tharaka,Chuka,Residential,5.0,1130993,195,-0.45,38.13,2.3507,1.7647,4.3284,D,1,0,1,2025
+Tharaka Nithi,Tharaka,Chuka,Commercial,0.5,1859496,195,-0.45,38.13,1.7954,2.3144,3.7102,D,1,1,1,2025
+Tharaka Nithi,Tharaka,Chuka,Agricultural,20.0,355474,195,-0.45,38.13,1.7097,2.3808,3.5689,D,0,1,1,2024
+Tharaka Nithi,Tharaka,Chuka,Residential,5.0,731128,195,-0.45,38.13,2.2114,2.3624,3.2341,D,0,1,1,2024
+Tharaka Nithi,Tharaka,Chuka,Commercial,0.125,1605869,195,-0.45,38.13,1.6151,1.9061,3.9104,D,1,0,1,2025
+Tharaka Nithi,Tharaka,Chuka,Agricultural,2.0,405988,195,-0.45,38.13,1.6208,2.087,4.6291,D,0,1,0,2025
+Tharaka Nithi,Tharaka,Chuka,Residential,0.5,1650831,195,-0.45,38.13,2.1834,2.1883,3.2914,D,1,1,1,2024
+Nyandarua,Ol Kalou,Ol Kalou,Residential,0.125,1262581,130,-0.45,36.57,2.1754,2.2152,3.6162,D,1,1,0,2025
+Nyandarua,Ol Kalou,Ol Kalou,Commercial,1.0,733305,130,-0.45,36.57,2.399,2.2171,3.6733,D,1,0,1,2025
+Nyandarua,Ol Kalou,Ol Kalou,Agricultural,20.0,239865,130,-0.45,36.57,1.6994,2.0548,3.7136,D,1,0,1,2025
+Nyandarua,Ol Kalou,Ol Kalou,Residential,0.5,591770,130,-0.45,36.57,2.0453,1.9269,4.1273,D,1,0,0,2024
+Nyandarua,Ol Kalou,Ol Kalou,Commercial,0.125,828152,130,-0.45,36.57,2.2952,1.7018,4.2085,D,1,0,0,2025
+Nyandarua,Ol Kalou,Ol Kalou,Agricultural,2.0,343988,130,-0.45,36.57,1.8539,2.0427,3.5647,D,1,0,1,2025
+Nyandarua,Ol Kalou,Ol Kalou,Residential,5.0,748270,130,-0.45,36.57,1.7878,1.6873,4.0111,D,1,0,1,2025
+Vihiga,Vihiga,Mbale,Residential,0.125,2507037,370,0.1,34.69,1.7255,1.2858,2.7918,C,0,0,1,2024
+Vihiga,Vihiga,Mbale,Commercial,0.5,2699865,370,0.1,34.69,1.2268,1.7582,3.4942,C,1,1,1,2025
+Vihiga,Vihiga,Mbale,Agricultural,1.0,943048,370,0.1,34.69,1.764,1.4273,3.0992,C,0,0,1,2025
+Vihiga,Vihiga,Mbale,Residential,5.0,1253225,370,0.1,34.69,1.5021,1.5447,3.0579,C,1,1,0,2025
+Vihiga,Vihiga,Mbale,Commercial,1.0,2295157,370,0.1,34.69,1.3902,1.317,3.0903,C,0,1,1,2025
+Vihiga,Vihiga,Mbale,Agricultural,2.0,760577,370,0.1,34.69,1.467,1.7746,2.8919,C,1,1,0,2025
+Vihiga,Vihiga,Mbale,Residential,0.125,2748254,370,0.1,34.69,1.5416,1.6961,2.5503,C,1,1,1,2024

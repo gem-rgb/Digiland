@@ -144,13 +144,13 @@ class AuthErrorHandler:
             "success": False,
             "error_code": "AUTH_ACCOUNT_LOCKED",
             "user_message": (
-                "Your account has been temporarily locked for security reasons. "
+                "Your account is temporarily locked. "
                 "Please try again later or contact support for assistance."
             ),
             "reference_id": reference_id,
             "redirect_url": "/accounts/login/",
             "recovery_action": (
-                "Wait for the lockout period to expire, or contact support "
+                "Wait for the lockout to end, or contact support "
                 f"with reference: {reference_id}"
             ),
         }

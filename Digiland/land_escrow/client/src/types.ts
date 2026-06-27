@@ -612,6 +612,8 @@ export interface PredictionComparisonSummary {
 export interface PredictionResultSummary {
   error?: string;
   county?: string;
+  constituency?: string;
+  town?: string;
   land_use?: string;
   size_acres?: string;
   price_per_acre?: string;

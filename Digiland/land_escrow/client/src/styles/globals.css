@@ -458,8 +458,7 @@ body {
 .dark .hero-gradient-overlay {
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.85));
 }
-<<<<<<< HEAD
-=======
+
 
 /* ------------------------------------------------------------------ */
 /*  Hero Motion Enhancements                                           */
@@ -568,4 +567,4 @@ body {
     transition-delay: 0s !important;
   }
 }
->>>>>>> ef5ef7fac4c0377f4742dd64e6f81c4164c05836
+

@@ -67,6 +67,8 @@ class TestLoginFlow(APITestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = _make_user()
+        self.user.is_email_verified = True
+        self.user.save(update_fields=["is_email_verified"])
         self.url = "/api/v1/auth/login/"
 
     def test_login_success(self):
@@ -75,6 +77,18 @@ class TestLoginFlow(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIn("tokens", resp.data)
         self.assertIn("access", resp.data["tokens"])
+
+    @patch("core.auth_views.send_mail")
+    def test_login_unverified_user_sends_verification_email(self, mock_send_mail):
+        """An unverified login attempt should send a verification email and block access."""
+        user = _make_user(email="api-unverified@digiland.co.ke", password="TestPass123!")
+        resp = self.client.post(self.url, {"email": user.email, "password": "TestPass123!"})
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(resp.data.get("verification_required"))
+        self.assertTrue(resp.data.get("verification_email_sent"))
+        self.assertTrue(mock_send_mail.called)
+        _, kwargs = mock_send_mail.call_args
+        self.assertIn(user.email, kwargs.get("recipient_list", []))
 
     def test_login_invalid_password(self):
         """Wrong password returns 401."""
@@ -126,6 +140,22 @@ class TestRegistrationFlow(APITestCase):
         resp = self.client.post(self.url, data)
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertTrue(User.objects.filter(email="new@digiland.co.ke").exists())
+
+    @patch("core.auth_views.send_mail")
+    def test_register_sends_verification_email(self, mock_send_mail):
+        """Registration should trigger a verification email to the submitted address."""
+        data = {
+            "email": "verify-me@digiland.co.ke",
+            "password": "SecurePass123!",
+            "full_name": "Verify Me",
+            "role": "Buyer",
+            "phone_number": "+254712345671",
+        }
+        resp = self.client.post(self.url, data)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(mock_send_mail.called, "Registration did not attempt to send a verification email.")
+        _, kwargs = mock_send_mail.call_args
+        self.assertIn("verify-me@digiland.co.ke", kwargs.get("recipient_list", []))
 
     def test_register_duplicate_email(self):
         """Duplicate email returns 400."""
@@ -594,13 +624,30 @@ class TestDefaultFromEmailNeverBlank(TestCase):
     def test_adapter_returns_non_blank_from_email(self):
         """The allauth adapter's get_from_email must never return ''."""
         from core.adapter import RoleBasedAccountAdapter
-        from django.test import RequestFactory
 
-        factory = RequestFactory()
-        request = factory.get("/")
         adapter = RoleBasedAccountAdapter()
-        from_email = adapter.get_from_email(request)
+        from_email = adapter.get_from_email()
         self.assertTrue(bool(from_email), f"from_email was blank/empty: {from_email!r}")
+
+    @patch("core.adapter.send_mail")
+    def test_unverified_login_redirects_to_pending_and_sends_email(self, mock_send_mail):
+        """Browser login should send a verification email for unverified users."""
+        from django.contrib.sessions.middleware import SessionMiddleware
+        from django.test import RequestFactory
+        from django.urls import reverse
+        from core.adapter import RoleBasedAccountAdapter
+
+        user = _make_user(email="browser-unverified@digiland.co.ke")
+        request = RequestFactory().get("/accounts/login/")
+        SessionMiddleware(lambda _request: None).process_request(request)
+        request.session.save()
+        request.user = user
+
+        adapter = RoleBasedAccountAdapter()
+        redirect_url = adapter.get_login_redirect_url(request)
+
+        self.assertEqual(redirect_url, reverse("account_verification_pending"))
+        self.assertTrue(mock_send_mail.called)
 
     @override_settings(
         EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
@@ -640,3 +687,106 @@ class TestDefaultFromEmailNeverBlank(TestCase):
             bool(settings.DEFAULT_FROM_EMAIL),
             f"DEFAULT_FROM_EMAIL is blank: {settings.DEFAULT_FROM_EMAIL!r}",
         )
+
+
+# ==================== EMAIL VERIFICATION URL REGRESSION TESTS ====================
+
+
+class TestEmailVerificationUrls(TestCase):
+    """Regression: pending verification routes must stay reversible."""
+
+    def test_pending_verification_page_renders(self):
+        """The pending verification page should render without NoReverseMatch."""
+        from django.test import Client
+        from django.urls import reverse
+
+        response = Client().get(reverse("account_verification_pending"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_email_verification_redirects_verified_users_to_login(self):
+        """Verified users should be sent back to the public login page."""
+        from django.test import Client
+        from django.urls import reverse
+
+        user = _make_user(email="verified@digiland.co.ke")
+        user.is_email_verified = True
+        user.save(update_fields=["is_email_verified"])
+
+        client = Client()
+        client.force_login(user)
+
+        response = client.get(reverse("account_verification_pending"))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("account_login"))
+
+    def test_email_verification_api_redirects_to_login(self):
+        """The verification API should return the login redirect after a successful click-through."""
+        from django.urls import reverse
+        from core.verification import issue_one_time_token
+
+        user = _make_user(email="api-verified@digiland.co.ke")
+        token = issue_one_time_token(
+            "emailverify",
+            {
+                "user_id": str(user.id),
+                "email": user.email,
+                "source": "test",
+            },
+            ttl_seconds=3600,
+        )
+
+        client = APIClient()
+        client.force_login(user)
+
+        response = client.post(reverse("auth-email-verify"), {"token": token}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["verification_status"], "verified")
+        self.assertEqual(response.data["redirect_url"], reverse("account_login"))
+        self.assertEqual(response.data["pending_verification"].get("redirect_url"), reverse("account_login"))
+
+        user.refresh_from_db()
+        self.assertTrue(user.is_email_verified)
+
+
+class TestEmailVerificationGateMiddleware(TestCase):
+    """Regression: authenticated users without verified email cannot reach normal pages."""
+
+    @override_settings(TESTING=False)
+    def test_unverified_authenticated_user_is_redirected_to_pending_page(self):
+        """The browser gate should redirect unverified users away from protected pages."""
+        from django.http import HttpResponse
+        from django.test import RequestFactory
+        from django.urls import reverse
+        from core.middleware import EmailVerificationGateMiddleware
+
+        user = _make_user(email="unverified@digiland.co.ke")
+        user.is_email_verified = False
+        user.save(update_fields=["is_email_verified"])
+
+        request = RequestFactory().get("/")
+        request.user = user
+
+        middleware = EmailVerificationGateMiddleware(lambda _request: HttpResponse("ok"))
+        response = middleware(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("account_verification_pending"))
+
+    @override_settings(TESTING=False)
+    def test_verification_api_paths_remain_accessible(self):
+        """Verification endpoints must stay accessible so the pending page can finish the flow."""
+        from django.http import HttpResponse
+        from django.test import RequestFactory
+        from core.middleware import EmailVerificationGateMiddleware
+
+        user = _make_user(email="unverified-api@digiland.co.ke")
+        user.is_email_verified = False
+        user.save(update_fields=["is_email_verified"])
+
+        request = RequestFactory().get("/api/v1/auth/email/verify/")
+        request.user = user
+
+        middleware = EmailVerificationGateMiddleware(lambda _request: HttpResponse("ok"))
+        response = middleware(request)
+
+        self.assertEqual(response.status_code, 200)

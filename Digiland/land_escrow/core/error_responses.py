@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
 # Sensitive patterns that must NEVER appear in user-facing responses
 SENSITIVE_PATTERNS = [
     "stripe", "mpesa", "paystack", "kcb", "daraja",
+    "m-pesa",
     "redis", "celery", "postgresql", "postgis",
     "sentry", "opensearch", "elasticsearch",
     "database", "db.sqlite", "table", "column", "sql",
@@ -74,6 +75,40 @@ def _sanitize_message(message: str) -> str:
                 flags=re.IGNORECASE,
             )
     return sanitized
+
+
+_SAFE_PUBLIC_ERROR_CODES = {
+    "auth": "AUTH_ERROR",
+    "validation": "VALIDATION_ERROR",
+    "payment": "PAYMENT_ERROR",
+    "withdrawal": "WITHDRAWAL_ERROR",
+    "network": "NETWORK_ERROR",
+    "file_upload": "FILE_UPLOAD_ERROR",
+    "search": "SEARCH_ERROR",
+    "system": "SYSTEM_ERROR",
+    "database": "SYSTEM_ERROR",
+    "escrow": "ESCROW_ERROR",
+    "notification": "NOTIFICATION_ERROR",
+    "external_service": "SYSTEM_ERROR",
+    "verification": "VERIFICATION_ERROR",
+    "compliance": "COMPLIANCE_ERROR",
+    "parcel": "PARCEL_ERROR",
+}
+
+
+def _public_error_code(error_code: str, definition: Optional[ErrorDefinition] = None) -> str:
+    """Return a production-safe error code when the internal code is sensitive."""
+    if not _is_production():
+        return error_code
+
+    lowered = error_code.lower()
+    if not any(pattern in lowered for pattern in SENSITIVE_PATTERNS):
+        return error_code
+
+    category = getattr(definition, "category", "")
+    category_value = getattr(category, "value", category)
+    category_value = str(category_value).lower()
+    return _SAFE_PUBLIC_ERROR_CODES.get(category_value, "ERROR")
 
 
 def _generate_reference_id() -> str:
@@ -139,11 +174,12 @@ def create_error_response(
 
     # Resolve status code
     resolved_status = status_code or definition.http_status_code
+    public_error_code = _public_error_code(error_code, definition)
 
     # Build the response body
     response_body: Dict[str, Any] = {
         "error": {
-            "code": error_code,
+            "code": public_error_code,
             "message": resolved_message,
             "reference_id": reference_id,
         }
@@ -155,7 +191,9 @@ def create_error_response(
 
     # Add recovery action if available
     if definition.recovery_action:
-        response_body["error"]["recovery_action"] = definition.recovery_action
+        response_body["error"]["recovery_action"] = _sanitize_message(
+            definition.recovery_action
+        )
 
     # Development-only details
     if not _is_production():
@@ -288,10 +326,11 @@ def create_financial_error_response(
 
     resolved_message = user_message or definition.user_message
     resolved_message = _sanitize_message(resolved_message)
+    public_error_code = _public_error_code(error_code, definition)
 
     response_body: Dict[str, Any] = {
         "error": {
-            "code": error_code,
+            "code": public_error_code,
             "message": resolved_message,
             "reference_id": reference_id,
         }
@@ -316,7 +355,9 @@ def create_financial_error_response(
         response_body["error"]["retryable"] = True
 
     if definition.recovery_action:
-        response_body["error"]["recovery_action"] = definition.recovery_action
+        response_body["error"]["recovery_action"] = _sanitize_message(
+            definition.recovery_action
+        )
 
     # Development-only details
     if not _is_production():
@@ -382,10 +423,11 @@ def create_auth_error_response(
 
     resolved_message = user_message or definition.user_message
     resolved_message = _sanitize_message(resolved_message)
+    public_error_code = _public_error_code(error_code, definition)
 
     response_body: Dict[str, Any] = {
         "error": {
-            "code": error_code,
+            "code": public_error_code,
             "message": resolved_message,
             "reference_id": reference_id,
         }
@@ -395,7 +437,9 @@ def create_auth_error_response(
         response_body["error"]["redirect_url"] = redirect_url
 
     if definition.recovery_action:
-        response_body["error"]["recovery_action"] = definition.recovery_action
+        response_body["error"]["recovery_action"] = _sanitize_message(
+            definition.recovery_action
+        )
 
     # Development-only details
     if not _is_production():

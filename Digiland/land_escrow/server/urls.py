@@ -1,11 +1,13 @@
 from django.urls import path
-from django.views.generic import TemplateView
+from django.views.generic import RedirectView
 from . import views
 
 app_name = 'frontend'
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('browse', RedirectView.as_view(pattern_name='frontend:parcel_list', permanent=False)),
+    path('browse/', RedirectView.as_view(pattern_name='frontend:parcel_list', permanent=False)),
     path('staff/login/', views.staff_login, name='staff_login'),
     path('staff/logout-to-login/', views.logout_to_staff_login, name='logout_to_staff_login'),
     path('temp-approve/<str:email>/', views.temp_approve_agent, name='temp_approve_agent'),
@@ -69,11 +71,28 @@ urlpatterns = [
     path('joint/removal/<uuid:request_id>/approve/', views.approve_joint_member_removal, name='approve_joint_member_removal'),
     path('joint/removal/<uuid:request_id>/reject/', views.reject_joint_member_removal, name='reject_joint_member_removal'),
     path('support/', views.support_tickets, name='support'),
-    path('about/', TemplateView.as_view(template_name='frontend/about.html'), name='about'),
-    path('architecture/', TemplateView.as_view(template_name='frontend/architecture.html'), name='architecture'),
-    path('investors/', TemplateView.as_view(template_name='frontend/investors.html'), name='investors'),
-    path('terms/', TemplateView.as_view(template_name='frontend/terms.html'), name='terms'),
-    path('privacy/', TemplateView.as_view(template_name='frontend/privacy.html'), name='privacy'),
+    path('about/', views.public_marketing_page, {'page_key': 'about'}, name='about'),
+    path('architecture/', views.public_marketing_page, {'page_key': 'architecture'}, name='architecture'),
+    path('investors/', views.public_marketing_page, {'page_key': 'investors'}, name='investors'),
+    path('terms/', views.public_marketing_page, {'page_key': 'terms'}, name='terms'),
+    path('privacy/', views.public_marketing_page, {'page_key': 'privacy'}, name='privacy'),
+    path('sell/', views.public_marketing_page, {'page_key': 'sell'}, name='sell'),
+    path('escrow/', views.public_marketing_page, {'page_key': 'escrow'}, name='escrow'),
+    path('virtual-cities/', views.public_marketing_page, {'page_key': 'virtual-cities'}, name='virtual_cities'),
+    path('ai-agents/', views.public_marketing_page, {'page_key': 'ai-agents'}, name='ai_agents'),
+    path('analytics/', views.public_marketing_page, {'page_key': 'analytics'}, name='analytics'),
+    path('dev-tools/', views.public_marketing_page, {'page_key': 'dev-tools'}, name='dev_tools'),
+    path('nft-assets/', views.public_marketing_page, {'page_key': 'nft-assets'}, name='nft_assets'),
+    path('docs/', views.public_marketing_page, {'page_key': 'docs'}, name='docs'),
+    path('api-reference/', views.public_marketing_page, {'page_key': 'api-reference'}, name='api_reference'),
+    path('blog/', views.public_marketing_page, {'page_key': 'blog'}, name='blog'),
+    path('help/', views.public_marketing_page, {'page_key': 'help'}, name='help'),
+    path('community/', views.public_marketing_page, {'page_key': 'community'}, name='community'),
+    path('careers/', views.public_marketing_page, {'page_key': 'careers'}, name='careers'),
+    path('press/', views.public_marketing_page, {'page_key': 'press'}, name='press'),
+    path('partners/', views.public_marketing_page, {'page_key': 'partners'}, name='partners'),
+    path('contact/', views.public_marketing_page, {'page_key': 'contact'}, name='contact'),
+    path('cookies/', views.public_marketing_page, {'page_key': 'cookies'}, name='cookies'),
     path('escrow-acts/', views.legal_requirements, name='escrow_acts'),
     path('seller-laws/', views.seller_legal_requirements, name='seller_laws'),
     path('dashboard/finance/', views.admin_finance, name='admin_finance'),
