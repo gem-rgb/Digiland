@@ -92,21 +92,26 @@ class PIIScrubberFilter(logging.Filter):
         (re.compile(r'\bid[_\s:]*(\d{7,9})\b', re.IGNORECASE), 'id=[ID_REDACTED]'),
     ]
 
+    @classmethod
+    def _scrub_text(cls, value):
+        if not isinstance(value, str):
+            return value
+
+        scrubbed = value
+        for pattern, replacement in cls.PATTERNS:
+            scrubbed = pattern.sub(replacement, scrubbed)
+        return scrubbed
+
     def filter(self, record):
         if isinstance(record.msg, str):
-            for pattern, replacement in self.PATTERNS:
-                record.msg = pattern.sub(replacement, record.msg)
+            record.msg = self._scrub_text(record.msg)
+
         if hasattr(record, 'args') and record.args:
             if isinstance(record.args, dict):
                 record.args = {
-                    k: pattern.sub(replacement, str(v)) if isinstance(v, str) else v
-                    for k, v in record.args.items()
-                    for pattern, replacement in self.PATTERNS
+                    key: self._scrub_text(value)
+                    for key, value in record.args.items()
                 }
             elif isinstance(record.args, (tuple, list)):
-                record.args = tuple(
-                    pattern.sub(replacement, str(v)) if isinstance(v, str) else v
-                    for v in record.args
-                    for pattern, replacement in self.PATTERNS
-                )
+                record.args = tuple(self._scrub_text(value) for value in record.args)
         return True
