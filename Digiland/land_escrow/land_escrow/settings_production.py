@@ -8,6 +8,7 @@ Usage:
     DJANGO_SETTINGS_MODULE=land_escrow.settings_production
 """
 
+import importlib.util
 import os
 from decouple import config
 
@@ -267,24 +268,28 @@ if SERVERLESS:
         },
     }
 else:
-    LOG_DIR = config("LOG_DIR", default="/var/log/digiland")
+    HAS_PYTHON_JSON_LOGGER = importlib.util.find_spec("pythonjsonlogger") is not None
+    LOG_DIR = config("LOG_DIR", default=str(BASE_DIR / "logs"))
     os.makedirs(LOG_DIR, exist_ok=True)
+
+    formatters = {
+        "verbose": {
+            "format": "[%(asctime)s] %(levelname)s %(name)s request_id=%(request_id)s %(process)d %(thread)d %(message)s",
+        },
+        "simple": {
+            "format": "[%(asctime)s] %(levelname)s %(message)s",
+        },
+    }
+    if HAS_PYTHON_JSON_LOGGER:
+        formatters["json"] = {
+            "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "format": "%(asctime)s %(levelname)s %(name)s %(request_id)s %(process)d %(message)s",
+        }
 
     LOGGING = {
         "version": 1,
         "disable_existing_loggers": False,
-        "formatters": {
-            "verbose": {
-                "format": "[%(asctime)s] %(levelname)s %(name)s request_id=%(request_id)s %(process)d %(thread)d %(message)s",
-            },
-            "simple": {
-                "format": "[%(asctime)s] %(levelname)s %(message)s",
-            },
-            "json": {
-                "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
-                "format": "%(asctime)s %(levelname)s %(name)s %(request_id)s %(process)d %(message)s",
-            },
-        },
+        "formatters": formatters,
         "filters": {
             "request_id": {
                 "()": "core.log_filters.RequestIDFilter",

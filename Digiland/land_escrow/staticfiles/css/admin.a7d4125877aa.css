@@ -1,0 +1,121 @@
+/* =============================================================================
+   Digiland — Admin Stylesheet
+   Admin-specific overrides only. Design tokens and components from main.css.
+   ============================================================================= */
+
+/* ── Stats Grid (admin-specific layout) ─────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1.25rem;
+  margin: 1.5rem 0;
+}
+
+/* stat-card base is in main.css; these are admin accent variants */
+.stat-card.deadline-passed {
+  border-left: 3px solid var(--danger);
+}
+.stat-card.deadline-passed .stat-value { color: #fca5a5; }
+
+.stat-card.verified {
+  border-left: 3px solid var(--success);
+}
+.stat-card.verified .stat-value { color: #6ee7b7; }
+
+/* ── Admin Sections ─────────────────────────────────────────────────────────── */
+.section {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+}
+
+.section h2 {
+  margin-top: 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  font-size: 1.25rem;
+  color: #f5f0eb;
+}
+
+/* ── Admin Data Tables ──────────────────────────────────────────────────────── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  background: rgba(255,255,255,.03);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  font-size: 0.875rem;
+}
+
+.data-table th {
+  background: rgba(255,255,255,.05);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #a09080;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+}
+
+.data-table td { color: #c4b8ab; }
+
+.data-table tr:hover td { background: rgba(255,255,255,.03); }
+
+.data-table tr.overdue td { background: rgba(239,68,68,.05); }
+
+.data-table code {
+  background: rgba(255,255,255,.1);
+  color: #a5f3db;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+/* ── Days Left Badges ───────────────────────────────────────────────────────── */
+.days-left {
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-block;
+}
+
+.days-left:empty,
+.days-left.zero {
+  background: rgba(239,68,68,.2);
+  color: #fca5a5;
+}
+
+.days-left:not(:empty):not(.zero) {
+  background: rgba(16,185,129,.2);
+  color: #6ee7b7;
+}
+
+.days-overdue {
+  color: #fca5a5;
+  font-weight: 700;
+}
+
+/* ── Admin Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+
+  .section { margin: 1.25rem 0; padding: 1rem; }
+
+  .data-table th,
+  .data-table td { padding: 0.6rem 0.75rem; }
+}
