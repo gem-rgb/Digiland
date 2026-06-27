@@ -4,6 +4,9 @@ Digiland/land_escrow/venv/
 Digiland/land_escrow/.venv/
 Digiland/land_escrow/.env
 Digiland/land_escrow/.env.*
+Digiland/land_escrow/logs/
+Digiland/land_escrow/media/
+Digiland/land_escrow/staticfiles/
 **/__pycache__/
 **/*.pyc
 **/*.pyo
