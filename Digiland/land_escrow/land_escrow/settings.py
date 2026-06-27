@@ -12,10 +12,61 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import sys
+from urllib.parse import unquote, urlparse
 from decouple import config
+
+try:
+    import dj_database_url
+except ImportError:  # pragma: no cover - deployment installs the package
+    dj_database_url = None
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def database_config_from_url(database_url, conn_max_age=60, ssl_require=False):
+    """Resolve DATABASE_URL with or without dj-database-url installed."""
+    if dj_database_url is not None:
+        return dj_database_url.config(
+            default=database_url,
+            conn_max_age=conn_max_age,
+            ssl_require=ssl_require,
+        )
+
+    parsed = urlparse(database_url)
+    scheme = (parsed.scheme or "").lower()
+
+    if scheme in {"sqlite", "sqlite3"}:
+        path = unquote(parsed.path or "").lstrip("/")
+        if not path:
+            return {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": ":memory:",
+            }
+        return {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / path,
+        }
+
+    if scheme in {"postgres", "postgresql"}:
+        database_name = unquote((parsed.path or "").lstrip("/"))
+        config_dict = {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": database_name,
+            "USER": unquote(parsed.username or ""),
+            "PASSWORD": unquote(parsed.password or ""),
+            "HOST": parsed.hostname or "localhost",
+            "PORT": str(parsed.port or 5432),
+            "CONN_MAX_AGE": conn_max_age,
+        }
+        if ssl_require:
+            config_dict["OPTIONS"] = {"sslmode": "require"}
+        return config_dict
+
+    return {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
 
 
 # Quick-start development settings - unsuitable for production
@@ -27,18 +78,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')  # No default — must be explicitly set
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)
 TESTING = "test" in sys.argv
 
 ALLOWED_HOSTS = [
     h.strip()
-    for h in config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+    for h in config('ALLOWED_HOSTS', default='localhost,127.0.0.1,.vercel.app').split(',')
     if h.strip()
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     o.strip()
-    for o in config('CSRF_TRUSTED_ORIGINS', default='http://localhost:8000').split(',')
+    for o in config(
+        'CSRF_TRUSTED_ORIGINS',
+        default='http://localhost:8000,http://127.0.0.1:8000,https://*.vercel.app',
+    ).split(',')
     if o.strip()
 ]
 
@@ -85,8 +139,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'core.middleware.LegacyBrowseRedirectMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'core.middleware.LegacyBrowseRedirectMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -141,12 +195,24 @@ WSGI_APPLICATION = 'land_escrow.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DATABASE_URL = config('DATABASE_URL', default='').strip()
+DB_CONN_MAX_AGE = config('DB_CONN_MAX_AGE', default=60, cast=int)
+
+if DATABASE_URL:
+    DATABASES = {
+        'default': database_config_from_url(
+            DATABASE_URL,
+            conn_max_age=DB_CONN_MAX_AGE,
+            ssl_require=not DEBUG,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -194,8 +260,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+STORAGES = {
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 # Only include optional frontend build output when it exists.
 STATICFILES_DIRS = [
@@ -219,7 +291,7 @@ if config('CLOUDINARY_CLOUD_NAME', default=''):
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.RawMediaCloudinaryStorage'
 else:
     # Fallback to local
-    MEDIA_URL = 'media/'
+    MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
 
 # Custom user model
@@ -280,7 +352,7 @@ CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localho
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TASK_ALWAYS_EAGER = config('CELERY_TASK_ALWAYS_EAGER', default=True, cast=bool)
+CELERY_TASK_ALWAYS_EAGER = config('CELERY_TASK_ALWAYS_EAGER', default=DEBUG, cast=bool)
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'
 
 # ── Cache (Redis with fallback to locmem) ─────────────────────────────────────
@@ -437,9 +509,8 @@ CORS_ALLOW_HEADERS = [
 MPESA_CALLBACK_SECRET = config('MPESA_CALLBACK_SECRET', default='')
 
 # ── Email Configuration ────────────────────────────────────────────────────────
-# Local development: uses Django's console email backend unless SMTP
-# credentials are configured, in which case we prefer real delivery during
-# normal runtime. Test runs remain isolated.
+# Local development uses the console backend until SMTP credentials are
+# configured. Production can still override this explicitly through env vars.
 EMAIL_BACKEND = config("EMAIL_BACKEND", default="").strip()
 EMAIL_HOST = config("EMAIL_HOST", cast=str, default="smtp.gmail.com").strip()
 EMAIL_PORT = config("EMAIL_PORT", cast=int, default=587)
@@ -461,9 +532,13 @@ DEFAULT_FROM_EMAIL = config(
     default="",
 ) or "noreply@digiland.local"
 
-if DEBUG and not TESTING and EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
-    if not EMAIL_BACKEND or EMAIL_BACKEND == "django.core.mail.backends.console.EmailBackend":
+if not EMAIL_BACKEND:
+    if not TESTING and EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
         EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    else:
+        EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+if not TESTING and EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     if DEFAULT_FROM_EMAIL.lower() in {
         "noreply@digiland.local",
         "noreply@digiland.co.ke",
@@ -471,9 +546,6 @@ if DEBUG and not TESTING and EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
         "no-reply@digiland.co.ke",
     }:
         DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-
-if not EMAIL_BACKEND:
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 

@@ -1,0 +1,17 @@
+.venv/
+Digiland/venv/
+Digiland/land_escrow/venv/
+Digiland/land_escrow/.venv/
+Digiland/land_escrow/.env
+Digiland/land_escrow/.env.*
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.log
+**/*.sqlite3
+Digiland/land_escrow/db.sqlite3
+Digiland/land_escrow/server.err.log
+Digiland/land_escrow/server.out.log
+Digiland/land_escrow/.pytest_cache/
+Digiland/land_escrow/client/node_modules/
+Digiland/land_escrow/client/dist/

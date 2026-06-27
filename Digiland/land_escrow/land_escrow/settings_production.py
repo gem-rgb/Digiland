@@ -15,18 +15,27 @@ from .settings import *  # noqa: F401,F403
 
 # ── Security ──────────────────────────────────────────────────────────────────
 DEBUG = False
+SERVERLESS = bool(
+    os.getenv("VERCEL")
+    or os.getenv("AWS_LAMBDA_FUNCTION_NAME")
+    or os.getenv("NETLIFY")
+    or os.getenv("RENDER")
+)
 
 SECRET_KEY = config("SECRET_KEY")  # No default — must be set in prod
 
 ALLOWED_HOSTS = [
     h.strip()
-    for h in config("ALLOWED_HOSTS", default="").split(",")
+    for h in config("ALLOWED_HOSTS", default=".vercel.app,localhost,127.0.0.1").split(",")
     if h.strip()
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     o.strip()
-    for o in config("CSRF_TRUSTED_ORIGINS", default="").split(",")
+    for o in config(
+        "CSRF_TRUSTED_ORIGINS",
+        default="http://localhost:8000,http://127.0.0.1:8000,https://*.vercel.app",
+    ).split(",")
     if o.strip()
 ]
 
@@ -46,26 +55,45 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = config(
 SECURE_HSTS_PRELOAD = config("SECURE_HSTS_PRELOAD", default=True, cast=bool)
 
 # ── Database — PostgreSQL ─────────────────────────────────────────────────────
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": config("DB_NAME", default="digiland"),
-        "USER": config("DB_USER", default="digiland"),
-        "PASSWORD": config("DB_PASSWORD", default=""),
-        "HOST": config("DB_HOST", default="localhost"),
-        "PORT": config("DB_PORT", default="5432"),
-        "CONN_MAX_AGE": config("DB_CONN_MAX_AGE", default=60, cast=int),
-        "OPTIONS": {
-            "sslmode": config("DB_SSL_MODE", default="prefer"),
-        },
+DATABASE_URL = config("DATABASE_URL", default="").strip()
+DB_CONN_MAX_AGE = config("DB_CONN_MAX_AGE", default=60, cast=int)
+
+if DATABASE_URL:
+    DATABASES = {
+        "default": database_config_from_url(
+            DATABASE_URL,
+            conn_max_age=DB_CONN_MAX_AGE,
+            ssl_require=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": config("DB_NAME", default="digiland"),
+            "USER": config("DB_USER", default="digiland"),
+            "PASSWORD": config("DB_PASSWORD", default=""),
+            "HOST": config("DB_HOST", default="localhost"),
+            "PORT": config("DB_PORT", default="5432"),
+            "CONN_MAX_AGE": DB_CONN_MAX_AGE,
+            "OPTIONS": {
+                "sslmode": config("DB_SSL_MODE", default="prefer"),
+            },
+        }
+    }
 
 # ── Cache — Redis ─────────────────────────────────────────────────────────────
-REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")
+REDIS_URL = config("REDIS_URL", default="").strip()
 
 CACHES = {
     "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "digiland-production-cache",
+    }
+}
+
+if REDIS_URL:
+    CACHES["default"] = {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": REDIS_URL,
         "KEY_PREFIX": "digiland",
@@ -74,11 +102,10 @@ CACHES = {
             "CLIENT_CLASS": "django.core.cache.backends.redis.RedisCacheClient",
         },
     }
-}
 
 # ── Celery — Redis broker ────────────────────────────────────────────────────
-CELERY_BROKER_URL = config("CELERY_BROKER_URL", default=REDIS_URL)
-CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default=REDIS_URL)
+CELERY_BROKER_URL = config("CELERY_BROKER_URL", default=REDIS_URL or "memory://")
+CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default=REDIS_URL or "cache+memory://")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
@@ -133,15 +160,21 @@ REST_FRAMEWORK = {
 }
 
 # ── Email — SMTP in production ────────────────────────────────────────────────
-# Production MUST use authenticated SMTP for real email delivery.
-# The dev default (console backend) is overridden here.
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# Production uses SMTP when credentials are present. Serverless deployments
+# fall back to console output unless EMAIL_BACKEND is explicitly set.
+EMAIL_BACKEND = config("EMAIL_BACKEND", default="").strip()
 EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
 EMAIL_PORT = config("EMAIL_PORT", cast=int, default=587)
 EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")  # MUST be set in prod
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")  # MUST be set in prod
 EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool, default=True)
 EMAIL_USE_SSL = config("EMAIL_USE_SSL", cast=bool, default=False)
+
+if not EMAIL_BACKEND:
+    if not SERVERLESS and EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
+        EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    else:
+        EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # The "From" address for outgoing emails — must be a real, deliverable address.
 # Falls back to EMAIL_HOST_USER if not explicitly set, then to a safe default.
@@ -187,91 +220,138 @@ STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY", default="")
 STRIPE_WEBHOOK_SECRET = config("STRIPE_WEBHOOK_SECRET", default="")
 
 # ── Logging — file handlers for production ────────────────────────────────────
-LOG_DIR = config("LOG_DIR", default="/var/log/digiland")
-os.makedirs(LOG_DIR, exist_ok=True)
+if SERVERLESS:
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "simple": {
+                "format": "[%(asctime)s] %(levelname)s %(name)s %(message)s",
+            },
+        },
+        "filters": {
+            "request_id": {
+                "()": "core.log_filters.RequestIDFilter",
+            },
+            "pii_scrubber": {
+                "()": "core.log_filters.PIIScrubberFilter",
+            },
+        },
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "simple",
+                "filters": ["request_id", "pii_scrubber"],
+            },
+        },
+        "root": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "loggers": {
+            "django": {
+                "handlers": ["console"],
+                "level": "INFO",
+                "propagate": False,
+            },
+            "core": {
+                "handlers": ["console"],
+                "level": "INFO",
+                "propagate": False,
+            },
+            "celery": {
+                "handlers": ["console"],
+                "level": "INFO",
+                "propagate": False,
+            },
+        },
+    }
+else:
+    LOG_DIR = config("LOG_DIR", default="/var/log/digiland")
+    os.makedirs(LOG_DIR, exist_ok=True)
 
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "verbose": {
-            "format": "[%(asctime)s] %(levelname)s %(name)s request_id=%(request_id)s %(process)d %(thread)d %(message)s",
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "verbose": {
+                "format": "[%(asctime)s] %(levelname)s %(name)s request_id=%(request_id)s %(process)d %(thread)d %(message)s",
+            },
+            "simple": {
+                "format": "[%(asctime)s] %(levelname)s %(message)s",
+            },
+            "json": {
+                "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+                "format": "%(asctime)s %(levelname)s %(name)s %(request_id)s %(process)d %(message)s",
+            },
         },
-        "simple": {
-            "format": "[%(asctime)s] %(levelname)s %(message)s",
+        "filters": {
+            "request_id": {
+                "()": "core.log_filters.RequestIDFilter",
+            },
+            "pii_scrubber": {
+                "()": "core.log_filters.PIIScrubberFilter",
+            },
         },
-        "json": {
-            "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
-            "format": "%(asctime)s %(levelname)s %(name)s %(request_id)s %(process)d %(message)s",
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "simple",
+                "filters": ["request_id", "pii_scrubber"],
+            },
+            "file_general": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": os.path.join(LOG_DIR, "digiland.log"),
+                "maxBytes": 10 * 1024 * 1024,
+                "backupCount": 10,
+                "formatter": "verbose",
+                "filters": ["request_id", "pii_scrubber"],
+            },
+            "file_errors": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": os.path.join(LOG_DIR, "errors.log"),
+                "maxBytes": 10 * 1024 * 1024,
+                "backupCount": 10,
+                "formatter": "verbose",
+                "level": "ERROR",
+                "filters": ["request_id", "pii_scrubber"],
+            },
+            "file_celery": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": os.path.join(LOG_DIR, "celery.log"),
+                "maxBytes": 10 * 1024 * 1024,
+                "backupCount": 5,
+                "formatter": "verbose",
+                "filters": ["request_id", "pii_scrubber"],
+            },
         },
-    },
-    "filters": {
-        "request_id": {
-            "()": "core.log_filters.RequestIDFilter",
-        },
-        "pii_scrubber": {
-            "()": "core.log_filters.PIIScrubberFilter",
-        },
-    },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "simple",
-            "filters": ["request_id", "pii_scrubber"],
-        },
-        "file_general": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": os.path.join(LOG_DIR, "digiland.log"),
-            "maxBytes": 10 * 1024 * 1024,  # 10 MB
-            "backupCount": 10,
-            "formatter": "verbose",
-            "filters": ["request_id", "pii_scrubber"],
-        },
-        "file_errors": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": os.path.join(LOG_DIR, "errors.log"),
-            "maxBytes": 10 * 1024 * 1024,
-            "backupCount": 10,
-            "formatter": "verbose",
-            "level": "ERROR",
-            "filters": ["request_id", "pii_scrubber"],
-        },
-        "file_celery": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": os.path.join(LOG_DIR, "celery.log"),
-            "maxBytes": 10 * 1024 * 1024,
-            "backupCount": 5,
-            "formatter": "verbose",
-            "filters": ["request_id", "pii_scrubber"],
-        },
-    },
-    "root": {
-        "handlers": ["console", "file_general"],
-        "level": "INFO",
-    },
-    "loggers": {
-        "django": {
-            "handlers": ["console", "file_general", "file_errors"],
+        "root": {
+            "handlers": ["console", "file_general"],
             "level": "INFO",
-            "propagate": False,
         },
-        "django.request": {
-            "handlers": ["file_errors"],
-            "level": "ERROR",
-            "propagate": False,
+        "loggers": {
+            "django": {
+                "handlers": ["console", "file_general", "file_errors"],
+                "level": "INFO",
+                "propagate": False,
+            },
+            "django.request": {
+                "handlers": ["file_errors"],
+                "level": "ERROR",
+                "propagate": False,
+            },
+            "core": {
+                "handlers": ["console", "file_general", "file_errors"],
+                "level": "INFO",
+                "propagate": False,
+            },
+            "celery": {
+                "handlers": ["console", "file_celery"],
+                "level": "INFO",
+                "propagate": False,
+            },
         },
-        "core": {
-            "handlers": ["console", "file_general", "file_errors"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "celery": {
-            "handlers": ["console", "file_celery"],
-            "level": "INFO",
-            "propagate": False,
-        },
-    },
-}
+    }
 
 # ── Sentry Integration ────────────────────────────────────────────────────────
 if SENTRY_DSN:

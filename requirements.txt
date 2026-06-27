@@ -1,0 +1,1 @@
+-r Digiland/land_escrow/config/requirements.txt
