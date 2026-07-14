@@ -12,6 +12,7 @@ export default {
       },
       fontFamily: {
         sans: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        serif: ['Playfair Display', 'Georgia', 'serif'],
       },
       boxShadow: {
         soft: '0 20px 60px -24px rgba(15, 23, 42, 0.28)',

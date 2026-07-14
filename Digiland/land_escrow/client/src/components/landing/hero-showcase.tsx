@@ -375,7 +375,7 @@ export function HeroShowcase({ notice, csrfToken, isAuthenticated = false }: Her
     <div className="space-y-8">
       <section
         ref={heroRef}
-        className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950 text-white px-6 py-16 sm:px-10 sm:py-20 lg:px-14 lg:py-24 shadow-2xl flex items-center justify-center"
+        className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950 text-white px-6 py-16 sm:px-10 sm:py-20 lg:px-14 lg:py-24 shadow-2xl"
       >
         {!reducedMotion ? (
           <canvas
@@ -392,52 +392,85 @@ export function HeroShowcase({ notice, csrfToken, isAuthenticated = false }: Her
         {/* Grid overlay for texture */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.02)_1px,_transparent_1px)] bg-[size:24px_24px] opacity-40 pointer-events-none select-none" />
 
-        {/* Foreground hero copy and email signup - Clean Centered Layout */}
-        <div className="relative z-10 w-full max-w-3xl mx-auto flex flex-col items-center text-center space-y-6">
-          <div ref={ctaRef} className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-            </span>
-            {notice || 'Kenya\'s Secure Land Escrow Platform'}
+        {/* Foreground 2-column Layout */}
+        <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-12 lg:gap-8">
+          {/* Left Column: Content */}
+          <div className="flex flex-col items-start text-left space-y-6 lg:col-span-7">
+            <div ref={ctaRef} className="inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+              </span>
+              {notice || 'Kenya\'s Secure Land Escrow Platform'}
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-semibold tracking-tight leading-[1.1] text-white">
+              Buy and Sell Land <br />
+              with <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 bg-clip-text text-transparent">Absolute Trust</span>
+            </h1>
+
+            <p className="text-sm sm:text-base lg:text-lg leading-relaxed text-slate-300 max-w-xl">
+              Digiland protects every transaction with verified land registry sync (ArdhiSasa), M-Pesa escrow protection, and licensed agent mediation so you never risk your money or title deed.
+            </p>
+
+            {/* Get Started Email Signup feature */}
+            <form onSubmit={handleGetStarted} className="flex flex-col sm:flex-row gap-3 max-w-md w-full bg-white/5 border border-white/10 rounded-2xl p-1.5 backdrop-blur-xl shadow-lg focus-within:border-emerald-500/40 transition">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email to transact..."
+                required
+                className="flex-1 bg-transparent px-4 py-2.5 text-white placeholder-slate-400 focus:outline-none text-sm"
+              />
+              <Button
+                type="submit"
+                className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-11 px-6 rounded-xl transition duration-300 shadow shadow-emerald-500/20 whitespace-nowrap"
+              >
+                Get Started
+              </Button>
+            </form>
+
+            {/* Trust/Stats indicator */}
+            <div className="flex flex-wrap items-center justify-start gap-4 text-xs text-slate-400 pt-2">
+              <div className="flex -space-x-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-black text-white border-2 border-slate-950">T</span>
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-black text-white border-2 border-slate-950">K</span>
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 text-[10px] font-black text-white border-2 border-slate-950">A</span>
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-purple-500 text-[10px] font-black text-white border-2 border-slate-950">M</span>
+              </div>
+              <span><strong>200+</strong> verified landowners trust Digiland for escrow transfers.</span>
+            </div>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6.5xl font-black tracking-tight leading-[1.08] text-white">
-            Buy and Sell Land <br />
-            with <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 bg-clip-text text-transparent">Absolute Trust</span>
-          </h1>
-
-          <p className="text-sm sm:text-base lg:text-lg leading-relaxed text-slate-300 max-w-2xl">
-            Digiland protects every transaction with verified land registry sync (ArdhiSasa), M-Pesa escrow protection, and licensed agent mediation so you never risk your money or title deed.
-          </p>
-
-          {/* Get Started Email Signup feature */}
-          <form onSubmit={handleGetStarted} className="flex flex-col sm:flex-row gap-3 max-w-md w-full bg-white/5 border border-white/10 rounded-2xl p-1.5 backdrop-blur-xl shadow-lg focus-within:border-emerald-500/40 transition">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email to transact..."
-              required
-              className="flex-1 bg-transparent px-4 py-2.5 text-white placeholder-slate-400 focus:outline-none text-sm"
-            />
-            <Button
-              type="submit"
-              className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-11 px-6 rounded-xl transition duration-300 shadow shadow-emerald-500/20 whitespace-nowrap"
-            >
-              Get Started
-            </Button>
-          </form>
-
-          {/* Trust/Stats indicator */}
-          <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400 pt-2">
-            <div className="flex -space-x-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-black text-white border-2 border-slate-950">T</span>
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-black text-white border-2 border-slate-950">K</span>
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 text-[10px] font-black text-white border-2 border-slate-950">A</span>
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-purple-500 text-[10px] font-black text-white border-2 border-slate-950">M</span>
+          {/* Right Column: Staggered Image Showcase */}
+          <div className="grid grid-cols-2 gap-4 lg:col-span-5 lg:pl-4">
+            <div className="space-y-4">
+              <div className="aspect-[3/4] overflow-hidden rounded-2xl border border-white/10 shadow-2xl bg-slate-900/50">
+                <img
+                  src="/static/images/land-showcase.png"
+                  alt="Verified Land Parcels"
+                  className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                  loading="lazy"
+                />
+              </div>
+              <p className="text-center text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Verified Land
+              </p>
             </div>
-            <span><strong>200+</strong> verified landowners trust Digiland for escrow transfers.</span>
+            <div className="space-y-4 pt-10">
+              <div className="aspect-[3/4] overflow-hidden rounded-2xl border border-white/10 shadow-2xl bg-slate-900/50">
+                <img
+                  src="/static/images/escrow-showcase.png"
+                  alt="Secure Escrow Transactions"
+                  className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                  loading="lazy"
+                />
+              </div>
+              <p className="text-center text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Secure Escrow
+              </p>
+            </div>
           </div>
         </div>
       </section>
