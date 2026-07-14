@@ -51,24 +51,36 @@ class LoginSerializer(serializers.Serializer):
 class RegisterSerializer(serializers.Serializer):
     """Serializer for user registration with full validation.
 
-    Validates email uniqueness, phone number format, password strength,
-    and creates the user on ``save()``.
+    Validates email uniqueness, password strength, and creates the user on ``save()``.
     """
 
     email = serializers.EmailField(help_text="User email address (must be unique)")
     password = serializers.CharField(write_only=True, min_length=10, help_text="Password (min 10 chars)")
-    full_name = serializers.CharField(max_length=200, help_text="Full legal name")
-    role = serializers.ChoiceField(choices=User.ROLE_CHOICES, help_text="Account role")
-    phone_number = serializers.CharField(max_length=20, help_text="Phone number (e.g. +254712345678)")
-    id_number = serializers.CharField(max_length=50, required=False, allow_blank=True, help_text="National ID number")
-    kra_pin = serializers.CharField(max_length=11, required=False, allow_blank=True, help_text="KRA PIN")
+    full_name = serializers.CharField(max_length=200, required=False, default="", allow_blank=True, help_text="Full legal name")
+    role = serializers.CharField(required=False, allow_null=True, allow_blank=True, help_text="Account role")
+    phone_number = serializers.CharField(max_length=20, required=False, allow_null=True, allow_blank=True, help_text="Phone number")
+    id_number = serializers.CharField(max_length=50, required=False, allow_null=True, allow_blank=True, help_text="National ID number")
+    kra_pin = serializers.CharField(max_length=11, required=False, allow_null=True, allow_blank=True, help_text="KRA PIN")
 
     def validate_email(self, value: str) -> str:
         if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError("A user with this email already exists.")
         return value.lower().strip()
 
+    def validate_role(self, value: str) -> str:
+        if not value:
+            return None
+        valid_roles = [r for r, _ in User.ROLE_CHOICES]
+        if value == 'Admin':
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Admin role cannot be self-assigned.")
+        if value not in valid_roles:
+            raise serializers.ValidationError("Invalid role assigned.")
+        return value
+
     def validate_phone_number(self, value: str) -> str:
+        if not value:
+            return None
         if not re.match(r"^(\+254|0)\d{9}$", value):
             raise serializers.ValidationError(
                 "Phone number must start with +254 or 0 and have 10 digits total."
@@ -76,12 +88,16 @@ class RegisterSerializer(serializers.Serializer):
         return value
 
     def validate_id_number(self, value: str) -> str:
-        if value and not re.match(r"^\d{7,9}$", value):
+        if not value:
+            return None
+        if not re.match(r"^\d{7,9}$", value):
             raise serializers.ValidationError("ID number must be 7, 8, or 9 digits.")
         return value
 
     def validate_kra_pin(self, value: str) -> str:
-        if value and not re.match(r"^[A-Z]\d{9}[A-Z]$", value):
+        if not value:
+            return None
+        if not re.match(r"^[A-Z]\d{9}[A-Z]$", value):
             raise serializers.ValidationError(
                 "KRA PIN must be 11 characters: Letter + 9 digits + Letter."
             )
@@ -98,18 +114,24 @@ class RegisterSerializer(serializers.Serializer):
     def create(self, validated_data: Dict[str, Any]) -> User:
         full_name = validated_data.pop("full_name", "")
         name_parts = full_name.split(" ", 1)
-        first_name = name_parts[0]
+        first_name = name_parts[0] if name_parts else ""
         last_name = name_parts[1] if len(name_parts) > 1 else ""
+
+        role = validated_data.get("role")
+        is_onboarded = False
+        if role in ['Buyer', 'Seller', 'Agent']:
+            is_onboarded = True
 
         user = User.objects.create_user(
             email=validated_data["email"],
             password=validated_data["password"],
             first_name=first_name,
             last_name=last_name,
-            role=validated_data["role"],
-            phone_number=validated_data.get("phone_number", ""),
-            id_number=validated_data.get("id_number", "00000000"),
-            kra_pin=validated_data.get("kra_pin", "A000000000Z"),
+            role=role,
+            is_onboarded=is_onboarded,
+            phone_number=validated_data.get("phone_number"),
+            id_number=validated_data.get("id_number"),
+            kra_pin=validated_data.get("kra_pin"),
         )
         return user
 

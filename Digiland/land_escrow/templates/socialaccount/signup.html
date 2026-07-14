@@ -1,0 +1,146 @@
+{% extends "account/base_auth.html" %}
+{% load i18n %}
+{% load widget_tweaks %}
+
+{% block title %}Complete Identity Registration - Digiland{% endblock %}
+
+{% block content %}
+{% with provider_name=account.get_provider.name|default:account.provider provider_id=account.provider|default:'' %}
+<div class="text-center mb-6">
+  <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 border border-emerald-200/60">
+    {% if provider_id == 'github' %}
+    <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-sm font-black text-white">GH</span>
+    {% else %}
+    <svg class="h-8 w-8 text-emerald-600" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+      <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
+    </svg>
+    {% endif %}
+  </div>
+  <div class="text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-700 mb-2">Third-party signup</div>
+  <h1 class="text-2xl font-black tracking-tight text-foreground">Finish your {{ provider_name }} workspace setup</h1>
+  <p class="text-sm text-muted-foreground mt-1">You are signed in with {{ provider_name }}. Choose the account type this workspace should open.</p>
+</div>
+
+<div class="rounded-3xl border border-border/70 bg-white/92 p-6 shadow-soft">
+  {% if form.non_field_errors %}
+  <div class="rounded-2xl border border-rose-200 bg-rose-50/70 p-3 text-sm text-rose-800 flex items-start gap-2 mb-4">
+    <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+    <span>{{ form.non_field_errors|join:", " }}</span>
+  </div>
+  {% endif %}
+
+  {% with signup_flow=request.GET.flow|default:'' %}
+  {% if signup_flow == 'agent' %}
+  <div class="rounded-[1.75rem] border border-amber-200 bg-amber-50/80 p-5 shadow-sm">
+    <div class="text-[10px] font-black uppercase tracking-[0.28em] text-amber-700">Agent application</div>
+    <div class="mt-2 text-sm leading-7 text-amber-900">
+      Agents use the detailed signup flow and are routed to the staff portal after KYC review. Complete the details below to submit your application.
+    </div>
+    <a href="{% url 'account_signup' %}" class="mt-3 inline-flex text-[11px] font-semibold text-emerald-700 hover:text-emerald-800">Back to Buyer / Seller signup</a>
+  </div>
+  {% else %}
+  <div class="relative overflow-hidden rounded-[1.9rem] border border-border/70 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.16),_transparent_42%),linear-gradient(180deg,_rgba(255,255,255,0.92),_rgba(243,249,246,0.88))] p-5 shadow-sm">
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.72),_transparent_30%)] opacity-80"></div>
+    <div class="relative">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-700">Buyer dashboard</div>
+          <p class="mt-2 max-w-xl text-sm leading-7 text-slate-600">Google will return you here after you pick the account you want to use. Select Buyer or Seller to continue.</p>
+        </div>
+        <a href="{% url 'account_signup' %}?flow=agent" class="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800">Apply as Agent</a>
+      </div>
+
+      <div class="mt-4 grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          data-role-choice="Buyer"
+          class="role-choice-card rounded-[1.5rem] border border-border/70 bg-white/80 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-white"
+        >
+          <div class="flex items-center justify-between gap-3">
+            <div class="text-sm font-black uppercase tracking-[0.24em] text-emerald-700">Buyer</div>
+            <span class="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Dashboard</span>
+          </div>
+          <p class="mt-3 text-sm leading-7 text-slate-600">Browse verified parcels, manage contracts, and move into the buyer workspace.</p>
+        </button>
+
+        <button
+          type="button"
+          data-role-choice="Seller"
+          class="role-choice-card rounded-[1.5rem] border border-border/70 bg-white/80 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-white"
+        >
+          <div class="flex items-center justify-between gap-3">
+            <div class="text-sm font-black uppercase tracking-[0.24em] text-emerald-700">Seller</div>
+            <span class="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Dashboard</span>
+          </div>
+          <p class="mt-3 text-sm leading-7 text-slate-600">List parcels, review offers, and manage settlement from the seller workspace.</p>
+        </button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% for error in form.role.errors %}<p class="mt-3 text-[11px] font-semibold text-rose-700">{{ error }}</p>{% endfor %}
+
+  <form method="post" action="{% url 'socialaccount_signup' %}" class="space-y-4 mt-5" data-oauth-confirm-form data-loading-message="Creating your Digiland account.">
+    {% csrf_token %}
+    <input type="hidden" name="role" id="social-signup-role" value="{% if signup_flow == 'agent' %}Agent{% else %}{{ request.GET.role|default:'Buyer' }}{% endif %}">
+
+    {% for field in form %}
+    {% if field.name == 'role' %}
+    {% elif field.is_hidden %}
+      {{ field }}
+    {% else %}
+    <div class="space-y-1.5">
+      <label for="{{ field.id_for_label }}" class="block text-xs font-semibold text-foreground">{{ field.label }}</label>
+      {% render_field field class="flex h-10 w-full rounded-2xl border border-input bg-white/95 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 placeholder:text-muted-foreground" %}
+      {% for error in field.errors %}<p class="text-[11px] text-rose-700 mt-1">{{ error }}</p>{% endfor %}
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    <button type="submit" data-loading-label="Continue" class="inline-flex h-10 w-full items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-2">
+      Continue
+    </button>
+  </form>
+
+  <div class="text-center border-t border-border/70 pt-4 mt-5">
+    <a href="{% url 'account_login' %}" class="text-xs font-semibold text-emerald-700 hover:text-emerald-800">Cancel and go back</a>
+  </div>
+  {% endwith %}
+</div>
+{% endwith %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function() {
+    const roleField = document.getElementById('social-signup-role');
+    const roleCards = Array.from(document.querySelectorAll('[data-role-choice]'));
+
+    function setRole(role) {
+        if (!roleField) return;
+        const nextRole = role || 'Buyer';
+        roleField.value = nextRole;
+        roleCards.forEach((card) => {
+            const active = card.dataset.roleChoice === nextRole;
+            card.classList.toggle('border-emerald-300', active);
+            card.classList.toggle('bg-white', active);
+            card.classList.toggle('shadow-soft', active);
+            card.classList.toggle('ring-2', active);
+            card.classList.toggle('ring-emerald-200', active);
+            card.classList.toggle('bg-white/80', !active);
+            card.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+    }
+
+    if (roleField && roleCards.length) {
+        roleCards.forEach((card) => {
+            card.addEventListener('click', function() {
+                setRole(this.dataset.roleChoice || 'Buyer');
+            });
+        });
+        setRole(roleField.value || 'Buyer');
+    }
+})();
+</script>
+{% endblock %}

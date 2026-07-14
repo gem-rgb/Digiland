@@ -73,6 +73,7 @@ from .verification import (
     clear_pending_verification_session,
     consume_one_time_token,
     get_email_verification_login_redirect_url,
+    get_post_verification_redirect_url,
     get_pending_verification_session,
     issue_one_time_token,
     mark_verification_resend,
@@ -138,7 +139,10 @@ def _build_pending_verification_payload(request, user=None) -> dict:
         "verify_url": reverse("auth-email-verify"),
     }
     if is_verified:
-        payload["redirect_url"] = get_email_verification_login_redirect_url()
+        if getattr(getattr(request, "user", None), "is_authenticated", False):
+            payload["redirect_url"] = get_post_verification_redirect_url(user)
+        else:
+            payload["redirect_url"] = get_email_verification_login_redirect_url()
     return payload
 
 
@@ -157,9 +161,17 @@ def _get_pending_verification_user(request):
     return user, session
 
 
-def _complete_email_verification_flow(request) -> str:
-    """Clear pending verification state and send the browser back to login."""
+def _complete_email_verification_flow(request, user=None) -> str:
+    """Clear pending verification state and send the browser to the right post-verification route."""
     clear_pending_verification_session(request)
+    active_user = user or getattr(request, "user", None)
+    request_user = getattr(request, "user", None)
+    if (
+        active_user
+        and getattr(active_user, "is_email_verified", False)
+        and getattr(request_user, "is_authenticated", False)
+    ):
+        return get_post_verification_redirect_url(active_user)
     auth_logout(request)
     return get_email_verification_login_redirect_url()
 
@@ -1324,7 +1336,7 @@ def email_verify_view(request):
     if not token_data:
         pending_user, _pending_session = _get_pending_verification_user(request)
         if pending_user and getattr(pending_user, "is_email_verified", False):
-            redirect_url = _complete_email_verification_flow(request)
+            redirect_url = _complete_email_verification_flow(request, user=pending_user)
             return Response(
                 {
                     "message": "Email verified successfully.",
@@ -1349,7 +1361,7 @@ def email_verify_view(request):
 
     _sync_allauth_email_address(user, email=token_data.get("email") or user.email, verified=True)
 
-    redirect_url = _complete_email_verification_flow(request)
+    redirect_url = _complete_email_verification_flow(request, user=user)
 
     AuditService.log_event(
         "EMAIL_VERIFIED",
@@ -1378,7 +1390,7 @@ def account_verification_pending_view(request):
         (getattr(request.user, "is_authenticated", False) and getattr(request.user, "is_email_verified", False))
         or (pending_user and getattr(pending_user, "is_email_verified", False))
     ):
-        return redirect(_complete_email_verification_flow(request))
+        return redirect(_complete_email_verification_flow(request, user=pending_user or request.user))
 
     context = {
         "pending_verification": _build_pending_verification_payload(request, pending_user or (request.user if getattr(request.user, "is_authenticated", False) else None)),
@@ -1408,7 +1420,7 @@ def email_verification_status_view(request):
 
     verified_user = pending_user if pending_user else (request.user if getattr(request.user, "is_authenticated", False) else None)
     if verified_user and getattr(verified_user, "is_email_verified", False):
-        redirect_url = _complete_email_verification_flow(request)
+        redirect_url = _complete_email_verification_flow(request, user=verified_user)
 
         payload = _build_pending_verification_payload(request, verified_user)
         payload.update(
@@ -1446,7 +1458,7 @@ def email_verification_resend_view(request):
         )
 
     if getattr(pending_user, "is_email_verified", False):
-        redirect_url = _complete_email_verification_flow(request)
+        redirect_url = _complete_email_verification_flow(request, user=pending_user)
         return Response(
             {
                 "message": "Your email address is already verified.",

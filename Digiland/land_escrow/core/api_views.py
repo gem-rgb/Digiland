@@ -2544,3 +2544,44 @@ def price_prediction_api(request):
     result['prediction_id'] = result.get('prediction_id', '')
 
     return Response(result, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def auth_me_api(request):
+    """GET /api/auth/me/
+    Returns authenticated user's details.
+    """
+    if not request.user.is_authenticated:
+        return Response({
+            "authenticated": False,
+            "role": None,
+            "is_onboarded": False,
+        }, status=status.HTTP_200_OK)
+    return Response({
+        "authenticated": True,
+        "role": request.user.role.lower() if request.user.role else None,
+        "is_onboarded": getattr(request.user, 'is_onboarded', False),
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def onboarding_select_role_api(request):
+    """POST /api/onboarding/select-role/
+    Saves user role and marks onboarding as completed.
+    """
+    role = request.data.get('role', '').lower().strip()
+    if role not in ['buyer', 'seller']:
+        return Response({'error': 'Invalid role. Choose buyer or seller.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = request.user
+    user.role = 'Buyer' if role == 'buyer' else 'Seller'
+    user.is_onboarded = True
+    user.save(update_fields=['role', 'is_onboarded'])
+
+    return Response({
+        "authenticated": True,
+        "role": user.role.lower(),
+        "is_onboarded": user.is_onboarded,
+    }, status=status.HTTP_200_OK)

@@ -25,7 +25,7 @@ def build_nav(user, active=None):
         ]
         if is_joint_buyer_account:
             nav.insert(3, {'label': 'My Groups', 'href': reverse('frontend:joint_groups'), 'icon': 'joint', 'active': active.startswith('joint')})
-        if getattr(user, 'buyer_account_type', None) == 'Joint':
+        if getattr(user, 'buyer_account_type', None) is None:
             nav.insert(3, {'label': 'Buyer Setup', 'href': reverse('frontend:buyer_account_choice'), 'icon': 'security', 'active': active == 'buyer-choice'})
         return nav
 

@@ -263,11 +263,12 @@ def get_post_verification_redirect_url(user) -> str:
     """Mirror the browser redirect logic used after verification/login."""
     from django.urls import reverse
 
-    if getattr(user, "role", None) == "Buyer" and not getattr(user, "buyer_account_type", None):
-        return reverse("frontend:buyer_account_choice")
-    if getattr(user, "role", None) == "Agent":
+    role = getattr(user, "role", None)
+    if role in {"Buyer", "Seller"}:
+        return reverse("frontend:home")
+    if role == "Agent":
         return reverse("frontend:agent_signup_complete")
-    if getattr(user, "role", None) == "Admin":
+    if role == "Admin":
         return reverse("frontend:agent_dashboard")
     return reverse("frontend:parcel_list")
 
@@ -278,9 +279,12 @@ def get_email_verification_login_redirect_url() -> str:
 
 
 def promote_verified_session(request, user, *, backend: str = "core.auth_backends.EmailOrUsernameModelBackend") -> str:
-    """Finalize email verification and send the browser back to login."""
+    """Finalize email verification and send the browser to the post-verification route."""
     del backend
     clear_pending_verification_session(request)
+    request_user = getattr(request, "user", None)
+    if getattr(user, "is_email_verified", False) and getattr(request_user, "is_authenticated", False):
+        return get_post_verification_redirect_url(user)
     auth_logout(request)
     return get_email_verification_login_redirect_url()
 

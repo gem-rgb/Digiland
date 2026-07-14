@@ -1,5 +1,6 @@
 {% extends "account/base_auth.html" %}
 {% load i18n %}
+{% load socialaccount %}
 {% load widget_tweaks %}
 
 {% block title %}Register Identity - Digiland{% endblock %}
@@ -9,9 +10,9 @@
   <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 border border-emerald-200/60">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
   </div>
-  <div class="text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-700 mb-2">New identity</div>
-  <h1 class="text-2xl font-black tracking-tight text-foreground">Create Your Identity</h1>
-  <p class="text-sm text-muted-foreground mt-1">Register to buy, sell, or manage property on Digiland.</p>
+  <div class="text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-700 mb-2">New account</div>
+  <h1 class="text-2xl font-black tracking-tight text-foreground">Choose your workspace</h1>
+  <p class="text-sm text-muted-foreground mt-1">Pick Buyer or Seller from the card overlay. Agents use the application path.</p>
 </div>
 
 <div class="rounded-3xl border border-border/70 bg-white/92 p-6 shadow-soft">
@@ -26,50 +27,27 @@
     {% csrf_token %}
 
     <div class="space-y-1.5">
+      <label for="id_full_name" class="block text-xs font-semibold text-foreground">Full Name</label>
+      {% render_field form.full_name id="id_full_name" class="flex h-10 w-full rounded-2xl border border-input bg-white/95 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 placeholder:text-muted-foreground" placeholder="Enter your full name" %}
+      {% for error in form.full_name.errors %}<p class="text-[11px] text-rose-700 mt-1">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="space-y-1.5">
       <label for="id_email" class="block text-xs font-semibold text-foreground">{{ form.email.label }}</label>
-      {% render_field form.email id="id_email" class="flex h-10 w-full rounded-2xl border border-input bg-white/95 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 placeholder:text-muted-foreground" %}
+      {% render_field form.email id="id_email" class="flex h-10 w-full rounded-2xl border border-input bg-white/95 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 placeholder:text-muted-foreground" placeholder="you@example.com" %}
       {% for error in form.email.errors %}<p class="text-[11px] text-rose-700 mt-1">{{ error }}</p>{% endfor %}
-    </div>
-
-    <div class="space-y-1.5">
-      <label for="id_role" class="block text-xs font-semibold text-foreground">{{ form.role.label }}</label>
-      {% render_field form.role id="id_role" class="flex h-10 w-full rounded-2xl border border-input bg-white/95 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" %}
-      <p class="text-[11px] text-muted-foreground">Buyers will choose between joint and individual setup after signup.</p>
-      {% for error in form.role.errors %}<p class="text-[11px] text-rose-700">{{ error }}</p>{% endfor %}
-    </div>
-
-    <div class="grid gap-3 grid-cols-2">
-      <div class="space-y-1.5">
-        <label for="id_id_number" class="block text-xs font-semibold text-foreground">National ID</label>
-        {% render_field form.id_number id="id_id_number" class="flex h-10 w-full rounded-2xl border border-input bg-white/95 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 placeholder:text-muted-foreground" %}
-        <div id="id_number_feedback" class="text-[11px]" style="display:none;"></div>
-        {% for error in form.id_number.errors %}<p class="text-[11px] text-rose-700">{{ error }}</p>{% endfor %}
-      </div>
-      <div class="space-y-1.5">
-        <label for="id_phone_number" class="block text-xs font-semibold text-foreground">Phone Number</label>
-        {% render_field form.phone_number id="id_phone_number" class="flex h-10 w-full rounded-2xl border border-input bg-white/95 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 placeholder:text-muted-foreground" %}
-        <div id="phone_feedback" class="text-[11px]" style="display:none;"></div>
-        {% for error in form.phone_number.errors %}<p class="text-[11px] text-rose-700">{{ error }}</p>{% endfor %}
-      </div>
-    </div>
-
-    <div class="space-y-1.5">
-      <label for="id_kra_pin" class="block text-xs font-semibold text-foreground">KRA PIN</label>
-      {% render_field form.kra_pin id="id_kra_pin" class="flex h-10 w-full rounded-2xl border border-input bg-white/95 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 placeholder:text-muted-foreground" %}
-      <div id="kra_feedback" class="text-[11px]" style="display:none;"></div>
-      {% for error in form.kra_pin.errors %}<p class="text-[11px] text-rose-700">{{ error }}</p>{% endfor %}
     </div>
 
     <div class="grid gap-3 grid-cols-2">
       <div class="space-y-1.5">
         <label for="id_password1" class="block text-xs font-semibold text-foreground">{{ form.password1.label }}</label>
         {% render_field form.password1 id="id_password1" class="flex h-10 w-full rounded-2xl border border-input bg-white/95 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 placeholder:text-muted-foreground" %}
-        {% for error in form.password1.errors %}<p class="text-[11px] text-rose-700">{{ error }}</p>{% endfor %}
+        {% for error in form.password1.errors %}<p class="text-[11px] text-rose-700 mt-1">{{ error }}</p>{% endfor %}
       </div>
       <div class="space-y-1.5">
         <label for="id_password2" class="block text-xs font-semibold text-foreground">{{ form.password2.label }}</label>
         {% render_field form.password2 id="id_password2" class="flex h-10 w-full rounded-2xl border border-input bg-white/95 px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 placeholder:text-muted-foreground" %}
-        {% for error in form.password2.errors %}<p class="text-[11px] text-rose-700">{{ error }}</p>{% endfor %}
+        {% for error in form.password2.errors %}<p class="text-[11px] text-rose-700 mt-1">{{ error }}</p>{% endfor %}
       </div>
     </div>
 
@@ -78,9 +56,33 @@
     {% endif %}
 
     <button type="submit" class="inline-flex h-10 w-full items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1">
-      Create Identity
+      Sign Up
     </button>
   </form>
+
+  <div class="relative flex py-2 items-center">
+    <div class="flex-grow border-t border-border/70"></div>
+    <span class="flex-shrink mx-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">or</span>
+    <div class="flex-grow border-t border-border/70"></div>
+  </div>
+
+  <div class="flex flex-col gap-2.5">
+    <a href="{% provider_login_url 'google' %}" data-oauth-link data-loading-label="Signing you in..." data-loading-message="Opening Google's account chooser." class="inline-flex h-10 w-full items-center justify-center gap-2.5 rounded-full border border-border bg-white px-5 text-sm font-semibold text-foreground transition-all duration-200 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+      <svg class="h-5 w-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05" />
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335" />
+      </svg>
+      Continue with Google
+    </a>
+    <a href="{% provider_login_url 'github' %}" data-oauth-link data-loading-label="Signing you in..." data-loading-message="Opening GitHub's authorization page." class="inline-flex h-10 w-full items-center justify-center gap-2.5 rounded-full border border-border bg-white px-5 text-sm font-semibold text-foreground transition-all duration-200 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+      <svg class="h-5 w-5 text-foreground" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.577.688.479C19.138 20.164 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+      </svg>
+      Continue with GitHub
+    </a>
+  </div>
 
   <div class="text-center border-t border-border/70 pt-4 mt-4">
     <span class="text-xs text-muted-foreground">Already have access?</span>
@@ -90,21 +92,4 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-(function() {
-    const idField = document.getElementById('id_id_number');
-    const phoneField = document.getElementById('id_phone_number');
-    const kraField = document.getElementById('id_kra_pin');
-    function showFeedback(el, feedbackId, isValid, msg) {
-        const fb = document.getElementById(feedbackId);
-        if (!fb) return;
-        fb.style.display = 'block';
-        fb.className = isValid ? 'text-[11px] text-emerald-700' : 'text-[11px] text-amber-700';
-        fb.textContent = (isValid ? '✓ ' : '⚠ ') + msg;
-    }
-    if (idField) idField.addEventListener('input', function() { const v = this.value.replace(/\D/g, ''); if (v.length >= 7 && v.length <= 9) showFeedback(this, 'id_number_feedback', true, 'Valid (' + v.length + ' digits)'); else if (v.length > 0) showFeedback(this, 'id_number_feedback', false, '7–9 digits needed'); });
-    if (phoneField) phoneField.addEventListener('input', function() { const v = this.value.replace(/[\s-]/g, ''); if (/^(\+254|0)\d{9}$/.test(v) || /^(07|01)\d{8}$/.test(v)) showFeedback(this, 'phone_feedback', true, 'Valid'); else if (v.length > 3) showFeedback(this, 'phone_feedback', false, 'Use +254 or 07 format'); });
-    if (kraField) kraField.addEventListener('input', function() { this.value = this.value.toUpperCase(); if (/^[A-Z]\d{9}[A-Z]$/.test(this.value)) showFeedback(this, 'kra_feedback', true, 'Valid KRA PIN'); else if (this.value.length > 2) showFeedback(this, 'kra_feedback', false, 'A + 9 digits + A'); });
-})();
-</script>
 {% endblock %}

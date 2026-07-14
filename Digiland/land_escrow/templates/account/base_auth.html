@@ -55,6 +55,104 @@
       </div>
     </footer>
   </div>
+  <div id="oauth-loading-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/25 px-4 py-6 backdrop-blur-sm">
+    <div class="w-full max-w-sm rounded-[1.75rem] border border-border/70 bg-white/95 p-5 shadow-2xl">
+      <div class="flex items-center gap-3">
+        <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+          <span class="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+        </span>
+        <div>
+          <div class="text-sm font-bold text-foreground" data-oauth-loading-title>Signing you in...</div>
+          <div class="text-[11px] text-muted-foreground" data-oauth-loading-message>Opening your provider.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+  (function() {
+    const overlay = document.getElementById('oauth-loading-overlay');
+    if (!overlay) return;
+
+    const titleNode = overlay.querySelector('[data-oauth-loading-title]');
+    const messageNode = overlay.querySelector('[data-oauth-loading-message]');
+
+    function showOverlay(title, message) {
+      if (titleNode) {
+        titleNode.textContent = title || 'Signing you in...';
+      }
+      if (messageNode) {
+        messageNode.textContent = message || 'Opening your provider.';
+      }
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+    }
+
+    function setBusyState(element, label) {
+      if (!element || element.dataset.busy === 'true') {
+        return false;
+      }
+
+      element.dataset.busy = 'true';
+      element.setAttribute('aria-busy', 'true');
+      element.setAttribute('aria-disabled', 'true');
+      element.classList.add('pointer-events-none', 'opacity-80');
+
+      if (element.tagName === 'A') {
+        element.setAttribute('tabindex', '-1');
+      } else if (element.tagName === 'BUTTON') {
+        element.disabled = true;
+      }
+
+      element.innerHTML = '';
+      const wrapper = document.createElement('span');
+      wrapper.className = 'inline-flex items-center gap-2';
+      const spinner = document.createElement('span');
+      spinner.className = 'h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent';
+      const text = document.createElement('span');
+      text.textContent = label || 'Signing you in...';
+      wrapper.append(spinner, text);
+      element.appendChild(wrapper);
+      return true;
+    }
+
+    document.querySelectorAll('[data-oauth-link]').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        if (link.dataset.busy === 'true') {
+          event.preventDefault();
+          return;
+        }
+
+        event.preventDefault();
+        const loadingLabel = link.dataset.loadingLabel || 'Signing you in...';
+        const loadingMessage = link.dataset.loadingMessage || 'Opening your provider.';
+        setBusyState(link, loadingLabel);
+        showOverlay(loadingLabel, loadingMessage);
+
+        const href = link.href;
+        window.setTimeout(() => {
+          window.location.href = href;
+        }, 80);
+      });
+    });
+
+    document.querySelectorAll('form[data-oauth-confirm-form]').forEach((form) => {
+      form.addEventListener('submit', () => {
+        if (form.dataset.busy === 'true') {
+          return;
+        }
+
+        form.dataset.busy = 'true';
+        const button = form.querySelector('button[type="submit"]');
+        const loadingLabel = (button && button.dataset.loadingLabel) || 'Signing you in...';
+        const loadingMessage = form.dataset.loadingMessage || 'Finalizing your sign in.';
+        if (button) {
+          setBusyState(button, loadingLabel);
+        }
+        showOverlay(loadingLabel, loadingMessage);
+      });
+    });
+  })();
+  </script>
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>

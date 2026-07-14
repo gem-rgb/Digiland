@@ -171,11 +171,18 @@ def home(request):
                 {'label': 'Browse parcels', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
                 {'label': 'Open transactions', 'href': reverse('frontend:transactions'), 'tone': 'secondary'},
             ]
+            if request.user.role == 'Buyer' and not getattr(request.user, 'buyer_account_type', None):
+                dashboard_actions.insert(0, {'label': 'Buyer setup', 'href': reverse('frontend:buyer_account_choice'), 'tone': 'outline'})
+
+        dashboard_title = {
+            'Buyer': 'Buyer Dashboard - Digiland',
+            'Seller': 'Seller Dashboard - Digiland',
+        }.get(request.user.role, 'Workspace - Digiland')
 
         return render_react_shell(
             request,
             'dashboard',
-            'My Dashboard - Digiland' if request.user.role == 'Buyer' else 'Workspace - Digiland',
+            dashboard_title,
             'Unified workspace for parcels, contracts, and escrow activity.',
             parcels=recent_parcels,
             transactions=recent_transactions,
@@ -4326,3 +4333,23 @@ def sponsored_ads(request):
             'total_clicks': total_clicks,
         },
     )
+
+@login_required
+def onboarding_select_role(request):
+    return render_react_shell(
+        request,
+        'onboarding-select-role',
+        'Select Your Role - Digiland',
+    )
+
+@login_required
+def buyer_dashboard(request):
+    if request.user.role != 'Buyer':
+        return redirect('frontend:home')
+    return home(request)
+
+@login_required
+def seller_dashboard(request):
+    if request.user.role != 'Seller':
+        return redirect('frontend:home')
+    return home(request)

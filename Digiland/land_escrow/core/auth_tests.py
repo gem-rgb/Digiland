@@ -649,6 +649,48 @@ class TestDefaultFromEmailNeverBlank(TestCase):
         self.assertEqual(redirect_url, reverse("account_verification_pending"))
         self.assertTrue(mock_send_mail.called)
 
+    def test_verified_buyer_login_redirects_to_home(self):
+        """Verified buyer sessions should land on the buyer dashboard."""
+        from django.contrib.sessions.middleware import SessionMiddleware
+        from django.test import RequestFactory
+        from django.urls import reverse
+        from core.adapter import RoleBasedAccountAdapter
+
+        user = _make_user(email="browser-verified@digiland.co.ke")
+        user.is_email_verified = True
+        user.save(update_fields=["is_email_verified"])
+
+        request = RequestFactory().get("/accounts/login/")
+        SessionMiddleware(lambda _request: None).process_request(request)
+        request.session.save()
+        request.user = user
+
+        adapter = RoleBasedAccountAdapter()
+        redirect_url = adapter.get_login_redirect_url(request)
+
+        self.assertEqual(redirect_url, reverse("frontend:home"))
+
+    def test_verified_buyer_signup_redirects_to_home(self):
+        """Verified buyer signups should return to the buyer dashboard."""
+        from django.contrib.sessions.middleware import SessionMiddleware
+        from django.test import RequestFactory
+        from django.urls import reverse
+        from core.adapter import RoleBasedAccountAdapter
+
+        user = _make_user(email="signup-verified@digiland.co.ke")
+        user.is_email_verified = True
+        user.save(update_fields=["is_email_verified"])
+
+        request = RequestFactory().get("/accounts/signup/")
+        SessionMiddleware(lambda _request: None).process_request(request)
+        request.session.save()
+        request.user = user
+
+        adapter = RoleBasedAccountAdapter()
+        redirect_url = adapter.get_signup_redirect_url(request)
+
+        self.assertEqual(redirect_url, reverse("frontend:home"))
+
     @override_settings(
         EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
         DEFAULT_FROM_EMAIL="test-sender@digiland.local",
@@ -688,6 +730,74 @@ class TestDefaultFromEmailNeverBlank(TestCase):
             f"DEFAULT_FROM_EMAIL is blank: {settings.DEFAULT_FROM_EMAIL!r}",
         )
 
+    def test_google_signin_prompts_for_account_choice(self):
+        """Google OAuth should force the Gmail account chooser."""
+        from django.conf import settings
+        self.assertEqual(
+            settings.SOCIALACCOUNT_PROVIDERS["google"]["AUTH_PARAMS"].get("prompt"),
+            "select_account",
+        )
+
+    def test_google_login_redirects_to_provider_on_get(self):
+        """The Google button should go straight to the provider instead of a dead confirmation page."""
+        from django.test import Client
+
+        response = Client().get("/accounts/google/login/")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("accounts.google.com", response.url)
+        self.assertIn("prompt=select_account", response.url)
+
+    def test_github_login_redirects_to_provider_on_get(self):
+        """The GitHub button should open GitHub authorization immediately."""
+        from django.test import Client
+
+        response = Client().get("/accounts/github/login/")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("github.com/login/oauth/authorize", response.url)
+
+    @override_settings(PUBLIC_BACKEND_URL="http://127.0.0.1:8000")
+    @patch("core.utils.send_mail")
+    @patch("core.utils.render_to_string", side_effect=lambda template, context: context["login_url"])
+    def test_user_approval_email_uses_canonical_backend_url(self, mock_render_to_string, mock_send_mail):
+        """Auth emails should use the same backend origin as OAuth callbacks."""
+        from core.utils import send_user_approval_email
+
+        user = _make_user(email="email-link@digiland.co.ke")
+        send_user_approval_email(user)
+
+        self.assertTrue(mock_render_to_string.called)
+        _, kwargs = mock_send_mail.call_args
+        self.assertEqual(kwargs["message"], "http://127.0.0.1:8000/accounts/login/")
+        self.assertEqual(kwargs["html_message"], "http://127.0.0.1:8000/accounts/login/")
+
+    def test_verified_google_social_signup_marks_email_verified(self):
+        """Google social signups with verified email data should bypass the pending gate."""
+        from types import SimpleNamespace
+        from django.contrib.sessions.middleware import SessionMiddleware
+        from django.test import RequestFactory
+        from core.signals import on_user_signed_up
+
+        user = _make_user(email="google-social@digiland.co.ke")
+        user.is_email_verified = False
+        user.save(update_fields=["is_email_verified"])
+
+        request = RequestFactory().post("/accounts/signup/")
+        SessionMiddleware(lambda _request: None).process_request(request)
+        request.session.save()
+
+        sociallogin = SimpleNamespace(
+            email_addresses=[SimpleNamespace(verified=True, email=user.email)],
+            account=SimpleNamespace(
+                provider="google",
+                extra_data={"email_verified": True, "email": user.email},
+            ),
+        )
+
+        on_user_signed_up(request=request, user=user, sociallogin=sociallogin)
+
+        user.refresh_from_db()
+        self.assertTrue(user.is_email_verified)
+
 
 # ==================== EMAIL VERIFICATION URL REGRESSION TESTS ====================
 
@@ -703,8 +813,8 @@ class TestEmailVerificationUrls(TestCase):
         response = Client().get(reverse("account_verification_pending"))
         self.assertEqual(response.status_code, 200)
 
-    def test_email_verification_redirects_verified_users_to_login(self):
-        """Verified users should be sent back to the public login page."""
+    def test_email_verification_redirects_verified_users_to_home(self):
+        """Verified users should be sent back to their dashboard."""
         from django.test import Client
         from django.urls import reverse
 
@@ -717,10 +827,10 @@ class TestEmailVerificationUrls(TestCase):
 
         response = client.get(reverse("account_verification_pending"))
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("account_login"))
+        self.assertEqual(response.url, reverse("frontend:home"))
 
-    def test_email_verification_api_redirects_to_login(self):
-        """The verification API should return the login redirect after a successful click-through."""
+    def test_email_verification_api_redirects_to_home(self):
+        """The verification API should return the dashboard redirect after a successful click-through."""
         from django.urls import reverse
         from core.verification import issue_one_time_token
 
@@ -741,8 +851,8 @@ class TestEmailVerificationUrls(TestCase):
         response = client.post(reverse("auth-email-verify"), {"token": token}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["verification_status"], "verified")
-        self.assertEqual(response.data["redirect_url"], reverse("account_login"))
-        self.assertEqual(response.data["pending_verification"].get("redirect_url"), reverse("account_login"))
+        self.assertEqual(response.data["redirect_url"], reverse("frontend:home"))
+        self.assertEqual(response.data["pending_verification"].get("redirect_url"), reverse("frontend:home"))
 
         user.refresh_from_db()
         self.assertTrue(user.is_email_verified)
@@ -790,3 +900,23 @@ class TestEmailVerificationGateMiddleware(TestCase):
         response = middleware(request)
 
         self.assertEqual(response.status_code, 200)
+
+
+class TestCanonicalBackendHostMiddleware(TestCase):
+    """Regression: local OAuth requests should be forced to one backend origin."""
+
+    @override_settings(TESTING=False, PUBLIC_BACKEND_URL="http://127.0.0.1:8000")
+    def test_localhost_requests_redirect_to_canonical_backend_host(self):
+        from django.http import HttpResponse
+        from django.test import RequestFactory
+        from core.middleware import CanonicalBackendHostMiddleware
+
+        request = RequestFactory().get("/accounts/google/login/?next=/parcels/", HTTP_HOST="localhost:8000")
+        middleware = CanonicalBackendHostMiddleware(lambda _request: HttpResponse("ok"))
+        response = middleware(request)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.url,
+            "http://127.0.0.1:8000/accounts/google/login/?next=/parcels/",
+        )

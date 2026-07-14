@@ -7,13 +7,18 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
 
+def _public_backend_base_url():
+    """Return the browser-visible backend origin used in emails."""
+    return getattr(settings, "PUBLIC_BACKEND_URL", "").strip().rstrip("/") or "http://127.0.0.1:8000"
+
+
 def send_agent_approval_email(agent):
     """Send approval email to agent"""
     subject = "Your Agent Application Has Been Approved - Digiland"
     
     context = {
         'agent': agent,
-        'login_url': f"{settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'localhost:8000'}/staff/login/"
+        'login_url': f"{_public_backend_base_url()}/staff/login/"
     }
     
     html_message = render_to_string('emails/agent_approval.html', context)
@@ -65,7 +70,7 @@ def send_task_assignment_email(agent, parcel):
     context = {
         'agent': agent,
         'parcel': parcel,
-        'dashboard_url': f"{settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'localhost:8000'}/agent/dashboard/"
+        'dashboard_url': f"{_public_backend_base_url()}/agent/dashboard/"
     }
     
     html_message = render_to_string('emails/task_assignment.html', context)
@@ -91,7 +96,7 @@ def send_user_approval_email(user):
     
     context = {
         'user': user,
-        'login_url': f"{settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'localhost:8000'}/accounts/login/"
+        'login_url': f"{_public_backend_base_url()}/accounts/login/"
     }
     
     html_message = render_to_string('emails/user_approval.html', context)
@@ -119,7 +124,7 @@ def send_agent_rating_notification(agent, rating, review):
         'agent': agent,
         'rating': rating,
         'review': review,
-        'dashboard_url': f"{settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'localhost:8000'}/agent/dashboard/"
+        'dashboard_url': f"{_public_backend_base_url()}/agent/dashboard/"
     }
     
     html_message = render_to_string('emails/agent_rating.html', context)

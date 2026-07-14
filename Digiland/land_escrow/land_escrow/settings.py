@@ -154,6 +154,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'core.middleware.CanonicalBackendHostMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'core.middleware.LegacyBrowseRedirectMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -164,6 +165,7 @@ MIDDLEWARE = [
     # Request ID middleware — must be before any request processing for log correlation
     'core.log_filters.RequestIDMiddleware',
     'core.middleware.EmailVerificationGateMiddleware',
+    'core.middleware.OnboardingGateMiddleware',
     'tenants.middleware.TenantMiddleware',
 
     # Graceful Degradation & Resilience Middleware
@@ -500,7 +502,10 @@ LOGGING = {
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
     o.strip()
-    for o in config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://localhost:8000').split(',')
+    for o in config(
+        'CORS_ALLOWED_ORIGINS',
+        default='http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000',
+    ).split(',')
     if o.strip()
 ]
 CORS_ALLOW_CREDENTIALS = True
@@ -644,6 +649,7 @@ ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_SIGNUP_FORM_CLASS = 'core.forms.CustomSignupForm'
 ACCOUNT_ADAPTER = 'core.adapter.RoleBasedAccountAdapter'
+SOCIALACCOUNT_LOGIN_ON_GET = True
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
@@ -705,6 +711,16 @@ MFA_STEP_UP_DURATION_MINUTES = 5
 
 # ── OAuth/SSO Configuration ──────────────────────────────────────────────────
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
+PUBLIC_BACKEND_URL = config('PUBLIC_BACKEND_URL', default='http://127.0.0.1:8000').strip().rstrip('/')
+
+
+def _optional_env(*names, default=''):
+    """Return the first non-empty environment variable from a list of aliases."""
+    for name in names:
+        value = config(name, default='').strip()
+        if value:
+            return value
+    return default
 
 # ── Admin Control Plane Settings ──────────────────────────────────────────────
 ADMIN_PATH_PREFIXES = ['/admin/', '/api/v1/admin/']
@@ -789,25 +805,25 @@ EMERGENCY_INCIDENT_RESPONDERS = [
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'APP': {
-            'client_id': config('GOOGLE_OAUTH_CLIENT_ID', default=''),
-            'secret': config('GOOGLE_OAUTH_CLIENT_SECRET', default=''),
+            'client_id': _optional_env('GOOGLE_OAUTH_CLIENT_ID', 'GOOGLE_CLIENT_ID'),
+            'secret': _optional_env('GOOGLE_OAUTH_CLIENT_SECRET', 'GOOGLE_CLIENT_SECRET'),
             'key': '',
         },
         'SCOPE': ['profile', 'email'],
-        'AUTH_PARAMS': {'access_type': 'online'},
+        'AUTH_PARAMS': {'access_type': 'online', 'prompt': 'select_account'},
     },
     'github': {
         'APP': {
-            'client_id': config('GITHUB_OAUTH_CLIENT_ID', default=''),
-            'secret': config('GITHUB_OAUTH_CLIENT_SECRET', default=''),
+            'client_id': _optional_env('GITHUB_OAUTH_CLIENT_ID', 'GITHUB_CLIENT_ID'),
+            'secret': _optional_env('GITHUB_OAUTH_CLIENT_SECRET', 'GITHUB_CLIENT_SECRET'),
             'key': '',
         },
         'SCOPE': ['user:email'],
     },
     'microsoft': {
         'APP': {
-            'client_id': config('MICROSOFT_OAUTH_CLIENT_ID', default=''),
-            'secret': config('MICROSOFT_OAUTH_CLIENT_SECRET', default=''),
+            'client_id': _optional_env('MICROSOFT_OAUTH_CLIENT_ID', 'MICROSOFT_CLIENT_ID'),
+            'secret': _optional_env('MICROSOFT_OAUTH_CLIENT_SECRET', 'MICROSOFT_CLIENT_SECRET'),
             'key': '',
         },
     },

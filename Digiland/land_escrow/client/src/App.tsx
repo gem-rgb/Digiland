@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowRight, ArrowDown, Banknote, BarChart3, Camera, CheckCircle2, CircleCheckBig, Clock3, ExternalLink, Eye, FileSignature, FileText, Gavel, Heart, Landmark, Lock, Mail, MapPin, MessageSquare, Printer, ReceiptText, Search, ShieldAlert, ShieldCheck, Sparkles, Ticket, Upload, UserCheck, Users, WalletCards, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, ArrowRight, ArrowDown, Banknote, BarChart3, Camera, CheckCircle2, CircleCheckBig, Clock3, ExternalLink, Eye, FileSignature, FileText, Gavel, Heart, Landmark, Lock, Mail, MapPin, MessageSquare, Printer, ReceiptText, Search, ShieldAlert, ShieldCheck, Sparkles, Ticket, Upload, UserCheck, Users, WalletCards, ShoppingCart, Briefcase, type LucideIcon } from 'lucide-react';
 import type { FormEvent, ReactNode } from 'react';
 import { readBootstrap } from './lib/bootstrap.js';
 import { AppShell } from './components/layout/app-shell.js';
@@ -442,7 +442,7 @@ function DashboardPage() {
     ? 'Monitor parcels, approvals, transactions, and messages from one workspace.'
     : role === 'Seller'
       ? 'Manage your listings, review buyer activity, and track escrow status.'
-      : 'Browse land, review contracts, and manage joint purchase activity from one clean workspace.';
+      : 'Browse verified parcels, review contracts, and manage your buyer dashboard from one clean workspace.';
 
   const pendingAgents = bootstrap.pending_agent_applications || [];
   const individualBuyers = bootstrap.individual_buyers || [];
@@ -3844,6 +3844,159 @@ function AIKYCPage() {
 }
 
 
+interface RoleSelectionPageProps {
+  shellProps: any;
+}
+
+function RoleSelectionPage({ shellProps }: RoleSelectionPageProps) {
+  const [selectedRole, setSelectedRole] = useState<'buyer' | 'seller' | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleContinue = async () => {
+    if (!selectedRole) return;
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/onboarding/select-role/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': bootstrap.csrf_token || '',
+        },
+        body: JSON.stringify({ role: selectedRole }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to select role. Please try again.');
+      }
+      // Success: redirect based on selected role
+      window.location.href = selectedRole === 'buyer' ? '/buyer/dashboard/' : '/seller/dashboard/';
+    } catch (err: any) {
+      setError(err.message || 'An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <PublicShell title="Welcome to Digiland" subtitle="Choose how you'd like to get started" nav={bootstrap.nav} user={bootstrap.user}>
+      <div className="flex min-h-[70vh] items-center justify-center px-4 py-12">
+        <div className="w-full max-w-4xl space-y-8 text-center">
+          {/* Header */}
+          <div className="space-y-3">
+            <h1 className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">
+              What brings you here?
+            </h1>
+            <p className="mx-auto max-w-2xl text-base text-slate-500">
+              Choose how you'd like to use the platform. You can change this later if your account supports multiple roles.
+            </p>
+          </div>
+
+          {/* Cards Grid */}
+          <div className="mt-8 grid gap-6 md:grid-cols-2">
+            {/* Buyer Card */}
+            <div
+              onClick={() => setSelectedRole('buyer')}
+              className={`group relative cursor-pointer overflow-hidden rounded-[2rem] border-2 bg-white/80 p-8 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-xl ${
+                selectedRole === 'buyer'
+                  ? 'border-emerald-500 ring-2 ring-emerald-500/25 bg-emerald-50/10'
+                  : 'border-border/70 hover:border-emerald-300'
+              }`}
+            >
+              <div className="flex flex-col h-full justify-between gap-6">
+                <div className="flex items-center justify-between">
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-300 ${
+                    selectedRole === 'buyer' ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100'
+                  }`}>
+                    <ShoppingCart className="h-6 w-6" />
+                  </div>
+                  {selectedRole === 'buyer' && (
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">Buy Land & Secure Escrow</h3>
+                  <p className="mt-2 text-sm text-slate-500 leading-relaxed font-normal">
+                    Browse verified parcels of land, connect with sellers, and complete secure escrow-protected transactions.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Seller Card */}
+            <div
+              onClick={() => setSelectedRole('seller')}
+              className={`group relative cursor-pointer overflow-hidden rounded-[2rem] border-2 bg-white/80 p-8 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-xl ${
+                selectedRole === 'seller'
+                  ? 'border-emerald-500 ring-2 ring-emerald-500/25 bg-emerald-50/10'
+                  : 'border-border/70 hover:border-emerald-300'
+              }`}
+            >
+              <div className="flex flex-col h-full justify-between gap-6">
+                <div className="flex items-center justify-between">
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-300 ${
+                    selectedRole === 'seller' ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100'
+                  }`}>
+                    <Briefcase className="h-6 w-6" />
+                  </div>
+                  {selectedRole === 'seller' && (
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">List Parcels & Sell Safely</h3>
+                  <p className="mt-2 text-sm text-slate-500 leading-relaxed font-normal">
+                    List your land parcels, manage offers, track verified buyer activity, and finalize transactions securely.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Footer */}
+          {error && (
+            <div className="mx-auto max-w-md rounded-2xl border border-rose-100 bg-rose-50/50 p-4 text-sm text-rose-600">
+              {error}
+            </div>
+          )}
+
+          <div className="pt-4 flex flex-col items-center gap-3">
+            <Button
+              onClick={handleContinue}
+              disabled={!selectedRole || loading}
+              className="w-full max-w-sm rounded-full py-6 text-base font-semibold shadow-md transition-all duration-200"
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving choice...
+                </span>
+              ) : selectedRole ? (
+                `Continue as ${selectedRole === 'buyer' ? 'Buyer' : 'Seller'}`
+              ) : (
+                'Select a role to continue'
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </PublicShell>
+  );
+}
+
+
 function ReactApp() {
   const page = bootstrap.page;
   const shellProps = {
@@ -3858,6 +4011,7 @@ function ReactApp() {
   let pageContent: ReactNode = null;
 
   if (page === 'landing') pageContent = <LandingPage />;
+  else if (page === 'onboarding-select-role') pageContent = <RoleSelectionPage shellProps={shellProps} />;
   else if (page === 'content') pageContent = <ContentPage />;
   else if (page === 'status') pageContent = <StatusPage />;
   else if (page === 'form' || page === 'staff-login' || page === 'agent-kyc' || page === 'payment-onboarding') pageContent = <GenericFormPage />;

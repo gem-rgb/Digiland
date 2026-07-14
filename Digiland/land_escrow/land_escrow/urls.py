@@ -22,6 +22,8 @@ from django.views.generic import RedirectView
 from core import admin_urls
 from land_escrow.health_views import health_check
 
+from core import api_views
+
 urlpatterns = [
     path('health/', health_check, name='health-check'),
     path('browse', RedirectView.as_view(url='/parcels/', permanent=False)),
@@ -29,6 +31,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('admin/', include(admin_urls)),
     path('api/v1/auth/', include('core.auth_urls')),
+    path('api/auth/me/', api_views.auth_me_api, name='auth_me_api'),
+    path('api/onboarding/select-role/', api_views.onboarding_select_role_api, name='onboarding_select_role_api'),
     path('accounts/', include('allauth.urls')),
     path('api/v1/', include('core.urls')),
     path('api/v1/admin/control-plane/', include('admin_control_plane.urls')),

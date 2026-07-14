@@ -39,6 +39,9 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # ── SSL / TLS ─────────────────────────────────────────────────────────────────
+# Canonical browser-visible backend origin used by OAuth callbacks and auth links.
+PUBLIC_BACKEND_URL = config("PUBLIC_BACKEND_URL", default="").strip()
+
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True

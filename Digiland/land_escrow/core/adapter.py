@@ -83,9 +83,7 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
 
     def get_login_redirect_url(self, request):
         """
-        Dynamically route users based on their selected role after login.
-        Only called by allauth's public login/signup flow.
-        The staff_login view handles its own redirect independently.
+        Dynamically route users based on their selected role and onboarding status after login.
         """
         user = request.user
         if user.is_authenticated:
@@ -93,8 +91,15 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
                 self._maybe_start_pending_session(request, user, flow="allauth-login")
                 self._maybe_send_login_verification_email(request, user, flow="allauth-login")
                 return reverse("account_verification_pending")
-            if user.role == 'Buyer' and not getattr(user, 'buyer_account_type', None):
-                return reverse('frontend:buyer_account_choice')
+            
+            # Un-onboarded users (no role or is_onboarded=False) go to onboarding select-role
+            if not user.role or not getattr(user, "is_onboarded", False):
+                return reverse("frontend:onboarding_select_role")
+
+            if user.role == 'Buyer':
+                return reverse('frontend:buyer_dashboard')
+            if user.role == 'Seller':
+                return reverse('frontend:seller_dashboard')
             if user.role == 'Agent':
                 # Agents should never reach here via public login (blocked in
                 # pre_login). If they somehow do (e.g. direct API call),
@@ -107,19 +112,23 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
 
     def get_signup_redirect_url(self, request):
         """
-        After a successful signup, agents are sent to the 'signup complete'
-        gate which logs them out and directs them to the Staff Login portal.
-        Buyers are sent to their onboarding choice page so they can select
-        joint or individual account mode.
+        After signup, dynamically route un-onboarded users to onboarding select-role.
         """
         user = request.user
         if user.is_authenticated and not getattr(user, "is_email_verified", False):
             self._maybe_start_pending_session(request, user, flow="allauth-signup")
             return reverse("account_verification_pending")
+
+        # Un-onboarded users (no role or is_onboarded=False) go to onboarding select-role
+        if user.is_authenticated and (not user.role or not getattr(user, "is_onboarded", False)):
+            return reverse("frontend:onboarding_select_role")
+
         if user.is_authenticated and getattr(user, 'role', None) == 'Agent':
             return reverse('frontend:agent_signup_complete')
         if user.is_authenticated and getattr(user, 'role', None) == 'Buyer':
-            return reverse('frontend:buyer_account_choice')
+            return reverse('frontend:buyer_dashboard')
+        if user.is_authenticated and getattr(user, 'role', None) == 'Seller':
+            return reverse('frontend:seller_dashboard')
         return super().get_signup_redirect_url(request)
 
     def get_email_confirmation_url(self, request, emailconfirmation):

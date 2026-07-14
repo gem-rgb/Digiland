@@ -23633,6 +23633,12 @@ var Banknote = createLucideIcon("Banknote", [
   ["path", { d: "M6 12h.01M18 12h.01", key: "113zkx" }]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/briefcase.js
+var Briefcase = createLucideIcon("Briefcase", [
+  ["path", { d: "M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16", key: "jecpp" }],
+  ["rect", { width: "20", height: "14", x: "2", y: "6", rx: "2", key: "i6l2r4" }]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/building-2.js
 var Building2 = createLucideIcon("Building2", [
   ["path", { d: "M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z", key: "1b4qmf" }],
@@ -24117,6 +24123,19 @@ var ShieldCheck = createLucideIcon("ShieldCheck", [
     }
   ],
   ["path", { d: "m9 12 2 2 4-4", key: "dzmm74" }]
+]);
+
+// node_modules/lucide-react/dist/esm/icons/shopping-cart.js
+var ShoppingCart = createLucideIcon("ShoppingCart", [
+  ["circle", { cx: "8", cy: "21", r: "1", key: "jimo8o" }],
+  ["circle", { cx: "19", cy: "21", r: "1", key: "13723u" }],
+  [
+    "path",
+    {
+      d: "M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12",
+      key: "9zh506"
+    }
+  ]
 ]);
 
 // node_modules/lucide-react/dist/esm/icons/sparkles.js
@@ -31157,7 +31176,7 @@ function TransactionTable() {
 function DashboardPage() {
   const role = bootstrap.user?.role || "Buyer";
   const isAdmin = role === "Admin";
-  const subtitle = role === "Admin" || role === "Agent" ? "Monitor parcels, approvals, transactions, and messages from one workspace." : role === "Seller" ? "Manage your listings, review buyer activity, and track escrow status." : "Browse land, review contracts, and manage joint purchase activity from one clean workspace.";
+  const subtitle = role === "Admin" || role === "Agent" ? "Monitor parcels, approvals, transactions, and messages from one workspace." : role === "Seller" ? "Manage your listings, review buyer activity, and track escrow status." : "Browse verified parcels, review contracts, and manage your buyer dashboard from one clean workspace.";
   const pendingAgents = bootstrap.pending_agent_applications || [];
   const individualBuyers = bootstrap.individual_buyers || [];
   return /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react18.default.createElement(
@@ -32350,6 +32369,58 @@ function AIKYCPage() {
   if (bootstrap.user) return /* @__PURE__ */ import_react18.default.createElement(AppShell, { ...shellProps }, body);
   return /* @__PURE__ */ import_react18.default.createElement(PublicShell, { title: bootstrap.title, subtitle: bootstrap.subtitle, nav: bootstrap.nav, user: bootstrap.user }, body);
 }
+function RoleSelectionPage({ shellProps }) {
+  const [selectedRole, setSelectedRole] = (0, import_react18.useState)(null);
+  const [loading, setLoading] = (0, import_react18.useState)(false);
+  const [error, setError] = (0, import_react18.useState)("");
+  const handleContinue = async () => {
+    if (!selectedRole) return;
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/onboarding/select-role/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": bootstrap.csrf_token || ""
+        },
+        body: JSON.stringify({ role: selectedRole })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to select role. Please try again.");
+      }
+      window.location.href = selectedRole === "buyer" ? "/buyer/dashboard/" : "/seller/dashboard/";
+    } catch (err) {
+      setError(err.message || "An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  return /* @__PURE__ */ import_react18.default.createElement(PublicShell, { title: "Welcome to Digiland", subtitle: "Choose how you'd like to get started", nav: bootstrap.nav, user: bootstrap.user }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex min-h-[70vh] items-center justify-center px-4 py-12" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "w-full max-w-4xl space-y-8 text-center" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("h1", { className: "text-4xl font-black tracking-tight text-slate-900 sm:text-5xl" }, "What brings you here?"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "mx-auto max-w-2xl text-base text-slate-500" }, "Choose how you'd like to use the platform. You can change this later if your account supports multiple roles.")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-8 grid gap-6 md:grid-cols-2" }, /* @__PURE__ */ import_react18.default.createElement(
+    "div",
+    {
+      onClick: () => setSelectedRole("buyer"),
+      className: `group relative cursor-pointer overflow-hidden rounded-[2rem] border-2 bg-white/80 p-8 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-xl ${selectedRole === "buyer" ? "border-emerald-500 ring-2 ring-emerald-500/25 bg-emerald-50/10" : "border-border/70 hover:border-emerald-300"}`
+    },
+    /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-col h-full justify-between gap-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: `flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-300 ${selectedRole === "buyer" ? "bg-emerald-500 text-white" : "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100"}` }, /* @__PURE__ */ import_react18.default.createElement(ShoppingCart, { className: "h-6 w-6" })), selectedRole === "buyer" && /* @__PURE__ */ import_react18.default.createElement("span", { className: "flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white" }, /* @__PURE__ */ import_react18.default.createElement("svg", { className: "h-4 w-4", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: "3" }, /* @__PURE__ */ import_react18.default.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M5 13l4 4L19 7" })))), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-xl font-bold text-slate-900" }, "Buy Land & Secure Escrow"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "mt-2 text-sm text-slate-500 leading-relaxed font-normal" }, "Browse verified parcels of land, connect with sellers, and complete secure escrow-protected transactions.")))
+  ), /* @__PURE__ */ import_react18.default.createElement(
+    "div",
+    {
+      onClick: () => setSelectedRole("seller"),
+      className: `group relative cursor-pointer overflow-hidden rounded-[2rem] border-2 bg-white/80 p-8 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-xl ${selectedRole === "seller" ? "border-emerald-500 ring-2 ring-emerald-500/25 bg-emerald-50/10" : "border-border/70 hover:border-emerald-300"}`
+    },
+    /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-col h-full justify-between gap-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: `flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-300 ${selectedRole === "seller" ? "bg-emerald-500 text-white" : "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100"}` }, /* @__PURE__ */ import_react18.default.createElement(Briefcase, { className: "h-6 w-6" })), selectedRole === "seller" && /* @__PURE__ */ import_react18.default.createElement("span", { className: "flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white" }, /* @__PURE__ */ import_react18.default.createElement("svg", { className: "h-4 w-4", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: "3" }, /* @__PURE__ */ import_react18.default.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M5 13l4 4L19 7" })))), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-xl font-bold text-slate-900" }, "List Parcels & Sell Safely"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "mt-2 text-sm text-slate-500 leading-relaxed font-normal" }, "List your land parcels, manage offers, track verified buyer activity, and finalize transactions securely.")))
+  )), error && /* @__PURE__ */ import_react18.default.createElement("div", { className: "mx-auto max-w-md rounded-2xl border border-rose-100 bg-rose-50/50 p-4 text-sm text-rose-600" }, error), /* @__PURE__ */ import_react18.default.createElement("div", { className: "pt-4 flex flex-col items-center gap-3" }, /* @__PURE__ */ import_react18.default.createElement(
+    Button,
+    {
+      onClick: handleContinue,
+      disabled: !selectedRole || loading,
+      className: "w-full max-w-sm rounded-full py-6 text-base font-semibold shadow-md transition-all duration-200"
+    },
+    loading ? /* @__PURE__ */ import_react18.default.createElement("span", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("svg", { className: "animate-spin h-5 w-5 text-white", fill: "none", viewBox: "0 0 24 24" }, /* @__PURE__ */ import_react18.default.createElement("circle", { className: "opacity-25", cx: "12", cy: "12", r: "10", stroke: "currentColor", strokeWidth: "4" }), /* @__PURE__ */ import_react18.default.createElement("path", { className: "opacity-75", fill: "currentColor", d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" })), "Saving choice...") : selectedRole ? `Continue as ${selectedRole === "buyer" ? "Buyer" : "Seller"}` : "Select a role to continue"
+  )))));
+}
 function ReactApp() {
   const page = bootstrap.page;
   const shellProps = {
@@ -32362,6 +32433,7 @@ function ReactApp() {
   };
   let pageContent = null;
   if (page === "landing") pageContent = /* @__PURE__ */ import_react18.default.createElement(LandingPage, null);
+  else if (page === "onboarding-select-role") pageContent = /* @__PURE__ */ import_react18.default.createElement(RoleSelectionPage, { shellProps });
   else if (page === "content") pageContent = /* @__PURE__ */ import_react18.default.createElement(ContentPage, null);
   else if (page === "status") pageContent = /* @__PURE__ */ import_react18.default.createElement(StatusPage, null);
   else if (page === "form" || page === "staff-login" || page === "agent-kyc" || page === "payment-onboarding") pageContent = /* @__PURE__ */ import_react18.default.createElement(GenericFormPage, null);
@@ -32899,6 +32971,14 @@ lucide-react/dist/esm/icons/banknote.js:
    * See the LICENSE file in the root directory of this source tree.
    *)
 
+lucide-react/dist/esm/icons/briefcase.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
 lucide-react/dist/esm/icons/building-2.js:
   (**
    * @license lucide-react v0.453.0 - ISC
@@ -33316,6 +33396,14 @@ lucide-react/dist/esm/icons/shield-alert.js:
    *)
 
 lucide-react/dist/esm/icons/shield-check.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
+lucide-react/dist/esm/icons/shopping-cart.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *

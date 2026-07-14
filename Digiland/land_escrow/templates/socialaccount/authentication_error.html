@@ -1,0 +1,27 @@
+{% extends "account/base_auth.html" %}
+{% load i18n %}
+
+{% block title %}Authentication Error - Digiland{% endblock %}
+
+{% block content %}
+{% with provider_name=auth_error.provider.name|default:auth_error.provider.id|default:'provider' %}
+<div class="text-center mb-6">
+  <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 border border-rose-200/60">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-rose-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+  </div>
+  <div class="text-[10px] font-bold uppercase tracking-[0.28em] text-rose-700 mb-2">Access Issue</div>
+  <h1 class="text-2xl font-black tracking-tight text-foreground">Authentication Failed</h1>
+  <p class="text-sm text-muted-foreground mt-1">An error occurred while connecting with {{ provider_name }}.</p>
+</div>
+
+<div class="rounded-3xl border border-border/70 bg-white/92 p-6 shadow-soft text-center">
+  <div class="rounded-2xl border border-rose-200 bg-rose-50/70 p-4 text-sm text-rose-800 mb-6">
+    The third-party authentication request was rejected, expired, or cancelled. Please try again.
+  </div>
+
+  <a href="{% url 'account_login' %}" class="inline-flex h-10 w-full items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+    Try Logging In Again
+  </a>
+</div>
+{% endwith %}
+{% endblock %}

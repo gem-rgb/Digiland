@@ -51,10 +51,11 @@ class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = None
     email = models.EmailField(_('email address'), unique=True)
-    id_number = models.CharField(max_length=50, db_index=True, validators=[id_number_regex])
-    phone_number = models.CharField(max_length=20, validators=[phone_regex])
-    kra_pin = models.CharField(max_length=11, validators=[kra_pin_regex], help_text='KRA PIN e.g. A123456789B')
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    id_number = models.CharField(max_length=50, db_index=True, validators=[id_number_regex], blank=True, null=True)
+    phone_number = models.CharField(max_length=20, validators=[phone_regex], blank=True, null=True)
+    kra_pin = models.CharField(max_length=11, validators=[kra_pin_regex], help_text='KRA PIN e.g. A123456789B', blank=True, null=True)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, blank=True, null=True)
+    is_onboarded = models.BooleanField(default=False)
     buyer_account_type = models.CharField(
         max_length=20,
         choices=BUYER_ACCOUNT_TYPE_CHOICES,

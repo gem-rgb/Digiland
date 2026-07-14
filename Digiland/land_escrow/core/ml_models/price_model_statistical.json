@@ -1,0 +1,15 @@
+{
+  "model_version": "3.1-hybrid",
+  "engine": "statistical-fallback",
+  "n_records": 951,
+  "n_features": 0,
+  "n_counties": 47,
+  "n_constituencies": 82,
+  "n_towns": 120,
+  "price_range": {
+    "min": 52971,
+    "max": 1659540551,
+    "median": 6176676
+  },
+  "trained_at": "2026-06-28T19:03:37.399202"
+}

@@ -101,4 +101,7 @@ urlpatterns = [
     path('api/popup-ads/event/', views.popup_ad_event_api, name='popup_ad_event_api'),
     path('messages/thread/<uuid:partner_id>/', views.message_thread_detail, name='message_thread_detail'),
     path('messages/thread/<uuid:partner_id>/clear/', views.clear_message_thread, name='clear_message_thread'),
+    path('onboarding/select-role/', views.onboarding_select_role, name='onboarding_select_role'),
+    path('buyer/dashboard/', views.buyer_dashboard, name='buyer_dashboard'),
+    path('seller/dashboard/', views.seller_dashboard, name='seller_dashboard'),
 ]

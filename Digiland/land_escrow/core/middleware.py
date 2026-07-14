@@ -1,5 +1,6 @@
 import time
 import logging
+from urllib.parse import urlsplit, urlunsplit
 
 from django.conf import settings
 from django.shortcuts import redirect
@@ -21,6 +22,57 @@ class LegacyBrowseRedirectMiddleware:
 
 
 logger = logging.getLogger(__name__)
+
+
+class CanonicalBackendHostMiddleware:
+    """Normalize local browser requests to the configured backend origin.
+
+    allauth builds OAuth callback URLs from the active request host. If the
+    app is reached through both ``localhost`` and ``127.0.0.1`` during local
+    development, Google sees different redirect URIs and rejects the login.
+    """
+
+    LOCAL_HOST_ALIASES = {"localhost", "127.0.0.1", "[::1]"}
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    @staticmethod
+    def _split_host_port(host: str) -> str:
+        host = (host or "").strip().lower()
+        if host.startswith("[") and "]" in host:
+            return host.split("]", 1)[0] + "]"
+        return host.split(":", 1)[0]
+
+    def __call__(self, request):
+        backend_url = getattr(settings, "PUBLIC_BACKEND_URL", "").strip()
+        if not backend_url:
+            return self.get_response(request)
+
+        parsed = urlsplit(backend_url)
+        if not parsed.scheme or not parsed.netloc:
+            return self.get_response(request)
+
+        current_host = self._split_host_port(request.get_host())
+        canonical_host = self._split_host_port(parsed.netloc)
+        current_scheme = "https" if request.is_secure() else "http"
+
+        if current_host == canonical_host and current_scheme == parsed.scheme:
+            return self.get_response(request)
+
+        if current_host not in self.LOCAL_HOST_ALIASES and current_host != canonical_host:
+            return self.get_response(request)
+
+        target = urlunsplit(
+            (
+                parsed.scheme,
+                parsed.netloc,
+                request.path,
+                request.META.get("QUERY_STRING", ""),
+                "",
+            )
+        )
+        return redirect(target)
 
 EMAIL_VERIFICATION_EXEMPT_PREFIXES = (
     '/static/',
@@ -536,3 +588,57 @@ class SecurityAuditMiddleware:
         if xff:
             return xff.split(",")[-1].strip()
         return request.META.get("REMOTE_ADDR", "0.0.0.0")
+
+
+ONBOARDING_EXEMPT_PREFIXES = (
+    '/static/',
+    '/media/',
+    '/accounts/',
+    '/api/v1/auth/',
+    '/onboarding/select-role/',
+    '/api/onboarding/select-role/',
+    '/api/auth/me/',
+)
+
+ONBOARDING_EXEMPT_PATHS = {
+    '/favicon.ico',
+    '/robots.txt',
+}
+
+
+class OnboardingGateMiddleware:
+    """Block authenticated users who have not yet completed onboarding/role selection."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if getattr(settings, "TESTING", False):
+            return self.get_response(request)
+
+        path = request.path
+        if path in ONBOARDING_EXEMPT_PATHS or any(path.startswith(prefix) for prefix in ONBOARDING_EXEMPT_PREFIXES):
+            return self.get_response(request)
+
+        user = getattr(request, "user", None)
+        if not user or not getattr(user, "is_authenticated", False):
+            return self.get_response(request)
+
+        # Allow superusers, staff, admins, and agents to bypass onboarding redirect
+        if getattr(user, "is_superuser", False) or user.role in ['Admin', 'Agent']:
+            return self.get_response(request)
+
+        # If role is not assigned, or role is Buyer/Seller but is_onboarded is False
+        if not user.role or not getattr(user, 'is_onboarded', False):
+            # If it's an API request, return JSON so that React page knows it needs redirection or onboarding
+            if path.startswith('/api/'):
+                return JsonResponse(
+                    {
+                        "detail": "Onboarding role selection required.",
+                        "redirect_to": "/onboarding/select-role/"
+                    },
+                    status=403
+                )
+            return redirect('/onboarding/select-role/')
+
+        return self.get_response(request)

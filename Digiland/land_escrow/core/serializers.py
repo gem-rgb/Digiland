@@ -61,33 +61,48 @@ class UserMinimalSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=10)
-
-    # SECURITY: Validate against the model's allowed roles.
-    # Admin self-assignment is blocked in the view so registration returns 403.
-    VALID_ROLES = [role for role, _ in User.ROLE_CHOICES]
+    full_name = serializers.CharField(write_only=True, max_length=200, required=False, default='')
+    role = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    id_number = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    phone_number = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    kra_pin = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ['email', 'password', 'id_number', 'phone_number', 'kra_pin', 'role', 'buyer_account_type']
+        fields = ['email', 'password', 'full_name', 'role', 'id_number', 'phone_number', 'kra_pin']
 
     def validate_role(self, value):
-        """SECURITY: Prevent Admin role assignment via API registration."""
-        if value not in self.VALID_ROLES:
-            raise serializers.ValidationError(
-                f"Invalid role. Allowed roles: {', '.join(self.VALID_ROLES)}. "
-                "Admin accounts are created by administrators only."
-            )
+        if not value:
+            return None
+        valid_roles = [r for r, _ in User.ROLE_CHOICES]
+        if value == 'Admin':
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Admin role cannot be self-assigned.")
+        if value not in valid_roles:
+            raise serializers.ValidationError("Invalid role assigned.")
         return value
 
     def create(self, validated_data):
+        full_name = validated_data.pop('full_name', '').strip()
+        name_parts = full_name.split(' ', 1)
+        first_name = name_parts[0] if name_parts else ''
+        last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+        role = validated_data.get('role')
+        is_onboarded = False
+        if role in ['Buyer', 'Seller', 'Agent']:
+            is_onboarded = True
+
         user = User.objects.create_user(
             email=validated_data['email'],
             password=validated_data['password'],
-            id_number=validated_data.get('id_number', ''),
-            phone_number=validated_data.get('phone_number', ''),
-            kra_pin=validated_data.get('kra_pin', ''),
-            role=validated_data.get('role', 'Buyer'),
-            buyer_account_type=validated_data.get('buyer_account_type'),
+            first_name=first_name,
+            last_name=last_name,
+            role=role,
+            is_onboarded=is_onboarded,
+            phone_number=validated_data.get('phone_number'),
+            id_number=validated_data.get('id_number'),
+            kra_pin=validated_data.get('kra_pin'),
         )
         return user
 

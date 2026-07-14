@@ -303,6 +303,9 @@ GITHUB_OAUTH_CLIENT_SECRET=
 MICROSOFT_OAUTH_CLIENT_ID=
 MICROSOFT_OAUTH_CLIENT_SECRET=
 
+# Canonical backend origin used for OAuth callbacks and auth links.
+PUBLIC_BACKEND_URL=http://127.0.0.1:8000
+
 # =============================================================================
 # Frontend URL
 # =============================================================================
