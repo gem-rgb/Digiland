@@ -31201,7 +31201,7 @@ function TransactionTable() {
 function DashboardPage() {
   const role = bootstrap.user?.role || "Buyer";
   const isAdmin = role === "Admin";
-  const subtitle = role === "Admin" || role === "Agent" ? "Monitor parcels, approvals, transactions, and messages from one workspace." : role === "Seller" ? "Manage your listings, review buyer activity, and track escrow status." : "Browse verified parcels, review contracts, and manage your buyer dashboard from one clean workspace.";
+  const subtitle = role === "Admin" || role === "Agent" || role === "Lawyer" ? "Monitor parcels, approvals, transactions, and messages from one workspace." : role === "Seller" ? "Manage your listings, review buyer activity, and track escrow status." : "Browse verified parcels, review contracts, and manage your buyer dashboard from one clean workspace.";
   const pendingAgents = bootstrap.pending_agent_applications || [];
   const individualBuyers = bootstrap.individual_buyers || [];
   return /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react18.default.createElement(

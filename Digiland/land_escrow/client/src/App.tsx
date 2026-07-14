@@ -438,7 +438,7 @@ function LegalCards(laws: NonNullable<typeof bootstrap.laws>) {
 function DashboardPage() {
   const role = bootstrap.user?.role || 'Buyer';
   const isAdmin = role === 'Admin';
-  const subtitle = role === 'Admin' || role === 'Agent'
+  const subtitle = role === 'Admin' || role === 'Agent' || role === 'Lawyer'
     ? 'Monitor parcels, approvals, transactions, and messages from one workspace.'
     : role === 'Seller'
       ? 'Manage your listings, review buyer activity, and track escrow status.'

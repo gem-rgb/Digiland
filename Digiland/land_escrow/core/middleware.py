@@ -625,7 +625,7 @@ class OnboardingGateMiddleware:
             return self.get_response(request)
 
         # Allow superusers, staff, admins, and agents to bypass onboarding redirect
-        if getattr(user, "is_superuser", False) or user.role in ['Admin', 'Agent']:
+        if getattr(user, "is_superuser", False) or user.role in ['Admin', 'Agent', 'Lawyer']:
             return self.get_response(request)
 
         # If role is not assigned, or role is Buyer/Seller but is_onboarded is False

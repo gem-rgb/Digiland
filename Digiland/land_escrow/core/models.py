@@ -27,6 +27,7 @@ class User(AbstractUser):
         ('Buyer', 'Buyer'),
         ('Seller', 'Seller'),
         ('Agent', 'Agent'),
+        ('Lawyer', 'Lawyer'),
         ('Land_Official', 'Land Official'),
         ('Admin', 'Admin'),
     ]

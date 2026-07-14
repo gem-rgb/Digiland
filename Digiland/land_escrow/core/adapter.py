@@ -17,7 +17,7 @@ from .verification import (
 )
 
 # Roles that are BANNED from the public /accounts/login/ route
-STAFF_ROLES = {'Admin', 'Agent'}
+STAFF_ROLES = {'Admin', 'Agent', 'Lawyer'}
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +177,7 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
           - Buyer / Seller:     ALWAYS allowed
         """
         role = getattr(user, 'role', None)
-        block = (role == 'Admin') or (role == 'Agent')
+        block = role in STAFF_ROLES
 
         if block and '/accounts/login' in request.path:
             from allauth.exceptions import ImmediateHttpResponse

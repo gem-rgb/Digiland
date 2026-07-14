@@ -51,13 +51,13 @@ def is_seller_or_agent(user):
 def is_verified_agent_or_admin(user):
     if not user.is_authenticated:
         return False
-    if user.role == 'Admin':
+    if user.role in ['Admin', 'Lawyer']:
         return True
     if user.role == 'Agent' and user.is_identity_verified:
         return True
     return False
 
-STAFF_ROLES = {'Admin', 'Agent'}
+STAFF_ROLES = {'Admin', 'Agent', 'Lawyer'}
 
 
 def render_react_shell(request, page, title, subtitle='', **extra):
@@ -1103,9 +1103,9 @@ def agent_user_review(request, user_id):
     reviewed_user = get_object_or_404(CoreUser, id=user_id)
 
     # Security: agents can only review Buyers/Sellers
-    if reviewed_user.role in ['Admin', 'Agent']:
+    if reviewed_user.role in ['Admin', 'Agent', 'Lawyer']:
         from django.contrib import messages
-        messages.error(request, 'You cannot review Admin or Agent accounts.')
+        messages.error(request, 'You cannot review Admin, Agent or Lawyer accounts.')
         return redirect('frontend:agent_approvals')
 
     context = {
@@ -1149,9 +1149,9 @@ def agent_approve_user(request, user_id):
 
     user = get_object_or_404(CoreUser, id=user_id)
 
-    # Hard security fence — agents cannot elevate Admin or other Agent accounts
-    if user.role in ['Admin', 'Agent']:
-        messages.error(request, 'Permission denied: you cannot approve Admin or Agent accounts through this portal.')
+    # Hard security fence — agents cannot elevate Admin, Agent or Lawyer accounts
+    if user.role in ['Admin', 'Agent', 'Lawyer']:
+        messages.error(request, 'Permission denied: you cannot approve Admin, Agent or Lawyer accounts through this portal.')
         return redirect('frontend:agent_approvals')
 
     user.is_identity_verified = True
@@ -1607,7 +1607,7 @@ def parcel_detail(request, parcel_number):
 
     can_view_documents = False
     if request.user.is_authenticated:
-        if request.user.role in ['Admin', 'Agent']:
+        if request.user.role in ['Admin', 'Agent', 'Lawyer']:
             can_view_documents = True
         elif request.user.id == parcel.listed_by_id:
             can_view_documents = True
@@ -1637,7 +1637,7 @@ def parcel_detail(request, parcel_number):
         'documents': [
             {
                 **serialize_document(doc),
-                'moderate_url': reverse('frontend:moderate_document', args=[parcel.parcel_number, doc.id]) if request.user.is_authenticated and request.user.role in ['Admin', 'Agent'] else None,
+                'moderate_url': reverse('frontend:moderate_document', args=[parcel.parcel_number, doc.id]) if request.user.is_authenticated and request.user.role in ['Admin', 'Agent', 'Lawyer'] else None,
                 'delete_url': reverse('frontend:delete_document', args=[parcel.parcel_number, doc.id]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) else None,
             }
             for doc in parcel.documents.all()
@@ -1659,7 +1659,7 @@ def parcel_detail(request, parcel_number):
         'edit_url': reverse('frontend:parcel_edit', args=[parcel.parcel_number]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) else None,
         'delete_url': reverse('frontend:parcel_delete', args=[parcel.parcel_number]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) else None,
         'toggle_favorite_url': reverse('frontend:toggle_favorite', args=[parcel.parcel_number]) if request.user.is_authenticated else None,
-        'agent_verify_url': reverse('frontend:agent_verify_parcel', args=[parcel.parcel_number]) if request.user.is_authenticated and request.user.role in ['Admin', 'Agent'] else None,
+        'agent_verify_url': reverse('frontend:agent_verify_parcel', args=[parcel.parcel_number]) if request.user.is_authenticated and request.user.role in ['Admin', 'Agent', 'Lawyer'] else None,
     }
 
     return render_react_shell(
@@ -1721,7 +1721,7 @@ def messages_list(request):
     # Rule: Admins/Agents can contact anyone
     if user.role in ['Buyer', 'Seller']:
         allowed_recipients = CoreUser.objects.filter(
-            role__in=['Admin', 'Agent']
+            role__in=['Admin', 'Agent', 'Lawyer']
         ).exclude(id=user.id)
     else:  # Admin / Agent
         allowed_recipients = CoreUser.objects.exclude(id=user.id)
@@ -1736,7 +1736,7 @@ def messages_list(request):
         context['threads'] = [
             serialize_message_thread(partner, msgs, user)
             for partner, msgs in threads.items()
-            if partner.role in ['Admin', 'Agent']
+            if partner.role in ['Admin', 'Agent', 'Lawyer']
         ]
         context['mode'] = 'single'
     elif user.role == 'Seller':
@@ -1744,7 +1744,7 @@ def messages_list(request):
         context['threads'] = [
             serialize_message_thread(partner, msgs, user)
             for partner, msgs in threads.items()
-            if partner.role in ['Admin', 'Agent']
+            if partner.role in ['Admin', 'Agent', 'Lawyer']
         ]
         context['mode'] = 'single'
     else:  # Admin / Agent
