@@ -1174,11 +1174,13 @@ function LandingPage() {
             isAuthenticated={Boolean(bootstrap.user)}
           />
 
-          {/* ── PRICE ESTIMATOR SECTION ── */}
+          {/* ── PRICE ESTIMATOR SECTION ── (Disabled for initial rollout) */}
+          {/*
           <PriceEstimatorSection
             csrfToken={bootstrap.csrf_token}
             isAuthenticated={Boolean(bootstrap.user)}
           />
+          */}
 
           {/* ── ANIMATED WALKTHROUGH ── */}
           <AnimatedWalkthrough />

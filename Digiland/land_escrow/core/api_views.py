@@ -2295,17 +2295,10 @@ def _get_market_position(price_per_acre):
 @permission_classes([AllowAny])
 @throttle_classes([PricePredictionAnonThrottle, PricePredictionUserThrottle])
 def price_prediction_api(request):
-    """
-    GET  /api/v1/price-prediction/  — Model info, available counties, constituencies, towns.
-         ?action=counties                     — List all counties
-         ?action=constituencies&county=X      — List constituencies for a county
-         ?action=towns&county=X&constituency=Y — List towns for a constituency
-
-    POST /api/v1/price-prediction/  — Predict land price.
-
-    Public endpoint (no auth required) for the landing page estimator.
-    Throttled: 10/min anonymous, 30/min authenticated.
-    """
+    return Response({
+        'error': 'AI features are disabled for this rollout.',
+        'error_code': 'SERVICE_UNAVAILABLE'
+    }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
     from .services.price_prediction import (
         predict_price, get_model_info, get_fallback_prediction,
         get_constituencies_for_county, get_towns_for_constituency,

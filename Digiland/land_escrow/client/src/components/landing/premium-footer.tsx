@@ -33,7 +33,6 @@ const NAV_COLUMNS: Array<{ title: string; links: NavLink[] }> = [
       { label: 'Browse Land', href: '/parcels/' },
       { label: 'Sell Property', href: '/sell' },
       { label: 'Escrow Protection', href: '/escrow' },
-      { label: 'Price Estimator', href: '/price-prediction' },
       { label: 'KYC Verification', href: '/kyc' },
     ],
   },

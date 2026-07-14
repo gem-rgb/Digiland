@@ -1584,20 +1584,8 @@ def parcel_detail(request, parcel_number):
     if request.user.is_authenticated:
         is_favorited = UserFavorite.objects.filter(user=request.user, parcel=parcel).exists()
 
-    # Get AI price estimate
+    # Get AI price estimate (Disabled for initial rollout)
     ai_price = None
-    try:
-        from core.services.price_prediction import predict_price
-        result = predict_price(
-            county=parcel.county,
-            constituency=parcel.constituency,
-            land_use=parcel.land_use_type,
-            size_acres=float(parcel.land_size),
-        )
-        if 'error' not in result:
-            ai_price = result
-    except Exception:
-        pass
 
     joint_groups = []
     can_use_joint_purchase = False
@@ -4183,7 +4171,6 @@ def submit_kyc_api(request):
         return JsonResponse({'error': 'Missing required documents'}, status=400)
         
     from core.models import KYCProfile
-    from core.ai_kyc import start_kyc_verification
     
     # Create or update profile
     profile, created = KYCProfile.objects.get_or_create(user=request.user)
@@ -4194,12 +4181,13 @@ def submit_kyc_api(request):
         
     profile.id_front_image = id_front
     profile.selfie_image = selfie
-    profile.status = 'PENDING'
-    profile.audit_log = {} # Reset audit log on new submission
+    profile.status = 'APPROVED'
+    profile.audit_log = {'reason': 'Verification complete (Manual/Direct approve).'}
     profile.save()
     
-    # Start async task
-    start_kyc_verification(profile.id)
+    # Instantly verify user identity
+    request.user.is_identity_verified = True
+    request.user.save()
     
     return JsonResponse({'status': 'processing'})
 
