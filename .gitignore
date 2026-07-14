@@ -28,3 +28,5 @@ Digiland/land_escrow/staticfiles/
 # Frontend build outputs
 Digiland/land_escrow/client/node_modules/
 Digiland/land_escrow/client/dist/
+
+.vercel

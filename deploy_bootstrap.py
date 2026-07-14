@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -22,6 +23,12 @@ def bootstrap() -> Path:
     ):
         if env_path.exists():
             load_dotenv(env_path, override=False)
+
+    # Vercel environment: redirect SQLite to writable /tmp directory
+    if os.environ.get("VERCEL") == "1":
+        db_url = os.environ.get("DATABASE_URL", "")
+        if not db_url or db_url.startswith("sqlite"):
+            os.environ["DATABASE_URL"] = "sqlite:////tmp/db.sqlite3"
 
     project_path = str(PROJECT_DIR)
     if project_path not in sys.path:

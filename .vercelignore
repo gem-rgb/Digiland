@@ -6,7 +6,7 @@ Digiland/land_escrow/.env
 Digiland/land_escrow/.env.*
 Digiland/land_escrow/logs/
 Digiland/land_escrow/media/
-Digiland/land_escrow/staticfiles/
+# Digiland/land_escrow/staticfiles/
 **/__pycache__/
 **/*.pyc
 **/*.pyo
@@ -17,4 +17,4 @@ Digiland/land_escrow/server.err.log
 Digiland/land_escrow/server.out.log
 Digiland/land_escrow/.pytest_cache/
 Digiland/land_escrow/client/node_modules/
-Digiland/land_escrow/client/dist/
+# Digiland/land_escrow/client/dist/
