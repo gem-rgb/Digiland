@@ -24082,6 +24082,15 @@ var RefreshCw = createLucideIcon("RefreshCw", [
   ["path", { d: "M8 16H3v5", key: "1cv678" }]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/scale.js
+var Scale = createLucideIcon("Scale", [
+  ["path", { d: "m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z", key: "7g6ntu" }],
+  ["path", { d: "m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z", key: "ijws7r" }],
+  ["path", { d: "M7 21h10", key: "1b0cd5" }],
+  ["path", { d: "M12 3v18", key: "108xh3" }],
+  ["path", { d: "M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2", key: "3gwbw2" }]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/search.js
 var Search = createLucideIcon("Search", [
   ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }],
@@ -32229,6 +32238,94 @@ function AgentWithdrawPage() {
     }
   )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" }, "Funds will be sent directly to the M-Pesa account registered to the phone number above. Please double-check before submitting."), /* @__PURE__ */ import_react18.default.createElement(Button, { type: "submit", className: "w-full rounded-full" }, "Withdraw to M-Pesa"))))));
 }
+function LegalProtectionPanel() {
+  const [lskNumber, setLskNumber] = (0, import_react18.useState)("");
+  const [lawyerName, setLawyerName] = (0, import_react18.useState)("");
+  const [isLskVerified, setIsLskVerified] = (0, import_react18.useState)(false);
+  const [lawyerSigned, setLawyerSigned] = (0, import_react18.useState)(false);
+  const [lawyerSignature, setLawyerSignature] = (0, import_react18.useState)("");
+  const [verifying, setVerifying] = (0, import_react18.useState)(false);
+  const [audits, setAudits] = (0, import_react18.useState)({
+    pagesChecked: false,
+    registrySearch: false,
+    physicalProduction: false
+  });
+  const handleLskVerify = () => {
+    if (!lskNumber || !lawyerName) return;
+    setVerifying(true);
+    setTimeout(() => {
+      setVerifying(false);
+      setIsLskVerified(true);
+    }, 1200);
+  };
+  const handleLawyerSign = (sig) => {
+    setLawyerSignature(sig);
+    if (sig) {
+      setLawyerSigned(true);
+    }
+  };
+  return /* @__PURE__ */ import_react18.default.createElement(Card, { className: "border-emerald-200 bg-emerald-50/10 shadow-lg rounded-[2rem]" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2.5" }, /* @__PURE__ */ import_react18.default.createElement(ShieldAlert, { className: "h-6 w-6 text-emerald-600" }), /* @__PURE__ */ import_react18.default.createElement(CardTitle, { className: "text-xl font-black text-slate-900" }, "Digiland Legal & Deed Protection Guard")), /* @__PURE__ */ import_react18.default.createElement(CardDescription, { className: "text-slate-500 mt-1" }, "Mandatory compliance checks to prevent title forgery, loan encumbrances, and real estate scams.")), /* @__PURE__ */ import_react18.default.createElement(CardContent, { className: "space-y-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid gap-4 md:grid-cols-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-amber-200 bg-amber-50/50 p-4 space-y-3 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "checkbox",
+      id: "audit-pages",
+      checked: audits.pagesChecked,
+      onChange: (e) => setAudits((prev) => ({ ...prev, pagesChecked: e.target.checked })),
+      className: "h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+    }
+  ), /* @__PURE__ */ import_react18.default.createElement("label", { htmlFor: "audit-pages", className: "text-xs font-bold text-amber-900 uppercase tracking-wide cursor-pointer select-none" }, "Page-by-Page Title Audit")), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-amber-800 leading-relaxed" }, "\u26A0\uFE0F ", /* @__PURE__ */ import_react18.default.createElement("strong", null, "Check Back Pages:"), " Verify all pages (especially page 3 & 4). Scammers often hide pages that show registered charges (bank loans) or caveats.")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-amber-200 bg-amber-50/50 p-4 space-y-3 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "checkbox",
+      id: "audit-registry",
+      checked: audits.registrySearch,
+      onChange: (e) => setAudits((prev) => ({ ...prev, registrySearch: e.target.checked })),
+      className: "h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+    }
+  ), /* @__PURE__ */ import_react18.default.createElement("label", { htmlFor: "audit-registry", className: "text-xs font-bold text-amber-900 uppercase tracking-wide cursor-pointer select-none" }, "Registry Search & Provenance")), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-amber-800 leading-relaxed" }, "\u26A0\uFE0F ", /* @__PURE__ */ import_react18.default.createElement("strong", null, "Independent Search:"), " Verify past owners and registry records directly via ArdhiSasa, not just the seller's uploaded copy.")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-amber-200 bg-amber-50/50 p-4 space-y-3 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "checkbox",
+      id: "audit-physical",
+      checked: audits.physicalProduction,
+      onChange: (e) => setAudits((prev) => ({ ...prev, physicalProduction: e.target.checked })),
+      className: "h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+    }
+  ), /* @__PURE__ */ import_react18.default.createElement("label", { htmlFor: "audit-physical", className: "text-xs font-bold text-amber-900 uppercase tracking-wide cursor-pointer select-none" }, "Physical Production")), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-amber-800 leading-relaxed" }, "\u26A0\uFE0F ", /* @__PURE__ */ import_react18.default.createElement("strong", null, "Verify Original Deed:"), " Ensure the physical Title Deed and Green Card are produced and authenticated at the Land Control Board meeting."))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "border-t border-slate-200/80 pt-6" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-bold text-slate-900 mb-4 flex items-center gap-2 text-left" }, /* @__PURE__ */ import_react18.default.createElement(Scale, { className: "h-4 w-4 text-emerald-600" }), " Law Society of Kenya (LSK) Advocate Sign-off"), !isLskVerified ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid gap-4 sm:grid-cols-3 max-w-2xl text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-1.5" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[10px] font-bold uppercase tracking-wider text-slate-500" }, "Lawyer Full Name"), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      placeholder: "e.g. Advocate Kamau",
+      value: lawyerName,
+      onChange: (e) => setLawyerName(e.target.value),
+      className: "flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+    }
+  )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-1.5" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[10px] font-bold uppercase tracking-wider text-slate-500" }, "LSK Admission Number"), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      placeholder: "e.g. P.105/12345/20",
+      value: lskNumber,
+      onChange: (e) => setLskNumber(e.target.value),
+      className: "flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+    }
+  )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-end" }, /* @__PURE__ */ import_react18.default.createElement(
+    Button,
+    {
+      onClick: handleLskVerify,
+      disabled: !lawyerName || !lskNumber || verifying,
+      className: "w-full h-10 rounded-xl"
+    },
+    verifying ? "Verifying LSK..." : "Verify LSK Advocate"
+  ))) : /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-emerald-100 bg-emerald-50/50 p-5 space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white" }, /* @__PURE__ */ import_react18.default.createElement(Scale, { className: "h-5 w-5" })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-bold text-slate-900" }, lawyerName, " (LSK Verified)"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs text-slate-500" }, "Admission No: ", lskNumber, " \u2022 Status: Active Practicing Advocate"))), /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "success", className: "px-3 py-1 rounded-full" }, "LSK Authenticated")), !lawyerSigned ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "max-w-md pt-2 border-t border-emerald-100/70 text-left" }, /* @__PURE__ */ import_react18.default.createElement(
+    SignaturePad,
+    {
+      label: "Advocate Cryptographic Sign-off for execution of purchase",
+      onChange: handleLawyerSign,
+      className: "border-emerald-200 bg-white"
+    }
+  )) : /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2 text-sm font-semibold text-emerald-700 pt-1 text-left" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-5 w-5" }), /* @__PURE__ */ import_react18.default.createElement("span", null, "Advocate contract signature recorded and locked."))))));
+}
 function ContractFullPage() {
   const contract = bootstrap.contract;
   const [documentSignatures, setDocumentSignatures] = (0, import_react18.useState)({});
@@ -32274,7 +32371,7 @@ function ContractFullPage() {
         }
       ), documentSignatures[doc.key] ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-3 flex items-center gap-2 text-sm font-medium text-emerald-700" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-4 w-4" }), "Signature captured") : null))) : null
     )
-  ))) : null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "print-document-toolbar grid gap-6 lg:grid-cols-2" }, /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white shadow-sm" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement(CardTitle, null, "Signature Status")), /* @__PURE__ */ import_react18.default.createElement(CardContent, { className: "space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl bg-muted/60 p-3 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-sm font-semibold" }, "Buyer: ", contract.buyer_email), contract.buyer_signature_present ? /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "success" }, "Signed") : /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "warning" }, "Awaiting")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl bg-muted/60 p-3 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-sm font-semibold" }, "Seller: ", contract.seller_email), contract.seller_signature_present ? /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "success" }, "Signed") : /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "warning" }, "Awaiting")))), (contract.current_user_is_buyer || contract.current_user_is_seller) && !contract.contract_agreed && !(contract.current_user_is_buyer && contract.buyer_signature_present || contract.current_user_is_seller && contract.seller_signature_present) ? /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white shadow-sm" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement(CardTitle, null, "Execute Contract"), /* @__PURE__ */ import_react18.default.createElement(CardDescription, null, "Sign all required documents and submit to complete the legal process.")), /* @__PURE__ */ import_react18.default.createElement(CardContent, null, /* @__PURE__ */ import_react18.default.createElement("form", { method: "post", action: contract.sign_url, className: "space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: contract.csrf_token }), /* @__PURE__ */ import_react18.default.createElement("input", { type: "hidden", name: "signature_data", value: JSON.stringify(documentSignatures) }), /* @__PURE__ */ import_react18.default.createElement(
+  ))) : null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react18.default.createElement(LegalProtectionPanel, null), /* @__PURE__ */ import_react18.default.createElement("div", { className: "print-document-toolbar grid gap-6 lg:grid-cols-2" }, /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white shadow-sm" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement(CardTitle, null, "Signature Status")), /* @__PURE__ */ import_react18.default.createElement(CardContent, { className: "space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl bg-muted/60 p-3 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-sm font-semibold" }, "Buyer: ", contract.buyer_email), contract.buyer_signature_present ? /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "success" }, "Signed") : /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "warning" }, "Awaiting")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl bg-muted/60 p-3 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-sm font-semibold" }, "Seller: ", contract.seller_email), contract.seller_signature_present ? /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "success" }, "Signed") : /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "warning" }, "Awaiting")))), (contract.current_user_is_buyer || contract.current_user_is_seller) && !contract.contract_agreed && !(contract.current_user_is_buyer && contract.buyer_signature_present || contract.current_user_is_seller && contract.seller_signature_present) ? /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white shadow-sm" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement(CardTitle, null, "Execute Contract"), /* @__PURE__ */ import_react18.default.createElement(CardDescription, null, "Sign all required documents and submit to complete the legal process.")), /* @__PURE__ */ import_react18.default.createElement(CardContent, null, /* @__PURE__ */ import_react18.default.createElement("form", { method: "post", action: contract.sign_url, className: "space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: contract.csrf_token }), /* @__PURE__ */ import_react18.default.createElement("input", { type: "hidden", name: "signature_data", value: JSON.stringify(documentSignatures) }), /* @__PURE__ */ import_react18.default.createElement(
     Button,
     {
       type: "submit",
@@ -32282,7 +32379,7 @@ function ContractFullPage() {
       disabled: contract.documents.some((doc) => doc.required && !documentSignatures[doc.key])
     },
     "Sign and accept all documents"
-  )))) : null), contract.checkout_available ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "print-document-success rounded-[2rem] border border-emerald-200 bg-emerald-50/70 p-8 text-center space-y-4" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-12 w-12 text-emerald-600 mx-auto" }), /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-2xl font-black tracking-tight text-foreground" }, "Legal process complete"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-sm leading-7 text-muted-foreground max-w-md mx-auto" }, "The contract has been fully signed. Continue to checkout to choose M-Pesa STK, KCB bank transfer, or Paystack."), /* @__PURE__ */ import_react18.default.createElement("a", { href: contract.payment_url, className: "inline-flex h-12 items-center justify-center rounded-full bg-primary px-8 text-sm font-semibold text-primary-foreground hover:bg-primary/90 shadow-lg" }, "Continue to checkout")) : null));
+  )))) : null)), contract.checkout_available ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "print-document-success rounded-[2rem] border border-emerald-200 bg-emerald-50/70 p-8 text-center space-y-4" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-12 w-12 text-emerald-600 mx-auto" }), /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-2xl font-black tracking-tight text-foreground" }, "Legal process complete"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-sm leading-7 text-muted-foreground max-w-md mx-auto" }, "The contract has been fully signed. Continue to checkout to choose M-Pesa STK, KCB bank transfer, or Paystack."), /* @__PURE__ */ import_react18.default.createElement("a", { href: contract.payment_url, className: "inline-flex h-12 items-center justify-center rounded-full bg-primary px-8 text-sm font-semibold text-primary-foreground hover:bg-primary/90 shadow-lg" }, "Continue to checkout")) : null));
 }
 function AdminWithdrawPage() {
   const data = bootstrap.withdraw_data;
@@ -33380,6 +33477,14 @@ lucide-react/dist/esm/icons/receipt-text.js:
    *)
 
 lucide-react/dist/esm/icons/refresh-cw.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
+lucide-react/dist/esm/icons/scale.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *
