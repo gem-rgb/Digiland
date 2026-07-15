@@ -65,7 +65,7 @@ if DATABASE_URL:
         "default": database_config_from_url(
             DATABASE_URL,
             conn_max_age=DB_CONN_MAX_AGE,
-            ssl_require=True,
+            ssl_require=DATABASE_URL.startswith(("postgres://", "postgresql://")),
         )
     }
 else:

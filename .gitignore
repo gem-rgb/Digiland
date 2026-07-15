@@ -30,3 +30,4 @@ Digiland/land_escrow/client/node_modules/
 Digiland/land_escrow/client/dist/
 
 .vercel
+.env*

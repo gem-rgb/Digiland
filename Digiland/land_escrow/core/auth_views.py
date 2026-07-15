@@ -1334,8 +1334,21 @@ def email_verify_view(request):
     token_data = consume_one_time_token("emailverify", token)
 
     if not token_data:
+        if request.user.is_authenticated and getattr(request.user, "is_email_verified", False):
+            redirect_url = get_post_verification_redirect_url(request.user)
+            return Response(
+                {
+                    "message": "Email verified successfully.",
+                    "verification_status": "verified",
+                    "redirect_url": redirect_url,
+                },
+                status=status.HTTP_200_OK,
+            )
         pending_user, _pending_session = _get_pending_verification_user(request)
         if pending_user and getattr(pending_user, "is_email_verified", False):
+            if not request.user.is_authenticated:
+                from django.contrib.auth import login as auth_login
+                auth_login(request, pending_user, backend='core.auth_backends.EmailOrUsernameModelBackend')
             redirect_url = _complete_email_verification_flow(request, user=pending_user)
             return Response(
                 {
@@ -1360,6 +1373,11 @@ def email_verify_view(request):
         user.save(update_fields=["is_email_verified"])
 
     _sync_allauth_email_address(user, email=token_data.get("email") or user.email, verified=True)
+
+    # Auto-login the user to establish/continue their authenticated session
+    if not request.user.is_authenticated or request.user.id != user.id:
+        from django.contrib.auth import login as auth_login
+        auth_login(request, user, backend='core.auth_backends.EmailOrUsernameModelBackend')
 
     redirect_url = _complete_email_verification_flow(request, user=user)
 
