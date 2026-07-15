@@ -39,8 +39,16 @@ def build_nav(user, active=None):
             {'label': 'Legal', 'href': reverse('frontend:seller_laws'), 'icon': 'legal', 'active': active in {'legal', 'seller-laws'}},
         ]
 
+    if role == 'Lawyer':
+        return [
+            {'label': 'Command Centre', 'href': reverse('frontend:agent_dashboard'), 'icon': 'dashboard', 'active': active in {'dashboard', 'lawyer-dashboard'}},
+            {'label': 'Transactions', 'href': reverse('frontend:transactions'), 'icon': 'transactions', 'active': active == 'transactions'},
+            {'label': 'Messages', 'href': reverse('frontend:messages'), 'icon': 'documents', 'active': active == 'messages'},
+            {'label': 'Legal Library', 'href': reverse('frontend:escrow_acts'), 'icon': 'legal', 'active': active in {'legal', 'joint-laws'}},
+        ]
+
     nav = [
-        {'label': 'Command Centre', 'href': reverse('frontend:agent_dashboard'), 'icon': 'dashboard', 'active': active in {'dashboard', 'admin-dashboard', 'agent-dashboard'}},
+        {'label': 'Command Centre', 'href': reverse('frontend:agent_dashboard'), 'icon': 'dashboard', 'active': active in {'dashboard', 'admin-dashboard', 'agent-dashboard', 'lawyer-dashboard'}},
         {'label': 'Tasks', 'href': reverse('frontend:task_management'), 'icon': 'parcels', 'active': active == 'tasks'},
         {'label': 'Parcels', 'href': reverse('frontend:parcel_list'), 'icon': 'parcels', 'active': active == 'parcel-list'},
         {'label': 'Transactions', 'href': reverse('frontend:transactions'), 'icon': 'transactions', 'active': active == 'transactions'},
@@ -99,6 +107,8 @@ def serialize_parcel(parcel, user=None):
         'verification_status': parcel.verification_status,
         'image_url': parcel.image.url if getattr(parcel, 'image', None) else None,
         'details_url': reverse('frontend:parcel_detail', args=[parcel.parcel_number]),
+        'edit_url': reverse('frontend:parcel_edit', args=[parcel.parcel_number]) if (is_owner or is_admin) else None,
+        'delete_url': reverse('frontend:parcel_delete', args=[parcel.parcel_number]) if (is_owner or is_admin) else None,
         'manage_label': 'Manage Listing' if (is_owner or is_admin) else 'View Details and Buy',
         'manage_url': reverse('frontend:parcel_detail', args=[parcel.parcel_number]),
         'status_badge': parcel.get_verification_status_display() if hasattr(parcel, 'get_verification_status_display') else parcel.verification_status,
@@ -151,9 +161,11 @@ def serialize_transaction(tx, user=None):
         action_label = 'Sign Agreement'
     elif user and getattr(user, 'id', None) == getattr(tx, 'seller_id', None) and not tx.seller_signature:
         action_label = 'Sign Agreement'
+    elif user and getattr(user, 'role', None) == 'Lawyer' and not tx.lawyer_signature:
+        action_label = 'Execute Sign-off'
 
     action_url = reverse('frontend:sign_contract', args=[tx.id])
-    if action_label == 'Sign Agreement':
+    if action_label in {'Sign Agreement', 'Execute Sign-off'}:
         from django.core.signing import Signer
         signer = Signer()
         signing_token = signer.sign(str(tx.id))
@@ -212,6 +224,10 @@ def serialize_contract(transaction, user, *, documents, joint_breakdown=None, si
         'checkout_available': can_checkout,
         'buyer_signature_present': bool(transaction.buyer_signature),
         'seller_signature_present': bool(transaction.seller_signature),
+        'lawyer_signature_present': bool(transaction.lawyer_signature),
+        'lawyer_name': transaction.lawyer_name,
+        'lawyer_lsk_number': transaction.lawyer_lsk_number,
+        'current_user_is_lawyer': getattr(user, 'role', None) == 'Lawyer',
         'is_joint_purchase': bool(transaction.is_joint_purchase),
         'joint_group_name': transaction.joint_group.name if transaction.is_joint_purchase and transaction.joint_group else None,
         'joint_group_ownership': transaction.joint_group.get_ownership_type_display() if transaction.is_joint_purchase and transaction.joint_group else None,

@@ -467,6 +467,141 @@ function DashboardPage() {
         </CardContent>
       </Card>
 
+      {role === 'Seller' ? (
+        <Card className="bg-white/92">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">My Land Listings</CardTitle>
+                <CardDescription>Track the verification status of your uploaded land parcels.</CardDescription>
+              </div>
+              <a href="/parcels/upload/" className="inline-flex h-9 items-center justify-center rounded-full bg-emerald-700 hover:bg-emerald-850 px-4 text-xs font-semibold text-white transition-colors">List New Parcel</a>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {!(bootstrap.parcels && bootstrap.parcels.length > 0) ? (
+              <div className="p-8 text-center text-sm text-slate-500">You have not listed any land parcels yet. Click "List New Parcel" above to start.</div>
+            ) : (
+              <div className="divide-y divide-border/60">
+                {bootstrap.parcels.map((parcel: any) => (
+                  <div key={parcel.parcel_number} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 gap-3 hover:bg-muted/10 transition-colors">
+                    <div className="flex items-center gap-4">
+                      {parcel.image_url ? (
+                        <img src={parcel.image_url} alt="" className="h-12 w-16 object-cover rounded-xl border" />
+                      ) : (
+                        <div className="h-12 w-16 bg-slate-100 flex items-center justify-center rounded-xl border text-xs text-slate-400">No Image</div>
+                      )}
+                      <div>
+                        <div className="font-bold text-foreground text-left">Parcel {parcel.parcel_number}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5 text-left">{parcel.county} · {parcel.constituency} · {parcel.ward}</div>
+                        <div className="text-xs font-bold text-emerald-800 mt-1 text-left">KES {Number(parcel.asking_price || 0).toLocaleString()}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 justify-between sm:justify-end">
+                      <Badge tone={
+                        parcel.verification_status === 'Verified' ? 'success' :
+                        parcel.verification_status === 'Fraudulent' ? 'danger' :
+                        parcel.verification_status === 'Pending' ? 'warning' : 'muted'
+                      }>
+                        {parcel.status_badge || parcel.verification_status}
+                      </Badge>
+                      <div className="flex items-center gap-3">
+                        <a href={parcel.details_url} className="text-xs font-bold text-slate-700 hover:text-slate-900">View</a>
+                        {parcel.edit_url && (
+                          <a href={parcel.edit_url} className="text-xs font-bold text-emerald-700 hover:text-emerald-805">Edit</a>
+                        )}
+                        {parcel.delete_url && (
+                          <form
+                            method="post"
+                            action={parcel.delete_url}
+                            onSubmit={(e) => {
+                              if (!window.confirm(`Are you sure you want to permanently delete Listing for Parcel ${parcel.parcel_number}?`)) {
+                                e.preventDefault();
+                              }
+                            }}
+                            className="inline"
+                          >
+                            <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token} />
+                            <button type="submit" className="text-xs font-bold text-red-650 hover:text-red-750 cursor-pointer bg-transparent border-0 p-0">Delete</button>
+                          </form>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {role === 'Agent' ? (
+        <Card className="bg-white/92">
+          <CardHeader>
+            <CardTitle className="text-base text-left">Assigned Pending Verifications</CardTitle>
+            <CardDescription className="text-left">Parcels currently assigned to you for inspection and verification.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            {!(bootstrap.parcels && bootstrap.parcels.length > 0) ? (
+              <div className="p-8 text-center text-sm text-slate-500">You have no pending verification tasks.</div>
+            ) : (
+              <div className="divide-y divide-border/60">
+                {bootstrap.parcels.map((parcel: any) => (
+                  <div key={parcel.parcel_number} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 gap-3 hover:bg-muted/10 transition-colors">
+                    <div className="flex items-center gap-4">
+                      {parcel.image_url ? (
+                        <img src={parcel.image_url} alt="" className="h-12 w-16 object-cover rounded-xl border" />
+                      ) : (
+                        <div className="h-12 w-16 bg-slate-100 flex items-center justify-center rounded-xl border text-xs text-slate-400">No Image</div>
+                      )}
+                      <div>
+                        <div className="font-bold text-foreground text-left">Parcel {parcel.parcel_number}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5 text-left">{parcel.county} · {parcel.constituency} · {parcel.ward}</div>
+                        <div className="text-xs font-bold text-emerald-800 mt-1 text-left">KES {Number(parcel.asking_price || 0).toLocaleString()}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 justify-between sm:justify-end">
+                      <Badge tone="warning">Pending Agent Review</Badge>
+                      <a href={parcel.details_url} className="inline-flex h-8 items-center justify-center rounded-full bg-emerald-700 hover:bg-emerald-850 px-4 text-xs font-semibold text-white transition-colors">Review Listing</a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {role === 'Lawyer' ? (
+        <Card className="bg-white/92">
+          <CardHeader>
+            <CardTitle className="text-base text-left">Pending Legal Reviews</CardTitle>
+            <CardDescription className="text-left">Escrow agreements awaiting Law Society of Kenya (LSK) Advocate sign-off.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            {!(bootstrap.transactions && bootstrap.transactions.length > 0) ? (
+              <div className="p-8 text-center text-sm text-slate-500">You have no pending legal reviews.</div>
+            ) : (
+              <div className="divide-y divide-border/60">
+                {bootstrap.transactions.map((tx: any) => (
+                  <div key={tx.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 gap-3 hover:bg-muted/10 transition-colors">
+                    <div>
+                      <div className="font-bold text-foreground text-left">Transaction {tx.id.substring(0, 8)}... (Parcel {tx.parcel_number})</div>
+                      <div className="text-xs text-muted-foreground mt-0.5 text-left">Agreement Price: KES {Number(tx.amount || 0).toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5 text-left">Date: {tx.created_at}</div>
+                    </div>
+                    <div className="flex items-center gap-4 justify-between sm:justify-end">
+                      <Badge tone="warning">Under Legal Review</Badge>
+                      <a href={tx.action_url} className="inline-flex h-8 items-center justify-center rounded-full bg-emerald-700 hover:bg-emerald-850 px-4 text-xs font-semibold text-white transition-colors">{tx.action_label}</a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
       {isAdmin && pendingAgents.length > 0 ? (
         <Card className="bg-white/92">
           <CardHeader>
@@ -3586,6 +3721,7 @@ function ContractFullPage() {
   const [documentSignatures, setDocumentSignatures] = useState<Record<string, string>>({});
   const [buyerSignature, setBuyerSignature] = useState('');
   const [sellerSignature, setSellerSignature] = useState('');
+  const [lawyerSignature, setLawyerSignature] = useState('');
   const backUrl = bootstrap.back_url || '/';
 
   if (!contract) {
@@ -3737,7 +3873,7 @@ function ContractFullPage() {
           <div className="print-document-toolbar grid gap-6 lg:grid-cols-2">
             <Card className="bg-white shadow-sm">
               <CardHeader>
-                <CardTitle>Signature Status</CardTitle>
+                <CardTitle className="text-left text-base">Signature Status</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="rounded-2xl bg-muted/60 p-3 flex items-center justify-between">
@@ -3748,14 +3884,75 @@ function ContractFullPage() {
                   <span className="text-sm font-semibold">Seller: {contract.seller_email}</span>
                   {contract.seller_signature_present ? <Badge tone="success">Signed</Badge> : <Badge tone="warning">Awaiting</Badge>}
                 </div>
+                <div className="rounded-2xl bg-muted/60 p-3 flex items-center justify-between">
+                  <span className="text-sm font-semibold">Lawyer: {contract.lawyer_name || 'LSK Verified Advocate'}</span>
+                  {contract.lawyer_signature_present ? <Badge tone="success">Signed</Badge> : <Badge tone="warning">Awaiting</Badge>}
+                </div>
               </CardContent>
             </Card>
+
+            {contract.current_user_role === 'Lawyer' && !contract.lawyer_signature_present ? (
+              <Card className="bg-white shadow-sm border-emerald-250 rounded-[2rem] overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="text-emerald-805 text-left text-base">Execute Advocate Sign-off</CardTitle>
+                  <CardDescription className="text-left">Perform LSK verification checks and submit your cryptographic signature.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <form method="post" action={contract.sign_url} className="space-y-4 text-left">
+                    <input type="hidden" name="csrfmiddlewaretoken" value={contract.csrf_token} />
+                    <input type="hidden" name="lawyer_signature_data" value={lawyerSignature} />
+                    
+                    <div className="space-y-3 p-4 bg-emerald-50/40 rounded-2xl border border-emerald-100">
+                      <div className="flex items-center gap-2">
+                        <input type="checkbox" id="audit-pages" required className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" />
+                        <label htmlFor="audit-pages" className="text-xs font-semibold text-slate-800 cursor-pointer select-none">I have audited all pages of the title deed (Cap. 300 compliance).</label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input type="checkbox" id="audit-registry" required className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" />
+                        <label htmlFor="audit-registry" className="text-xs font-semibold text-slate-800 cursor-pointer select-none">I have verified the provenance of registry records on ArdhiSasa.</label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input type="checkbox" id="audit-physical" required className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" />
+                        <label htmlFor="audit-physical" className="text-xs font-semibold text-slate-800 cursor-pointer select-none">I have verified production of original Title Deed and Green Card.</label>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lawyer Full Name</label>
+                        <input type="text" name="lawyer_name" required placeholder="Advocate Kamau" className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">LSK Admission Number</label>
+                        <input type="text" name="lawyer_lsk_number" required placeholder="P.105/12345/20" className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <SignaturePad
+                        label="Cryptographic signature pad"
+                        onChange={(sig) => setLawyerSignature(sig)}
+                        className="border-emerald-100 bg-white"
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full rounded-full h-12 text-base bg-emerald-700 hover:bg-emerald-800"
+                      disabled={!lawyerSignature}
+                    >
+                      Sign off and execute transfer
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            ) : null}
 
             {(contract.current_user_is_buyer || contract.current_user_is_seller) && !contract.contract_agreed && !((contract.current_user_is_buyer && contract.buyer_signature_present) || (contract.current_user_is_seller && contract.seller_signature_present)) ? (
               <Card className="bg-white shadow-sm">
                 <CardHeader>
-                  <CardTitle>Execute Contract</CardTitle>
-                  <CardDescription>Sign all required documents and submit to complete the legal process.</CardDescription>
+                  <CardTitle className="text-left text-base">Execute Contract</CardTitle>
+                  <CardDescription className="text-left">Sign all required documents and submit to complete the legal process.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form method="post" action={contract.sign_url} className="space-y-4">
@@ -4216,7 +4413,7 @@ function ReactApp() {
   else if (page === 'seller-withdraw') pageContent = <SellerWithdrawPage />;
   else if (page === 'escrow-release') pageContent = <EscrowReleasePage />;
   else if (page === 'agent-withdraw') pageContent = <AgentWithdrawPage />;
-  else if (page === 'dashboard' || page === 'admin-dashboard' || page === 'agent-dashboard') pageContent = <AppShell {...shellProps}><DashboardPage /></AppShell>;
+  else if (page === 'dashboard' || page === 'admin-dashboard' || page === 'agent-dashboard' || page === 'lawyer-dashboard') pageContent = <AppShell {...shellProps}><DashboardPage /></AppShell>;
   else if (page === 'finance') pageContent = <AppShell {...shellProps}><AdminFinancePage /></AppShell>;
   else if (page === 'contract-fullpage') pageContent = <ContractFullPage />;
   else if (page === 'admin-withdraw') pageContent = <AdminWithdrawPage />;

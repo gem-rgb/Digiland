@@ -288,7 +288,11 @@ class Transaction(models.Model):
     
     buyer_signature = models.TextField(null=True, blank=True, help_text="Base64 encoded cryptographic signature graphic of the buyer")
     seller_signature = models.TextField(null=True, blank=True, help_text="Base64 encoded cryptographic signature graphic of the seller")
-    contract_agreed = models.BooleanField(default=False, help_text="Has the contract been fully signed by both parties?")
+    lawyer_signature = models.TextField(null=True, blank=True, help_text="Base64 encoded cryptographic signature graphic of the LSK verified lawyer")
+    lawyer_name = models.CharField(max_length=200, null=True, blank=True, help_text="Full name of the LSK verified lawyer")
+    lawyer_lsk_number = models.CharField(max_length=100, null=True, blank=True, help_text="LSK Admission Number of the lawyer")
+    lawyer_signed_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when the lawyer signed the transaction")
+    contract_agreed = models.BooleanField(default=False, help_text="Has the contract been fully signed by all parties?")
     
     # 7-Day Buyer Validation Protocol
     buyer_validation_deadline = models.DateTimeField(null=True, blank=True, help_text="Deadline by which buyer must confirm or disputes ownership. Funds are fully refundable until this date.")

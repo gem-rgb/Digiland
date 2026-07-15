@@ -132,7 +132,11 @@ def home(request):
             transactions = Transaction.objects.filter(Q(buyer=request.user) | Q(seller=request.user)).distinct().order_by('-created_at')[:5]
     
     if request.user.is_authenticated:
-        recent_parcels = [serialize_parcel(parcel, request.user) for parcel in parcels]
+        if request.user.role == 'Seller':
+            seller_parcels = LandParcel.objects.filter(listed_by=request.user).order_by('-updated_at')
+            recent_parcels = [serialize_parcel(parcel, request.user) for parcel in seller_parcels]
+        else:
+            recent_parcels = [serialize_parcel(parcel, request.user) for parcel in parcels]
         recent_transactions = [serialize_transaction(tx, request.user) for tx in transactions] if transactions else []
 
         # Build role-specific stats
@@ -162,8 +166,9 @@ def home(request):
         # Build role-specific actions
         if request.user.role == 'Seller':
             dashboard_actions = [
+                {'label': 'List new parcel', 'href': reverse('frontend:parcel_upload'), 'tone': 'default'},
                 {'label': 'My parcels', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
-                {'label': 'Withdraw funds', 'href': reverse('frontend:seller_withdraw'), 'tone': 'default'},
+                {'label': 'Withdraw funds', 'href': reverse('frontend:seller_withdraw'), 'tone': 'secondary'},
                 {'label': 'Messages', 'href': reverse('frontend:messages'), 'tone': 'secondary'},
             ]
         else:
@@ -456,6 +461,7 @@ def parcel_list(request):
     if request.user.is_authenticated:
         if request.user.role == 'Seller':
             actions = [
+                {'label': 'List new parcel', 'href': reverse('frontend:parcel_upload'), 'tone': 'default'},
                 {'label': 'Legal checklist', 'href': reverse('frontend:seller_laws'), 'tone': 'outline'},
             ]
         elif request.user.role == 'Buyer':
@@ -579,9 +585,47 @@ def agent_dashboard(request):
     if request.user.role == 'Admin':
         # Admin gets full command centre access
         return render_admin_dashboard(request, context)
+    elif request.user.role == 'Lawyer':
+        # Lawyer gets legal reviews dashboard
+        return render_lawyer_dashboard(request, context)
     else:
         # Agent gets restricted dashboard
         return render_agent_dashboard(request, context)
+
+def render_lawyer_dashboard(request, context):
+    """Render lawyer-specific command centre."""
+    pending_transactions = Transaction.objects.filter(
+        status='Under_Verification'
+    ).select_related('buyer', 'seller', 'land_parcel').order_by('created_at')
+
+    completed_transactions = Transaction.objects.filter(
+        status__in=['Completed', 'Disputed', 'Refunded', 'Reversed'],
+        lawyer_signature__isnull=False
+    ).select_related('buyer', 'seller', 'land_parcel').order_by('-updated_at')[:30]
+
+    context.update({
+        'pending_transactions': pending_transactions,
+        'completed_transactions': completed_transactions,
+    })
+
+    recent_transactions = [serialize_transaction(tx, request.user) for tx in pending_transactions[:10]]
+
+    return render_react_shell(
+        request,
+        'lawyer-dashboard',
+        'Lawyer Command Centre',
+        'Review land transfer agreements, verify advocate status, and execute cryptographic sign-offs.',
+        transactions=recent_transactions,
+        stats=[
+            {'label': 'Pending reviews', 'value': str(pending_transactions.count()), 'tone': 'warning'},
+            {'label': 'Completed reviews', 'value': str(completed_transactions.count()), 'tone': 'success'},
+            {'label': 'LSK Status', 'value': 'Verified Advocate', 'tone': 'success'},
+        ],
+        actions=[
+            {'label': 'Legal Library', 'href': reverse('frontend:escrow_acts'), 'tone': 'outline'},
+            {'label': 'Withdraw earnings', 'href': reverse('frontend:agent_withdraw'), 'tone': 'primary'},
+        ],
+    )
 
 
 def render_admin_dashboard(request, context):
@@ -935,7 +979,7 @@ def agent_verify_parcel(request, parcel_number):
                     f"Reason: The parcel failed verification checks and has been classified "
                     f"as potentially fraudulent under the Land Registration Act (Cap. 300) "
                     f"and the platform's anti-fraud policy.\n\n"
-                    f"Action taken: The listing has been permanently removed from the platform.\n\n"
+                    f"Action taken: The listing has been permanently marked as fraudulent and hidden from the marketplace.\n\n"
                     f"If you believe this is an error, please contact Digiland support "
                     f"with your original title documents for re-evaluation.\n\n"
                     f"— Digiland Escrow Platform"
@@ -949,7 +993,7 @@ def agent_verify_parcel(request, parcel_number):
             # Audit log
             AuditLog.objects.create(
                 user=request.user,
-                action=f"Parcel {parcel_label} flagged as fraudulent and deleted",
+                action=f"Parcel {parcel_label} flagged as fraudulent",
                 metadata={
                     'parcel_number': parcel_label,
                     'seller_email': seller.email if seller else 'unknown',
@@ -957,12 +1001,13 @@ def agent_verify_parcel(request, parcel_number):
                 }
             )
 
-            # Delete the fraudulent parcel
-            parcel.delete()
+            # Flag the parcel as fraudulent
+            parcel.verification_status = 'Fraudulent'
+            parcel.save()
 
             from django.contrib import messages as django_messages
-            django_messages.success(request, f'Parcel {parcel_label} has been removed and the seller has been notified.')
-            return redirect('frontend:parcel_list')
+            django_messages.success(request, f'Parcel {parcel_label} has been flagged as fraudulent and the seller has been notified.')
+            return redirect('frontend:agent_dashboard')
     return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
 
 @login_required
@@ -1668,7 +1713,7 @@ def parcel_detail(request, parcel_number):
 
 @login_required
 def user_transactions(request):
-    if request.user.role == 'Admin':
+    if request.user.role in ['Admin', 'Lawyer']:
         transactions = Transaction.objects.all().order_by('-created_at')
     else:
         transactions = (
@@ -1914,8 +1959,8 @@ def sign_contract(request, transaction_id):
         id=transaction_id,
     )
     
-    # Security: Only involved parties (buyer, seller) or Admin can access
-    if request.user not in [transaction.buyer, transaction.seller] and request.user.role != 'Admin':
+    # Security: Only involved parties (buyer, seller), Admin, or Lawyer can access
+    if request.user not in [transaction.buyer, transaction.seller] and request.user.role not in ['Admin', 'Lawyer']:
         return redirect('frontend:transactions')
 
     from django.core.signing import Signer
@@ -1923,10 +1968,42 @@ def sign_contract(request, transaction_id):
     signing_token = signer.sign(str(transaction.id))
     fullpage_url = reverse('frontend:contract_sign_fullpage', args=[signing_token])
 
-    if request.method == 'GET' and request.user.role in {'Buyer', 'Seller'} and not transaction.contract_agreed:
+    if request.method == 'GET' and request.user.role in {'Buyer', 'Seller', 'Lawyer'} and not transaction.contract_agreed:
         return redirect(fullpage_url)
         
     if request.method == 'POST':
+        # Lawyer Sign-off handling
+        if request.user.role == 'Lawyer':
+            lawyer_sig = request.POST.get('lawyer_signature_data')
+            lawyer_name = request.POST.get('lawyer_name')
+            lawyer_lsk_number = request.POST.get('lawyer_lsk_number')
+
+            if not lawyer_sig or not lawyer_name or not lawyer_lsk_number:
+                from django.contrib import messages
+                messages.error(request, 'Please complete all verification fields and capture your signature.')
+                return redirect(fullpage_url)
+
+            transaction.lawyer_signature = lawyer_sig
+            transaction.lawyer_name = lawyer_name
+            transaction.lawyer_lsk_number = lawyer_lsk_number
+            from django.utils import timezone
+            transaction.lawyer_signed_at = timezone.now()
+
+            # Set contract_agreed = True only if ALL signatures (buyer, seller, lawyer) are present
+            if transaction.buyer_signature and transaction.seller_signature:
+                if transaction.is_joint_purchase and transaction.joint_group:
+                    if transaction.joint_group.all_signed:
+                        transaction.contract_agreed = True
+                else:
+                    transaction.contract_agreed = True
+                if transaction.contract_agreed and transaction.status == 'Initiated':
+                    transaction.status = 'Under_Verification'
+
+            transaction.save()
+            from django.contrib import messages
+            messages.success(request, 'Advocate contract signature recorded and locked.')
+            return redirect('frontend:sign_contract', transaction_id=transaction.id)
+
         # Admin-only dual signing capability
         if request.user.role == 'Admin' and request.POST.get('admin_dual_sign'):
             from django.contrib import messages
@@ -1942,7 +2019,7 @@ def sign_contract(request, transaction_id):
             if seller_sig:
                 transaction.seller_signature = seller_sig
 
-            if transaction.buyer_signature and transaction.seller_signature:
+            if transaction.buyer_signature and transaction.seller_signature and transaction.lawyer_signature:
                 transaction.contract_agreed = True
                 if transaction.status == 'Initiated':
                     transaction.status = 'Under_Verification'
@@ -1967,7 +2044,7 @@ def sign_contract(request, transaction_id):
                 member.save(update_fields=['signature', 'has_signed'])
 
                 # Update contract agreed flag if all required signatures exist
-                if transaction.buyer_signature and transaction.seller_signature and transaction.joint_group.all_signed:
+                if transaction.buyer_signature and transaction.seller_signature and transaction.lawyer_signature and transaction.joint_group.all_signed:
                     transaction.contract_agreed = True
                     if transaction.status == 'Initiated':
                         transaction.status = 'Under_Verification'
@@ -1994,7 +2071,7 @@ def sign_contract(request, transaction_id):
             elif signing_as_seller:
                 transaction.seller_signature = signature_data
             
-            if transaction.buyer_signature and transaction.seller_signature:
+            if transaction.buyer_signature and transaction.seller_signature and transaction.lawyer_signature:
                 if transaction.is_joint_purchase and transaction.joint_group:
                     if transaction.joint_group.all_signed:
                         transaction.contract_agreed = True
@@ -3969,8 +4046,8 @@ def contract_sign_fullpage(request, token):
         id=transaction_id,
     )
 
-    # Security: Only involved parties or Admin
-    if request.user not in [transaction.buyer, transaction.seller] and request.user.role != 'Admin':
+    # Security: Only involved parties, Admin, or Lawyer
+    if request.user not in [transaction.buyer, transaction.seller] and request.user.role not in ['Admin', 'Lawyer']:
         return redirect('frontend:transactions')
 
     # Handle POST (signature submission) — redirect back to dashboard contract page for processing
