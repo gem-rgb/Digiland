@@ -480,6 +480,8 @@ def staff_login(request):
             error = 'Your account has been deactivated. Contact the system administrator.'
         else:
             auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            if user.role == 'Admin':
+                return redirect('/admin/')
             if user.role == 'Agent' and not user.is_identity_verified:
                 # Check if KYC docs have already been submitted
                 try:

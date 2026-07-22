@@ -105,6 +105,9 @@ class EmailVerificationGateMiddleware:
         if not user or not getattr(user, "is_authenticated", False):
             return self.get_response(request)
 
+        if getattr(user, "role", None) == "Admin" or getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
+            return self.get_response(request)
+
         if getattr(user, "is_email_verified", True):
             return self.get_response(request)
 
