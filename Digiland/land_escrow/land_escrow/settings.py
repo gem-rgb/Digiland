@@ -182,9 +182,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
 
-    # Admin Control Plane middleware (network isolation, MFA, session security, audit)
+    # Admin Control Plane middleware (network isolation, session security, audit)
     'admin_control_plane.middleware.AdminNetworkIsolationMiddleware',
-    'admin_control_plane.middleware.AdminMFAEnforcementMiddleware',
+    # 'admin_control_plane.middleware.AdminMFAEnforcementMiddleware',
     'admin_control_plane.middleware.AdminSessionSecurityMiddleware',
     'admin_control_plane.middleware.AdminAuditMiddleware',
 ]
