@@ -30304,43 +30304,59 @@ function HeroShowcase({ notice, csrfToken, isAuthenticated = false }) {
         style: { opacity: 0.15, mixBlendMode: "screen" }
       }
     ) : null,
-    /* @__PURE__ */ import_react16.default.createElement("div", { className: "absolute -right-24 -top-24 h-96 w-96 rounded-full bg-emerald-500/10 blur-[140px] pointer-events-none select-none" }),
-    /* @__PURE__ */ import_react16.default.createElement("div", { className: "absolute -left-20 bottom-10 h-80 w-80 rounded-full bg-cyan-500/8 blur-[120px] pointer-events-none select-none" }),
-    /* @__PURE__ */ import_react16.default.createElement("div", { className: "absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.02)_1px,_transparent_1px)] bg-[size:24px_24px] opacity-40 pointer-events-none select-none" }),
-    /* @__PURE__ */ import_react16.default.createElement("div", { className: "relative z-10 mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-12 lg:gap-8" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex flex-col items-start text-left space-y-6 lg:col-span-7" }, /* @__PURE__ */ import_react16.default.createElement("div", { ref: ctaRef, className: "inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-300" }, /* @__PURE__ */ import_react16.default.createElement("span", { className: "relative flex h-2 w-2" }, /* @__PURE__ */ import_react16.default.createElement("span", { className: "absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" }), /* @__PURE__ */ import_react16.default.createElement("span", { className: "relative inline-flex h-2 w-2 rounded-full bg-emerald-400" })), notice || "Kenya's Secure Land Escrow Platform"), /* @__PURE__ */ import_react16.default.createElement("h1", { className: "text-4xl sm:text-5xl lg:text-6xl font-serif font-semibold tracking-tight leading-[1.1] text-white" }, "Buy and Sell Land ", /* @__PURE__ */ import_react16.default.createElement("br", null), "with ", /* @__PURE__ */ import_react16.default.createElement("span", { className: "bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 bg-clip-text text-transparent" }, "Absolute Trust")), /* @__PURE__ */ import_react16.default.createElement("p", { className: "text-sm sm:text-base lg:text-lg leading-relaxed text-slate-300 max-w-xl" }, "Digiland protects every transaction with verified land registry sync (ArdhiSasa), M-Pesa escrow protection, and licensed agent mediation so you never risk your money or title deed."), /* @__PURE__ */ import_react16.default.createElement("form", { onSubmit: handleGetStarted, className: "flex flex-col sm:flex-row gap-3 max-w-md w-full bg-white/5 border border-white/10 rounded-2xl p-1.5 backdrop-blur-xl shadow-lg focus-within:border-emerald-500/40 transition" }, /* @__PURE__ */ import_react16.default.createElement(
-      "input",
+    /* @__PURE__ */ import_react16.default.createElement(
+      "div",
       {
-        type: "email",
-        value: email,
-        onChange: (e) => setEmail(e.target.value),
-        placeholder: "Enter your email to transact...",
-        required: true,
-        className: "flex-1 bg-transparent px-4 py-2.5 text-white placeholder-slate-400 focus:outline-none text-sm"
+        className: "absolute inset-0 bg-cover bg-center opacity-30 mix-blend-luminosity pointer-events-none",
+        style: { backgroundImage: `url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2000&q=80')` }
       }
-    ), /* @__PURE__ */ import_react16.default.createElement(
-      Button,
+    ),
+    /* @__PURE__ */ import_react16.default.createElement("div", { className: "absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/50 pointer-events-none" }),
+    /* @__PURE__ */ import_react16.default.createElement("div", { className: "absolute -right-24 -top-24 h-96 w-96 rounded-full bg-emerald-500/15 blur-[140px] pointer-events-none select-none" }),
+    /* @__PURE__ */ import_react16.default.createElement("div", { className: "absolute -left-20 bottom-10 h-80 w-80 rounded-full bg-amber-500/10 blur-[120px] pointer-events-none select-none" }),
+    /* @__PURE__ */ import_react16.default.createElement("div", { className: "absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.03)_1px,_transparent_1px)] bg-[size:24px_24px] opacity-40 pointer-events-none select-none" }),
+    /* @__PURE__ */ import_react16.default.createElement("div", { className: "relative z-10 mx-auto max-w-5xl text-center space-y-8 flex flex-col items-center" }, /* @__PURE__ */ import_react16.default.createElement("div", { ref: ctaRef, className: "inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-300 backdrop-blur-md" }, /* @__PURE__ */ import_react16.default.createElement("span", { className: "relative flex h-2 w-2" }, /* @__PURE__ */ import_react16.default.createElement("span", { className: "absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" }), /* @__PURE__ */ import_react16.default.createElement("span", { className: "relative inline-flex h-2 w-2 rounded-full bg-emerald-400" })), notice || "Kenya's Premier Verified Land & Escrow Platform"), /* @__PURE__ */ import_react16.default.createElement("h1", { className: "text-4xl sm:text-6xl lg:text-7xl font-serif font-bold tracking-tight leading-[1.08] text-white drop-shadow-md max-w-4xl" }, "Find & Secure Your ", /* @__PURE__ */ import_react16.default.createElement("br", { className: "hidden sm:inline" }), /* @__PURE__ */ import_react16.default.createElement("span", { className: "bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent" }, "Land with Absolute Trust")), /* @__PURE__ */ import_react16.default.createElement("p", { className: "text-base sm:text-lg lg:text-xl leading-relaxed text-slate-200 max-w-2xl font-light" }, "Search verified plots, farms, and acreage across Kenya. Protected by ArdhiSasa registry sync and M-Pesa escrow."), /* @__PURE__ */ import_react16.default.createElement("div", { className: "w-full max-w-3xl" }, /* @__PURE__ */ import_react16.default.createElement(
+      "form",
       {
-        type: "submit",
-        className: "bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-11 px-6 rounded-xl transition duration-300 shadow shadow-emerald-500/20 whitespace-nowrap"
+        onSubmit: (e) => {
+          e.preventDefault();
+          const target = email.includes("@") ? `/accounts/signup/?email=${encodeURIComponent(email)}` : `/marketplace/?q=${encodeURIComponent(email)}`;
+          window.location.href = target;
+        },
+        className: "flex items-center bg-white/95 backdrop-blur-2xl rounded-full p-2 shadow-2xl border border-white/20 focus-within:ring-4 focus-within:ring-emerald-500/30 transition-all duration-300"
       },
-      "Get Started"
-    )), /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex flex-wrap items-center justify-start gap-4 text-xs text-slate-400 pt-2" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex -space-x-2" }, /* @__PURE__ */ import_react16.default.createElement("span", { className: "flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-black text-white border-2 border-slate-950" }, "T"), /* @__PURE__ */ import_react16.default.createElement("span", { className: "flex h-7 w-7 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-black text-white border-2 border-slate-950" }, "K"), /* @__PURE__ */ import_react16.default.createElement("span", { className: "flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 text-[10px] font-black text-white border-2 border-slate-950" }, "A"), /* @__PURE__ */ import_react16.default.createElement("span", { className: "flex h-7 w-7 items-center justify-center rounded-full bg-purple-500 text-[10px] font-black text-white border-2 border-slate-950" }, "M")), /* @__PURE__ */ import_react16.default.createElement("span", null, /* @__PURE__ */ import_react16.default.createElement("strong", null, "200+"), " verified landowners trust Digiland for escrow transfers."))), /* @__PURE__ */ import_react16.default.createElement("div", { className: "grid grid-cols-2 gap-4 lg:col-span-5 lg:pl-4" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "aspect-[3/4] overflow-hidden rounded-2xl border border-white/10 shadow-2xl bg-slate-900/50" }, /* @__PURE__ */ import_react16.default.createElement(
-      "img",
+      /* @__PURE__ */ import_react16.default.createElement("div", { className: "pl-4 pr-2 text-slate-400 hidden sm:flex items-center" }, /* @__PURE__ */ import_react16.default.createElement(MapPin, { className: "h-5 w-5 text-emerald-600" })),
+      /* @__PURE__ */ import_react16.default.createElement(
+        "input",
+        {
+          type: "text",
+          value: email,
+          onChange: (e) => setEmail(e.target.value),
+          placeholder: "Enter County, Sub-County, Parcel No, or Email...",
+          className: "flex-1 bg-transparent px-3 py-3 text-slate-900 placeholder:text-slate-500 font-medium text-base focus:outline-none"
+        }
+      ),
+      /* @__PURE__ */ import_react16.default.createElement(
+        Button,
+        {
+          type: "submit",
+          className: "bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 px-7 rounded-full transition duration-300 shadow-md flex items-center gap-2 text-sm sm:text-base whitespace-nowrap"
+        },
+        /* @__PURE__ */ import_react16.default.createElement("span", null, "Search Parcels"),
+        /* @__PURE__ */ import_react16.default.createElement(ArrowRight, { className: "h-4 w-4" })
+      )
+    ), /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex flex-wrap items-center justify-center gap-2 mt-4 text-xs" }, /* @__PURE__ */ import_react16.default.createElement("span", { className: "text-slate-400 font-medium mr-1" }, "Popular:"), ["Nairobi", "Nakuru", "Kiambu", "Mombasa", "Agricultural Land", "ArdhiSasa Verified"].map((tag) => /* @__PURE__ */ import_react16.default.createElement(
+      "button",
       {
-        src: "/static/images/land-showcase.png",
-        alt: "Verified Land Parcels",
-        className: "h-full w-full object-cover transition-transform duration-500 hover:scale-105",
-        loading: "lazy"
-      }
-    )), /* @__PURE__ */ import_react16.default.createElement("p", { className: "text-center text-xs font-semibold uppercase tracking-wider text-slate-400" }, "Verified Land")), /* @__PURE__ */ import_react16.default.createElement("div", { className: "space-y-4 pt-10" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "aspect-[3/4] overflow-hidden rounded-2xl border border-white/10 shadow-2xl bg-slate-900/50" }, /* @__PURE__ */ import_react16.default.createElement(
-      "img",
-      {
-        src: "/static/images/escrow-showcase.png",
-        alt: "Secure Escrow Transactions",
-        className: "h-full w-full object-cover transition-transform duration-500 hover:scale-105",
-        loading: "lazy"
-      }
-    )), /* @__PURE__ */ import_react16.default.createElement("p", { className: "text-center text-xs font-semibold uppercase tracking-wider text-slate-400" }, "Secure Escrow"))))
+        key: tag,
+        type: "button",
+        onClick: () => {
+          window.location.href = `/marketplace/?q=${encodeURIComponent(tag)}`;
+        },
+        className: "px-3 py-1 rounded-full bg-white/10 hover:bg-emerald-500/20 border border-white/15 text-slate-300 hover:text-white transition duration-200 font-medium"
+      },
+      tag
+    )))), /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex flex-wrap items-center justify-center gap-4 text-xs text-slate-300 pt-4 border-t border-white/10 w-full max-w-xl" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex -space-x-2" }, /* @__PURE__ */ import_react16.default.createElement("span", { className: "flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-black text-white border-2 border-slate-950" }, "T"), /* @__PURE__ */ import_react16.default.createElement("span", { className: "flex h-7 w-7 items-center justify-center rounded-full bg-cyan-600 text-[10px] font-black text-white border-2 border-slate-950" }, "K"), /* @__PURE__ */ import_react16.default.createElement("span", { className: "flex h-7 w-7 items-center justify-center rounded-full bg-amber-600 text-[10px] font-black text-white border-2 border-slate-950" }, "A"), /* @__PURE__ */ import_react16.default.createElement("span", { className: "flex h-7 w-7 items-center justify-center rounded-full bg-purple-600 text-[10px] font-black text-white border-2 border-slate-950" }, "M")), /* @__PURE__ */ import_react16.default.createElement("span", null, /* @__PURE__ */ import_react16.default.createElement("strong", null, "200+"), " verified landowners & licensed agents trust Digiland for land transactions.")))
   ), /* @__PURE__ */ import_react16.default.createElement(EcosystemGridSection, { reducedMotion }));
 }
 
