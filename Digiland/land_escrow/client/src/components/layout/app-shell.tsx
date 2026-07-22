@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { Badge } from '../ui/badge.js';
 import { Button } from '../ui/button.js';
 import { Card } from '../ui/card.js';
+import { LocationPermissionModal } from '../ui/location-permission-modal.js';
 import type { ActionLink, NavItem, UserSummary } from '../../types.js';
 import { cn } from '../../lib/utils.js';
 
@@ -169,6 +170,9 @@ export function AppShell({ title, subtitle, user, nav, children, actions, logout
           {children}
         </main>
       </div>
+
+      <LocationPermissionModal />
     </div>
   );
 }
+

@@ -4,6 +4,7 @@ import { LogOut, ShieldCheck } from 'lucide-react';
 import type { ActionLink, NavItem, UserSummary } from '../../types.js';
 import { Badge } from '../ui/badge.js';
 import { Button } from '../ui/button.js';
+import { LocationPermissionModal } from '../ui/location-permission-modal.js';
 import { cn } from '../../lib/utils.js';
 
 function actionClass(tone?: ActionLink['tone']) {
@@ -146,6 +147,8 @@ export function PublicShell({
           )}
         </div>
       </footer>}
+
+      <LocationPermissionModal />
     </div>
   );
 }
