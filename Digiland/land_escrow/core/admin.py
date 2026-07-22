@@ -214,27 +214,58 @@ class JointMemberRemovalRequestAdmin(admin.ModelAdmin):
     ordering = ('-created_at',)
 
 class CustomUserAdmin(UserAdmin):
-    # Specify the fields that should be displayed in the list view
-    list_display = ('email', 'role', 'buyer_account_type', 'agent_county', 'agent_constituency', 'id_number', 'is_identity_verified', 'is_staff')
-    search_fields = ('email', 'id_number')
+    list_display = ('email', 'role', 'is_email_verified', 'is_identity_verified', 'id_number', 'phone_number', 'is_staff', 'is_active')
+    list_filter = ('role', 'is_identity_verified', 'is_email_verified', 'is_staff', 'is_active')
+    search_fields = ('email', 'id_number', 'phone_number')
     ordering = ('email',)
     
-    # Define custom fieldsets to ensure the Admin can toggle high-security fields natively
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal info', {'fields': ('id_number', 'phone_number', 'buyer_account_type', 'agent_county', 'agent_constituency')}),
-        ('Security & Fencing', {'fields': ('role', 'is_identity_verified', 'gavakonect_verification_id')}),
+        ('Security & Roles', {'fields': ('role', 'is_email_verified', 'is_identity_verified', 'gavakonect_verification_id')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
     
-    # Define add_fieldsets since AbstractUser handles creation differently
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password', 'role', 'id_number', 'phone_number', 'buyer_account_type', 'agent_county', 'agent_constituency', 'is_identity_verified'),
+            'fields': ('email', 'password', 'role', 'id_number', 'phone_number', 'is_email_verified', 'is_identity_verified', 'is_staff'),
         }),
     )
+
+    actions = ['promote_to_cooperation_lawyer', 'verify_email_address']
+
+    @admin.action(description='Provision selected user(s) as Verified Cooperation Lawyer')
+    def promote_to_cooperation_lawyer(self, request, queryset):
+        from allauth.account.models import EmailAddress
+        updated_count = 0
+        for user in queryset:
+            user.role = 'Lawyer'
+            user.is_email_verified = True
+            user.is_identity_verified = True
+            user.is_onboarded = True
+            user.save()
+            EmailAddress.objects.update_or_create(
+                user=user,
+                email=user.email,
+                defaults={'verified': True, 'primary': True}
+            )
+            updated_count += 1
+        self.message_user(request, f'Successfully provisioned {updated_count} user(s) as Cooperation Lawyers.')
+
+    @admin.action(description='Verify email address for selected user(s)')
+    def verify_email_address(self, request, queryset):
+        from allauth.account.models import EmailAddress
+        for user in queryset:
+            user.is_email_verified = True
+            user.save()
+            EmailAddress.objects.update_or_create(
+                user=user,
+                email=user.email,
+                defaults={'verified': True, 'primary': True}
+            )
+        self.message_user(request, f'Successfully verified email for {queryset.count()} user(s).')
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):

@@ -106,7 +106,7 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
                 # send them to the signup-complete gate.
                 return reverse('frontend:agent_signup_complete')
             if user.role == 'Admin':
-                return reverse('frontend:agent_dashboard')
+                return '/admin/'
             return reverse('frontend:parcel_list')
         return super().get_login_redirect_url(request)
 
@@ -170,14 +170,12 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
     def pre_login(self, request, user, **kwargs):
         """
         Routing rules for /accounts/login/ (the public login page):
-          - Admin:              ALWAYS blocked -> must use /staff/login/
+          - Admin:              Direct access to /admin/
           - Agent (any state):  ALWAYS blocked -> must use /staff/login/
-            (unverified agents go through KYC/onboarding only after
-             authenticating via the staff portal)
           - Buyer / Seller:     ALWAYS allowed
         """
         role = getattr(user, 'role', None)
-        block = role in STAFF_ROLES
+        block = role == 'Agent'
 
         if block and '/accounts/login' in request.path:
             from allauth.exceptions import ImmediateHttpResponse

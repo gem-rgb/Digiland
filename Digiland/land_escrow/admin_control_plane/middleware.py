@@ -283,6 +283,10 @@ class AdminMFAEnforcementMiddleware:
         if path.startswith("/static/") or path.startswith("/media/"):
             return self.get_response(request)
 
+        # Skip MFA enforcement in development environments
+        if getattr(settings, "DEBUG", False) or getattr(settings, "DJANGO_ENV", "production") == "development":
+            return self.get_response(request)
+
         # Skip exempt paths (login, MFA endpoints)
         if any(path.startswith(exempt) for exempt in self.MFA_EXEMPT_PATHS):
             return self.get_response(request)
