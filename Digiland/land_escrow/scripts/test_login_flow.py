@@ -2,7 +2,10 @@
 """
 Test the complete agent login flow
 """
-import os, django
+import os, sys, django
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'land_escrow.settings')
 django.setup()
 

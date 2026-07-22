@@ -1,10 +1,11 @@
 from django.http import Http404
+from django.core.exceptions import ValidationError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.middleware.csrf import get_token
 from django.db import models
-from core.models import LandParcel, Transaction, Message, SupportTicket, Document, User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite, JointBuyerGroup, JointBuyerMember, JointPaymentContribution, JointMemberRemovalRequest, AuditLog, PopupAdCampaign
+from core.models import LandParcel, Transaction, PurchaseCommission, Message, SupportTicket, Document, User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite, JointBuyerGroup, JointBuyerMember, JointPaymentContribution, JointMemberRemovalRequest, AuditLog, PopupAdCampaign
 from core.legal import (
     LAND_TRANSACTION_LAWS,
     LAND_TRANSACTION_CHECKLIST,
@@ -35,9 +36,24 @@ from .react_data import (
     serialize_status_page,
     serialize_support_ticket,
     serialize_transaction,
+    serialize_commission,
     serialize_user,
 )
 from core.services.popup_ads import build_popup_ads_payload, build_seller_promotions_dashboard, record_popup_event
+from core.services.commission import (
+    accept_commission,
+    advance_step,
+    close_commission,
+    complete_site_visit,
+    create_commission,
+    find_nearby_agents,
+    get_default_lawyer,
+    lawyer_verdict,
+    resolve_agent_region,
+    review_documents,
+    schedule_site_visit,
+    submit_to_lawyer,
+)
 from .public_pages import PUBLIC_PAGES
 
 def is_seller_or_agent(user):
@@ -119,6 +135,32 @@ def is_joint_buyer(user):
     except Exception:
         return False
 
+
+def commission_region_matches_agent(commission, agent):
+    county, constituency, _ = resolve_agent_region(agent)
+    if not county or not constituency:
+        return False
+    return (
+        commission.target_county.strip().lower() == county.strip().lower()
+        and commission.target_constituency.strip().lower() == constituency.strip().lower()
+    )
+
+
+def can_view_commission(user, commission):
+    if not getattr(user, 'is_authenticated', False):
+        return False
+    if getattr(user, 'role', None) == 'Admin':
+        return True
+    if getattr(user, 'id', None) in {getattr(commission, 'buyer_id', None), getattr(commission, 'accepted_by_id', None), getattr(commission, 'assigned_lawyer_id', None)}:
+        return True
+    if getattr(user, 'role', None) == 'Agent':
+        if commission.status == 'Open':
+            return commission_region_matches_agent(commission, user)
+        return getattr(commission, 'accepted_by_id', None) == getattr(user, 'id', None)
+    if getattr(user, 'role', None) == 'Lawyer':
+        return getattr(user, 'role', None) == 'Admin' or getattr(commission, 'assigned_lawyer_id', None) == getattr(user, 'id', None)
+    return False
+
 def home(request):
     from django.db.models import Q
     active_tx_statuses = ['Initiated', 'Deposit_Paid', 'Under_Verification', 'Completed']
@@ -138,6 +180,17 @@ def home(request):
         else:
             recent_parcels = [serialize_parcel(parcel, request.user) for parcel in parcels]
         recent_transactions = [serialize_transaction(tx, request.user) for tx in transactions] if transactions else []
+        buyer_commissions = []
+        active_buyer_commissions = PurchaseCommission.objects.none()
+
+        if request.user.role == 'Buyer':
+            buyer_commissions_qs = PurchaseCommission.objects.filter(
+                buyer=request.user,
+            ).select_related('buyer', 'land_parcel', 'accepted_by', 'assigned_lawyer', 'transaction').order_by('-created_at')
+            active_buyer_commissions = buyer_commissions_qs.filter(
+                status__in=['Open', 'Accepted', 'Documents_Review', 'Lawyer_Verification', 'Site_Visit_Scheduled', 'Site_Visit_Complete', 'Closing']
+            )
+            buyer_commissions = [serialize_commission(commission, request.user) for commission in buyer_commissions_qs[:5]]
 
         # Build role-specific stats
         if request.user.role == 'Seller':
@@ -148,12 +201,19 @@ def home(request):
             in_escrow = escrow_tx.aggregate(total=Sum('agreed_price'))['total'] or 0
             # Simple rating: average of ratings given by buyers on transactions with this seller
             seller_rating = AgentRating.objects.filter(agent=request.user).aggregate(avg=models.Avg('rating'))['avg']
-            rating_display = f"{seller_rating:.1f} ★" if seller_rating else 'No ratings yet'
+            rating_display = f"{seller_rating:.1f} ???" if seller_rating else 'No ratings yet'
             stats = [
                 {'label': 'Listed parcels', 'value': str(LandParcel.objects.filter(listed_by=request.user).count()), 'tone': 'success'},
                 {'label': 'Seller rating', 'value': rating_display, 'tone': 'accent'},
                 {'label': 'Payments received', 'value': f'KES {total_received:,.0f}', 'tone': 'success'},
                 {'label': 'In escrow', 'value': f'KES {in_escrow:,.0f}', 'tone': 'warning'},
+            ]
+        elif request.user.role == 'Buyer':
+            stats = [
+                {'label': 'Verified parcels', 'value': str(len(recent_parcels)), 'tone': 'success'},
+                {'label': 'Recent transactions', 'value': str(len(recent_transactions)), 'tone': 'accent'},
+                {'label': 'Active commissions', 'value': str(active_buyer_commissions.count()), 'tone': 'warning'},
+                {'label': 'Account type', 'value': getattr(request.user, 'buyer_account_type', None) or request.user.role, 'tone': 'default'},
             ]
         else:
             stats = [
@@ -171,13 +231,18 @@ def home(request):
                 {'label': 'Withdraw funds', 'href': reverse('frontend:seller_withdraw'), 'tone': 'secondary'},
                 {'label': 'Messages', 'href': reverse('frontend:messages'), 'tone': 'secondary'},
             ]
+        elif request.user.role == 'Buyer':
+            dashboard_actions = [
+                {'label': 'Browse parcels', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
+                {'label': 'Open transactions', 'href': reverse('frontend:transactions'), 'tone': 'secondary'},
+            ]
         else:
             dashboard_actions = [
                 {'label': 'Browse parcels', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
                 {'label': 'Open transactions', 'href': reverse('frontend:transactions'), 'tone': 'secondary'},
             ]
-            if request.user.role == 'Buyer' and not getattr(request.user, 'buyer_account_type', None):
-                dashboard_actions.insert(0, {'label': 'Buyer setup', 'href': reverse('frontend:buyer_account_choice'), 'tone': 'outline'})
+        if request.user.role == 'Buyer' and not getattr(request.user, 'buyer_account_type', None):
+            dashboard_actions.insert(0, {'label': 'Buyer setup', 'href': reverse('frontend:buyer_account_choice'), 'tone': 'outline'})
 
         dashboard_title = {
             'Buyer': 'Buyer Dashboard - Digiland',
@@ -191,10 +256,10 @@ def home(request):
             'Unified workspace for parcels, contracts, and escrow activity.',
             parcels=recent_parcels,
             transactions=recent_transactions,
+            commissions=buyer_commissions,
             stats=stats,
             actions=dashboard_actions,
         )
-
     context = {
         'parcels': parcels,
         'transactions': transactions
@@ -399,7 +464,7 @@ def staff_login(request):
 
     if request.user.is_authenticated:
         if request.user.role in STAFF_ROLES:
-            return redirect('frontend:agent_dashboard')
+            return redirect('frontend:home')
         return redirect('frontend:parcel_list')
 
     if request.method == 'POST':
@@ -603,9 +668,17 @@ def render_lawyer_dashboard(request, context):
         lawyer_signature__isnull=False
     ).select_related('buyer', 'seller', 'land_parcel').order_by('-updated_at')[:30]
 
+    commission_reviews_qs = PurchaseCommission.objects.filter(
+        status='Lawyer_Verification',
+        assigned_lawyer=request.user,
+    ).select_related('buyer', 'land_parcel', 'accepted_by', 'assigned_lawyer').order_by('created_at')
+
+    commission_reviews = [serialize_commission(commission, request.user) for commission in commission_reviews_qs[:10]]
+
     context.update({
         'pending_transactions': pending_transactions,
         'completed_transactions': completed_transactions,
+        'commission_reviews': commission_reviews,
     })
 
     recent_transactions = [serialize_transaction(tx, request.user) for tx in pending_transactions[:10]]
@@ -616,17 +689,18 @@ def render_lawyer_dashboard(request, context):
         'Lawyer Command Centre',
         'Review land transfer agreements, verify advocate status, and execute cryptographic sign-offs.',
         transactions=recent_transactions,
+        commission_reviews=commission_reviews,
         stats=[
             {'label': 'Pending reviews', 'value': str(pending_transactions.count()), 'tone': 'warning'},
+            {'label': 'Commission reviews', 'value': str(len(commission_reviews)), 'tone': 'accent'},
             {'label': 'Completed reviews', 'value': str(completed_transactions.count()), 'tone': 'success'},
             {'label': 'LSK Status', 'value': 'Verified Advocate', 'tone': 'success'},
         ],
         actions=[
             {'label': 'Legal Library', 'href': reverse('frontend:escrow_acts'), 'tone': 'outline'},
-            {'label': 'Withdraw earnings', 'href': reverse('frontend:agent_withdraw'), 'tone': 'primary'},
+            {'label': 'Messages', 'href': reverse('frontend:messages'), 'tone': 'secondary'},
         ],
     )
-
 
 def render_admin_dashboard(request, context):
     """Render full admin command centre."""
@@ -818,6 +892,8 @@ def render_agent_dashboard(request, context):
     from core.models import User as CoreUser
     from django.db.models import Q
 
+    county, constituency, region_source = resolve_agent_region(request.user)
+
     # Agents can only see their assigned parcels and completed tasks
     pending_parcels = LandParcel.objects.filter(
         assigned_agent=request.user, verification_status='Pending'
@@ -825,7 +901,28 @@ def render_agent_dashboard(request, context):
     completed_parcels = LandParcel.objects.filter(
         assigned_agent=request.user, verification_status__in=['Verified', 'Fraudulent']
     ).order_by('-ardhisasa_last_synced')[:30]
-    
+
+    # Open commissions within the agent's operating region
+    open_commissions_qs = PurchaseCommission.objects.filter(status='Open').select_related(
+        'buyer', 'land_parcel', 'accepted_by', 'assigned_lawyer'
+    ).order_by('-created_at')
+    if county and constituency:
+        region_commissions = open_commissions_qs.filter(
+            target_county__iexact=county,
+            target_constituency__iexact=constituency,
+        )
+        if region_commissions.exists():
+            open_commissions_qs = region_commissions
+        else:
+            county_matches = open_commissions_qs.filter(target_county__iexact=county)
+            if county_matches.exists():
+                open_commissions_qs = county_matches
+
+    active_commissions_qs = PurchaseCommission.objects.filter(
+        accepted_by=request.user,
+        status__in=['Accepted', 'Documents_Review', 'Lawyer_Verification', 'Site_Visit_Scheduled', 'Site_Visit_Complete', 'Closing'],
+    ).select_related('buyer', 'land_parcel', 'accepted_by', 'assigned_lawyer').order_by('-updated_at')
+
     # Agents can see transactions they're involved in or assigned parcels
     pending_transactions = Transaction.objects.filter(
         contract_agreed=True,
@@ -835,7 +932,7 @@ def render_agent_dashboard(request, context):
         Q(buyer=request.user) |
         Q(seller=request.user)
     ).distinct().order_by('created_at')
-    
+
     # Agents can approve Buyers/Sellers (NOT Admin/Agent accounts)
     pending_users = CoreUser.objects.filter(
         role__in=['Buyer', 'Seller'], is_identity_verified=False, is_active=True
@@ -848,29 +945,281 @@ def render_agent_dashboard(request, context):
         'pending_transactions': pending_transactions,
         'pending_agents': None,  # Agents cannot see other agents
         'pending_users': pending_users,
+        'open_commissions': open_commissions_qs[:6],
+        'active_commissions': active_commissions_qs[:6],
+        'region_source': region_source,
     })
     recent_parcels = [serialize_parcel(parcel, request.user) for parcel in pending_parcels[:6]]
     recent_transactions = [serialize_transaction(tx, request.user) for tx in pending_transactions[:6]]
+    recent_open_commissions = [serialize_commission(commission, request.user) for commission in open_commissions_qs[:6]]
+    recent_active_commissions = [serialize_commission(commission, request.user) for commission in active_commissions_qs[:6]]
     return render_react_shell(
         request,
         'agent-dashboard',
         'Command Centre',
-        'Your assigned pipeline for parcel verification and escrow support.',
+        'Your assigned pipeline for parcel verification, commission routing, and escrow support.',
         parcels=recent_parcels,
         transactions=recent_transactions,
+        commissions=recent_open_commissions,
+        active_commissions=recent_active_commissions,
         stats=[
             {'label': 'Pending parcels', 'value': str(pending_parcels.count()), 'tone': 'warning'},
-            {'label': 'Pending transactions', 'value': str(pending_transactions.count()), 'tone': 'accent'},
-            {'label': 'Pending users', 'value': str(pending_users.count()), 'tone': 'danger'},
+            {'label': 'Available jobs', 'value': str(open_commissions_qs.count()), 'tone': 'accent'},
+            {'label': 'Active commissions', 'value': str(active_commissions_qs.count()), 'tone': 'success'},
             {'label': 'Completed parcels', 'value': str(completed_parcels.count()), 'tone': 'success'},
         ],
         actions=[
             {'label': 'Task management', 'href': reverse('frontend:task_management'), 'tone': 'outline'},
+            {'label': 'Job Board', 'href': reverse('frontend:agent_job_board'), 'tone': 'secondary'},
             {'label': 'User approvals', 'href': reverse('frontend:agent_approvals'), 'tone': 'secondary'},
             {'label': 'Withdraw earnings', 'href': reverse('frontend:agent_withdraw'), 'tone': 'primary'},
         ],
     )
 
+
+
+@login_required
+def commission_detail(request, commission_id):
+    commission = get_object_or_404(
+        PurchaseCommission.objects.select_related(
+            'buyer', 'land_parcel', 'land_parcel__listed_by', 'accepted_by', 'assigned_lawyer', 'transaction'
+        ),
+        id=commission_id,
+    )
+
+    if not can_view_commission(request.user, commission):
+        return redirect('frontend:transactions')
+
+    actions = []
+    if request.user.role == 'Buyer':
+        actions.append({'label': 'Back to parcel', 'href': reverse('frontend:parcel_detail', args=[commission.land_parcel.parcel_number]), 'tone': 'outline'})
+        if commission.transaction_id:
+            actions.append({'label': 'Continue to payment', 'href': reverse('frontend:payment_onboarding', args=[commission.transaction_id]), 'tone': 'default'})
+    elif request.user.role == 'Agent':
+        actions.append({'label': 'Job Board', 'href': reverse('frontend:agent_job_board'), 'tone': 'secondary'})
+        if commission.accepted_by_id == request.user.id:
+            actions.append({'label': 'Work steps', 'href': reverse('frontend:agent_commission_steps', args=[commission.id]), 'tone': 'default'})
+    elif request.user.role == 'Lawyer':
+        actions.append({'label': 'Command Centre', 'href': reverse('frontend:home'), 'tone': 'secondary'})
+    else:
+        actions.append({'label': 'Transactions', 'href': reverse('frontend:transactions'), 'tone': 'outline'})
+
+    return render_react_shell(
+        request,
+        'commission-detail',
+        f'Commission - {commission.land_parcel.parcel_number}',
+        f'{commission.target_county}, {commission.target_constituency}',
+        commission_detail=serialize_commission(commission, request.user),
+        actions=actions,
+    )
+
+
+@login_required
+@user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
+def agent_job_board(request):
+    county, constituency, region_source = resolve_agent_region(request.user)
+    open_commissions_qs = PurchaseCommission.objects.filter(status='Open').select_related(
+        'buyer', 'land_parcel', 'accepted_by', 'assigned_lawyer'
+    ).order_by('-created_at')
+
+    if request.user.role == 'Agent':
+        if county and constituency:
+            region_commissions = open_commissions_qs.filter(
+                target_county__iexact=county,
+                target_constituency__iexact=constituency,
+            )
+            if region_commissions.exists():
+                open_commissions_qs = region_commissions
+            else:
+                county_matches = open_commissions_qs.filter(target_county__iexact=county)
+                if county_matches.exists():
+                    open_commissions_qs = county_matches
+
+    open_commissions = [serialize_commission(commission, request.user) for commission in open_commissions_qs[:24]]
+
+    return render_react_shell(
+        request,
+        'agent-job-board',
+        'Commission Job Board',
+        'Open purchase commissions matched to your operating region.',
+        agent_job_board={
+            'region_county': county,
+            'region_constituency': constituency,
+            'region_source': region_source,
+            'open_count': open_commissions_qs.count(),
+            'commissions': open_commissions,
+        },
+        stats=[
+            {'label': 'Open jobs', 'value': str(open_commissions_qs.count()), 'tone': 'accent'},
+            {'label': 'Region', 'value': f"{county or 'Unassigned'} / {constituency or 'Unassigned'}", 'tone': 'warning'},
+            {'label': 'Your dashboard', 'value': 'Agent workspace', 'tone': 'success'},
+        ],
+        actions=[
+            {'label': 'Back to dashboard', 'href': reverse('frontend:agent_dashboard'), 'tone': 'outline'},
+            {'label': 'Command Centre', 'href': reverse('frontend:agent_dashboard'), 'tone': 'secondary'},
+        ],
+    )
+
+
+@login_required
+@user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
+def agent_accept_job(request, commission_id):
+    if request.method != 'POST':
+        return redirect('frontend:agent_job_board')
+
+    commission = get_object_or_404(
+        PurchaseCommission.objects.select_related('buyer', 'land_parcel', 'accepted_by', 'assigned_lawyer'),
+        id=commission_id,
+    )
+
+    if request.user.role != 'Agent' and request.user.role != 'Admin':
+        return redirect('frontend:agent_job_board')
+
+    from django.contrib import messages as django_messages
+    try:
+        accept_commission(request.user, commission)
+        django_messages.success(request, f'You accepted commission {commission.land_parcel.parcel_number}.')
+        return redirect('frontend:agent_commission_steps', commission_id=commission.id)
+    except ValidationError as exc:
+        django_messages.error(request, str(exc))
+        return redirect('frontend:agent_job_board')
+
+
+@login_required
+@user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
+def agent_commission_steps(request, commission_id):
+    commission = get_object_or_404(
+        PurchaseCommission.objects.select_related(
+            'buyer', 'land_parcel', 'land_parcel__listed_by', 'accepted_by', 'assigned_lawyer', 'transaction'
+        ),
+        id=commission_id,
+    )
+
+    if not can_view_commission(request.user, commission):
+        return redirect('frontend:commission_detail', commission_id=commission.id)
+
+    commission_data = serialize_commission(commission, request.user)
+    actions = [{'label': 'Back to commission', 'href': reverse('frontend:commission_detail', args=[commission.id]), 'tone': 'outline'}]
+    if request.user.role == 'Agent' and commission.accepted_by_id != request.user.id and request.user.role != 'Admin':
+        actions = [{'label': 'Job Board', 'href': reverse('frontend:agent_job_board'), 'tone': 'outline'}]
+    elif commission.transaction_id:
+        actions.append({'label': 'Continue to payment', 'href': reverse('frontend:payment_onboarding', args=[commission.transaction_id]), 'tone': 'default'})
+
+    return render_react_shell(
+        request,
+        'agent-commission-steps',
+        f"Commission steps - {commission.land_parcel.parcel_number}",
+        'Move through document review, lawyer verification, site visit, and closing.',
+        commission_steps=commission_data,
+        commission_detail=commission_data,
+        actions=actions,
+    )
+
+
+@login_required
+@user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
+def agent_commission_step_action(request, commission_id, step):
+    if request.method != 'POST':
+        return redirect('frontend:agent_commission_steps', commission_id=commission_id)
+
+    commission = get_object_or_404(
+        PurchaseCommission.objects.select_related(
+            'buyer', 'land_parcel', 'land_parcel__listed_by', 'accepted_by', 'assigned_lawyer', 'transaction'
+        ),
+        id=commission_id,
+    )
+
+    if not can_view_commission(request.user, commission):
+        return redirect('frontend:commission_detail', commission_id=commission.id)
+
+    agent_steps = {'documents_review', 'submit_to_lawyer', 'schedule_site_visit', 'complete_site_visit', 'close'}
+    lawyer_steps = {'lawyer_verdict'}
+    if step in agent_steps:
+        if request.user.role not in {'Agent', 'Admin'}:
+            raise ValidationError('Only the assigned agent can advance this commission step.')
+        if request.user.role == 'Agent' and commission.accepted_by_id not in {None, request.user.id}:
+            raise ValidationError('Only the accepted agent can advance this commission step.')
+    elif step in lawyer_steps:
+        if request.user.role not in {'Lawyer', 'Admin'}:
+            raise ValidationError('Only the assigned lawyer can update this step.')
+        if request.user.role == 'Lawyer' and commission.assigned_lawyer_id not in {None, request.user.id}:
+            raise ValidationError('Only the assigned lawyer can update this commission.')
+    else:
+        raise ValidationError('Unsupported commission step.')
+
+    from django.contrib import messages as django_messages
+    from django.utils import timezone
+    from django.utils.dateparse import parse_datetime
+
+    try:
+        if step == 'documents_review':
+            note = (request.POST.get('note') or '').strip()
+            approved = (request.POST.get('approved') or 'true').strip().lower() not in {'false', '0', 'no'}
+            review_documents(commission, request.user, note=note, approved=approved)
+        elif step == 'submit_to_lawyer':
+            note = (request.POST.get('note') or '').strip()
+            lawyer_id = (request.POST.get('lawyer_id') or '').strip()
+            lawyer = None
+            if lawyer_id:
+                lawyer = get_object_or_404(CoreUser, id=lawyer_id, role='Lawyer')
+            elif commission.assigned_lawyer_id:
+                lawyer = commission.assigned_lawyer
+            else:
+                lawyer = get_default_lawyer()
+            submit_to_lawyer(commission, request.user, lawyer=lawyer, note=note)
+        elif step == 'lawyer_verdict':
+            verified = (request.POST.get('verified') or 'true').strip().lower() not in {'false', '0', 'no'}
+            note = (request.POST.get('note') or '').strip()
+            lawyer_verdict(commission, request.user, verified=verified, note=note)
+        elif step == 'schedule_site_visit':
+            visit_date_raw = (request.POST.get('visit_date') or request.POST.get('site_visit_date') or '').strip()
+            visit_date = parse_datetime(visit_date_raw)
+            if visit_date is None:
+                raise ValidationError('Enter a valid site visit date and time.')
+            if timezone.is_naive(visit_date):
+                visit_date = timezone.make_aware(visit_date, timezone.get_current_timezone())
+            location = (request.POST.get('location') or request.POST.get('site_visit_location') or '').strip()
+            notes = (request.POST.get('notes') or '').strip()
+            schedule_site_visit(commission, request.user, visit_date=visit_date, location=location, notes=notes)
+        elif step == 'complete_site_visit':
+            notes = (request.POST.get('notes') or '').strip()
+            complete_site_visit(commission, request.user, notes=notes)
+        elif step == 'close':
+            locked_commission, transaction = close_commission(commission, request.user)
+            django_messages.success(request, f'Commission {locked_commission.land_parcel.parcel_number} is now in closing.')
+            return redirect('frontend:payment_onboarding', transaction_id=transaction.id)
+
+        django_messages.success(request, f'Updated commission step: {step.replace("_", " ")}.')
+        return redirect('frontend:agent_commission_steps', commission_id=commission.id)
+    except ValidationError as exc:
+        django_messages.error(request, str(exc))
+        return redirect('frontend:agent_commission_steps', commission_id=commission.id)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_authenticated and getattr(u, 'role', None) in {'Lawyer', 'Admin'}, login_url='/')
+def lawyer_review_commission(request, commission_id):
+    commission = get_object_or_404(
+        PurchaseCommission.objects.select_related('buyer', 'land_parcel', 'accepted_by', 'assigned_lawyer', 'transaction'),
+        id=commission_id,
+    )
+
+    if not can_view_commission(request.user, commission):
+        return redirect('frontend:home')
+
+    if request.method != 'POST':
+        return redirect('frontend:commission_detail', commission_id=commission.id)
+
+    from django.contrib import messages as django_messages
+    try:
+        verified = (request.POST.get('verified') or 'true').strip().lower() not in {'false', '0', 'no'}
+        note = (request.POST.get('note') or '').strip()
+        lawyer_verdict(commission, request.user, verified=verified, note=note)
+        django_messages.success(request, f'Lawyer review saved for {commission.land_parcel.parcel_number}.')
+    except ValidationError as exc:
+        django_messages.error(request, str(exc))
+
+    return redirect('frontend:commission_detail', commission_id=commission.id)
 
 @login_required
 @user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
@@ -1558,55 +1907,60 @@ def parcel_delete(request, parcel_number):
 @login_required
 def initiate_escrow(request, parcel_number):
     parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
-    
-    # Security: Only Buyers can initiate escrow, Admins can force initiate for testing
+
+    from django.contrib import messages as django_messages
+
+    # Security: Only Buyers can commission a purchase, Admins can force create for testing.
     if request.user.role not in ['Buyer', 'Admin']:
         return redirect('frontend:parcel_detail', parcel_number=parcel_number)
-        
-    if parcel.verification_status != 'Verified':
-        return redirect('frontend:parcel_detail', parcel_number=parcel_number)
-        
-    if request.method == 'POST':
-        joint_group_id = (request.POST.get('joint_group_id') or '').strip()
-        purchase_mode = (request.POST.get('purchase_mode') or '').strip()
 
+    if parcel.verification_status != 'Verified':
+        django_messages.error(request, 'Only verified parcels can be commissioned for purchase.')
+        return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+
+    if request.method == 'POST':
         joint_group = None
+        is_joint_purchase = False
+        purchase_mode = (request.POST.get('purchase_mode') or '').strip().lower()
+        joint_group_id = (request.POST.get('joint_group_id') or '').strip()
+
         if purchase_mode == 'joint' or joint_group_id:
             if request.user.role != 'Buyer':
+                django_messages.error(request, 'Joint commissions are only available for buyer accounts.')
                 return redirect('frontend:parcel_detail', parcel_number=parcel_number)
             if not is_joint_buyer(request.user):
-                from django.contrib import messages
-                messages.error(request, 'Joint purchases require a joint buyer account. Choose the joint option after signup first.')
+                django_messages.error(request, 'Joint commissions require a joint buyer account. Choose the joint option after signup first.')
                 return redirect('frontend:buyer_account_choice')
+            is_joint_purchase = True
             if joint_group_id:
                 joint_group = get_object_or_404(JointBuyerGroup, id=joint_group_id, leader=request.user)
                 if not joint_group.is_valid:
-                    from django.contrib import messages
-                    messages.error(request, 'This joint group is not valid. Ensure it has at least 2 members and shares total 100%.')
+                    django_messages.error(request, 'This joint group is not valid. Ensure it has at least 2 members and shares total 100%.')
                     return redirect('frontend:parcel_detail', parcel_number=parcel_number)
             if getattr(request.user, 'buyer_account_type', None) != 'Joint':
                 request.user.buyer_account_type = 'Joint'
                 request.user.save(update_fields=['buyer_account_type'])
 
-        # Safely instantiate or retrieve the explicit Escrow transaction
-        tx, created = Transaction.objects.get_or_create(
-            land_parcel=parcel,
-            buyer=request.user if request.user.role == 'Buyer' else parcel.listed_by,
-            seller=parcel.listed_by,
-            defaults={
-                'agreed_price': parcel.displayed_price, # Securely derived from Seller limit + 10% Platform Cut
-                'status': 'Under_Verification'
-            }
-        )
+        try:
+            commission = create_commission(
+                request.user,
+                parcel,
+                is_joint_purchase=is_joint_purchase,
+                joint_group=joint_group,
+            )
+            django_messages.success(request, f'Commission created for parcel {parcel.parcel_number}. Nearby agents have been notified.')
+            return redirect('frontend:commission_detail', commission_id=commission.id)
+        except ValidationError as exc:
+            existing = PurchaseCommission.objects.filter(
+                buyer=request.user,
+                land_parcel=parcel,
+                status__in=['Open', 'Accepted', 'Documents_Review', 'Lawyer_Verification', 'Site_Visit_Scheduled', 'Site_Visit_Complete', 'Closing'],
+            ).order_by('-created_at').first()
+            if existing:
+                django_messages.info(request, 'An active commission for this parcel already exists. Opening it now.')
+                return redirect('frontend:commission_detail', commission_id=existing.id)
+            django_messages.error(request, str(exc))
 
-        if joint_group:
-            tx.is_joint_purchase = True
-            tx.joint_group = joint_group
-            tx.save(update_fields=['is_joint_purchase', 'joint_group'])
-
-        # Redirect Buyer to Payment Onboarding instead of Sign Contract
-        return redirect('frontend:payment_onboarding', transaction_id=tx.id)
-        
     return redirect('frontend:parcel_detail', parcel_number=parcel_number)
 
 @login_required

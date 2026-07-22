@@ -64,6 +64,18 @@ class User(AbstractUser):
         null=True,
         help_text='Buyer onboarding choice: individual or joint purchase mode.',
     )
+    agent_county = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text='Agent operating county used for commission routing.',
+    )
+    agent_constituency = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text='Agent operating constituency used for commission routing.',
+    )
     is_identity_verified = models.BooleanField(default=False)
     is_email_verified = models.BooleanField(default=False, help_text='Whether the user has verified their email address (distinct from identity verification via KRA PIN/ID)')
     gavakonect_verification_id = models.CharField(max_length=100, blank=True, null=True)
@@ -430,6 +442,115 @@ class Transaction(models.Model):
             )
             
             raise Exception(f"Payment reversal failed: {reversal_result.get('message', 'Unknown error')}")
+
+
+class PurchaseCommission(models.Model):
+    """Tracks a buyer commission from parcel request through closing."""
+
+    STATUS_CHOICES = [
+        ('Open', 'Open - Awaiting Agent'),
+        ('Accepted', 'Accepted by Agent'),
+        ('Documents_Review', 'Step 1 - Document Review'),
+        ('Lawyer_Verification', 'Step 2 - Lawyer Verification'),
+        ('Site_Visit_Scheduled', 'Step 3 - Site Visit Scheduled'),
+        ('Site_Visit_Complete', 'Step 4 - Site Visit Complete'),
+        ('Closing', 'Step 5 - Closing & Payment'),
+        ('Completed', 'Completed'),
+        ('Cancelled', 'Cancelled'),
+    ]
+
+    tenant_id = models.UUIDField(db_index=True, null=True, blank=True, help_text='Organization tenant ID for row-level security isolation')
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='purchase_commissions')
+    land_parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='commissions')
+    is_joint_purchase = models.BooleanField(default=False)
+    joint_group = models.ForeignKey('JointBuyerGroup', on_delete=models.SET_NULL, null=True, blank=True, related_name='commission_requests')
+    status = models.CharField(max_length=32, choices=STATUS_CHOICES, default='Open', db_index=True)
+
+    # Agent assignment
+    accepted_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='accepted_commissions',
+        limit_choices_to={'role': 'Agent'},
+    )
+    accepted_at = models.DateTimeField(null=True, blank=True)
+
+    # Step 1: Document review
+    documents_reviewed = models.BooleanField(default=False)
+    documents_review_note = models.TextField(blank=True)
+    documents_reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    # Step 2: Lawyer verification
+    assigned_lawyer = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='lawyer_commissions',
+        limit_choices_to={'role': 'Lawyer'},
+    )
+    lawyer_submitted_at = models.DateTimeField(null=True, blank=True)
+    lawyer_verified = models.BooleanField(null=True, blank=True)
+    lawyer_verification_note = models.TextField(blank=True)
+    lawyer_verified_at = models.DateTimeField(null=True, blank=True)
+
+    # Step 3: Site visit
+    site_visit_date = models.DateTimeField(null=True, blank=True)
+    site_visit_location = models.CharField(max_length=500, blank=True)
+    site_visit_notes = models.TextField(blank=True)
+    site_visit_complete = models.BooleanField(default=False)
+    site_visit_completed_at = models.DateTimeField(null=True, blank=True)
+
+    # Step 5: Closing
+    transaction = models.OneToOneField(Transaction, on_delete=models.SET_NULL, null=True, blank=True, related_name='commission')
+    closed_at = models.DateTimeField(null=True, blank=True)
+
+    # Geo-routing
+    target_county = models.CharField(max_length=100, db_index=True)
+    target_constituency = models.CharField(max_length=100, db_index=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    deleted_at = models.DateTimeField(null=True, blank=True, help_text='Soft delete timestamp - null means active record')
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='%(class)s_updates', help_text='Last user who modified this record')
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['tenant_id', 'status'], name='idx_comm_tenant_status'),
+            models.Index(fields=['tenant_id', 'target_county', 'target_constituency'], name='idx_comm_tenant_region'),
+            models.Index(fields=['tenant_id', 'buyer', 'status'], name='idx_comm_tenant_buyer_status'),
+        ]
+
+    def __str__(self):
+        return f"{self.land_parcel.parcel_number} - {self.status}"
+
+    @property
+    def current_step_key(self):
+        mapping = {
+            'Open': 'open',
+            'Accepted': 'accepted',
+            'Documents_Review': 'documents_review',
+            'Lawyer_Verification': 'lawyer_verification',
+            'Site_Visit_Scheduled': 'site_visit',
+            'Site_Visit_Complete': 'site_visit_complete',
+            'Closing': 'closing',
+            'Completed': 'completed',
+            'Cancelled': 'cancelled',
+        }
+        return mapping.get(self.status, 'open')
+
+    @property
+    def is_closed(self):
+        return self.status in {'Completed', 'Cancelled'}
+
+    @property
+    def can_create_transaction(self):
+        return self.site_visit_complete and self.documents_reviewed and self.accepted_by_id is not None
 
 class Document(models.Model):
     DOC_TYPE_CHOICES = [

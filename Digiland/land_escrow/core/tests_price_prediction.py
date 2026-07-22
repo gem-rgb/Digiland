@@ -20,7 +20,7 @@ Covers:
   16. API: POST invalid plot_grade -> 400
 """
 import django
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from .services.price_prediction import (
@@ -31,6 +31,7 @@ from .services.price_prediction import (
 from .api_views import _get_confidence_label, _get_market_position
 
 
+@override_settings(ENABLE_AI_PRICE_PREDICTION=True)
 class PricePredictionAPITests(TestCase):
     """DRF APIClient tests for /api/v1/price-prediction/ endpoint."""
 

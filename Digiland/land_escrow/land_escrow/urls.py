@@ -25,6 +25,7 @@ from land_escrow.health_views import health_check
 from core import api_views
 
 urlpatterns = [
+    path('favicon.ico', RedirectView.as_view(url=settings.STATIC_URL + 'images/favicon.ico', permanent=True)),
     path('health/', health_check, name='health-check'),
     path('browse', RedirectView.as_view(url='/parcels/', permanent=False)),
     path('browse/', RedirectView.as_view(url='/parcels/', permanent=False)),

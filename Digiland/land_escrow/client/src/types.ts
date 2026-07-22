@@ -22,6 +22,9 @@ export type PageKind =
   | 'approvals'
   | 'user-review'
   | 'parcel-detail'
+  | 'commission-detail'
+  | 'agent-job-board'
+  | 'agent-commission-steps'
   | 'messages'
   | 'support'
   | 'contract'
@@ -181,6 +184,94 @@ export interface TransactionSummary {
   action_url: string;
   is_joint_purchase?: boolean;
   joint_label?: string;
+}
+
+export interface CommissionStep {
+  key: string;
+  status: string;
+  label: string;
+  description: string;
+  completed: boolean;
+  active: boolean;
+  state: 'complete' | 'current' | 'upcoming' | 'skipped';
+}
+
+export interface CommissionDocumentSummary {
+  id: string;
+  document_type: string;
+  document_label: string;
+  verification_status: string;
+  uploaded_at: string;
+}
+
+export interface CommissionSummary {
+  id: string;
+  status: string;
+  status_label: string;
+  status_tone?: 'success' | 'warning' | 'danger' | 'muted' | 'accent';
+  buyer?: UserSummary | null;
+  accepted_by?: UserSummary | null;
+  accepted_at?: string | null;
+  assigned_lawyer?: UserSummary | null;
+  lawyer_submitted_at?: string | null;
+  lawyer_verified?: boolean | null;
+  lawyer_verification_note?: string;
+  lawyer_verified_at?: string | null;
+  documents_reviewed?: boolean;
+  documents_review_note?: string;
+  documents_reviewed_at?: string | null;
+  site_visit_date?: string | null;
+  site_visit_location?: string;
+  site_visit_notes?: string;
+  site_visit_complete?: boolean;
+  site_visit_completed_at?: string | null;
+  transaction_id?: string | null;
+  transaction_status?: string | null;
+  closed_at?: string | null;
+  is_joint_purchase?: boolean;
+  joint_group?: JointGroupSummary | null;
+  target_county: string;
+  target_constituency: string;
+  created_at: string;
+  updated_at: string;
+  parcel: ParcelSummary;
+  documents: CommissionDocumentSummary[];
+  document_count: number;
+  required_documents: Array<{ title: string; key: string; required: boolean; description: string }>;
+  steps: CommissionStep[];
+  detail_url: string;
+  accept_url: string;
+  steps_url: string;
+  review_url?: string | null;
+  transaction_url?: string | null;
+  step_action_urls: {
+    documents_review: string;
+    submit_to_lawyer: string;
+    lawyer_verdict: string;
+    schedule_site_visit: string;
+    complete_site_visit: string;
+    close: string;
+  };
+  can_accept?: boolean;
+  can_work?: boolean;
+  can_review_documents?: boolean;
+  can_submit_to_lawyer?: boolean;
+  can_schedule_site_visit?: boolean;
+  can_complete_site_visit?: boolean;
+  can_close?: boolean;
+  can_review_as_lawyer?: boolean;
+  is_buyer?: boolean;
+  is_agent?: boolean;
+  is_lawyer?: boolean;
+  is_admin?: boolean;
+}
+
+export interface CommissionBoardData {
+  region_county?: string | null;
+  region_constituency?: string | null;
+  region_source?: string | null;
+  open_count: number;
+  commissions: CommissionSummary[];
 }
 
 export interface LawSummary {
@@ -797,6 +888,13 @@ export interface BootstrapData {
   form?: SerializedForm | null;
   member_formset?: SerializedForm | null;
   parcel_detail?: ParcelDetailData | null;
+  commission_detail?: CommissionSummary | null;
+  commission_steps?: CommissionSummary | null;
+  agent_job_board?: CommissionBoardData | null;
+  commissions?: CommissionSummary[];
+  active_commissions?: CommissionSummary[];
+  commission_reviews?: CommissionSummary[];
+  open_commissions?: CommissionSummary[];
   contract?: ContractData | null;
   checkout?: CheckoutData | null;
   messages_page?: MessagesPageData | null;

@@ -33,16 +33,34 @@ def release_payment_to_seller(transaction):
     """
     Logic to clear the transaction. Moves status to Completed.
     """
+    from django.utils import timezone
+
     transaction.status = 'Completed'
-    transaction.save()
+    transaction.save(update_fields=['status', 'updated_at'])
+
+    commission = getattr(transaction, 'commission', None)
+    if commission:
+        commission.status = 'Completed'
+        commission.closed_at = commission.closed_at or timezone.now()
+        commission.save(update_fields=['status', 'closed_at', 'updated_at'])
+
     return transaction
 
 def refund_payment_to_buyer(transaction):
     """
     Handles scenarios where the transaction fails fraud check and needs refund.
     """
+    from django.utils import timezone
+
     transaction.status = 'Refunded'
-    transaction.save()
+    transaction.save(update_fields=['status', 'updated_at'])
+
+    commission = getattr(transaction, 'commission', None)
+    if commission and commission.status not in {'Completed', 'Cancelled'}:
+        commission.status = 'Cancelled'
+        commission.closed_at = commission.closed_at or timezone.now()
+        commission.save(update_fields=['status', 'closed_at', 'updated_at'])
+
     return transaction
 
 

@@ -14,7 +14,7 @@ import { Badge } from './components/ui/badge.js';
 import { Button } from './components/ui/button.js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card.js';
 import { Separator } from './components/ui/separator.js';
-import type { ActionLink, CheckoutData, ParcelSummary, RecommendationParcelSummary } from './types.js';
+import type { ActionLink, CheckoutData, CommissionBoardData, CommissionSummary, CommissionStep, ParcelSummary, RecommendationParcelSummary } from './types.js';
 import { cn } from './lib/utils.js';
 import { SellerPromotionsPage } from './pages/seller-promotions-page.js';
 import { PromotionTiersPage } from './pages/promotion-tiers-page.js';
@@ -405,6 +405,266 @@ function TransactionTable() {
   );
 }
 
+function commissionCurrentStep(commission: CommissionSummary) {
+  return commission.steps.find((step) => step.active) || commission.steps.find((step) => step.state === 'current') || commission.steps[0];
+}
+
+type CommissionAction = {
+  label: string;
+  href: string;
+  tone?: 'default' | 'secondary' | 'outline' | 'ghost' | 'accent';
+  method?: 'get' | 'post';
+};
+
+function actionButtonClass(tone: CommissionAction['tone'] = 'default') {
+  switch (tone) {
+    case 'secondary':
+      return 'inline-flex h-10 items-center justify-center rounded-full bg-slate-900 px-4 text-sm font-semibold text-white transition-colors hover:bg-slate-800';
+    case 'outline':
+      return 'inline-flex h-10 items-center justify-center rounded-full border border-border bg-white px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted';
+    case 'ghost':
+      return 'inline-flex h-10 items-center justify-center rounded-full px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted';
+    case 'accent':
+      return 'inline-flex h-10 items-center justify-center rounded-full bg-emerald-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-emerald-700';
+    default:
+      return 'inline-flex h-10 items-center justify-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90';
+  }
+}
+
+function CommissionStepRail({ commission }: { commission: CommissionSummary }) {
+  const toneFor = (state: CommissionStep['state']) => {
+    if (state === 'complete') return 'success';
+    if (state === 'current') return 'warning';
+    if (state === 'skipped') return 'muted';
+    return 'outline';
+  };
+
+  return (
+    <div className="space-y-3">
+      {commission.steps.map((step, index) => (
+        <div
+          key={step.key}
+          className={cn(
+            'rounded-3xl border p-4 shadow-sm',
+            step.state === 'complete'
+              ? 'border-emerald-200 bg-emerald-50/60'
+              : step.state === 'current'
+                ? 'border-amber-200 bg-amber-50/70'
+                : step.state === 'skipped'
+                  ? 'border-border bg-muted/30 opacity-70'
+                  : 'border-border bg-white'
+          )}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.28em] text-muted-foreground">Step {index + 1}</div>
+              <div className="mt-1 font-semibold text-foreground">{step.label}</div>
+            </div>
+            <StatusBadge label={step.state} tone={toneFor(step.state)} />
+          </div>
+          <p className="mt-2 text-sm leading-7 text-muted-foreground">{step.description}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CommissionDocumentChecklist({ commission }: { commission: CommissionSummary }) {
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      {commission.required_documents.map((requiredDoc) => {
+        const uploadedDoc = commission.documents.find((document) => document.document_type === requiredDoc.key);
+        const present = Boolean(uploadedDoc);
+        const tone = uploadedDoc?.verification_status === 'Match' ? 'success' : present ? 'warning' : 'muted';
+        return (
+          <div
+            key={requiredDoc.key}
+            className={cn(
+              'rounded-3xl border p-4 shadow-sm',
+              present ? 'border-emerald-200 bg-emerald-50/60' : 'border-border bg-white'
+            )}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="font-semibold text-foreground">{requiredDoc.title}</div>
+                <div className="mt-1 text-xs leading-6 text-muted-foreground">{requiredDoc.description}</div>
+              </div>
+              <StatusBadge label={present ? (uploadedDoc?.verification_status || 'Present') : 'Missing'} tone={tone} />
+            </div>
+            <div className="mt-3 text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+              {present ? `Uploaded ${uploadedDoc?.uploaded_at || ''}`.trim() : 'Awaiting upload'}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CommissionCard({
+  commission,
+  primaryAction,
+  secondaryAction,
+  footer,
+}: {
+  commission: CommissionSummary;
+  primaryAction?: CommissionAction | null;
+  secondaryAction?: CommissionAction | null;
+  footer?: ReactNode;
+}) {
+  const currentStep = commissionCurrentStep(commission);
+
+  const renderAction = (action?: CommissionAction | null) => {
+    if (!action) return null;
+    if (action.method === 'post') {
+      return (
+        <form method="post" action={action.href} className="inline-flex">
+          <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+          <button type="submit" className={actionButtonClass(action.tone)}>
+            {action.label}
+          </button>
+        </form>
+      );
+    }
+
+    return (
+      <a href={action.href} className={actionButtonClass(action.tone)}>
+        {action.label}
+      </a>
+    );
+  };
+
+  return (
+    <Card className="bg-white/92">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-base">{commission.parcel.parcel_number}</CardTitle>
+            <CardDescription>
+              {commission.parcel.county}, {commission.parcel.constituency}
+            </CardDescription>
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {commission.is_joint_purchase ? <Badge tone="outline">Joint</Badge> : null}
+            <StatusBadge label={commission.status_label} tone={commission.status_tone} />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl bg-muted/60 p-3">
+            <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Price</div>
+            <div className="mt-1 text-sm font-semibold text-foreground">{money(commission.parcel.displayed_price || commission.parcel.asking_price || '0')}</div>
+          </div>
+          <div className="rounded-2xl bg-muted/60 p-3">
+            <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Documents</div>
+            <div className="mt-1 text-sm font-semibold text-foreground">{commission.document_count} uploaded</div>
+          </div>
+          <div className="rounded-2xl bg-muted/60 p-3">
+            <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Current step</div>
+            <div className="mt-1 text-sm font-semibold text-foreground">{currentStep?.label || commission.status_label}</div>
+          </div>
+        </div>
+
+        {footer ? <div className="rounded-2xl border border-border bg-muted/30 p-3 text-sm leading-7 text-muted-foreground">{footer}</div> : null}
+
+        <div className="flex flex-wrap gap-2">
+          {renderAction(primaryAction)}
+          {renderAction(secondaryAction)}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CommissionListSection({
+  title,
+  subtitle,
+  commissions,
+  emptyMessage,
+  mode,
+  gridClassName = 'grid gap-4 xl:grid-cols-2',
+}: {
+  title: string;
+  subtitle?: string;
+  commissions: CommissionSummary[];
+  emptyMessage?: string;
+  mode: 'buyer' | 'agent-open' | 'agent-active' | 'lawyer';
+  gridClassName?: string;
+}) {
+  if (!commissions.length) {
+    if (!emptyMessage) return null;
+    return (
+      <Card className="bg-white/92">
+        <CardContent className="p-8 text-center text-sm text-muted-foreground">{emptyMessage}</CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-black tracking-tight text-foreground">{title}</h2>
+          {subtitle ? <p className="mt-1 max-w-3xl text-sm leading-7 text-muted-foreground">{subtitle}</p> : null}
+        </div>
+        <Badge tone="outline">{commissions.length}</Badge>
+      </div>
+      <div className={gridClassName}>
+        {commissions.map((commission) => {
+          const currentStep = commissionCurrentStep(commission);
+          let primaryAction: CommissionAction | null = null;
+          let secondaryAction: CommissionAction | null = null;
+          let footer: ReactNode = null;
+
+          if (mode === 'buyer') {
+            primaryAction = commission.transaction_url
+              ? { label: 'Continue to payment', href: commission.transaction_url, tone: 'default' }
+              : { label: 'Open commission', href: commission.detail_url, tone: 'outline' };
+            secondaryAction = { label: 'View progress', href: commission.detail_url, tone: 'secondary' };
+            footer = commission.accepted_by
+              ? <>Accepted by <span className="font-semibold text-foreground">{commission.accepted_by.email}</span></>
+              : 'Waiting for an agent to accept this commission.';
+          } else if (mode === 'agent-open') {
+            primaryAction = commission.can_accept
+              ? { label: 'Accept job', href: commission.accept_url, tone: 'accent', method: 'post' }
+              : { label: 'View details', href: commission.detail_url, tone: 'outline' };
+            secondaryAction = { label: 'Open commission', href: commission.detail_url, tone: 'secondary' };
+            footer = `Matched to ${commission.target_county}, ${commission.target_constituency}.`;
+          } else if (mode === 'agent-active') {
+            primaryAction = commission.steps_url
+              ? { label: 'Continue steps', href: commission.steps_url, tone: 'default' }
+              : { label: 'View details', href: commission.detail_url, tone: 'outline' };
+            secondaryAction = commission.transaction_url
+              ? { label: 'Continue to payment', href: commission.transaction_url, tone: 'secondary' }
+              : { label: 'View progress', href: commission.detail_url, tone: 'secondary' };
+            footer = currentStep ? `Current step: ${currentStep.label}.` : 'Tracking the active commission workflow.';
+          } else {
+            primaryAction = commission.review_url
+              ? { label: 'Review documents', href: commission.review_url, tone: 'accent', method: 'post' }
+              : { label: 'View details', href: commission.detail_url, tone: 'outline' };
+            secondaryAction = { label: 'View progress', href: commission.detail_url, tone: 'secondary' };
+            footer = commission.assigned_lawyer
+              ? <>Assigned lawyer <span className="font-semibold text-foreground">{commission.assigned_lawyer.email}</span></>
+              : 'Waiting for the lawyer review queue.';
+          }
+
+          return (
+            <CommissionCard
+              key={commission.id}
+              commission={commission}
+              primaryAction={primaryAction}
+              secondaryAction={secondaryAction}
+              footer={footer}
+            />
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+
 function LegalCards(laws: NonNullable<typeof bootstrap.laws>) {
   return (
     <div className="space-y-4">
@@ -466,6 +726,45 @@ function DashboardPage() {
           <TransactionTable />
         </CardContent>
       </Card>
+
+      {role === 'Buyer' ? (
+        <CommissionListSection
+          title="My commissions"
+          subtitle="Track each parcel request through agent review, lawyer authentication, site visits, and closing."
+          commissions={bootstrap.commissions || []}
+          emptyMessage="You have not commissioned a parcel yet. Open a verified parcel and commission it to start the workflow."
+          mode="buyer"
+        />
+      ) : null}
+
+      {role === 'Agent' ? (
+        <div className="space-y-6">
+          <CommissionListSection
+            title="Open commission jobs"
+            subtitle="Nearby purchase commissions waiting for an agent to accept them."
+            commissions={bootstrap.commissions || []}
+            emptyMessage="No open commissions matched to your operating region yet."
+            mode="agent-open"
+          />
+          <CommissionListSection
+            title="Active commissions"
+            subtitle="Jobs you have already accepted and are actively working through."
+            commissions={bootstrap.active_commissions || []}
+            emptyMessage="You do not have any active commissions yet."
+            mode="agent-active"
+          />
+        </div>
+      ) : null}
+
+      {role === 'Lawyer' ? (
+        <CommissionListSection
+          title="Commission reviews"
+          subtitle="Documents waiting for lawyer authentication and a verdict."
+          commissions={bootstrap.commission_reviews || []}
+          emptyMessage="No commission reviews are waiting right now."
+          mode="lawyer"
+        />
+      ) : null}
 
       {role === 'Seller' ? (
         <Card className="bg-white/92">
@@ -1667,8 +1966,8 @@ function ParcelDetailPage() {
             {detail.can_initiate_escrow ? (
               <Card className="bg-white/92">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base"><WalletCards className="h-4 w-4 text-emerald-700" />Purchase readiness</CardTitle>
-                  <CardDescription>Choose the purchase mode before initiating escrow.</CardDescription>
+                  <CardTitle className="flex items-center gap-2 text-base"><WalletCards className="h-4 w-4 text-emerald-700" />Commission request</CardTitle>
+                  <CardDescription>Choose the purchase mode before creating a commission.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <form method="post" action={detail.initiate_escrow_url} className="space-y-4">
@@ -1709,7 +2008,7 @@ function ParcelDetailPage() {
                       </div>
                     ) : null}
 
-                    <Button type="submit" className="w-full rounded-full">Initiate secure escrow</Button>
+                    <Button type="submit" className="w-full rounded-full">Commission for purchase</Button>
                   </form>
                 </CardContent>
               </Card>
@@ -1720,6 +2019,412 @@ function ParcelDetailPage() {
     </AppShell>
   );
 }
+
+function CommissionDetailPage() {
+  const commission = bootstrap.commission_detail || bootstrap.commission_steps;
+  if (!commission) {
+    return (
+      <AppShell {...{
+        title: bootstrap.title,
+        subtitle: bootstrap.subtitle,
+        user: bootstrap.user,
+        nav: bootstrap.nav,
+        logoutUrl: bootstrap.logout_url,
+        csrfToken: bootstrap.csrf_token,
+      }}>
+        <Card className="bg-white/92">
+          <CardContent className="p-8 text-center text-sm text-muted-foreground">Commission details are unavailable.</CardContent>
+        </Card>
+      </AppShell>
+    );
+  }
+
+  const shellProps = {
+    title: bootstrap.title,
+    subtitle: bootstrap.subtitle,
+    user: bootstrap.user,
+    nav: bootstrap.nav,
+    logoutUrl: bootstrap.logout_url,
+    csrfToken: bootstrap.csrf_token,
+  };
+
+  const primaryAction = commission.is_buyer
+    ? (commission.transaction_url
+        ? { label: 'Continue to payment', href: commission.transaction_url, tone: 'default' as const }
+        : { label: 'Back to parcel', href: commission.detail_url, tone: 'outline' as const })
+    : commission.is_agent
+      ? (commission.can_work && commission.steps_url
+          ? { label: 'Open workflow steps', href: commission.steps_url, tone: 'default' as const }
+          : commission.can_accept
+            ? { label: 'Accept job', href: commission.accept_url, tone: 'accent' as const, method: 'post' as const }
+            : { label: 'View workflow', href: commission.steps_url || commission.detail_url, tone: 'outline' as const })
+      : commission.is_lawyer
+        ? (commission.review_url
+            ? { label: 'Review documents', href: commission.review_url, tone: 'accent' as const, method: 'post' as const }
+            : { label: 'View dashboard', href: '/', tone: 'outline' as const })
+        : { label: 'Back to dashboard', href: '/', tone: 'outline' as const };
+
+  const secondaryAction = commission.is_buyer
+    ? { label: 'View parcel', href: commission.detail_url, tone: 'secondary' as const }
+    : { label: 'Track progress', href: commission.detail_url, tone: 'secondary' as const };
+
+  return (
+    <AppShell {...shellProps}>
+      <div className="space-y-6">
+        <PageHeader
+          kicker="Commission"
+          title={commission.parcel.parcel_number}
+          subtitle={`${commission.target_county}, ${commission.target_constituency}`}
+          badge={commission.status_label}
+          actions={bootstrap.actions}
+        />
+
+        <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <div className="space-y-6">
+            <CommissionCard
+              commission={commission}
+              primaryAction={primaryAction}
+              secondaryAction={secondaryAction}
+              footer={commission.is_joint_purchase && commission.joint_group ? <>Joint group <span className="font-semibold text-foreground">{commission.joint_group.name}</span></> : commission.accepted_by ? <>Accepted by <span className="font-semibold text-foreground">{commission.accepted_by.email}</span></> : 'This commission is tracked end-to-end through agent, lawyer, and closing stages.'}
+            />
+
+            <Card className="bg-white/92">
+              <CardHeader>
+                <CardTitle className="text-base">Progress tracker</CardTitle>
+                <CardDescription>The buyer sees the workflow as a read-only timeline. The agent sees the same timeline with action links on the workflow page.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CommissionStepRail commission={commission} />
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="space-y-6">
+            <Card className="bg-white/92">
+              <CardHeader>
+                <CardTitle className="text-base">Document summary</CardTitle>
+                <CardDescription>Verification only checks that the listed documents exist in the parcel record.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CommissionDocumentChecklist commission={commission} />
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/92">
+              <CardHeader>
+                <CardTitle className="text-base">Parties</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div className="rounded-2xl bg-muted/60 p-3">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Buyer</div>
+                  <div className="mt-1 font-semibold text-foreground">{commission.buyer?.email}</div>
+                </div>
+                {commission.accepted_by ? (
+                  <div className="rounded-2xl bg-muted/60 p-3">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Agent</div>
+                    <div className="mt-1 font-semibold text-foreground">{commission.accepted_by.email}</div>
+                  </div>
+                ) : null}
+                {commission.assigned_lawyer ? (
+                  <div className="rounded-2xl bg-muted/60 p-3">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Lawyer</div>
+                    <div className="mt-1 font-semibold text-foreground">{commission.assigned_lawyer.email}</div>
+                  </div>
+                ) : null}
+                <div className="rounded-2xl bg-muted/60 p-3">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Created</div>
+                  <div className="mt-1 font-semibold text-foreground">{commission.created_at}</div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+function AgentJobBoardPage() {
+  const board = bootstrap.agent_job_board;
+  if (!board) {
+    return (
+      <AppShell {...{
+        title: bootstrap.title,
+        subtitle: bootstrap.subtitle,
+        user: bootstrap.user,
+        nav: bootstrap.nav,
+        logoutUrl: bootstrap.logout_url,
+        csrfToken: bootstrap.csrf_token,
+      }}>
+        <Card className="bg-white/92">
+          <CardContent className="p-8 text-center text-sm text-muted-foreground">Commission job board is unavailable.</CardContent>
+        </Card>
+      </AppShell>
+    );
+  }
+
+  const shellProps = {
+    title: bootstrap.title,
+    subtitle: bootstrap.subtitle,
+    user: bootstrap.user,
+    nav: bootstrap.nav,
+    logoutUrl: bootstrap.logout_url,
+    csrfToken: bootstrap.csrf_token,
+  };
+
+  return (
+    <AppShell {...shellProps}>
+      <div className="space-y-6">
+        <PageHeader
+          kicker="Agent job board"
+          title="Purchase commissions"
+          subtitle={`Open commissions matched to ${board.region_county || 'your region'}${board.region_constituency ? ` / ${board.region_constituency}` : ''}.`}
+          badge={`${board.open_count} open`}
+          actions={bootstrap.actions}
+        />
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="bg-white/92">
+            <CardContent className="p-5">
+              <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Open jobs</div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-foreground">{board.open_count}</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/92">
+            <CardContent className="p-5">
+              <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Region</div>
+              <div className="mt-2 text-lg font-black tracking-tight text-foreground">{board.region_county || 'Unassigned'}</div>
+              <div className="text-sm text-muted-foreground">{board.region_constituency || 'No constituency set'}</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/92">
+            <CardContent className="p-5">
+              <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Source</div>
+              <div className="mt-2 text-lg font-black tracking-tight text-foreground">{board.region_source || 'profile'}</div>
+              <div className="text-sm text-muted-foreground">Matched from profile or parcel history.</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {board.commissions.length ? (
+          <div className="grid gap-4 xl:grid-cols-2">
+            {board.commissions.map((commission) => (
+              <CommissionCard
+                key={commission.id}
+                commission={commission}
+                primaryAction={commission.can_accept ? { label: 'Accept job', href: commission.accept_url, tone: 'accent', method: 'post' } : { label: 'View details', href: commission.detail_url, tone: 'outline' }}
+                secondaryAction={{ label: 'Open commission', href: commission.detail_url, tone: 'secondary' }}
+                footer={`Asked to serve ${commission.target_county}, ${commission.target_constituency}.`}
+              />
+            ))}
+          </div>
+        ) : (
+          <Card className="bg-white/92">
+            <CardContent className="p-8 text-center text-sm text-muted-foreground">No open commissions were matched to your operating region yet.</CardContent>
+          </Card>
+        )}
+      </div>
+    </AppShell>
+  );
+}
+
+function AgentCommissionStepsPage() {
+  const commission = bootstrap.commission_steps || bootstrap.commission_detail;
+  if (!commission) {
+    return (
+      <AppShell {...{
+        title: bootstrap.title,
+        subtitle: bootstrap.subtitle,
+        user: bootstrap.user,
+        nav: bootstrap.nav,
+        logoutUrl: bootstrap.logout_url,
+        csrfToken: bootstrap.csrf_token,
+      }}>
+        <Card className="bg-white/92">
+          <CardContent className="p-8 text-center text-sm text-muted-foreground">Commission workflow is unavailable.</CardContent>
+        </Card>
+      </AppShell>
+    );
+  }
+
+  const shellProps = {
+    title: bootstrap.title,
+    subtitle: bootstrap.subtitle,
+    user: bootstrap.user,
+    nav: bootstrap.nav,
+    logoutUrl: bootstrap.logout_url,
+    csrfToken: bootstrap.csrf_token,
+  };
+
+  return (
+    <AppShell {...shellProps}>
+      <div className="space-y-6">
+        <PageHeader
+          kicker="Commission workflow"
+          title={commission.parcel.parcel_number}
+          subtitle={`${commission.target_county}, ${commission.target_constituency}`}
+          badge={commission.status_label}
+          actions={bootstrap.actions}
+        />
+
+        <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <div className="space-y-6">
+            <CommissionCard
+              commission={commission}
+              primaryAction={commission.transaction_url ? { label: 'Continue to payment', href: commission.transaction_url, tone: 'default' } : { label: 'Back to commission', href: commission.detail_url, tone: 'outline' }}
+              secondaryAction={{ label: 'Open commission', href: commission.detail_url, tone: 'secondary' }}
+              footer={commission.accepted_by ? <>Working with <span className="font-semibold text-foreground">{commission.accepted_by.email}</span></> : 'Commission accepted. Follow the steps below to move it to closing.'}
+            />
+
+            <Card className="bg-white/92">
+              <CardHeader>
+                <CardTitle className="text-base">Workflow steps</CardTitle>
+                <CardDescription>Each checkpoint must be completed in order before the commission can close.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CommissionStepRail commission={commission} />
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/92">
+              <CardHeader>
+                <CardTitle className="text-base">Document checklist</CardTitle>
+                <CardDescription>Confirm the parcel file contains the required documents before forwarding anything to the lawyer.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CommissionDocumentChecklist commission={commission} />
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="space-y-6">
+            <Card className={commission.can_review_documents ? 'bg-white/92' : 'border-dashed border-border bg-white/80'}>
+              <CardHeader>
+                <CardTitle className="text-base">Step 1 - Document review</CardTitle>
+                <CardDescription>Confirm that the parcel records are complete.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {commission.can_review_documents ? (
+                  <form method="post" action={commission.step_action_urls.documents_review} className="space-y-4">
+                    <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+                    <input type="hidden" name="approved" value="true" />
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground">Review note</label>
+                      <Textarea name="note" rows={4} placeholder="Confirm the parcel documents are in order" />
+                    </div>
+                    <button type="submit" className={actionButtonClass('default')}>Mark documents reviewed</button>
+                  </form>
+                ) : (
+                  <div className="text-sm leading-7 text-muted-foreground">This step becomes available after the commission is accepted by an agent.</div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className={commission.can_submit_to_lawyer ? 'bg-white/92' : 'border-dashed border-border bg-white/80'}>
+              <CardHeader>
+                <CardTitle className="text-base">Step 2 - Lawyer submission</CardTitle>
+                <CardDescription>Forward the commission to the assigned or default lawyer for authentication.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {commission.can_submit_to_lawyer ? (
+                  <form method="post" action={commission.step_action_urls.submit_to_lawyer} className="space-y-4">
+                    <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground">Submission note</label>
+                      <Textarea name="note" rows={4} placeholder="Describe what the lawyer should verify" />
+                    </div>
+                    <button type="submit" className={actionButtonClass('accent')}>Send to lawyer</button>
+                  </form>
+                ) : (
+                  <div className="text-sm leading-7 text-muted-foreground">Documents must be reviewed before the lawyer stage opens.</div>
+                )}
+                {commission.assigned_lawyer ? (
+                  <div className="rounded-2xl bg-muted/60 p-3 text-sm text-foreground">
+                    Assigned lawyer: <span className="font-semibold">{commission.assigned_lawyer.email}</span>
+                  </div>
+                ) : null}
+                <div className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                  Lawyer status: {commission.lawyer_verified === true ? 'Verified' : commission.lawyer_verified === false ? 'Rejected' : 'Pending'}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className={commission.can_schedule_site_visit ? 'bg-white/92' : 'border-dashed border-border bg-white/80'}>
+              <CardHeader>
+                <CardTitle className="text-base">Step 3 - Site visit</CardTitle>
+                <CardDescription>Propose the visit date and place for buyer confirmation.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {commission.can_schedule_site_visit ? (
+                  <form method="post" action={commission.step_action_urls.schedule_site_visit} className="space-y-4">
+                    <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground">Visit date and time</label>
+                      <Input type="datetime-local" name="visit_date" required />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground">Location</label>
+                      <Input name="location" placeholder="Parcel access point or nearby landmark" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground">Notes</label>
+                      <Textarea name="notes" rows={3} placeholder="Any site visit context for the buyer" />
+                    </div>
+                    <button type="submit" className={actionButtonClass('default')}>Schedule site visit</button>
+                  </form>
+                ) : (
+                  <div className="text-sm leading-7 text-muted-foreground">The lawyer must verify the documents before a site visit can be scheduled.</div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className={commission.can_complete_site_visit ? 'bg-white/92' : 'border-dashed border-border bg-white/80'}>
+              <CardHeader>
+                <CardTitle className="text-base">Step 4 - Site visit completion</CardTitle>
+                <CardDescription>Record the completed visit and capture any final notes.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {commission.can_complete_site_visit ? (
+                  <form method="post" action={commission.step_action_urls.complete_site_visit} className="space-y-4">
+                    <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground">Completion notes</label>
+                      <Textarea name="notes" rows={4} placeholder="Share what was observed during the site visit" />
+                    </div>
+                    <button type="submit" className={actionButtonClass('default')}>Mark site visit complete</button>
+                  </form>
+                ) : (
+                  <div className="text-sm leading-7 text-muted-foreground">This step opens after the site visit has been scheduled.</div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className={commission.can_close ? 'bg-white/92' : 'border-dashed border-border bg-white/80'}>
+              <CardHeader>
+                <CardTitle className="text-base">Step 5 - Closing</CardTitle>
+                <CardDescription>Once the visit is complete, create the transaction and move into payment.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {commission.can_close ? (
+                  <form method="post" action={commission.step_action_urls.close} className="space-y-4">
+                    <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+                    <button type="submit" className={actionButtonClass('accent')}>Create transaction and open payment</button>
+                  </form>
+                ) : (
+                  <div className="text-sm leading-7 text-muted-foreground">Closing is available after document review, lawyer verification, and site visit completion.</div>
+                )}
+                {commission.transaction_url ? (
+                  <a href={commission.transaction_url} className={actionButtonClass('outline')}>Continue to payment</a>
+                ) : null}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
 
 function MessagesPage() {
   const page = bootstrap.messages_page;
@@ -4398,6 +5103,9 @@ function ReactApp() {
   else if (page === 'joint-groups') pageContent = <AppShell {...shellProps}><JointGroupsPage /></AppShell>;
   else if (page === 'joint-group-detail') pageContent = <AppShell {...shellProps}><JointGroupDetailPage /></AppShell>;
   else if (page === 'parcel-detail') pageContent = <ParcelDetailPage />;
+  else if (page === 'commission-detail') pageContent = <CommissionDetailPage />;
+  else if (page === 'agent-job-board') pageContent = <AgentJobBoardPage />;
+  else if (page === 'agent-commission-steps') pageContent = <AgentCommissionStepsPage />;
   else if (page === 'messages') pageContent = <MessagesPage />;
   else if (page === 'support') pageContent = <SupportPage />;
   else if (page === 'contract') pageContent = <ContractPage />;

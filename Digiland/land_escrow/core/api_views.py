@@ -4,6 +4,7 @@ import logging
 from decimal import Decimal
 from datetime import timedelta
 
+from django.conf import settings
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -2295,10 +2296,11 @@ def _get_market_position(price_per_acre):
 @permission_classes([AllowAny])
 @throttle_classes([PricePredictionAnonThrottle, PricePredictionUserThrottle])
 def price_prediction_api(request):
-    return Response({
-        'error': 'AI features are disabled for this rollout.',
-        'error_code': 'SERVICE_UNAVAILABLE'
-    }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    if not getattr(settings, 'ENABLE_AI_PRICE_PREDICTION', False):
+        return Response({
+            'error': 'AI features are disabled for this rollout.',
+            'error_code': 'SERVICE_UNAVAILABLE'
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
     from .services.price_prediction import (
         predict_price, get_model_info, get_fallback_prediction,
         get_constituencies_for_county, get_towns_for_constituency,

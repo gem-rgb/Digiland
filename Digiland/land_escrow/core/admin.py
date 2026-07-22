@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from .models import User, LandParcel, Transaction, Document, AuditLog, SupportTicket, Message, PlatformLegalDocument, KYCProfile, JointMemberRemovalRequest, PopupAdCampaign, PopupAdEvent
+from .models import User, LandParcel, Transaction, PurchaseCommission, Document, AuditLog, SupportTicket, Message, PlatformLegalDocument, KYCProfile, JointMemberRemovalRequest, PopupAdCampaign, PopupAdEvent
 
 @admin.register(PlatformLegalDocument)
 class PlatformLegalDocumentAdmin(admin.ModelAdmin):
@@ -215,14 +215,14 @@ class JointMemberRemovalRequestAdmin(admin.ModelAdmin):
 
 class CustomUserAdmin(UserAdmin):
     # Specify the fields that should be displayed in the list view
-    list_display = ('email', 'role', 'buyer_account_type', 'id_number', 'is_identity_verified', 'is_staff')
+    list_display = ('email', 'role', 'buyer_account_type', 'agent_county', 'agent_constituency', 'id_number', 'is_identity_verified', 'is_staff')
     search_fields = ('email', 'id_number')
     ordering = ('email',)
     
     # Define custom fieldsets to ensure the Admin can toggle high-security fields natively
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Personal info', {'fields': ('id_number', 'phone_number', 'buyer_account_type')}),
+        ('Personal info', {'fields': ('id_number', 'phone_number', 'buyer_account_type', 'agent_county', 'agent_constituency')}),
         ('Security & Fencing', {'fields': ('role', 'is_identity_verified', 'gavakonect_verification_id')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
@@ -232,7 +232,7 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password', 'role', 'id_number', 'phone_number', 'buyer_account_type', 'is_identity_verified'),
+            'fields': ('email', 'password', 'role', 'id_number', 'phone_number', 'buyer_account_type', 'agent_county', 'agent_constituency', 'is_identity_verified'),
         }),
     )
 
@@ -423,3 +423,21 @@ class MessageAdmin(admin.ModelAdmin):
 
 # Register the models to the secure Offline Admin Vault
 admin.site.register(User, CustomUserAdmin)
+
+@admin.register(PurchaseCommission)
+class PurchaseCommissionAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'buyer', 'land_parcel', 'status', 'accepted_by', 'assigned_lawyer', 'transaction', 'created_at', 'updated_at'
+    )
+    list_filter = ('status', 'target_county', 'target_constituency', 'created_at', 'updated_at')
+    search_fields = (
+        'buyer__email',
+        'land_parcel__parcel_number',
+        'accepted_by__email',
+        'assigned_lawyer__email',
+        'target_county',
+        'target_constituency',
+    )
+    readonly_fields = ('created_at', 'updated_at', 'accepted_at', 'documents_reviewed_at', 'lawyer_submitted_at', 'lawyer_verified_at', 'site_visit_completed_at', 'closed_at')
+    autocomplete_fields = ('buyer', 'land_parcel', 'accepted_by', 'assigned_lawyer', 'transaction')
+

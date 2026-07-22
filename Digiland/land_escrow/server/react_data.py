@@ -1,6 +1,7 @@
 from django import forms as django_forms
 from django.contrib.messages import get_messages
 from django.urls import reverse
+from core.legal import KENYAN_LAND_DOCUMENTS, JOINT_KENYAN_LAND_DOCUMENTS
 
 
 def build_nav(user, active=None):
@@ -21,6 +22,7 @@ def build_nav(user, active=None):
             {'label': 'Dashboard', 'href': reverse('frontend:home'), 'icon': 'dashboard', 'active': active == 'dashboard'},
             {'label': 'Marketplace', 'href': reverse('frontend:parcel_list'), 'icon': 'parcels', 'active': active == 'parcel-list'},
             {'label': 'Transactions', 'href': reverse('frontend:transactions'), 'icon': 'transactions', 'active': active == 'transactions'},
+            {'label': 'My Commissions', 'href': reverse('frontend:buyer_dashboard'), 'icon': 'security', 'active': active in {'commission-detail', 'my-commissions'}},
             {'label': 'Legal', 'href': reverse('frontend:escrow_acts'), 'icon': 'legal', 'active': active in {'legal', 'joint-laws'}},
         ]
         if is_joint_buyer_account:
@@ -183,6 +185,160 @@ def serialize_transaction(tx, user=None):
         'action_url': action_url,
         'is_joint_purchase': bool(getattr(tx, 'is_joint_purchase', False)),
         'joint_label': 'Joint' if getattr(tx, 'is_joint_purchase', False) else '',
+    }
+
+
+COMMISSION_STEP_DEFINITIONS = [
+    ('Open', 'Awaiting Agent', 'A nearby agent has not yet accepted the commission.'),
+    ('Accepted', 'Agent Accepted', 'An agent has accepted responsibility for the commission.'),
+    ('Documents_Review', 'Document Review', 'The accepted agent has reviewed the parcel documents.'),
+    ('Lawyer_Verification', 'Lawyer Verification', 'Documents are with the lawyer for authentication.'),
+    ('Site_Visit_Scheduled', 'Site Visit Scheduled', 'A site visit has been proposed and shared with the buyer.'),
+    ('Site_Visit_Complete', 'Site Visit Complete', 'The on-site visit has been completed.'),
+    ('Closing', 'Closing', 'The transaction has been created and payment can begin.'),
+    ('Completed', 'Completed', 'Escrow closed and ownership transfer completed.'),
+    ('Cancelled', 'Cancelled', 'The commission was cancelled before completion.'),
+]
+
+
+def _commission_status_tone(status):
+    if status == 'Completed':
+        return 'success'
+    if status in {'Open', 'Accepted', 'Documents_Review', 'Lawyer_Verification', 'Site_Visit_Scheduled', 'Closing'}:
+        return 'warning'
+    if status in {'Site_Visit_Complete'}:
+        return 'accent'
+    if status == 'Cancelled':
+        return 'danger'
+    return 'muted'
+
+
+def _serialize_commission_documents(parcel):
+    return [
+        {
+            'id': str(document.id),
+            'document_type': document.document_type,
+            'document_label': document.get_document_type_display() if hasattr(document, 'get_document_type_display') else document.document_type,
+            'verification_status': document.verification_status,
+            'uploaded_at': document.uploaded_at.strftime('%b %d, %Y') if getattr(document, 'uploaded_at', None) else '',
+        }
+        for document in parcel.documents.all().order_by('-uploaded_at')
+    ]
+
+
+def _serialize_commission_steps(commission):
+    status_order = {status: index for index, (status, _, _) in enumerate(COMMISSION_STEP_DEFINITIONS)}
+    current_index = status_order.get(commission.status, 0)
+    steps = []
+    for index, (status, label, description) in enumerate(COMMISSION_STEP_DEFINITIONS):
+        if commission.status == 'Cancelled' and status != 'Cancelled':
+            state = 'skipped'
+            completed = False
+            active = False
+        else:
+            completed = index < current_index
+            active = index == current_index and commission.status != 'Cancelled'
+            state = 'complete' if completed else 'current' if active else 'upcoming'
+        steps.append({
+            'key': status.lower(),
+            'status': status,
+            'label': label,
+            'description': description,
+            'completed': completed,
+            'active': active,
+            'state': state,
+        })
+    return steps
+
+
+def serialize_commission(commission, user=None):
+    parcel = commission.land_parcel
+    parcel_summary = serialize_parcel(parcel, user)
+    documents = _serialize_commission_documents(parcel)
+    steps = _serialize_commission_steps(commission)
+    is_buyer = bool(user and getattr(user, 'id', None) == getattr(commission, 'buyer_id', None))
+    is_agent = bool(user and getattr(user, 'id', None) == getattr(commission, 'accepted_by_id', None))
+    is_lawyer = bool(user and getattr(user, 'id', None) == getattr(commission, 'assigned_lawyer_id', None))
+    is_admin = bool(user and getattr(user, 'role', None) == 'Admin')
+
+    can_accept = bool(user and getattr(user, 'role', None) == 'Agent' and commission.status == 'Open')
+    can_work = bool(is_agent or is_admin)
+    can_review_documents = can_work and commission.status in {'Accepted', 'Documents_Review'}
+    can_submit_to_lawyer = can_work and commission.documents_reviewed
+    can_schedule_site_visit = can_work and commission.lawyer_verified is True
+    can_complete_site_visit = can_work and commission.status == 'Site_Visit_Scheduled'
+    can_close = can_work and commission.can_create_transaction
+    can_review_as_lawyer = bool(user and getattr(user, 'role', None) == 'Lawyer' and (commission.assigned_lawyer_id in {None, getattr(user, 'id', None)} or is_admin))
+
+    return {
+        'id': str(commission.id),
+        'status': commission.status,
+        'status_label': commission.get_status_display() if hasattr(commission, 'get_status_display') else commission.status,
+        'status_tone': _commission_status_tone(commission.status),
+        'buyer': serialize_user(commission.buyer),
+        'accepted_by': serialize_user(commission.accepted_by) if commission.accepted_by else None,
+        'accepted_at': commission.accepted_at.strftime('%b %d, %Y %H:%M') if getattr(commission, 'accepted_at', None) else None,
+        'assigned_lawyer': serialize_user(commission.assigned_lawyer) if commission.assigned_lawyer else None,
+        'lawyer_submitted_at': commission.lawyer_submitted_at.strftime('%b %d, %Y %H:%M') if getattr(commission, 'lawyer_submitted_at', None) else None,
+        'lawyer_verified': commission.lawyer_verified,
+        'lawyer_verification_note': commission.lawyer_verification_note,
+        'lawyer_verified_at': commission.lawyer_verified_at.strftime('%b %d, %Y %H:%M') if getattr(commission, 'lawyer_verified_at', None) else None,
+        'documents_reviewed': commission.documents_reviewed,
+        'documents_review_note': commission.documents_review_note,
+        'documents_reviewed_at': commission.documents_reviewed_at.strftime('%b %d, %Y %H:%M') if getattr(commission, 'documents_reviewed_at', None) else None,
+        'site_visit_date': commission.site_visit_date.strftime('%b %d, %Y %H:%M') if getattr(commission, 'site_visit_date', None) else None,
+        'site_visit_location': commission.site_visit_location,
+        'site_visit_notes': commission.site_visit_notes,
+        'site_visit_complete': commission.site_visit_complete,
+        'site_visit_completed_at': commission.site_visit_completed_at.strftime('%b %d, %Y %H:%M') if getattr(commission, 'site_visit_completed_at', None) else None,
+        'transaction_id': str(commission.transaction_id) if commission.transaction_id else None,
+        'transaction_status': commission.transaction.status if commission.transaction_id else None,
+        'closed_at': commission.closed_at.strftime('%b %d, %Y %H:%M') if getattr(commission, 'closed_at', None) else None,
+        'is_joint_purchase': bool(commission.is_joint_purchase),
+        'joint_group': serialize_joint_group(commission.joint_group, user) if commission.joint_group else None,
+        'target_county': commission.target_county,
+        'target_constituency': commission.target_constituency,
+        'created_at': commission.created_at.strftime('%b %d, %Y %H:%M'),
+        'updated_at': commission.updated_at.strftime('%b %d, %Y %H:%M'),
+        'parcel': parcel_summary,
+        'documents': documents,
+        'document_count': len(documents),
+        'required_documents': [
+            {
+                'title': doc['title'],
+                'key': doc['key'],
+                'required': doc.get('required', False),
+                'description': doc.get('description', ''),
+            }
+            for doc in (JOINT_KENYAN_LAND_DOCUMENTS if commission.is_joint_purchase else KENYAN_LAND_DOCUMENTS)
+        ],
+        'steps': steps,
+        'detail_url': reverse('frontend:commission_detail', args=[commission.id]),
+        'accept_url': reverse('frontend:agent_accept_job', args=[commission.id]),
+        'steps_url': reverse('frontend:agent_commission_steps', args=[commission.id]),
+        'step_action_base_url': reverse('frontend:agent_commission_step_action', args=[commission.id, 'documents_review']),
+        'step_action_urls': {
+            'documents_review': reverse('frontend:agent_commission_step_action', args=[commission.id, 'documents_review']),
+            'submit_to_lawyer': reverse('frontend:agent_commission_step_action', args=[commission.id, 'submit_to_lawyer']),
+            'lawyer_verdict': reverse('frontend:agent_commission_step_action', args=[commission.id, 'lawyer_verdict']),
+            'schedule_site_visit': reverse('frontend:agent_commission_step_action', args=[commission.id, 'schedule_site_visit']),
+            'complete_site_visit': reverse('frontend:agent_commission_step_action', args=[commission.id, 'complete_site_visit']),
+            'close': reverse('frontend:agent_commission_step_action', args=[commission.id, 'close']),
+        },
+        'review_url': reverse('frontend:lawyer_review_commission', args=[commission.id]),
+        'transaction_url': reverse('frontend:payment_onboarding', args=[commission.transaction_id]) if commission.transaction_id else None,
+        'can_accept': can_accept,
+        'can_work': can_work,
+        'can_review_documents': can_review_documents,
+        'can_submit_to_lawyer': can_submit_to_lawyer,
+        'can_schedule_site_visit': can_schedule_site_visit,
+        'can_complete_site_visit': can_complete_site_visit,
+        'can_close': can_close,
+        'can_review_as_lawyer': can_review_as_lawyer,
+        'is_buyer': is_buyer,
+        'is_agent': is_agent,
+        'is_lawyer': is_lawyer,
+        'is_admin': is_admin,
     }
 
 
