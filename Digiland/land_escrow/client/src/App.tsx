@@ -697,338 +697,165 @@ function LegalCards(laws: NonNullable<typeof bootstrap.laws>) {
 
 function DashboardPage() {
   const role = bootstrap.user?.role || 'Buyer';
+  const displayName = bootstrap.user?.full_name || bootstrap.user?.email || 'User';
   const isAdmin = role === 'Admin';
-  const subtitle = role === 'Admin' || role === 'Agent' || role === 'Lawyer'
-    ? 'Monitor parcels, approvals, transactions, and messages from one workspace.'
-    : role === 'Seller'
-      ? 'Manage your listings, review buyer activity, and track escrow status.'
-      : 'Browse verified parcels, review contracts, and manage your buyer dashboard from one clean workspace.';
+  const isAgent = role === 'Agent';
+  const isLawyer = role === 'Lawyer';
+  const isSeller = role === 'Seller';
 
-  const pendingAgents = bootstrap.pending_agent_applications || [];
-  const individualBuyers = bootstrap.individual_buyers || [];
+  const subtitle = isAdmin || isAgent || isLawyer
+    ? 'High-level command overview. Access dedicated modules for tasks, approvals, and escrow ledger.'
+    : isSeller
+      ? 'High-level seller overview. Manage parcels and promotions in their dedicated workspaces.'
+      : 'High-level buyer overview. Track active purchase commissions and escrow settlements.';
+
+  const activeCommissions = bootstrap.active_commissions || bootstrap.commissions || [];
+  const activeSpotlightCommission = activeCommissions[0];
+  const sellerParcels = bootstrap.parcels || [];
+  const activeSpotlightParcel = sellerParcels[0];
+  const transactions = bootstrap.transactions || [];
+  const recentTransactions = transactions.slice(0, 5);
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        kicker="Workspace"
-        title={bootstrap.title}
-        subtitle={subtitle}
-        badge={bootstrap.notice}
-        actions={bootstrap.actions}
-      />
+    <div className="space-y-8 max-w-full">
+      {/* Sleek Hero Welcome & Quick Action Pill Bar */}
+      <div className="rounded-[2.25rem] border border-emerald-100 bg-gradient-to-r from-emerald-900 via-slate-900 to-slate-950 p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute right-0 top-0 h-64 w-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2 text-left">
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold uppercase tracking-wider">
+                {role} Workspace
+              </span>
+              <span className="text-xs text-slate-300 font-medium flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                Active Session
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+              Welcome back, {displayName}
+            </h1>
+            <p className="text-sm text-slate-300 max-w-2xl font-light">
+              {subtitle}
+            </p>
+          </div>
+
+          {/* Role-Specific Quick Action Shortcuts */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {!isSeller && !isAdmin && !isAgent && !isLawyer && (
+              <>
+                <a href="/marketplace/" className="inline-flex h-11 items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-5 text-xs font-bold transition shadow-md gap-2">
+                  <Grid2X2 className="h-4 w-4" /> Browse Marketplace
+                </a>
+                <a href="/buyer/dashboard/" className="inline-flex h-11 items-center justify-center rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-white px-5 text-xs font-bold transition gap-2">
+                  <ShieldCheck className="h-4 w-4" /> My Commissions ({activeCommissions.length})
+                </a>
+              </>
+            )}
+
+            {isSeller && (
+              <>
+                <a href="/parcels/upload/" className="inline-flex h-11 items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-5 text-xs font-bold transition shadow-md gap-2">
+                  <Grid2X2 className="h-4 w-4" /> List New Parcel
+                </a>
+                <a href="/seller/promotions/" className="inline-flex h-11 items-center justify-center rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-white px-5 text-xs font-bold transition gap-2">
+                  <Sparkles className="h-4 w-4" /> Promote Listing
+                </a>
+              </>
+            )}
+
+            {(isAdmin || isAgent || isLawyer) && (
+              <>
+                <a href="/agent/approvals/" className="inline-flex h-11 items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-5 text-xs font-bold transition shadow-md gap-2">
+                  <Gavel className="h-4 w-4" /> Approvals Hub
+                </a>
+                <a href="/transactions/" className="inline-flex h-11 items-center justify-center rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-white px-5 text-xs font-bold transition gap-2">
+                  <ReceiptText className="h-4 w-4" /> Escrow Ledger
+                </a>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* KPI Metric Stat Grid */}
       <StatGrid />
 
-      <Card className="bg-white/92">
+      {/* Active Focus Spotlight Card (Highlights 1 urgent item instead of massive list) */}
+      {activeSpotlightCommission && (
+        <Card className="bg-gradient-to-r from-emerald-50/70 to-slate-50 border border-emerald-200/80 shadow-md rounded-[2rem] overflow-hidden">
+          <CardContent className="p-6 text-left">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Badge tone="accent" className="text-xs">Active Spotlight Workflow</Badge>
+                  <span className="text-xs text-slate-500 font-medium">Parcel {activeSpotlightCommission.parcel_number}</span>
+                </div>
+                <h3 className="text-lg font-black text-slate-900">
+                  {activeSpotlightCommission.status_display || activeSpotlightCommission.status}
+                </h3>
+                <p className="text-xs text-slate-600">
+                  Assigned Agent: <strong>{activeSpotlightCommission.accepted_by?.full_name || 'Awaiting Agent'}</strong> · Region: {activeSpotlightCommission.county || 'Kenyan Land'}
+                </p>
+              </div>
+
+              <a 
+                href={activeSpotlightCommission.detail_url || '/buyer/dashboard/'} 
+                className="inline-flex h-11 items-center justify-center rounded-full bg-emerald-700 hover:bg-emerald-800 text-white px-6 text-xs font-bold transition shadow-md whitespace-nowrap gap-2"
+              >
+                <span>Manage Full Pipeline Workspace</span>
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recent Escrow Activity Stream (Clean 5-item summary with link to dedicated register) */}
+      <Card className="bg-white/95 shadow-md border-slate-200/80 rounded-[2rem]">
         <CardHeader>
-          <PanelTitle title="Recent transactions" subtitle="Latest escrow movement in your account." action={<a href="/transactions/" className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">Open register</a>} />
+          <PanelTitle 
+            title="Recent Escrow Activity" 
+            subtitle="Latest 5 transaction events. Access the dedicated register for full ledger." 
+            action={<a href="/transactions/" className="text-xs font-extrabold text-emerald-700 hover:text-emerald-800 flex items-center gap-1">Open Escrow Ledger <ArrowRight className="h-3.5 w-3.5" /></a>} 
+          />
         </CardHeader>
         <CardContent className="p-0">
-          <TransactionTable />
-        </CardContent>
-      </Card>
-
-      {role === 'Buyer' ? (
-        <CommissionListSection
-          title="My commissions"
-          subtitle="Track each parcel request through agent review, lawyer authentication, site visits, and closing."
-          commissions={bootstrap.commissions || []}
-          emptyMessage="You have not commissioned a parcel yet. Open a verified parcel and commission it to start the workflow."
-          mode="buyer"
-        />
-      ) : null}
-
-      {role === 'Agent' ? (
-        <div className="space-y-6">
-          <CommissionListSection
-            title="Open commission jobs"
-            subtitle="Nearby purchase commissions waiting for an agent to accept them."
-            commissions={bootstrap.commissions || []}
-            emptyMessage="No open commissions matched to your operating region yet."
-            mode="agent-open"
-          />
-          <CommissionListSection
-            title="Active commissions"
-            subtitle="Jobs you have already accepted and are actively working through."
-            commissions={bootstrap.active_commissions || []}
-            emptyMessage="You do not have any active commissions yet."
-            mode="agent-active"
-          />
-        </div>
-      ) : null}
-
-      {role === 'Lawyer' ? (
-        <CommissionListSection
-          title="Commission reviews"
-          subtitle="Documents waiting for lawyer authentication and a verdict."
-          commissions={bootstrap.commission_reviews || []}
-          emptyMessage="No commission reviews are waiting right now."
-          mode="lawyer"
-        />
-      ) : null}
-
-      {role === 'Seller' ? (
-        <Card className="bg-white/92">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base">My Land Listings</CardTitle>
-                <CardDescription>Track the verification status of your uploaded land parcels.</CardDescription>
-              </div>
-              <a href="/parcels/upload/" className="inline-flex h-9 items-center justify-center rounded-full bg-emerald-700 hover:bg-emerald-850 px-4 text-xs font-semibold text-white transition-colors">List New Parcel</a>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {!(bootstrap.parcels && bootstrap.parcels.length > 0) ? (
-              <div className="p-8 text-center text-sm text-slate-500">You have not listed any land parcels yet. Click "List New Parcel" above to start.</div>
-            ) : (
-              <div className="divide-y divide-border/60">
-                {bootstrap.parcels.map((parcel: any) => (
-                  <div key={parcel.parcel_number} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 gap-3 hover:bg-muted/10 transition-colors">
-                    <div className="flex items-center gap-4">
-                      {parcel.image_url ? (
-                        <img src={parcel.image_url} alt="" className="h-12 w-16 object-cover rounded-xl border" />
-                      ) : (
-                        <div className="h-12 w-16 bg-slate-100 flex items-center justify-center rounded-xl border text-xs text-slate-400">No Image</div>
-                      )}
-                      <div>
-                        <div className="font-bold text-foreground text-left">Parcel {parcel.parcel_number}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5 text-left">{parcel.county} · {parcel.constituency} · {parcel.ward}</div>
-                        <div className="text-xs font-bold text-emerald-800 mt-1 text-left">KES {Number(parcel.asking_price || 0).toLocaleString()}</div>
-                      </div>
+          {recentTransactions.length === 0 ? (
+            <div className="p-8 text-center text-sm text-slate-400">No recent transaction activity recorded.</div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {recentTransactions.map((tx: any) => (
+                <div key={tx.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 gap-3 hover:bg-slate-50/80 transition-colors">
+                  <div className="flex items-center gap-3.5">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 font-bold border border-emerald-100">
+                      <ReceiptText className="h-5 w-5" />
                     </div>
-                    <div className="flex items-center gap-4 justify-between sm:justify-end">
-                      <Badge tone={
-                        parcel.verification_status === 'Verified' ? 'success' :
-                        parcel.verification_status === 'Fraudulent' ? 'danger' :
-                        parcel.verification_status === 'Pending' ? 'warning' : 'muted'
-                      }>
-                        {parcel.status_badge || parcel.verification_status}
-                      </Badge>
-                      <div className="flex items-center gap-3">
-                        <a href={parcel.details_url} className="text-xs font-bold text-slate-700 hover:text-slate-900">View</a>
-                        {parcel.edit_url && (
-                          <a href={parcel.edit_url} className="text-xs font-bold text-emerald-700 hover:text-emerald-805">Edit</a>
-                        )}
-                        {parcel.delete_url && (
-                          <form
-                            method="post"
-                            action={parcel.delete_url}
-                            onSubmit={(e) => {
-                              if (!window.confirm(`Are you sure you want to permanently delete Listing for Parcel ${parcel.parcel_number}?`)) {
-                                e.preventDefault();
-                              }
-                            }}
-                            className="inline"
-                          >
-                            <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token} />
-                            <button type="submit" className="text-xs font-bold text-red-650 hover:text-red-750 cursor-pointer bg-transparent border-0 p-0">Delete</button>
-                          </form>
-                        )}
-                      </div>
+                    <div className="text-left">
+                      <div className="font-bold text-slate-900 text-sm">Parcel {tx.parcel_number}</div>
+                      <div className="text-xs text-slate-500">ID: {tx.id.substring(0, 8)}... · Buyer: {tx.buyer_email}</div>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ) : null}
 
-      {role === 'Agent' ? (
-        <Card className="bg-white/92">
-          <CardHeader>
-            <CardTitle className="text-base text-left">Assigned Pending Verifications</CardTitle>
-            <CardDescription className="text-left">Parcels currently assigned to you for inspection and verification.</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            {!(bootstrap.parcels && bootstrap.parcels.length > 0) ? (
-              <div className="p-8 text-center text-sm text-slate-500">You have no pending verification tasks.</div>
-            ) : (
-              <div className="divide-y divide-border/60">
-                {bootstrap.parcels.map((parcel: any) => (
-                  <div key={parcel.parcel_number} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 gap-3 hover:bg-muted/10 transition-colors">
-                    <div className="flex items-center gap-4">
-                      {parcel.image_url ? (
-                        <img src={parcel.image_url} alt="" className="h-12 w-16 object-cover rounded-xl border" />
-                      ) : (
-                        <div className="h-12 w-16 bg-slate-100 flex items-center justify-center rounded-xl border text-xs text-slate-400">No Image</div>
-                      )}
-                      <div>
-                        <div className="font-bold text-foreground text-left">Parcel {parcel.parcel_number}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5 text-left">{parcel.county} · {parcel.constituency} · {parcel.ward}</div>
-                        <div className="text-xs font-bold text-emerald-800 mt-1 text-left">KES {Number(parcel.asking_price || 0).toLocaleString()}</div>
-                      </div>
+                  <div className="flex items-center gap-4 justify-between sm:justify-end">
+                    <div className="text-right">
+                      <div className="font-black text-emerald-700 text-sm">KES {money(tx.amount)}</div>
+                      <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{tx.status}</div>
                     </div>
-                    <div className="flex items-center gap-4 justify-between sm:justify-end">
-                      <Badge tone="warning">Pending Agent Review</Badge>
-                      <a href={parcel.details_url} className="inline-flex h-8 items-center justify-center rounded-full bg-emerald-700 hover:bg-emerald-850 px-4 text-xs font-semibold text-white transition-colors">Review Listing</a>
-                    </div>
+                    <a href="/transactions/" className="inline-flex h-8 items-center justify-center rounded-full border border-slate-200 bg-white px-3.5 text-xs font-bold text-slate-700 hover:bg-slate-50">
+                      Details
+                    </a>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {role === 'Lawyer' ? (
-        <Card className="bg-white/92">
-          <CardHeader>
-            <CardTitle className="text-base text-left">Pending Legal Reviews</CardTitle>
-            <CardDescription className="text-left">Escrow agreements awaiting Law Society of Kenya (LSK) Advocate sign-off.</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            {!(bootstrap.transactions && bootstrap.transactions.length > 0) ? (
-              <div className="p-8 text-center text-sm text-slate-500">You have no pending legal reviews.</div>
-            ) : (
-              <div className="divide-y divide-border/60">
-                {bootstrap.transactions.map((tx: any) => (
-                  <div key={tx.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 gap-3 hover:bg-muted/10 transition-colors">
-                    <div>
-                      <div className="font-bold text-foreground text-left">Transaction {tx.id.substring(0, 8)}... (Parcel {tx.parcel_number})</div>
-                      <div className="text-xs text-muted-foreground mt-0.5 text-left">Agreement Price: KES {Number(tx.amount || 0).toLocaleString()}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5 text-left">Date: {tx.created_at}</div>
-                    </div>
-                    <div className="flex items-center gap-4 justify-between sm:justify-end">
-                      <Badge tone="warning">Under Legal Review</Badge>
-                      <a href={tx.action_url} className="inline-flex h-8 items-center justify-center rounded-full bg-emerald-700 hover:bg-emerald-850 px-4 text-xs font-semibold text-white transition-colors">{tx.action_label}</a>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {isAdmin && pendingAgents.length > 0 ? (
-        <Card className="bg-white/92">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
-                <ShieldAlert className="h-4 w-4" />
-              </div>
-              <div>
-                <CardTitle className="text-base">Agent Applications</CardTitle>
-                <CardDescription>{pendingAgents.length} pending KYC review{pendingAgents.length !== 1 ? 's' : ''}</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {pendingAgents.map((agent: any) => (
-              <div key={agent.id} className="rounded-3xl border border-border bg-muted/30 p-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div className="font-bold text-foreground">{agent.email}</div>
-                    <div className="mt-1 text-sm text-muted-foreground">
-                      ID: {agent.id_number || '—'} · KRA: {agent.kra_pin || '—'} · Phone: {agent.phone_number || '—'}
-                    </div>
-                    <div className="mt-1 text-xs text-muted-foreground">Joined {agent.joined_at || '—'}</div>
-                  </div>
-                  <Badge tone={agent.kyc?.submitted ? 'warning' : 'danger'}>
-                    {agent.kyc?.status || 'No KYC'}
-                  </Badge>
                 </div>
-
-                {agent.kyc?.submitted ? (
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                    {agent.kyc.id_photo_url ? (
-                      <a href={agent.kyc.id_photo_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-2xl border border-border bg-white px-4 py-3 text-xs font-semibold text-foreground hover:bg-muted">
-                        <FileText className="h-4 w-4 text-emerald-700" /> ID Photo
-                      </a>
-                    ) : null}
-                    {agent.kyc.resume_url ? (
-                      <a href={agent.kyc.resume_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-2xl border border-border bg-white px-4 py-3 text-xs font-semibold text-foreground hover:bg-muted">
-                        <FileText className="h-4 w-4 text-blue-700" /> Resume / CV
-                      </a>
-                    ) : null}
-                    {agent.kyc.certificate_url ? (
-                      <a href={agent.kyc.certificate_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-2xl border border-border bg-white px-4 py-3 text-xs font-semibold text-foreground hover:bg-muted">
-                        <FileText className="h-4 w-4 text-purple-700" /> Good Conduct
-                      </a>
-                    ) : null}
-                    {agent.kyc.practicing_cert_url ? (
-                      <a href={agent.kyc.practicing_cert_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-2xl border border-border bg-white px-4 py-3 text-xs font-semibold text-foreground hover:bg-muted">
-                        <FileText className="h-4 w-4 text-amber-700" /> Practicing Cert
-                      </a>
-                    ) : null}
-                  </div>
-                ) : (
-                  <div className="mt-3 rounded-2xl bg-rose-50 p-3 text-xs text-rose-700">KYC documents have not been submitted yet.</div>
-                )}
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {agent.kyc?.submitted ? (
-                    <form method="post" action={agent.approve_url}>
-                      <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
-                      <Button type="submit" className="rounded-full bg-emerald-700 hover:bg-emerald-800">Approve Agent</Button>
-                    </form>
-                  ) : null}
-                  <form method="post" action={agent.reject_url}>
-                    <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
-                    <Button type="submit" variant="outline" className="rounded-full border-rose-300 text-rose-700 hover:bg-rose-50">Reject</Button>
-                  </form>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {isAdmin && individualBuyers.length > 0 ? (
-        <Card className="bg-white/92">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
-                <Users className="h-4 w-4" />
-              </div>
-              <div>
-                <CardTitle className="text-base">Buyer Account Type Upgrades</CardTitle>
-                <CardDescription>Promote individual buyers to joint account owners on verified admin request.</CardDescription>
-              </div>
+              ))}
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {individualBuyers.map((buyer: any) => (
-              <div key={buyer.id} className="rounded-3xl border border-border bg-muted/30 p-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div className="font-bold text-foreground">{buyer.email}</div>
-                    <div className="mt-1 text-sm text-muted-foreground">
-                      Current account type: Individual
-                    </div>
-                    <div className="mt-1 text-xs text-muted-foreground">Phone: {buyer.phone_number || '—'} · Joined {buyer.joined_at || '—'}</div>
-                  </div>
-                  <form method="post" action={buyer.promote_to_joint_url}>
-                    <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
-                    <Button type="submit" className="rounded-full bg-emerald-700 hover:bg-emerald-800">
-                      Promote to Joint
-                    </Button>
-                  </form>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <Card className="bg-white/92">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base"><ShieldCheck className="h-4 w-4 text-emerald-700" />Key actions</CardTitle>
-          <CardDescription>Shortcuts to the most common workflows.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2">
-          {(bootstrap.actions || []).map((action) => (
-            <a key={action.href} href={action.href} className="flex items-center justify-between rounded-2xl border border-border bg-muted/45 px-4 py-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted">
-              <span>{action.label}</span>
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            </a>
-          ))}
+          )}
         </CardContent>
       </Card>
     </div>
   );
 }
+
 
 function ParcelListPage() {
   return (
@@ -3071,14 +2898,29 @@ function TaskManagementPage() {
 
 function ApprovalsPage() {
   const page = bootstrap.approvals_page;
-  if (!page) return <AppShell {...{
-    title: bootstrap.title,
-    subtitle: bootstrap.subtitle,
-    user: bootstrap.user,
-    nav: bootstrap.nav,
-    logoutUrl: bootstrap.logout_url,
-    csrfToken: bootstrap.csrf_token,
-  }}><Card className="bg-white/92"><CardContent className="p-8 text-center text-sm text-muted-foreground">Approvals are unavailable.</CardContent></Card></AppShell>;
+  const [activeTab, setActiveTab] = useState<'users' | 'parcels' | 'transactions' | 'removals'>('users');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  if (!page) {
+    return (
+      <AppShell {...{
+        title: bootstrap.title,
+        subtitle: bootstrap.subtitle,
+        user: bootstrap.user,
+        nav: bootstrap.nav,
+        logoutUrl: bootstrap.logout_url,
+        csrfToken: bootstrap.csrf_token,
+      }}>
+        <Card className="bg-white/92 shadow-sm">
+          <CardContent className="p-12 text-center text-muted-foreground">
+            <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-amber-500" />
+            <div className="text-lg font-bold text-foreground">Approvals Workspace Unavailable</div>
+            <p className="mt-1 text-sm">You do not have access or no pending approvals exist.</p>
+          </CardContent>
+        </Card>
+      </AppShell>
+    );
+  }
 
   const shellProps = {
     title: bootstrap.title,
@@ -3088,95 +2930,384 @@ function ApprovalsPage() {
     logoutUrl: bootstrap.logout_url,
     csrfToken: bootstrap.csrf_token,
   };
+
+  const pendingUsers = page.pending_users || [];
+  const pendingParcels = page.pending_parcels || [];
+  const pendingTransactions = page.pending_transactions || [];
   const pendingRemovalRequests = page.pending_joint_removals || [];
+
+  // Filter items by search query
+  const filteredUsers = pendingUsers.filter(u => 
+    !searchQuery || u.email?.toLowerCase().includes(searchQuery.toLowerCase()) || u.role?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredParcels = pendingParcels.filter(p => 
+    !searchQuery || p.parcel_number?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    p.county?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    p.constituency?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredTransactions = pendingTransactions.filter(t => 
+    !searchQuery || t.parcel_number?.toLowerCase().includes(searchQuery.toLowerCase()) || t.status?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredRemovals = pendingRemovalRequests.filter(r => 
+    !searchQuery || r.group_name?.toLowerCase().includes(searchQuery.toLowerCase()) || r.member?.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <AppShell {...shellProps}>
-      <div className="space-y-6">
-        <PageHeader kicker="Approvals" title={bootstrap.title} subtitle={bootstrap.subtitle} />
-        <div className="grid gap-6 xl:grid-cols-4">
-          <Card className="bg-white/92">
-            <CardHeader><CardTitle className="text-base">Pending users</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              {page.pending_users.map((user) => (
-                <div key={user.email} className="rounded-3xl border border-border bg-muted/40 p-4">
-                  <div className="font-semibold text-foreground">{user.email}</div>
-                  <div className="text-sm text-muted-foreground">{user.role}</div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <a href={`/agent/approvals/${user.id}/review/`} className="inline-flex h-9 items-center justify-center rounded-full border border-border bg-white px-4 text-xs font-semibold text-foreground hover:bg-muted">Review</a>
-                    <form method="post" action={`/agent/users/${user.id}/approve/`}>
-                      <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
-                      <Button type="submit" size="sm" className="rounded-full">Approve</Button>
-                    </form>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+      <div className="space-y-8 max-w-7xl mx-auto">
+        <PageHeader 
+          kicker="Command Hub" 
+          title="Central Approvals & Identity Verification" 
+          subtitle="Manage pending user KYC applications, parcel verification listings, escrow transfers, and joint member exits." 
+        />
 
-          <Card className="bg-white/92">
-            <CardHeader><CardTitle className="text-base">Pending parcels</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              {page.pending_parcels.map((parcel) => (
-                <a key={parcel.parcel_number} href={parcel.details_url} className="block rounded-3xl border border-border bg-muted/40 p-4 hover:bg-muted">
-                  <div className="font-semibold text-foreground">{parcel.parcel_number}</div>
-                  <div className="text-sm text-muted-foreground">{parcel.county}, {parcel.constituency}</div>
-                </a>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/92">
-            <CardHeader><CardTitle className="text-base">Pending transactions</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              {page.pending_transactions.map((tx) => (
-                <div key={tx.id} className="rounded-3xl border border-border bg-muted/40 p-4">
-                  <div className="font-semibold text-foreground">{tx.parcel_number}</div>
-                  <div className="text-sm text-muted-foreground">{tx.status} · KES {tx.amount}</div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/92 xl:col-span-4">
-            <CardHeader>
-              <CardTitle className="text-base">Pending joint member removals</CardTitle>
-              <CardDescription>Admin must confirm consent and compensation before a member is removed from a joint group.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {pendingRemovalRequests.length ? pendingRemovalRequests.map((request) => (
-                <div key={request.id} className="rounded-3xl border border-border bg-muted/40 p-4">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-2">
-                      <div className="font-semibold text-foreground">{request.group_name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Remove <strong>{request.member.full_name}</strong> · Requested by {request.requested_by?.email || 'Unknown'}
-                      </div>
-                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                        Consent: {request.consent_confirmed ? 'Confirmed' : 'Pending'} · Compensation: {request.compensation_confirmed ? `Confirmed${request.compensation_amount ? ` (KES ${request.compensation_amount})` : ''}` : 'Pending'}
-                      </div>
-                      {request.notes ? <div className="rounded-2xl bg-white px-3 py-2 text-sm text-foreground">{request.notes}</div> : null}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <form method="post" action={request.approve_url}>
-                        <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
-                        <Button type="submit" size="sm" className="rounded-full">Approve removal</Button>
-                      </form>
-                      <form method="post" action={request.reject_url}>
-                        <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
-                        <Button type="submit" size="sm" variant="outline" className="rounded-full">Reject</Button>
-                      </form>
-                    </div>
-                  </div>
-                </div>
-              )) : (
-                <div className="rounded-3xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-                  No pending joint removal requests.
-                </div>
+        {/* Tab Selection Navigation Bar */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-4">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab('users')}
+              className={cn(
+                "inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 cursor-pointer",
+                activeTab === 'users'
+                  ? "bg-emerald-700 text-white shadow-md"
+                  : "bg-white border border-border text-slate-700 hover:bg-slate-50"
               )}
-            </CardContent>
-          </Card>
+            >
+              <Users className="h-4 w-4" />
+              <span>Pending Users</span>
+              <span className={cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === 'users' ? "bg-emerald-800 text-emerald-100" : "bg-slate-100 text-slate-700")}>
+                {pendingUsers.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('parcels')}
+              className={cn(
+                "inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 cursor-pointer",
+                activeTab === 'parcels'
+                  ? "bg-emerald-700 text-white shadow-md"
+                  : "bg-white border border-border text-slate-700 hover:bg-slate-50"
+              )}
+            >
+              <Landmark className="h-4 w-4" />
+              <span>Pending Parcels</span>
+              <span className={cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === 'parcels' ? "bg-emerald-800 text-emerald-100" : "bg-slate-100 text-slate-700")}>
+                {pendingParcels.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('transactions')}
+              className={cn(
+                "inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 cursor-pointer",
+                activeTab === 'transactions'
+                  ? "bg-emerald-700 text-white shadow-md"
+                  : "bg-white border border-border text-slate-700 hover:bg-slate-50"
+              )}
+            >
+              <WalletCards className="h-4 w-4" />
+              <span>Active Escrow</span>
+              <span className={cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === 'transactions' ? "bg-emerald-800 text-emerald-100" : "bg-slate-100 text-slate-700")}>
+                {pendingTransactions.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('removals')}
+              className={cn(
+                "inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 cursor-pointer",
+                activeTab === 'removals'
+                  ? "bg-emerald-700 text-white shadow-md"
+                  : "bg-white border border-border text-slate-700 hover:bg-slate-50"
+              )}
+            >
+              <Gavel className="h-4 w-4" />
+              <span>Joint Removals</span>
+              <span className={cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === 'removals' ? "bg-emerald-800 text-emerald-100" : "bg-slate-100 text-slate-700")}>
+                {pendingRemovalRequests.length}
+              </span>
+            </button>
+          </div>
+
+          {/* Quick Search Input */}
+          <div className="relative min-w-[240px]">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Filter current view..."
+              className="w-full h-10 pl-9 pr-4 rounded-full border border-border bg-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-sm"
+            />
+            <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+          </div>
         </div>
+
+        {/* TAB 1: PENDING USERS */}
+        {activeTab === 'users' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-black text-slate-900">User Identity & KYC Queue</h3>
+              <span className="text-xs text-muted-foreground">Showing {filteredUsers.length} user(s) awaiting verification</span>
+            </div>
+
+            {filteredUsers.length === 0 ? (
+              <Card className="bg-white/95">
+                <CardContent className="p-12 text-center text-muted-foreground">
+                  <Users className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+                  <div className="text-base font-bold text-slate-700">No Pending User Identity Verification Requests</div>
+                  <p className="text-xs mt-1">All buyer and seller identity submissions have been processed.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {filteredUsers.map((user) => (
+                  <Card key={user.email} className="bg-white/95 border-slate-200/80 shadow-md rounded-[1.75rem] overflow-hidden hover:shadow-lg transition duration-200">
+                    <CardContent className="p-6 text-left space-y-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3.5">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 font-bold text-lg border border-emerald-100">
+                            {user.email.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="font-bold text-base text-slate-900 truncate max-w-[220px]">{user.email}</div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge tone="outline" className="text-xs font-semibold">{user.role}</Badge>
+                              <span className="text-xs text-slate-400">ID Verification Pending</span>
+                            </div>
+                          </div>
+                        </div>
+                        <Badge tone="warning" className="px-3 py-1 text-xs">Needs KYC Review</Badge>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 pt-2 text-xs border-t border-slate-100">
+                        <div className="rounded-xl bg-slate-50 p-2.5">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">ID Number</span>
+                          <strong className="text-slate-800 font-semibold">{user.id_number || 'Not provided'}</strong>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-2.5">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">KRA PIN</span>
+                          <strong className="text-slate-800 font-semibold">{user.kra_pin || 'Not provided'}</strong>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-2">
+                        <a 
+                          href={`/agent/approvals/${user.id}/review/`} 
+                          className="flex-1 inline-flex h-10 items-center justify-center rounded-full border border-slate-300 bg-white px-4 text-xs font-bold text-slate-700 hover:bg-slate-50 transition shadow-sm"
+                        >
+                          Review Identity & Docs
+                        </a>
+                        <form method="post" action={`/agent/users/${user.id}/approve/`} className="flex-1">
+                          <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+                          <Button type="submit" className="w-full h-10 rounded-full bg-emerald-700 hover:bg-emerald-800 text-xs font-bold shadow-md">
+                            Direct Approve
+                          </Button>
+                        </form>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 2: PENDING PARCELS */}
+        {activeTab === 'parcels' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-black text-slate-900">Land Parcel Verification Queue</h3>
+              <span className="text-xs text-muted-foreground">Showing {filteredParcels.length} parcel(s) awaiting verification</span>
+            </div>
+
+            {filteredParcels.length === 0 ? (
+              <Card className="bg-white/95">
+                <CardContent className="p-12 text-center text-muted-foreground">
+                  <Landmark className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+                  <div className="text-base font-bold text-slate-700">No Pending Parcel Verification Requests</div>
+                  <p className="text-xs mt-1">All land parcels have been reviewed or verified.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {filteredParcels.map((parcel) => (
+                  <Card key={parcel.parcel_number} className="bg-white/95 border-slate-200/80 shadow-md rounded-[1.75rem] overflow-hidden hover:shadow-lg transition duration-200">
+                    <CardContent className="p-6 text-left space-y-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="text-xs font-bold uppercase tracking-wider text-emerald-700">Parcel Listing</div>
+                          <div className="font-black text-xl text-slate-900 mt-0.5">{parcel.parcel_number}</div>
+                          <div className="text-xs font-medium text-slate-500 mt-1 flex items-center gap-1">
+                            <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                            {parcel.county}, {parcel.constituency}
+                          </div>
+                        </div>
+                        <Badge tone="warning" className="px-3 py-1 text-xs">Unverified Parcel</Badge>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 pt-2 text-xs border-t border-slate-100">
+                        <div className="rounded-xl bg-slate-50 p-2.5">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Asking Price</span>
+                          <strong className="text-emerald-700 font-bold text-sm">KES {money(parcel.displayed_price || parcel.asking_price || '0')}</strong>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-2.5">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Land Size</span>
+                          <strong className="text-slate-800 font-semibold">{parcel.land_size || 'N/A'} Acres</strong>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2">
+                        <a 
+                          href={parcel.details_url} 
+                          className="w-full inline-flex h-11 items-center justify-center rounded-full bg-emerald-700 hover:bg-emerald-800 text-xs font-bold text-white transition shadow-md gap-2"
+                        >
+                          <span>Open Parcel Verification Dashboard</span>
+                          <ArrowRight className="h-4 w-4" />
+                        </a>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 3: PENDING TRANSACTIONS */}
+        {activeTab === 'transactions' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-black text-slate-900">Active Escrow Transactions</h3>
+              <span className="text-xs text-muted-foreground">Showing {filteredTransactions.length} active transaction(s)</span>
+            </div>
+
+            {filteredTransactions.length === 0 ? (
+              <Card className="bg-white/95">
+                <CardContent className="p-12 text-center text-muted-foreground">
+                  <WalletCards className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+                  <div className="text-base font-bold text-slate-700">No Active Escrow Transactions Requiring Action</div>
+                  <p className="text-xs mt-1">Escrow transactions will appear here when deposits are made.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {filteredTransactions.map((tx) => (
+                  <Card key={tx.id} className="bg-white/95 border-slate-200/80 shadow-md rounded-[1.75rem] overflow-hidden">
+                    <CardContent className="p-6 text-left space-y-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="text-xs font-bold uppercase tracking-wider text-emerald-700">Escrow Transaction</div>
+                          <div className="font-black text-xl text-slate-900 mt-0.5">{tx.parcel_number}</div>
+                          <div className="text-xs text-slate-500 mt-1">ID: {tx.id.slice(0, 8).toUpperCase()}</div>
+                        </div>
+                        <Badge tone={tx.status === 'Completed' ? 'success' : 'warning'} className="px-3 py-1 text-xs">{tx.status}</Badge>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 pt-2 text-xs border-t border-slate-100">
+                        <div className="rounded-xl bg-slate-50 p-2.5">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Escrow Amount</span>
+                          <strong className="text-emerald-700 font-bold text-sm">KES {money(tx.amount)}</strong>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-2.5">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Contract Signed</span>
+                          <strong className={tx.contract_signed ? 'text-emerald-700 font-bold' : 'text-amber-600 font-bold'}>{tx.contract_signed ? '✓ Signed' : 'Pending'}</strong>
+                        </div>
+                      </div>
+
+                      <div className="text-xs text-slate-600 space-y-1 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                        <div>Buyer: <strong className="text-slate-800">{tx.buyer_email}</strong></div>
+                        <div>Seller: <strong className="text-slate-800">{tx.seller_email}</strong></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 4: JOINT MEMBER REMOVALS */}
+        {activeTab === 'removals' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-black text-slate-900">Joint Member Exit Requests</h3>
+              <span className="text-xs text-muted-foreground">Showing {filteredRemovals.length} exit request(s)</span>
+            </div>
+
+            {filteredRemovals.length === 0 ? (
+              <Card className="bg-white/95">
+                <CardContent className="p-12 text-center text-muted-foreground">
+                  <Gavel className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+                  <div className="text-base font-bold text-slate-700">No Pending Joint Member Exit Requests</div>
+                  <p className="text-xs mt-1">Admin review is required for consent & compensation verification before joint members exit.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {filteredRemovals.map((request) => (
+                  <Card key={request.id} className="bg-white/95 border-slate-200/80 shadow-md rounded-[1.75rem] overflow-hidden">
+                    <CardContent className="p-6 text-left space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                        <div>
+                          <div className="text-xs font-bold uppercase tracking-wider text-emerald-700">Joint Buyer Group</div>
+                          <div className="font-black text-xl text-slate-900 mt-0.5">{request.group_name}</div>
+                        </div>
+                        <Badge tone="warning" className="px-3 py-1 text-xs w-fit">Pending Admin Verdict</Badge>
+                      </div>
+
+                      <div className="grid sm:grid-cols-3 gap-4 text-xs">
+                        <div className="rounded-xl bg-slate-50 p-3">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Member to Exit</span>
+                          <strong className="text-slate-900 text-sm font-bold">{request.member?.full_name || 'N/A'}</strong>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-3">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Consent Verification</span>
+                          <strong className={request.consent_confirmed ? 'text-emerald-700 font-bold' : 'text-amber-600 font-bold'}>
+                            {request.consent_confirmed ? '✓ Confirmed' : 'Pending Verification'}
+                          </strong>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-3">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Compensation Status</span>
+                          <strong className={request.compensation_confirmed ? 'text-emerald-700 font-bold' : 'text-amber-600 font-bold'}>
+                            {request.compensation_confirmed ? `✓ Paid (KES ${request.compensation_amount || 'N/A'})` : 'Pending Check'}
+                          </strong>
+                        </div>
+                      </div>
+
+                      {request.notes ? (
+                        <div className="rounded-2xl border border-amber-200/80 bg-amber-50/60 p-4 text-xs text-amber-900">
+                          <strong>Request Notes:</strong> {request.notes}
+                        </div>
+                      ) : null}
+
+                      <div className="flex items-center gap-3 pt-2">
+                        <form method="post" action={request.approve_url} className="flex-1">
+                          <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+                          <Button type="submit" className="w-full h-11 rounded-full bg-emerald-700 hover:bg-emerald-800 text-xs font-bold shadow-md">
+                            Approve Member Exit
+                          </Button>
+                        </form>
+                        <form method="post" action={request.reject_url} className="flex-1">
+                          <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
+                          <Button type="submit" variant="outline" className="w-full h-11 rounded-full border-rose-200 text-rose-700 hover:bg-rose-50 text-xs font-bold">
+                            Reject Exit Request
+                          </Button>
+                        </form>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </AppShell>
   );

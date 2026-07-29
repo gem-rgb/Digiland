@@ -280,12 +280,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-STORAGES = {
-    'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
-    },
-}
-
 # Only include optional frontend build output when it exists.
 STATICFILES_DIRS = [
     static_dir
@@ -306,10 +300,21 @@ CLOUDINARY_STORAGE = {
 if config('CLOUDINARY_CLOUD_NAME', default=''):
     # Use Raw Storage to support PDFs and Docx uploaded for Land Titles
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.RawMediaCloudinaryStorage'
+    DEFAULT_STORAGE_BACKEND = 'cloudinary_storage.storage.RawMediaCloudinaryStorage'
 else:
     # Fallback to local
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
+    DEFAULT_STORAGE_BACKEND = 'django.core.files.storage.FileSystemStorage'
+
+STORAGES = {
+    'default': {
+        'BACKEND': DEFAULT_STORAGE_BACKEND,
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 # Custom user model
 AUTH_USER_MODEL = 'core.User'

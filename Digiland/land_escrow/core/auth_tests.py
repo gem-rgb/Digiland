@@ -656,9 +656,10 @@ class TestDefaultFromEmailNeverBlank(TestCase):
         from django.urls import reverse
         from core.adapter import RoleBasedAccountAdapter
 
-        user = _make_user(email="browser-verified@digiland.co.ke")
+        user = _make_user(email="browser-verified@digiland.co.ke", role="Buyer")
         user.is_email_verified = True
-        user.save(update_fields=["is_email_verified"])
+        user.is_onboarded = True
+        user.save(update_fields=["is_email_verified", "is_onboarded"])
 
         request = RequestFactory().get("/accounts/login/")
         SessionMiddleware(lambda _request: None).process_request(request)
@@ -668,7 +669,7 @@ class TestDefaultFromEmailNeverBlank(TestCase):
         adapter = RoleBasedAccountAdapter()
         redirect_url = adapter.get_login_redirect_url(request)
 
-        self.assertEqual(redirect_url, reverse("frontend:home"))
+        self.assertEqual(redirect_url, reverse("frontend:buyer_dashboard"))
 
     def test_verified_buyer_signup_redirects_to_home(self):
         """Verified buyer signups should return to the buyer dashboard."""
@@ -677,9 +678,10 @@ class TestDefaultFromEmailNeverBlank(TestCase):
         from django.urls import reverse
         from core.adapter import RoleBasedAccountAdapter
 
-        user = _make_user(email="signup-verified@digiland.co.ke")
+        user = _make_user(email="signup-verified@digiland.co.ke", role="Buyer")
         user.is_email_verified = True
-        user.save(update_fields=["is_email_verified"])
+        user.is_onboarded = True
+        user.save(update_fields=["is_email_verified", "is_onboarded"])
 
         request = RequestFactory().get("/accounts/signup/")
         SessionMiddleware(lambda _request: None).process_request(request)
@@ -689,7 +691,7 @@ class TestDefaultFromEmailNeverBlank(TestCase):
         adapter = RoleBasedAccountAdapter()
         redirect_url = adapter.get_signup_redirect_url(request)
 
-        self.assertEqual(redirect_url, reverse("frontend:home"))
+        self.assertEqual(redirect_url, reverse("frontend:buyer_dashboard"))
 
     @override_settings(
         EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",

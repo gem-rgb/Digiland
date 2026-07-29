@@ -1202,13 +1202,17 @@ def trusted_device_revoke_view(request, pk):
 # ==================== SESSION VIEWS ====================
 
 
-@api_view(["GET"])
+@api_view(["GET", "DELETE"])
 @permission_classes([IsAuthenticated])
 def active_sessions_view(request):
-    """List active sessions for the authenticated user.
+    """List or revoke active sessions for the authenticated user.
 
     GET /api/v1/auth/sessions/
+    DELETE /api/v1/auth/sessions/
     """
+    if request.method == "DELETE":
+        return active_session_revoke_view(getattr(request, '_request', request))
+
     sessions = SessionService.list_active_sessions(request.user)
     serializer = SessionListSerializer(sessions, many=True, context={"request": request})
     return Response(serializer.data, status=status.HTTP_200_OK)

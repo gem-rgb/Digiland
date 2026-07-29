@@ -35,7 +35,7 @@ class MFAService:
     def get_totp_uri(secret, email):
         """Get the otpauth:// URI for QR code generation."""
         totp = pyotp.TOTP(secret)
-        return totp.provision_uri(name=email, issuer_name=MFAService.TOTP_ISSUER)
+        return totp.provisioning_uri(name=email, issuer_name=MFAService.TOTP_ISSUER)
     
     @staticmethod
     def generate_qr_code_base64(uri):

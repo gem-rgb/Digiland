@@ -182,7 +182,7 @@ class MFAService:
     def generate_qr_code_uri(secret: str, email: str) -> str:
         """Build the otpauth:// URI for authenticator app provisioning."""
         totp = pyotp.TOTP(secret)
-        return totp.provision_uri(name=email, issuer_name=MFAService.TOTP_ISSUER)
+        return totp.provisioning_uri(name=email, issuer_name=MFAService.TOTP_ISSUER)
 
     @staticmethod
     def generate_qr_code_base64(uri: str) -> str:
