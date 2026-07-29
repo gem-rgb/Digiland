@@ -96,66 +96,76 @@ function ListingCard({
     parcel.promotion_tier === 'Elite' ? 'success' : parcel.promotion_tier === 'Pro' ? 'warning' : 'outline';
   const listingTone = statusTone(parcel.verification_status);
   const price = parcel.displayed_price || parcel.asking_price;
+  const imageUrl = parcel.image_url || 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80';
 
   return (
-    <Card className={cn('overflow-hidden bg-white/92', parcel.is_promoted ? 'border-amber-200 shadow-soft' : '', className)}>
-      <div className="relative aspect-[16/10] bg-gradient-to-br from-emerald-50 via-stone-50 to-teal-50">
-        {parcel.image_url ? (
-          <img src={parcel.image_url} alt={parcel.parcel_number} className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full items-center justify-center text-sm font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-            No image
-          </div>
-        )}
-        <div className="absolute left-3 top-3 flex max-w-[75%] flex-wrap gap-2">
-          {parcel.is_promoted ? <Badge tone="success">Featured</Badge> : null}
-          {parcel.promotion_tier ? <Badge tone={promotionTone}>{parcel.promotion_tier}</Badge> : null}
+    <Card className={cn('group overflow-hidden bg-white shadow-md border-slate-200/80 rounded-[1.75rem] hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1', parcel.is_promoted ? 'border-emerald-300 ring-2 ring-emerald-500/20' : '', className)}>
+      <div className="relative aspect-[16/10] overflow-hidden bg-slate-900">
+        <img 
+          src={imageUrl} 
+          alt={parcel.parcel_number} 
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90" 
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-black/30 pointer-events-none" />
+
+        {/* Badges Overlay */}
+        <div className="absolute left-3 top-3 flex flex-wrap items-center gap-1.5 z-10">
+          {parcel.is_promoted ? <Badge tone="success" className="bg-emerald-600 text-white font-bold shadow">Featured</Badge> : null}
+          {parcel.promotion_tier ? <Badge tone={promotionTone} className="font-semibold">{parcel.promotion_tier}</Badge> : null}
           {showMatchScore && parcel.match_score != null ? <Badge tone="success">{Math.round(parcel.match_score)}% match</Badge> : null}
+          <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[11px] font-extrabold text-white border border-white/20">
+            {parcel.land_size || '1.0'} Acres
+          </span>
         </div>
-        <div className="absolute right-3 top-3">
+
+        <div className="absolute right-3 top-3 z-10">
           <StatusBadge label={parcel.status_badge || parcel.verification_status} tone={listingTone} />
         </div>
+
+        {/* Bottom Image Price Overlay */}
+        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white z-10">
+          <div className="flex items-center gap-1 text-xs font-medium text-slate-200 drop-shadow">
+            <MapPin className="h-3.5 w-3.5 text-emerald-400" />
+            <span>{parcel.county}, {parcel.constituency}</span>
+          </div>
+          {price ? (
+            <div className="bg-emerald-700/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-black text-white shadow-md border border-emerald-400/30">
+              KES {money(price)}
+            </div>
+          ) : null}
+        </div>
       </div>
-      <CardHeader className={cn('pb-3', compact ? 'pb-2' : '')}>
+
+      <CardHeader className={cn('pb-2 pt-4 px-5 text-left', compact ? 'pb-2' : '')}>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <CardTitle className={cn('text-base', compact ? 'text-sm' : '')}>{parcel.parcel_number}</CardTitle>
-            <CardDescription>
-              {parcel.county}, {parcel.constituency}
+            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-700">Parcel Registry</div>
+            <CardTitle className={cn('text-lg font-black text-slate-900', compact ? 'text-base' : '')}>Parcel {parcel.parcel_number}</CardTitle>
+            <CardDescription className="text-xs text-slate-500 mt-0.5">
+              {parcel.ward ? `${parcel.ward} Ward · ` : ''}{parcel.land_use_type || 'Agricultural / Residential'}
             </CardDescription>
           </div>
         </div>
       </CardHeader>
-      <CardContent className={cn('space-y-4', compact ? 'p-4 pt-0' : '')}>
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="rounded-2xl bg-muted/60 p-3">
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Land use</div>
-            <div className="mt-1 font-semibold text-foreground">{parcel.land_use_type}</div>
-          </div>
-          <div className="rounded-2xl bg-muted/60 p-3">
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Size</div>
-            <div className="mt-1 font-semibold text-foreground">{parcel.land_size}</div>
-          </div>
-        </div>
 
-        {price ? (
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3">
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Price</div>
-            <div className="mt-1 text-lg font-black tracking-tight text-foreground">{money(price)}</div>
+      <CardContent className={cn('space-y-4 px-5 pb-5 pt-0 text-left', compact ? 'p-4 pt-0' : '')}>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Land Use</div>
+            <div className="mt-0.5 font-bold text-slate-800 truncate">{parcel.land_use_type || 'General'}</div>
           </div>
-        ) : null}
-
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          {parcel.ward ? <span>{parcel.ward}</span> : null}
-          {parcel.displayed_price || parcel.asking_price ? <span>Transparent pricing</span> : null}
+          <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-100">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Acreage</div>
+            <div className="mt-0.5 font-bold text-slate-800 truncate">{parcel.land_size || 'N/A'} Acres</div>
+          </div>
         </div>
 
         <a
           href={parcel.details_url}
-          className="inline-flex h-11 w-full items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          className="inline-flex h-11 w-full items-center justify-center rounded-full bg-emerald-700 hover:bg-emerald-800 text-xs font-bold text-white transition-all shadow-md gap-2 group-hover:bg-emerald-800"
         >
-          {parcel.manage_label || ctaLabel}
-          <ArrowRight className="ml-2 h-4 w-4" />
+          <span>{parcel.manage_label || ctaLabel}</span>
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </a>
       </CardContent>
     </Card>
