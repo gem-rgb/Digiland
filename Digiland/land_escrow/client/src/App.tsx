@@ -1424,7 +1424,6 @@ function PublicSectionCards({ sections }: { sections: NonNullable<typeof bootstr
 }
 
 function LandingPage() {
-  const parcels = bootstrap.parcels || [];
   const stats = bootstrap.stats || [];
 
   return (
@@ -1437,81 +1436,78 @@ function LandingPage() {
         actions={bootstrap.actions}
         hideFooter
       >
-        <div className="space-y-8">
-          <HeroShowcase
-            notice={bootstrap.notice}
-            stats={stats}
-            csrfToken={bootstrap.csrf_token}
-            isAuthenticated={Boolean(bootstrap.user)}
-          />
+        <HeroShowcase
+          notice={bootstrap.notice}
+          stats={stats}
+          csrfToken={bootstrap.csrf_token}
+          isAuthenticated={Boolean(bootstrap.user)}
+        />
+      </PublicShell>
+      <PremiumFooter />
+    </div>
+  );
+}
 
-          {/* ── PRICE ESTIMATOR SECTION ── (Disabled for initial rollout) */}
-          {/*
-          <PriceEstimatorSection
-            csrfToken={bootstrap.csrf_token}
-            isAuthenticated={Boolean(bootstrap.user)}
-          />
-          */}
+function FeaturesPage() {
+  return (
+    <div className="features-page-wrapper">
+      <PublicShell
+        title="Protocol Features"
+        subtitle="Explore the 10 core capabilities powering autonomous land escrow in Kenya."
+        nav={bootstrap.nav}
+        user={bootstrap.user}
+        actions={bootstrap.actions}
+        hideFooter
+      >
+        <div className="space-y-8 max-w-6xl mx-auto py-6">
+          <div className="text-left space-y-2">
+            <div className="text-xs font-black uppercase tracking-[0.24em] text-emerald-700">Platform Capabilities</div>
+            <h1 className="text-3xl font-black text-slate-900 sm:text-4xl">Digiland System Architecture & Features</h1>
+            <p className="text-sm text-slate-600 max-w-2xl font-medium">
+              From acquisition to legal conveyancing, Digiland connects identity, escrow vaulting, and government registry validation into a seamless protocol.
+            </p>
+          </div>
 
-          {/* ── ANIMATED WALKTHROUGH ── */}
+          {/* Animated Walkthrough & Ecosystem Features */}
           <AnimatedWalkthrough />
 
-          {/* ── HOW IT WORKS SECTION ── */}
-          <section id="how-it-works" className="space-y-4">
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <div className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-700">How it works</div>
-                <h2 className="text-2xl font-black tracking-tight text-foreground">Secure land transactions, step by step</h2>
-              </div>
-              <a href="/escrow-acts/" className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">Read the legal checklist</a>
-            </div>
-            <div className="grid gap-4 lg:grid-cols-3">
-              {[
-                {
-                  title: 'List and verify',
-                  body: 'Sellers upload parcel details and compliance documents. Licensed agents review the listing before it goes live. Every property is verified against official land records.',
-                },
-                {
-                  title: 'Sign the contract',
-                  body: 'Buyer and seller sign the land transfer agreement. Joint buyers can capture member signatures as well. Contracts are legally binding and digitally secured.',
-                },
-                {
-                  title: 'Send payment',
-                  body: 'Once the contract is complete, the buyer sees checkout and receives an M-Pesa STK prompt or joint bank instructions. Funds are held in escrow until ownership is confirmed.',
-                },
-              ].map((step, index) => (
-                <Card key={step.title} className="bg-white/92">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <Badge tone="outline">0{index + 1}</Badge>
-                      <Sparkles className="h-4 w-4 text-emerald-700" />
-                    </div>
-                    <CardTitle className="text-lg">{step.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm leading-7 text-foreground">{step.body}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-
-          {parcels.length ? (
-            <section className="space-y-4">
-              <div className="flex items-end justify-between gap-3">
-                <div>
-                  <div className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-700">Marketplace</div>
-                  <h2 className="text-2xl font-black tracking-tight text-foreground">Recent verified parcels</h2>
+          <div className="grid gap-6 md:grid-cols-3 text-left">
+            <Card className="bg-white/95 border-slate-200/80 p-6 rounded-[1.75rem] shadow-sm">
+              <CardHeader className="p-0 pb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 font-bold mb-2">
+                  <ShieldCheck className="h-5 w-5" />
                 </div>
-                <a href="/parcels/" className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">View all parcels</a>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {parcels.slice(0, 6).map((parcel) => (
-                  <ListingCard key={parcel.parcel_number} parcel={parcel} />
-                ))}
-              </div>
-            </section>
-          ) : null}
+                <CardTitle className="text-base font-bold text-slate-900">ArdhiSasa Registry Validation</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 text-xs leading-relaxed text-slate-600">
+                Direct integration with Ministry of Lands land registry to confirm title deed ownership, encumbrances, and parcel boundaries before contract signing.
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/95 border-slate-200/80 p-6 rounded-[1.75rem] shadow-sm">
+              <CardHeader className="p-0 pb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-700 font-bold mb-2">
+                  <WalletCards className="h-5 w-5" />
+                </div>
+                <CardTitle className="text-base font-bold text-slate-900">M-Pesa STK & KCB Escrow Vault</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 text-xs leading-relaxed text-slate-600">
+                Buyer deposits are held securely in escrow via M-Pesa B2C & KCB Bank until all legal conditions and advocate signatures are satisfied.
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/95 border-slate-200/80 p-6 rounded-[1.75rem] shadow-sm">
+              <CardHeader className="p-0 pb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700 font-bold mb-2">
+                  <Gavel className="h-5 w-5" />
+                </div>
+                <CardTitle className="text-base font-bold text-slate-900">LSK Advocate Sign-Off</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 text-xs leading-relaxed text-slate-600">
+                Licensed Law Society of Kenya advocates review title documents, execute cryptographic sign-offs, and oversee legal ownership transfer.
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </PublicShell>
       <PremiumFooter />
@@ -5232,6 +5228,7 @@ function ReactApp() {
   let pageContent: ReactNode = null;
 
   if (page === 'landing') pageContent = <LandingPage />;
+  else if (page === 'features') pageContent = <FeaturesPage />;
   else if (page === 'onboarding-select-role') pageContent = <RoleSelectionPage shellProps={shellProps} />;
   else if (page === 'content') pageContent = <ContentPage />;
   else if (page === 'status') pageContent = <StatusPage />;

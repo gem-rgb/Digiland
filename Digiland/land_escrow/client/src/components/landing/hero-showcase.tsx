@@ -365,120 +365,153 @@ export function HeroShowcase({ notice, csrfToken, isAuthenticated = false }: Her
 
   useHeroParallax(heroRef, reducedMotion);
 
-  const handleGetStarted = (e: React.FormEvent) => {
-    e.preventDefault();
-    const query = email ? `?email=${encodeURIComponent(email)}` : '';
-    window.location.href = `/accounts/signup/${query}`;
-  };
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Sleek Web3 / Crypto-Style Hero Section */}
       <section
         ref={heroRef}
-        className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950 text-white px-6 py-16 sm:px-10 sm:py-20 lg:px-14 lg:py-24 shadow-2xl"
+        className="relative overflow-hidden rounded-[2.5rem] border border-emerald-500/20 bg-slate-950 text-white px-6 py-12 sm:px-10 sm:py-16 lg:px-14 lg:py-20 shadow-2xl min-h-[75vh] flex flex-col justify-center"
       >
         {!reducedMotion ? (
           <canvas
             ref={particlesRef}
-            className="pointer-events-none absolute inset-0 h-full w-full"
-            style={{ opacity: 0.15, mixBlendMode: 'screen' }}
+            className="pointer-events-none absolute inset-0 h-full w-full opacity-20 mix-blend-screen"
           />
         ) : null}
 
-        {/* Background Image Overlay inspired by Land.com with dark gradient */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-luminosity pointer-events-none"
-          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2000&q=80')` }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/50 pointer-events-none" />
-
         {/* Ambient background glows */}
-        <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-emerald-500/15 blur-[140px] pointer-events-none select-none" />
-        <div className="absolute -left-20 bottom-10 h-80 w-80 rounded-full bg-amber-500/10 blur-[120px] pointer-events-none select-none" />
+        <div className="absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full bg-emerald-600/15 blur-[160px] pointer-events-none select-none" />
+        <div className="absolute -left-32 bottom-0 h-[400px] w-[400px] rounded-full bg-cyan-600/10 blur-[140px] pointer-events-none select-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(16,185,129,0.05)_1px,_transparent_1px)] bg-[size:32px_32px] opacity-60 pointer-events-none select-none" />
 
-        {/* Grid overlay for texture */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.03)_1px,_transparent_1px)] bg-[size:24px_24px] opacity-40 pointer-events-none select-none" />
+        {/* Main Content Layout */}
+        <div className="relative z-10 grid gap-10 lg:grid-cols-12 lg:items-center">
+          {/* Left Column: Headline, Subheadline & Action Buttons */}
+          <div className="lg:col-span-7 space-y-6 text-left">
+            <div ref={ctaRef} className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-300 backdrop-blur-md">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+              </span>
+              {notice || 'Kenya\'s Autonomous Land Registry & Escrow Protocol'}
+            </div>
 
-        {/* Hero Content */}
-        <div className="relative z-10 mx-auto max-w-5xl text-center space-y-8 flex flex-col items-center">
-          <div ref={ctaRef} className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-300 backdrop-blur-md">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-            </span>
-            {notice || 'Kenya\'s Premier Verified Land & Escrow Platform'}
-          </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08] text-white">
+              The Trust Layer for <br />
+              <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
+                Kenyan Land Commerce
+              </span>
+            </h1>
 
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-serif font-bold tracking-tight leading-[1.08] text-white drop-shadow-md max-w-4xl">
-            Find & Secure Your <br className="hidden sm:inline" />
-            <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">Land with Absolute Trust</span>
-          </h1>
+            <p className="text-base sm:text-lg leading-relaxed text-slate-300 font-light max-w-xl">
+              Automated ArdhiSasa land title validation, M-Pesa escrow vaulting, and cryptographic Law Society advocate authentication — all in one unified protocol.
+            </p>
 
-          <p className="text-base sm:text-lg lg:text-xl leading-relaxed text-slate-200 max-w-2xl font-light">
-            Search verified plots, farms, and acreage across Kenya. Protected by ArdhiSasa registry sync and M-Pesa escrow.
-          </p>
-
-          {/* Land.com-inspired Pill Search Bar */}
-          <div className="w-full max-w-3xl">
-            <form 
-              onSubmit={(e) => {
-                e.preventDefault();
-                const target = email.includes('@') ? `/accounts/signup/?email=${encodeURIComponent(email)}` : `/marketplace/?q=${encodeURIComponent(email)}`;
-                window.location.href = target;
-              }}
-              className="flex items-center bg-white/95 backdrop-blur-2xl rounded-full p-2 shadow-2xl border border-white/20 focus-within:ring-4 focus-within:ring-emerald-500/30 transition-all duration-300"
-            >
-              <div className="pl-4 pr-2 text-slate-400 hidden sm:flex items-center">
-                <MapPin className="h-5 w-5 text-emerald-600" />
-              </div>
-              <input
-                type="text"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter County, Sub-County, Parcel No, or Email..."
-                className="flex-1 bg-transparent px-3 py-3 text-slate-900 placeholder:text-slate-500 font-medium text-base focus:outline-none"
-              />
-              <Button
-                type="submit"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 px-7 rounded-full transition duration-300 shadow-md flex items-center gap-2 text-sm sm:text-base whitespace-nowrap"
+            {/* Crypto-Style Search & Launch Pill */}
+            <div className="w-full max-w-xl pt-2">
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const target = email.includes('@') ? `/accounts/signup/?email=${encodeURIComponent(email)}` : `/marketplace/?q=${encodeURIComponent(email)}`;
+                  window.location.href = target;
+                }}
+                className="flex items-center bg-white/95 backdrop-blur-2xl rounded-full p-2 shadow-2xl border border-white/20 focus-within:ring-4 focus-within:ring-emerald-500/30 transition-all duration-300"
               >
-                <span>Search Parcels</span>
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </form>
-
-            {/* Quick Filter Categories */}
-            <div className="flex flex-wrap items-center justify-center gap-2 mt-4 text-xs">
-              <span className="text-slate-400 font-medium mr-1">Popular:</span>
-              {['Nairobi', 'Nakuru', 'Kiambu', 'Mombasa', 'Agricultural Land', 'ArdhiSasa Verified'].map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => {
-                    window.location.href = `/marketplace/?q=${encodeURIComponent(tag)}`;
-                  }}
-                  className="px-3 py-1 rounded-full bg-white/10 hover:bg-emerald-500/20 border border-white/15 text-slate-300 hover:text-white transition duration-200 font-medium"
+                <div className="pl-4 pr-2 text-slate-400 hidden sm:flex items-center">
+                  <MapPin className="h-5 w-5 text-emerald-600" />
+                </div>
+                <input
+                  type="text"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter County, Parcel No, or Email..."
+                  className="flex-1 bg-transparent px-3 py-2 text-slate-900 placeholder:text-slate-500 font-medium text-sm sm:text-base focus:outline-none"
+                />
+                <Button
+                  type="submit"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 px-6 rounded-full transition duration-300 shadow-md flex items-center gap-2 text-xs sm:text-sm whitespace-nowrap"
                 >
-                  {tag}
-                </button>
-              ))}
+                  <span>Launch Marketplace</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </form>
+            </div>
+
+            {/* Quick Metrics Ticker */}
+            <div className="flex flex-wrap items-center gap-6 pt-4 text-xs font-semibold text-slate-300 border-t border-white/10">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                <span>ArdhiSasa Synchronized</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <WalletCards className="h-4 w-4 text-teal-400" />
+                <span>100% Escrow Protected</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Gavel className="h-4 w-4 text-amber-400" />
+                <span>LSK Advocate Verified</span>
+              </div>
             </div>
           </div>
 
-          {/* Trust/Stats indicator */}
-          <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-300 pt-4 border-t border-white/10 w-full max-w-xl">
-            <div className="flex -space-x-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-black text-white border-2 border-slate-950">T</span>
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-600 text-[10px] font-black text-white border-2 border-slate-950">K</span>
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-600 text-[10px] font-black text-white border-2 border-slate-950">A</span>
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-purple-600 text-[10px] font-black text-white border-2 border-slate-950">M</span>
+          {/* Right Column: High-Impact Protocol Concept Showcase Card */}
+          <div className="lg:col-span-5">
+            <div className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-white/5 backdrop-blur-2xl p-6 sm:p-8 shadow-2xl space-y-6 text-left hover:border-emerald-500/40 transition duration-500">
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs font-black uppercase tracking-[0.2em] text-emerald-300">System Concept Architecture</span>
+                </div>
+                <Badge tone="outline" className="border-white/20 text-white text-[10px]">Protocol Flow</Badge>
+              </div>
+
+              {/* Protocol Flow Visual Steps */}
+              <div className="space-y-4">
+                <div className="flex items-start gap-4 p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30 text-sm">
+                    01
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-white">Title Verification & ArdhiSasa Sync</div>
+                    <div className="text-xs text-slate-400 mt-0.5">Automated title deed check against Ministry of Lands registry.</div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-500/20 text-teal-300 font-bold border border-teal-500/30 text-sm">
+                    02
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-white">Smart Escrow Deposit Vault</div>
+                    <div className="text-xs text-slate-400 mt-0.5">Funds locked safely via M-Pesa STK & KCB Bank until legal closing.</div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 text-sm">
+                    03
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-white">Cryptographic Advocate Sign-Off</div>
+                    <div className="text-xs text-slate-400 mt-0.5">LSK Advocate executes deed transfer under legal supervision.</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Protocol Status Banner */}
+              <div className="pt-2">
+                <a 
+                  href="/escrow-acts/" 
+                  className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-200 transition text-xs font-bold"
+                >
+                  <span>Explore Complete Legal & Escrow Acts</span>
+                  <ArrowRight className="h-4 w-4" />
+                </a>
+              </div>
             </div>
-            <span><strong>200+</strong> verified landowners & licensed agents trust Digiland for land transactions.</span>
           </div>
         </div>
       </section>
-
-      <EcosystemGridSection reducedMotion={reducedMotion} />
     </div>
   );
 }

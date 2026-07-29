@@ -12,7 +12,9 @@ def build_nav(user, active=None):
     if not is_authenticated:
         return [
             {'label': 'Marketplace', 'href': reverse('frontend:parcel_list'), 'icon': 'parcels', 'active': active == 'parcel-list'},
-            {'label': 'Legal', 'href': reverse('frontend:escrow_acts'), 'icon': 'legal', 'active': active in {'legal', 'joint-laws'}},
+            {'label': 'Features', 'href': '/features/', 'icon': 'security', 'active': active == 'features'},
+            {'label': 'About Us', 'href': '/about/', 'icon': 'documents', 'active': active in {'about', 'content'}},
+            {'label': 'Legal & Escrow', 'href': reverse('frontend:escrow_acts'), 'icon': 'legal', 'active': active in {'legal', 'joint-laws'}},
         ]
 
     if role == 'Buyer':

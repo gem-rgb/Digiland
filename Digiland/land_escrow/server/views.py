@@ -276,10 +276,14 @@ def home(request):
             {'label': 'Joint-ready', 'value': 'Yes', 'tone': 'warning'},
             {'label': 'Status', 'value': 'Live', 'tone': 'default'},
         ],
-        actions=[
-            {'label': 'Get Started', 'href': '/accounts/signup/', 'tone': 'default'},
-            {'label': 'Sign in', 'href': '/accounts/login/', 'tone': 'outline'},
-        ],
+    )
+
+def features(request):
+    return render_react_shell(
+        request,
+        'features',
+        'Digiland Features & Architecture',
+        'Explore the 10 core capabilities powering autonomous land escrow in Kenya.',
     )
 
 def agent_signup_complete(request):

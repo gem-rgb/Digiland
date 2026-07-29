@@ -6,6 +6,7 @@ app_name = 'frontend'
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('features/', views.features, name='features'),
     path('browse', RedirectView.as_view(pattern_name='frontend:parcel_list', permanent=False)),
     path('browse/', RedirectView.as_view(pattern_name='frontend:parcel_list', permanent=False)),
     path('staff/login/', views.staff_login, name='staff_login'),
