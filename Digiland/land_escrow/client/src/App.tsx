@@ -343,8 +343,8 @@ function ParcelGrid() {
       <Card className="bg-white/90">
         <CardContent className="p-8 text-center">
           <Landmark className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-          <div className="text-lg font-bold text-foreground">No parcels found</div>
-          <p className="mt-2 text-sm text-muted-foreground">Listings will appear here once parcels are uploaded and reviewed.</p>
+          <div className="text-lg font-bold text-foreground">{bootstrap.search_active ? `No parcels found for "${bootstrap.search_query || 'that search'}"` : 'No parcels found'}</div>
+          <p className="mt-2 text-sm text-muted-foreground">{bootstrap.search_active ? 'Try a county, constituency, ward, parcel number, or a broader price range.' : 'Listings will appear here once parcels are uploaded and reviewed.'}</p>
         </CardContent>
       </Card>
     );
@@ -1733,6 +1733,24 @@ function ParcelDetailPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {detail.google_maps_url ? (
+              <Card className="bg-white/92">
+                <CardHeader><CardTitle className="flex items-center gap-2 text-base"><MapPin className="h-4 w-4 text-emerald-700" />Parcel access location</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">Use Google Maps to navigate to the recorded parcel coordinates for an authorized site visit.</p>
+                  <a href={detail.google_maps_url} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center justify-center rounded-full bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-700"><MapPin className="mr-2 h-4 w-4" />Open in Google Maps</a>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {detail.access_locked && detail.confirm_access_url ? (
+              <Card className="border-amber-200 bg-amber-50/70"><CardHeader><CardTitle className="flex items-center gap-2 text-base"><Lock className="h-4 w-4 text-amber-700" />Dual-signature access required</CardTitle><CardDescription>The seller must authorize this parcel before your PIN can unlock restricted documents.</CardDescription></CardHeader><CardContent><form method="post" action={detail.confirm_access_url} className="flex gap-2"><input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} /><Input name="pin" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} placeholder="6-digit PIN" required /><Button type="submit" className="rounded-full">Confirm access</Button></form></CardContent></Card>
+            ) : null}
+
+            {detail.request_access_url ? (
+              <Card className="border-emerald-200 bg-emerald-50/70"><CardHeader><CardTitle className="flex items-center gap-2 text-base"><ShieldCheck className="h-4 w-4 text-emerald-700" />Authorize document access</CardTitle><CardDescription>Set or enter your 6-digit seller PIN to authorize the assigned reviewer.</CardDescription></CardHeader><CardContent><form method="post" action={detail.request_access_url} className="flex gap-2"><input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} /><Input name="pin" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} placeholder="6-digit PIN" required /><Button type="submit" className="rounded-full">Authorize reviewer</Button></form></CardContent></Card>
+            ) : null}
 
             <Card className="bg-white/92">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -5241,6 +5259,7 @@ function ReactApp() {
   else if (page === 'joint-groups') pageContent = <AppShell {...shellProps}><JointGroupsPage /></AppShell>;
   else if (page === 'joint-group-detail') pageContent = <AppShell {...shellProps}><JointGroupDetailPage /></AppShell>;
   else if (page === 'parcel-detail') pageContent = <ParcelDetailPage />;
+  else if (page === 'lawyer-checklist') pageContent = <LawyerChecklistPage />;
   else if (page === 'commission-detail') pageContent = <CommissionDetailPage />;
   else if (page === 'agent-job-board') pageContent = <AgentJobBoardPage />;
   else if (page === 'agent-commission-steps') pageContent = <AgentCommissionStepsPage />;

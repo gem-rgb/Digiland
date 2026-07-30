@@ -388,147 +388,45 @@ export function HeroShowcase({ notice, csrfToken, isAuthenticated = false }: Her
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Land.com Inspired Hero Section with Landscape Background Overlay */}
-      <section
-        ref={heroRef}
-        className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 text-white px-6 py-16 sm:px-10 sm:py-24 lg:px-16 lg:py-28 shadow-2xl min-h-[80vh] flex flex-col justify-center border border-emerald-500/20"
-      >
-        {/* Scenic Nature & Landscape Background Image with Rich Dark Overlay */}
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-45 mix-blend-luminosity pointer-events-none scale-105 transition-transform duration-1000"
-          style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2000&q=80')`,
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/40 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/60 to-transparent pointer-events-none" />
+    <div className="relative min-h-[calc(100vh-7rem)] overflow-hidden rounded-[2.5rem] border border-emerald-400/15 bg-slate-950 px-5 py-8 text-white shadow-2xl sm:px-10 sm:py-10 lg:px-16 lg:py-12">
+      <div className="pointer-events-none absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px)', backgroundSize: '42px 42px' }} />
+      <div className="pointer-events-none absolute -right-24 -top-24 h-[34rem] w-[34rem] rounded-full bg-emerald-500/20 blur-[150px]" />
+      <div className="pointer-events-none absolute -bottom-40 left-1/4 h-[28rem] w-[28rem] rounded-full bg-cyan-500/10 blur-[140px]" />
+      {!reducedMotion ? <canvas ref={particlesRef} className="pointer-events-none absolute inset-0 h-full w-full opacity-20 mix-blend-screen" /> : null}
 
-        {!reducedMotion ? (
-          <canvas
-            ref={particlesRef}
-            className="pointer-events-none absolute inset-0 h-full w-full opacity-15 mix-blend-screen"
-          />
-        ) : null}
-
-        {/* Ambient background glows */}
-        <div className="absolute -right-24 -top-24 h-[500px] w-[500px] rounded-full bg-emerald-500/15 blur-[160px] pointer-events-none select-none" />
-        <div className="absolute -left-20 bottom-10 h-[400px] w-[400px] rounded-full bg-amber-500/10 blur-[140px] pointer-events-none select-none" />
-
-        {/* Main Hero Content */}
-        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8">
-          {/* Top Pill Badge */}
-          <div ref={ctaRef} className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-950/80 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-300 backdrop-blur-md shadow-lg">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-            </span>
-            {notice || "Kenya's Premier Land Escrow & Marketplace"}
+      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-11rem)] max-w-7xl flex-col justify-between gap-10">
+        <div className="flex items-center justify-between gap-4">
+          <div ref={ctaRef} className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-emerald-300">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_16px_rgba(52,211,153,0.9)]" /> {notice || 'Digiland Protocol / Kenya'}
           </div>
+          <div className="hidden text-right text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 sm:block">Secure land infrastructure<br /><span className="text-emerald-400">Network online</span></div>
+        </div>
 
-          {/* Headline */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] text-white drop-shadow-md font-serif">
-            Find & Secure Your Land <br />
-            <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent italic font-sans font-extrabold">
-              with Absolute Trust
-            </span>
-          </h1>
+        <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+          <div className="max-w-3xl">
+            <div className="mb-5 text-xs font-black uppercase tracking-[0.28em] text-emerald-400">Autonomous land registry & escrow protocol</div>
+            <h1 className="text-4xl font-black leading-[0.98] tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl">Kenya's Autonomous<br /><span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">Land Registry & Escrow Protocol</span></h1>
+            <p className="mt-6 max-w-2xl text-sm leading-7 text-slate-300 sm:text-lg sm:leading-8">Automated ArdhiSasa land title validation, M-Pesa escrow vaulting, and cryptographic Law Society advocate authentication.</p>
 
-          {/* Subtitle */}
-          <p className="text-base sm:text-xl leading-relaxed text-slate-200 font-light max-w-2xl mx-auto drop-shadow-sm">
-            Ranches, Farms, Agricultural & Residential Land for Sale Across Kenya — Protected by ArdhiSasa Title Checks and M-Pesa Escrow.
-          </p>
-
-          {/* Land.com-Style Multi-Filter Search Console */}
-          <div className="w-full max-w-3xl mx-auto pt-2">
-            <form
-              onSubmit={handleSearch}
-              className="bg-white/95 backdrop-blur-2xl rounded-3xl p-3 sm:p-4 shadow-2xl border border-white/40 text-slate-900 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:gap-3 transition-all duration-300 focus-within:ring-4 focus-within:ring-emerald-500/30"
-            >
-              {/* Search Query Input */}
-              <div className="flex-1 flex items-center gap-3 px-3 py-1 bg-slate-50/80 rounded-2xl sm:bg-transparent sm:py-0">
-                <MapPin className="h-5 w-5 text-emerald-600 shrink-0" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="County, Town, Sub-county, or Parcel No..."
-                  className="w-full bg-transparent py-2.5 text-slate-900 placeholder:text-slate-500 font-semibold text-sm sm:text-base focus:outline-none"
-                />
-              </div>
-
-              {/* Property Type Dropdown */}
-              <div className="hidden md:flex items-center border-l border-slate-200 pl-3 pr-1 py-1">
-                <select
-                  value={propertyType}
-                  onChange={(e) => setPropertyType(e.target.value)}
-                  className="bg-transparent text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none cursor-pointer pr-2"
-                >
-                  <option value="all">All Land Types</option>
-                  <option value="Agricultural">Agricultural Land</option>
-                  <option value="Residential">Residential Plot</option>
-                  <option value="Commercial">Commercial Plot</option>
-                  <option value="Ranch">Ranches & Farms</option>
-                </select>
-              </div>
-
-              {/* Price Range Dropdown */}
-              <div className="hidden lg:flex items-center border-l border-slate-200 pl-3 pr-1 py-1">
-                <select
-                  value={priceRange}
-                  onChange={(e) => setPriceRange(e.target.value)}
-                  className="bg-transparent text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none cursor-pointer pr-2"
-                >
-                  <option value="all">Any Price</option>
-                  <option value="under_1m">Under KES 1M</option>
-                  <option value="1m_5m">KES 1M - 5M</option>
-                  <option value="5m_20m">KES 5M - 20M</option>
-                  <option value="20m_plus">KES 20M+</option>
-                </select>
-              </div>
-
-              {/* Submit Search Button */}
-              <Button
-                type="submit"
-                className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 px-8 rounded-2xl sm:rounded-2xl transition duration-300 shadow-lg flex items-center justify-center gap-2 text-sm whitespace-nowrap shrink-0"
-              >
-                <Search className="h-4 w-4" />
-                <span>Search Land</span>
-              </Button>
+            <form onSubmit={handleSearch} className="mt-8 flex max-w-2xl flex-col gap-3 rounded-[1.35rem] border border-white/10 bg-white/[0.07] p-2 backdrop-blur-xl sm:flex-row">
+              <div className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3"><Search className="h-5 w-5 shrink-0 text-emerald-400" /><input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search county, ward, or parcel number" className="w-full bg-transparent py-3 text-sm text-white outline-none placeholder:text-slate-500" /></div>
+              <Button type="submit" className="h-12 rounded-xl bg-emerald-500 px-6 font-black text-slate-950 hover:bg-emerald-400"><Search className="mr-2 h-4 w-4" />Search</Button>
             </form>
+            <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-500"><span>Popular:</span>{['Nairobi', 'Nakuru', 'Kiambu', 'Kajiado'].map((tag) => <a key={tag} href={`/parcels/?q=${encodeURIComponent(tag)}`} className="text-slate-300 transition hover:text-emerald-300">{tag}</a>)}</div>
+            <div className="mt-8 flex flex-wrap gap-3"><a href="/marketplace/" className="inline-flex h-12 items-center justify-center rounded-full bg-emerald-500 px-6 text-sm font-black text-slate-950 transition hover:bg-emerald-400">Launch Marketplace <ArrowRight className="ml-2 h-4 w-4" /></a><a href="/features/" className="inline-flex h-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] px-6 text-sm font-bold text-white transition hover:border-emerald-400/50 hover:bg-emerald-400/10">Explore protocol</a></div>
           </div>
 
-          {/* Quick Popular Location & Category Filter Tags */}
-          <div className="flex flex-wrap items-center justify-center gap-2 pt-2 text-xs">
-            <span className="text-slate-400 font-medium mr-1">Popular:</span>
-            {popularTags.map((tag) => (
-              <a
-                key={tag.label}
-                href={`/parcels/?q=${encodeURIComponent(tag.query)}`}
-                className="rounded-full bg-white/10 hover:bg-emerald-500/20 border border-white/15 hover:border-emerald-400/50 px-3.5 py-1 text-slate-200 hover:text-emerald-300 font-semibold transition duration-200 backdrop-blur-sm"
-              >
-                {tag.label}
-              </a>
-            ))}
-          </div>
-
-          {/* Trust Metrics Bar */}
-          <div className="flex flex-wrap items-center justify-center gap-8 pt-6 text-xs font-semibold text-slate-300 border-t border-white/10">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-emerald-400" />
-              <span>ArdhiSasa Registry Synchronized</span>
+          <div className="relative rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 shadow-[0_30px_100px_-45px_rgba(16,185,129,0.8)] backdrop-blur-2xl sm:p-7">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4"><div><div className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400">System concept architecture</div><div className="mt-1 text-sm font-bold text-slate-300">Three trust layers. One closing path.</div></div><ShieldCheck className="h-6 w-6 text-emerald-400" /></div>
+            <div className="mt-5 space-y-3">
+              {[['01', 'ArdhiSasa Registry Validation', 'Government title deed check', Landmark], ['02', 'Smart Escrow Vault', 'M-Pesa STK & KCB bank deposit lock', WalletCards], ['03', 'Cryptographic Advocate Sign-Off', 'LSK lawyer title transfer', Gavel]].map(([number, title, description, Icon]) => <div key={String(number)} className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-900/60 p-4 transition hover:border-emerald-400/40"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-xs font-black text-emerald-300">{number}</div><div className="min-w-0 flex-1"><div className="text-sm font-black text-white">{title}</div><div className="mt-1 text-xs text-slate-400">{description}</div></div><Icon className="h-5 w-5 shrink-0 text-emerald-400" /></div>)}
             </div>
-            <div className="flex items-center gap-2">
-              <WalletCards className="h-4 w-4 text-teal-400" />
-              <span>100% Escrow Vault Protection</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Gavel className="h-4 w-4 text-amber-400" />
-              <span>Law Society Advocates Verified</span>
-            </div>
+            <div className="mt-6 grid grid-cols-3 gap-2 border-t border-white/10 pt-5 text-center"><div><div className="text-lg font-black text-white">24/7</div><div className="text-[9px] uppercase tracking-wider text-slate-500">Monitoring</div></div><div><div className="text-lg font-black text-white">M-Pesa</div><div className="text-[9px] uppercase tracking-wider text-slate-500">Vaulting</div></div><div><div className="text-lg font-black text-white">LSK</div><div className="text-[9px] uppercase tracking-wider text-slate-500">Verified</div></div></div>
           </div>
         </div>
-      </section>
+
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500"><span>ArdhiSasa synchronized</span><span>Escrow protected</span><span>Advocate authenticated</span><span className="text-emerald-400">Protocol status: operational</span></div>
+      </div>
     </div>
   );
 }

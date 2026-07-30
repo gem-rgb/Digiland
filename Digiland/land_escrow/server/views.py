@@ -5,7 +5,11 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.middleware.csrf import get_token
 from django.db import models
-from core.models import LandParcel, Transaction, PurchaseCommission, Message, SupportTicket, Document, User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite, JointBuyerGroup, JointBuyerMember, JointPaymentContribution, JointMemberRemovalRequest, AuditLog, PopupAdCampaign
+from django.db.models import Q
+from django.utils import timezone
+from django.contrib import messages as django_messages
+from datetime import timedelta
+from core.models import LandParcel, Transaction, PurchaseCommission, Message, SupportTicket, Document, User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite, JointBuyerGroup, JointBuyerMember, JointPaymentContribution, JointMemberRemovalRequest, AuditLog, PopupAdCampaign, DocumentAccessGrant, LawyerPostTransactionTask
 from core.legal import (
     LAND_TRANSACTION_LAWS,
     LAND_TRANSACTION_CHECKLIST,
@@ -74,6 +78,32 @@ def is_verified_agent_or_admin(user):
     return False
 
 STAFF_ROLES = {'Admin', 'Agent', 'Lawyer'}
+
+
+def _pin_token(pin, user, parcel):
+    import hashlib, hmac
+    from django.conf import settings
+    value = f'{user.id}:{parcel.id}:{pin.strip()}'
+    return hmac.new(settings.SECRET_KEY.encode(), value.encode(), hashlib.sha256).hexdigest()
+
+
+def _verify_or_set_access_pin(user, pin, parcel):
+    import hmac
+    if not pin or not pin.isdigit() or len(pin) != 6:
+        raise ValidationError('Enter a valid 6-digit authorization PIN.')
+    token = _pin_token(pin, user, parcel)
+    if user.document_access_pin_hash and not hmac.compare_digest(user.document_access_pin_hash, token):
+        raise ValidationError('That PIN does not match your saved document access PIN.')
+    if not user.document_access_pin_hash:
+        user.document_access_pin_hash = token
+        user.save(update_fields=['document_access_pin_hash'])
+    return token
+
+
+def _active_document_grant(parcel, accessor):
+    return DocumentAccessGrant.objects.filter(
+        parcel=parcel, accessor=accessor, access_granted=True,
+    ).order_by('-created_at').first()
 
 
 def render_react_shell(request, page, title, subtitle='', **extra):
@@ -505,58 +535,39 @@ def staff_login(request):
     })
 
 def parcel_list(request):
-    from django.db.models import Q
     active_tx_statuses = ['Initiated', 'Deposit_Paid', 'Under_Verification', 'Completed']
-    
+    search_query = (request.GET.get('q') or '').strip()
+    land_type = (request.GET.get('type') or '').strip()
+    price_filter = (request.GET.get('price') or '').strip()
+    min_price = request.GET.get('min_price')
+    max_price = request.GET.get('max_price')
     if request.user.is_authenticated and request.user.role == 'Seller':
-        # Sellers ONLY see their own listed parcels
-        parcels = LandParcel.objects.filter(
-            listed_by=request.user
-        ).order_by('-ardhisasa_last_synced')
+        parcels = LandParcel.objects.filter(listed_by=request.user).order_by('-ardhisasa_last_synced')
     elif request.user.is_authenticated and request.user.role in ['Agent', 'Admin']:
-        # Agents/Admins see all verified parcels + their own assignments
-        parcels = LandParcel.objects.filter(
-            Q(assigned_agent=request.user) | Q(verification_status='Verified')
-        ).exclude(
-            transactions__status__in=active_tx_statuses
-        ).distinct().order_by('-ardhisasa_last_synced')
+        parcels = LandParcel.objects.filter(Q(assigned_agent=request.user) | Q(verification_status='Verified')).exclude(transactions__status__in=active_tx_statuses).distinct().order_by('-ardhisasa_last_synced')
     else:
-        # Buyers & guests see only Verified, available parcels
-        parcels = LandParcel.objects.filter(
-            verification_status='Verified'
-        ).exclude(
-            transactions__status__in=active_tx_statuses
-        ).order_by('-ardhisasa_last_synced')
-        
+        parcels = LandParcel.objects.filter(verification_status='Verified').exclude(transactions__status__in=active_tx_statuses).order_by('-ardhisasa_last_synced')
+    if search_query:
+        parcels = parcels.filter(Q(county__icontains=search_query) | Q(constituency__icontains=search_query) | Q(ward__icontains=search_query) | Q(parcel_number__icontains=search_query))
+    if land_type:
+        parcels = parcels.filter(land_use_type__iexact=land_type)
+    try:
+        if price_filter and '-' in price_filter:
+            min_price, max_price = [part.strip() for part in price_filter.split('-', 1)]
+        if min_price:
+            parcels = parcels.filter(asking_price__gte=float(min_price))
+        if max_price:
+            parcels = parcels.filter(asking_price__lte=float(max_price))
+    except (TypeError, ValueError):
+        pass
     actions = []
-    if request.user.is_authenticated:
-        if request.user.role == 'Seller':
-            actions = [
-                {'label': 'List new parcel', 'href': reverse('frontend:parcel_upload'), 'tone': 'default'},
-                {'label': 'Legal checklist', 'href': reverse('frontend:seller_laws'), 'tone': 'outline'},
-            ]
-        elif request.user.role == 'Buyer':
-            actions = [
-                {'label': 'Legal checklist', 'href': reverse('frontend:escrow_acts'), 'tone': 'outline'},
-                {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'},
-            ]
-        # Admin and Agent see no actions
+    if request.user.is_authenticated and request.user.role == 'Seller':
+        actions = [{'label': 'List new parcel', 'href': reverse('frontend:parcel_upload'), 'tone': 'default'}, {'label': 'Legal checklist', 'href': reverse('frontend:seller_laws'), 'tone': 'outline'}]
+    elif request.user.is_authenticated and request.user.role == 'Buyer':
+        actions = [{'label': 'Legal checklist', 'href': reverse('frontend:escrow_acts'), 'tone': 'outline'}, {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'}]
     else:
-        # Unauthenticated users see general laws
-        actions = [
-            {'label': 'Legal checklist', 'href': reverse('frontend:escrow_acts'), 'tone': 'outline'},
-            {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'},
-        ]
-
-    return render_react_shell(
-        request,
-        'parcel-list',
-        'Marketplace',
-        'Verified parcels available for purchase or management.',
-        parcels=[serialize_parcel(parcel, request.user) for parcel in parcels],
-        actions=actions,
-    )
-
+        actions = [{'label': 'Legal checklist', 'href': reverse('frontend:escrow_acts'), 'tone': 'outline'}, {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'}]
+    return render_react_shell(request, 'parcel-list', 'Marketplace', 'Verified parcels available for purchase or management.', parcels=[serialize_parcel(parcel, request.user) for parcel in parcels], actions=actions, search_query=search_query, search_active=bool(search_query or land_type or min_price or max_price))
 @login_required
 def agent_kyc(request):
     """KYC document submission for newly registered Agent users."""
@@ -1217,6 +1228,11 @@ def lawyer_review_commission(request, commission_id):
         return redirect('frontend:commission_detail', commission_id=commission.id)
 
     from django.contrib import messages as django_messages
+    if request.user.role != 'Admin':
+        grant = _active_document_grant(commission.land_parcel, request.user)
+        if not grant or not grant.is_valid():
+            django_messages.error(request, 'Dual-signature document access is required before lawyer review.')
+            return redirect('frontend:commission_detail', commission_id=commission.id)
     try:
         verified = (request.POST.get('verified') or 'true').strip().lower() not in {'false', '0', 'no'}
         note = (request.POST.get('note') or '').strip()
@@ -1308,6 +1324,69 @@ def task_management(request):
         },
     )
 
+
+@login_required
+def request_document_access(request, parcel_number):
+    parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
+    if request.user.id != parcel.listed_by_id:
+        return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+    if request.method == 'POST':
+        try:
+            token = _verify_or_set_access_pin(request.user, request.POST.get('pin', '').strip(), parcel)
+            commission = parcel.commissions.exclude(accepted_by__isnull=True).order_by('-updated_at').first()
+            accessor = (commission.assigned_lawyer or commission.accepted_by) if commission else None
+            if not accessor:
+                raise ValidationError('No assigned lawyer or agent is available for this parcel yet.')
+            DocumentAccessGrant.objects.update_or_create(parcel=parcel, accessor=accessor, access_granted=False, defaults={'commission': commission, 'seller_auth_token': token, 'seller_signed_at': timezone.now()})
+            django_messages.success(request, 'Seller authorization recorded. The assigned reviewer must now enter their PIN.')
+        except ValidationError as exc:
+            django_messages.error(request, str(exc))
+    return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+
+
+@login_required
+def confirm_document_access(request, parcel_number):
+    parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
+    if request.user.role not in {'Agent', 'Lawyer', 'Admin'}:
+        return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+    if request.method == 'POST':
+        try:
+            commission = parcel.commissions.filter(assigned_lawyer=request.user).first() if request.user.role == 'Lawyer' else parcel.commissions.filter(accepted_by=request.user).first()
+            grant = DocumentAccessGrant.objects.filter(parcel=parcel, accessor=request.user, access_granted=False).order_by('-created_at').first()
+            if not grant or not grant.seller_auth_token:
+                raise ValidationError('The seller must authorize this parcel first.')
+            grant.accessor_auth_token = _verify_or_set_access_pin(request.user, request.POST.get('pin', '').strip(), parcel)
+            grant.accessor_signed_at = timezone.now()
+            grant.commission = commission or grant.commission
+            grant.access_granted = True
+            grant.expires_at = timezone.now() + timedelta(hours=24)
+            grant.save()
+            django_messages.success(request, 'Dual-signature document access granted for 24 hours.')
+        except ValidationError as exc:
+            django_messages.error(request, str(exc))
+    return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+
+
+@login_required
+def lawyer_post_transaction_checklist(request, transaction_id):
+    transaction = get_object_or_404(Transaction.objects.select_related('land_parcel'), id=transaction_id)
+    commission = transaction.land_parcel.commissions.filter(assigned_lawyer=request.user).first()
+    if request.user.role not in {'Lawyer', 'Admin'} or (request.user.role == 'Lawyer' and not commission):
+        return redirect('frontend:home')
+    lawyer = request.user if request.user.role == 'Lawyer' else (transaction.land_parcel.commissions.filter(assigned_lawyer__isnull=False).first().assigned_lawyer if transaction.land_parcel.commissions.filter(assigned_lawyer__isnull=False).exists() else None)
+    for key, label in LawyerPostTransactionTask.TASK_CHOICES:
+        LawyerPostTransactionTask.objects.get_or_create(transaction=transaction, task_key=key, defaults={'lawyer': lawyer})
+    if request.method == 'POST':
+        task = get_object_or_404(LawyerPostTransactionTask, transaction=transaction, task_key=request.POST.get('task_key'))
+        task.completed = request.POST.get('completed') == 'on'
+        task.completed_at = timezone.now() if task.completed else None
+        task.notes = request.POST.get('notes', '').strip()
+        task.evidence_url = request.POST.get('evidence_url', '').strip()
+        task.save()
+        return redirect('frontend:lawyer_post_transaction_checklist', transaction_id=transaction.id)
+    tasks = LawyerPostTransactionTask.objects.filter(transaction=transaction)
+    return render_react_shell(request, 'lawyer-checklist', 'Post-transaction legal checklist', 'Track registry and title-transfer duties after signing.', post_transaction_tasks=[{'key': t.task_key, 'label': t.get_task_key_display(), 'completed': t.completed, 'notes': t.notes, 'evidence_url': t.evidence_url} for t in tasks], transaction_id=str(transaction.id))
+
 @login_required
 @user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
 def agent_verify_parcel(request, parcel_number):
@@ -1315,6 +1394,11 @@ def agent_verify_parcel(request, parcel_number):
     if request.method == 'POST':
         action = request.POST.get('verify_action') or request.POST.get('action')
         if action == 'verify':
+            if request.user.role != 'Admin':
+                grant = _active_document_grant(parcel, request.user)
+                if not grant or not grant.is_valid():
+                    django_messages.error(request, 'Dual-signature document access is required before verification.')
+                    return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
             parcel.verification_status = 'Verified'
             parcel.save()
             return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
@@ -1999,15 +2083,15 @@ def parcel_detail(request, parcel_number):
         can_use_joint_purchase = is_joint_buyer(request.user)
 
     can_view_documents = False
+    active_grant = None
     if request.user.is_authenticated:
-        if request.user.role in ['Admin', 'Agent', 'Lawyer']:
+        if request.user.role == 'Admin' or request.user.id == parcel.listed_by_id:
             can_view_documents = True
-        elif request.user.id == parcel.listed_by_id:
+        elif request.user.role in {'Agent', 'Lawyer'}:
+            active_grant = _active_document_grant(parcel, request.user)
+            can_view_documents = bool(active_grant and active_grant.is_valid())
+        elif request.user.role == 'Buyer' and parcel.transactions.filter(buyer=request.user, status='Completed').exists():
             can_view_documents = True
-        elif request.user.role == 'Buyer':
-            # Buyer can only see documents if the purchase is completed
-            if parcel.transactions.filter(buyer=request.user, status='Completed').exists():
-                can_view_documents = True
 
     parcel_data = {
         'parcel_number': str(parcel.parcel_number),
@@ -2019,6 +2103,9 @@ def parcel_detail(request, parcel_number):
         'land_size': str(parcel.land_size),
         'registered_owner_id_masked': f"***{parcel.registered_owner_id[3:]}" if parcel.registered_owner_id else 'N/A',
         'verification_status': parcel.verification_status,
+        'latitude': str(parcel.latitude) if parcel.latitude is not None else None,
+        'longitude': str(parcel.longitude) if parcel.longitude is not None else None,
+        'google_maps_url': f'https://www.google.com/maps/search/?api=1&query={parcel.latitude},{parcel.longitude}' if parcel.latitude is not None and parcel.longitude is not None else None,
         'displayed_price': str(parcel.displayed_price),
         'is_favorited': is_favorited,
         'ai_price': None if not ai_price else {
@@ -2027,6 +2114,9 @@ def parcel_detail(request, parcel_number):
             'confidence_low': str(ai_price.get('confidence_low', '')),
             'confidence_high': str(ai_price.get('confidence_high', '')),
         },
+        'access_locked': bool(request.user.is_authenticated and request.user.role in {'Agent', 'Lawyer'} and not can_view_documents),
+        'request_access_url': reverse('frontend:request_document_access', args=[parcel.parcel_number]) if request.user.is_authenticated and request.user.id == parcel.listed_by_id else None,
+        'confirm_access_url': reverse('frontend:confirm_document_access', args=[parcel.parcel_number]) if request.user.is_authenticated and request.user.role in {'Agent', 'Lawyer'} else None,
         'documents': [
             {
                 **serialize_document(doc),

@@ -30,40 +30,37 @@ const NAV_COLUMNS: Array<{ title: string; links: NavLink[] }> = [
   {
     title: 'Platform',
     links: [
-      { label: 'Browse Land', href: '/parcels/' },
-      { label: 'Sell Property', href: '/sell' },
-      { label: 'Escrow Protection', href: '/escrow' },
-      { label: 'KYC Verification', href: '/kyc' },
+      { label: 'Browse Parcels', href: '/parcels/' },
+      { label: 'List Property', href: '/parcels/upload/' },
+      { label: 'Escrow Protection', href: '/escrow-acts/' },
+      { label: 'Platform Features', href: '/features/' },
     ],
   },
   {
-    title: 'Ecosystem',
+    title: 'User Portals',
     links: [
-      { label: 'Virtual Cities', href: '/virtual-cities' },
-      { label: 'AI Agents', href: '/ai-agents' },
-      { label: 'Land Analytics', href: '/analytics' },
-      { label: 'Development Tools', href: '/dev-tools' },
-      { label: 'NFT Assets', href: '/nft-assets' },
+      { label: 'Buyer Dashboard', href: '/buyer-choice/' },
+      { label: 'Seller Hub', href: '/parcels/upload/' },
+      { label: 'Staff & Advocates', href: '/staff/login/' },
+      { label: 'Admin Control Plane', href: '/admin/' },
     ],
   },
   {
-    title: 'Resources',
+    title: 'Legal & Escrow',
     links: [
-      { label: 'Documentation', href: '/docs' },
-      { label: 'API Reference', href: '/api-reference' },
-      { label: 'Blog', href: '/blog' },
-      { label: 'Help Center', href: '/help' },
-      { label: 'Community', href: '/community' },
+      { label: 'Legal Framework', href: '/escrow-acts/' },
+      { label: 'Joint Ownership Laws', href: '/joint-laws/' },
+      { label: 'ArdhiSasa Registry Sync', href: '/escrow-acts/' },
+      { label: 'LSK Advocate Sign-Off', href: '/staff/login/' },
     ],
   },
   {
     title: 'Company',
     links: [
-      { label: 'About Us', href: '/about' },
-      { label: 'Careers', href: '/careers' },
-      { label: 'Press', href: '/press' },
-      { label: 'Partners', href: '/partners' },
-      { label: 'Contact', href: '/contact' },
+      { label: 'About Digiland', href: '/features/' },
+      { label: 'System Architecture', href: '/features/' },
+      { label: 'Help & Support', href: '/support/' },
+      { label: 'Partner Network', href: '/parcels/' },
     ],
   },
 ];
@@ -93,23 +90,23 @@ type TrustItem = { icon: React.ElementType; label: string; description: string }
 const TRUST_ITEMS: TrustItem[] = [
   {
     icon: Lock,
-    label: 'Bank-Grade Security',
-    description: 'AES-256 encryption and SOC 2 compliant infrastructure.',
+    label: 'Bank-Grade Vault Security',
+    description: 'AES-256 encrypted escrow deposits & SOC 2 compliant architecture.',
   },
   {
     icon: Landmark,
-    label: 'CBK Licensed Escrow',
-    description: 'Fully regulated escrow under Central Bank of Kenya.',
+    label: 'CBK & M-Pesa Regulated',
+    description: 'Automated settlement via Central Bank & Safaricom M-Pesa STK.',
   },
   {
     icon: FileCheck2,
-    label: 'ISO 27001 Compliant',
-    description: 'Certified information security management system.',
+    label: 'ArdhiSasa Direct Sync',
+    description: 'Instant title deed validation against Ministry of Lands databases.',
   },
   {
     icon: Zap,
-    label: '24/7 Support',
-    description: 'Dedicated support team available around the clock.',
+    label: 'LSK Advocate Sign-Off',
+    description: 'Verified Law Society of Kenya lawyers execute title deeds.',
   },
 ];
 
@@ -283,7 +280,7 @@ function SocialIcon({ icon: Icon, label, href }: SocialLink) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="group relative flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition-all duration-300 hover:scale-[1.2] hover:border-emerald-400/40 hover:bg-emerald-400/10 hover:text-emerald-400 hover:shadow-[0_0_18px_rgba(52,211,153,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+      className="group relative flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition-all duration-300 hover:scale-[1.15] hover:border-emerald-400/40 hover:bg-emerald-400/10 hover:text-emerald-400 hover:shadow-[0_0_18px_rgba(52,211,153,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
     >
       <Icon className="h-[18px] w-[18px]" />
     </a>
@@ -396,7 +393,7 @@ export function PremiumFooter() {
   );
 
   return (
-    <footer className="relative overflow-hidden bg-slate-950 text-white" role="contentinfo">
+    <footer className="relative overflow-hidden bg-slate-950 text-white border-t border-white/10" role="contentinfo">
       {/* ================================================================== */}
       {/*  1. Footer Hero CTA                                                */}
       {/* ================================================================== */}
@@ -422,16 +419,15 @@ export function PremiumFooter() {
         <FilmGrainOverlay />
 
         <div className="cta-reveal relative z-10 mx-auto max-w-5xl text-center" style={{ opacity: 0 }}>
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">
-            Ready to Buy Land{' '}
-            <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-              With Confidence?
+          <h2 className="text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl font-serif">
+            Ready to Transact Land{' '}
+            <span className="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent italic font-sans font-extrabold">
+              With Absolute Trust?
             </span>
           </h2>
 
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8">
-            Join thousands of Kenyans who trust Digiland for verified land, escrow protection, and seamless
-            transactions.
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8 font-light">
+            Join thousands of buyers, sellers, and advocates across Kenya using Digiland for verified title deeds, M-Pesa escrow protection, and legal closing.
           </p>
 
           {/* CTA Buttons */}
@@ -441,18 +437,18 @@ export function PremiumFooter() {
                 size="lg"
                 className="h-13 rounded-full bg-emerald-600 px-8 text-base font-bold text-white shadow-[0_0_28px_rgba(5,150,105,0.4)] transition-all duration-300 hover:bg-emerald-500 hover:shadow-[0_0_40px_rgba(5,150,105,0.55)]"
               >
-                Get Started
-                <ArrowRight className="ml-1 h-4 w-4" />
+                Get Started Free
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </a>
             <a href="/parcels/">
               <Button
                 variant="outline"
                 size="lg"
-                className="h-13 rounded-full border-white/20 bg-transparent px-8 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-emerald-400/50 hover:bg-emerald-400/10 hover:text-emerald-300"
+                className="h-13 rounded-full border-white/20 bg-white/5 px-8 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-emerald-400/50 hover:bg-emerald-400/10 hover:text-emerald-300"
               >
-                Browse Parcels
-                <MapPin className="ml-1 h-4 w-4" />
+                Browse Marketplace
+                <MapPin className="ml-2 h-4 w-4" />
               </Button>
             </a>
           </div>
@@ -462,7 +458,7 @@ export function PremiumFooter() {
             {CTA_COUNTERS.map((stat) => (
               <div
                 key={stat.label}
-                className="cta-reveal flex flex-col items-center rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-5 backdrop-blur-sm"
+                className="cta-reveal flex flex-col items-center rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-5 backdrop-blur-md hover:border-emerald-500/30 transition duration-300"
                 style={{ opacity: 0 }}
               >
                 <CounterCard stat={stat} reduced={reduced} />
@@ -473,37 +469,36 @@ export function PremiumFooter() {
       </section>
 
       {/* ================================================================== */}
-      {/*  2. Brand Section                                                   */}
+      {/*  2. Brand & Navigation Section                                       */}
       {/* ================================================================== */}
       <section
         ref={brandRef}
-        className="relative border-t border-white/6 px-6 py-16"
+        className="relative border-t border-white/10 px-6 py-16"
         aria-label="Digiland brand"
       >
         <div
-          className="brand-reveal mx-auto flex max-w-7xl flex-col items-start gap-10 lg:flex-row lg:items-center lg:justify-between"
+          className="brand-reveal mx-auto flex max-w-7xl flex-col items-start gap-12 lg:flex-row lg:items-start lg:justify-between"
           style={{ opacity: 0 }}
         >
           {/* Brand info */}
           <div className="max-w-md space-y-4">
-            {/* Logo: "Digi" in white + "land" in emerald */}
-            <div className="flex items-baseline gap-0" aria-label="Digiland">
-              <span className="text-2xl tracking-tight text-white" style={{ fontWeight: 800 }}>
-                Digi
-              </span>
-              <span className="text-2xl tracking-tight text-emerald-400" style={{ fontWeight: 800 }}>
-                land
+            {/* Logo + Kenya Flag Pill */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-baseline gap-0" aria-label="Digiland">
+                <span className="text-3xl font-black tracking-tight text-white">Digi</span>
+                <span className="text-3xl font-black tracking-tight text-emerald-400">land</span>
+              </div>
+              <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-emerald-300">
+                🇰🇪 Kenya Land Protocol
               </span>
             </div>
 
-            <p className="text-sm font-medium text-slate-300">
-              Secure land transactions for every Kenyan.
+            <p className="text-sm font-semibold text-slate-200">
+              Kenya's Autonomous Land Registry & Escrow Infrastructure
             </p>
 
-            <p className="text-sm leading-6 text-slate-400">
-              Digiland is Kenya&rsquo;s trusted platform for verified land transactions. We combine escrow
-              protection, AI-powered valuations, and county-level coverage to make buying and selling land
-              transparent, safe, and accessible for everyone.
+            <p className="text-sm leading-6 text-slate-400 font-light">
+              Digiland connects land buyers, property sellers, and Law Society of Kenya advocates. We combine automated ArdhiSasa title verification, M-Pesa deposit vaulting, and legal oversight to make Kenya land commerce 100% transparent and safe.
             </p>
 
             {/* Social media icons */}
@@ -519,12 +514,12 @@ export function PremiumFooter() {
           {/* ================================================================== */}
           <nav
             ref={navRef}
-            className="grid w-full grid-cols-1 gap-8 sm:grid-cols-2 lg:w-auto lg:max-w-2xl lg:grid-cols-4 lg:gap-12"
+            className="grid w-full grid-cols-2 gap-8 sm:grid-cols-2 lg:w-auto lg:max-w-2xl lg:grid-cols-4 lg:gap-12"
             aria-label="Footer navigation"
           >
             {NAV_COLUMNS.map((col) => (
               <div key={col.title} className="nav-col-reveal space-y-3" style={{ opacity: 0 }}>
-                <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-400">
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">
                   {col.title}
                 </h3>
                 <ul className="space-y-2.5" role="list">
@@ -541,10 +536,10 @@ export function PremiumFooter() {
       </section>
 
       {/* ================================================================== */}
-      {/*  4. Trust & Statistics Section                                       */}
+      {/*  4. Trust & Certifications Section                                  */}
       {/* ================================================================== */}
-      <section ref={trustRef} className="relative px-6 py-12" aria-label="Trust and certifications">
-        <Card className="mx-auto max-w-5xl !border-white/10 !bg-white/[0.03] !p-0 backdrop-blur-xl">
+      <section ref={trustRef} className="relative px-6 py-10" aria-label="Trust and certifications">
+        <Card className="mx-auto max-w-6xl !border-white/10 !bg-white/[0.03] !p-0 backdrop-blur-xl">
           <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4">
             {TRUST_ITEMS.map((item) => (
               <TrustCard key={item.label} {...item} />
@@ -566,11 +561,11 @@ export function PremiumFooter() {
         <div className="newsletter-reveal relative z-10 mx-auto max-w-lg text-center" style={{ opacity: 0 }}>
           <div className="flex items-center justify-center gap-2">
             <Mail className="h-5 w-5 text-emerald-400" />
-            <h3 className="text-lg font-bold text-white">Stay Updated</h3>
+            <h3 className="text-lg font-bold text-white">Stay Informed</h3>
           </div>
 
-          <p className="mt-2 text-sm leading-6 text-slate-400">
-            Get the latest land listings, market insights, and platform updates delivered to your inbox.
+          <p className="mt-2 text-sm leading-6 text-slate-300 font-light">
+            Receive updates on newly verified land listings, county price benchmarks, and legal policy updates across Kenya.
           </p>
 
           <form onSubmit={handleSubscribe} className="mt-6 flex items-center gap-2">
@@ -580,16 +575,16 @@ export function PremiumFooter() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder="Enter your email address..."
                 aria-label="Email address for newsletter"
-                className="h-11 rounded-full border-white/12 bg-white/5 pl-5 pr-4 text-sm text-white placeholder:text-slate-500 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-slate-950"
+                className="h-12 rounded-full border-white/15 bg-white/5 pl-5 pr-4 text-sm text-white placeholder:text-slate-500 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-slate-950"
               />
             </div>
 
             <Button
               type="submit"
               disabled={submitting || subscribed}
-              className="h-11 rounded-full bg-emerald-600 px-6 font-semibold text-white shadow-[0_0_18px_rgba(5,150,105,0.3)] transition-all duration-300 hover:bg-emerald-500 hover:shadow-[0_0_30px_rgba(5,150,105,0.45)] disabled:opacity-60"
+              className="h-12 rounded-full bg-emerald-600 px-6 font-bold text-white shadow-[0_0_18px_rgba(5,150,105,0.3)] transition-all duration-300 hover:bg-emerald-500 hover:shadow-[0_0_30px_rgba(5,150,105,0.45)] disabled:opacity-60"
             >
               {submitting ? (
                 <span className="flex items-center gap-2">
@@ -613,12 +608,11 @@ export function PremiumFooter() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                     />
                   </svg>
-                  <span className="sr-only">Subscribing…</span>
                 </span>
               ) : subscribed ? (
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="h-4 w-4" />
-                  Subscribed!
+                  Subscribed
                 </span>
               ) : (
                 <span className="flex items-center gap-1.5">
@@ -629,48 +623,58 @@ export function PremiumFooter() {
             </Button>
           </form>
 
-          <p className="mt-3 text-xs text-slate-500">No spam. Unsubscribe anytime.</p>
+          <p className="mt-3 text-xs text-slate-500">We respect your privacy. Unsubscribe anytime.</p>
         </div>
       </section>
 
       {/* ================================================================== */}
       {/*  6. Footer Bottom Bar                                               */}
       {/* ================================================================== */}
-      <div className="border-t border-white/10 px-6 py-6">
-        <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 text-xs text-slate-500 sm:flex-row sm:justify-between">
-          {/* Left – copyright */}
-          <p>&copy; 2026 Digiland. All rights reserved.</p>
+      <div className="border-t border-white/10 px-6 py-6 bg-slate-950/90">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 text-xs text-slate-400 sm:flex-row sm:justify-between">
+          {/* Left – Copyright & Status */}
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              All Systems Operational
+            </span>
+            <span className="text-slate-600">&bull;</span>
+            <p>&copy; 2026 Digiland Kenya. All rights reserved.</p>
+          </div>
 
-          {/* Center – legal links */}
-          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1" aria-label="Legal links">
+          {/* Center – Legal links */}
+          <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 font-medium" aria-label="Legal links">
             <a
-              href="/privacy"
-              className="transition-colors duration-200 hover:text-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+              href="/escrow-acts/"
+              className="transition-colors duration-200 hover:text-emerald-400"
+            >
+              Legal & Escrow Acts
+            </a>
+            <span className="text-white/20" aria-hidden="true">&middot;</span>
+            <a
+              href="/joint-laws/"
+              className="transition-colors duration-200 hover:text-emerald-400"
+            >
+              Joint Land Laws
+            </a>
+            <span className="text-white/20" aria-hidden="true">&middot;</span>
+            <a
+              href="/privacy/"
+              className="transition-colors duration-200 hover:text-emerald-400"
             >
               Privacy Policy
             </a>
-            <span className="text-white/15" aria-hidden="true">
-              &middot;
-            </span>
+            <span className="text-white/20" aria-hidden="true">&middot;</span>
             <a
-              href="/terms"
-              className="transition-colors duration-200 hover:text-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+              href="/terms/"
+              className="transition-colors duration-200 hover:text-emerald-400"
             >
               Terms of Service
             </a>
-            <span className="text-white/15" aria-hidden="true">
-              &middot;
-            </span>
-            <a
-              href="/cookies"
-              className="transition-colors duration-200 hover:text-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
-            >
-              Cookie Policy
-            </a>
           </nav>
 
-          {/* Right – made in Kenya */}
-          <p className="flex items-center gap-1.5 font-medium">
+          {/* Right – Made in Kenya */}
+          <p className="flex items-center gap-1.5 font-bold text-slate-300">
             Made in Kenya <span aria-label="Kenya flag">🇰🇪</span>
           </p>
         </div>

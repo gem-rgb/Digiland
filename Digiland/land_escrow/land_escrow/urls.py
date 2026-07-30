@@ -29,6 +29,7 @@ urlpatterns = [
     path('health/', health_check, name='health-check'),
     path('browse', RedirectView.as_view(url='/parcels/', permanent=False)),
     path('browse/', RedirectView.as_view(url='/parcels/', permanent=False)),
+    path('marketplace/', RedirectView.as_view(url='/parcels/', permanent=False, query_string=True)),
     path('admin/', admin.site.urls),
     path('admin/', include(admin_urls)),
     path('api/v1/auth/', include('core.auth_urls')),

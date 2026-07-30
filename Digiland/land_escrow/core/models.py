@@ -79,6 +79,7 @@ class User(AbstractUser):
     is_identity_verified = models.BooleanField(default=False)
     is_email_verified = models.BooleanField(default=False, help_text='Whether the user has verified their email address (distinct from identity verification via KRA PIN/ID)')
     gavakonect_verification_id = models.CharField(max_length=100, blank=True, null=True)
+    document_access_pin_hash = models.CharField(max_length=64, blank=True, null=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -595,6 +596,50 @@ class Document(models.Model):
     def __str__(self):
         return f"{self.document_type} - {self.id}"
 
+class DocumentAccessGrant(models.Model):
+    """Short-lived dual-signature authorization for restricted parcel documents."""
+    commission = models.ForeignKey('PurchaseCommission', on_delete=models.SET_NULL, null=True, blank=True, related_name='document_access_grants')
+    parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='document_access_grants')
+    accessor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='document_access_grants')
+    seller_auth_token = models.CharField(max_length=64, blank=True)
+    accessor_auth_token = models.CharField(max_length=64, blank=True)
+    seller_signed_at = models.DateTimeField(null=True, blank=True)
+    accessor_signed_at = models.DateTimeField(null=True, blank=True)
+    access_granted = models.BooleanField(default=False)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['parcel', 'accessor', 'access_granted'])]
+
+    def is_valid(self):
+        from django.utils import timezone
+        return self.access_granted and self.expires_at and self.expires_at > timezone.now()
+
+
+class LawyerPostTransactionTask(models.Model):
+    TASK_CHOICES = [
+        ('lodge_caution', 'Lodge Registry Caution/Caveat'),
+        ('lcb_consent', 'Obtain Land Control Board Consent'),
+        ('rates_clearance', 'Obtain Land Rates Clearance Certificate'),
+        ('rent_clearance', 'Obtain Land Rent Clearance'),
+        ('stamp_duty', 'Calculate & Pay Stamp Duty'),
+        ('submit_transfer', 'Submit Transfer Documents to Registry'),
+        ('title_handover', 'Final Title Deed Handover to Buyer'),
+    ]
+    transaction = models.ForeignKey(Transaction, on_delete=models.CASCADE, related_name='lawyer_post_transaction_tasks')
+    lawyer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='post_transaction_tasks')
+    task_key = models.CharField(max_length=40, choices=TASK_CHOICES)
+    completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+    evidence_url = models.URLField(blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [('transaction', 'task_key')]
+        ordering = ['transaction', 'task_key']
 class AuditLog(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     action = models.CharField(max_length=255)

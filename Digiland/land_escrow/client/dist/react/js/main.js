@@ -30221,93 +30221,7 @@ function HeroShowcase({ notice, csrfToken, isAuthenticated = false }) {
     { label: "Ranches & Farms", query: "Ranch" },
     { label: "ArdhiSasa Verified", query: "Verified" }
   ];
-  return /* @__PURE__ */ import_react16.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react16.default.createElement(
-    "section",
-    {
-      ref: heroRef,
-      className: "relative overflow-hidden rounded-[2.5rem] bg-slate-900 text-white px-6 py-16 sm:px-10 sm:py-24 lg:px-16 lg:py-28 shadow-2xl min-h-[80vh] flex flex-col justify-center border border-emerald-500/20"
-    },
-    /* @__PURE__ */ import_react16.default.createElement(
-      "div",
-      {
-        className: "absolute inset-0 bg-cover bg-center opacity-45 mix-blend-luminosity pointer-events-none scale-105 transition-transform duration-1000",
-        style: {
-          backgroundImage: `url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2000&q=80')`
-        }
-      }
-    ),
-    /* @__PURE__ */ import_react16.default.createElement("div", { className: "absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/40 pointer-events-none" }),
-    /* @__PURE__ */ import_react16.default.createElement("div", { className: "absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/60 to-transparent pointer-events-none" }),
-    !reducedMotion ? /* @__PURE__ */ import_react16.default.createElement(
-      "canvas",
-      {
-        ref: particlesRef,
-        className: "pointer-events-none absolute inset-0 h-full w-full opacity-15 mix-blend-screen"
-      }
-    ) : null,
-    /* @__PURE__ */ import_react16.default.createElement("div", { className: "absolute -right-24 -top-24 h-[500px] w-[500px] rounded-full bg-emerald-500/15 blur-[160px] pointer-events-none select-none" }),
-    /* @__PURE__ */ import_react16.default.createElement("div", { className: "absolute -left-20 bottom-10 h-[400px] w-[400px] rounded-full bg-amber-500/10 blur-[140px] pointer-events-none select-none" }),
-    /* @__PURE__ */ import_react16.default.createElement("div", { className: "relative z-10 max-w-4xl mx-auto text-center space-y-8" }, /* @__PURE__ */ import_react16.default.createElement("div", { ref: ctaRef, className: "inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-950/80 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-300 backdrop-blur-md shadow-lg" }, /* @__PURE__ */ import_react16.default.createElement("span", { className: "relative flex h-2 w-2" }, /* @__PURE__ */ import_react16.default.createElement("span", { className: "absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" }), /* @__PURE__ */ import_react16.default.createElement("span", { className: "relative inline-flex h-2 w-2 rounded-full bg-emerald-400" })), notice || "Kenya's Premier Land Escrow & Marketplace"), /* @__PURE__ */ import_react16.default.createElement("h1", { className: "text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] text-white drop-shadow-md font-serif" }, "Find & Secure Your Land ", /* @__PURE__ */ import_react16.default.createElement("br", null), /* @__PURE__ */ import_react16.default.createElement("span", { className: "bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent italic font-sans font-extrabold" }, "with Absolute Trust")), /* @__PURE__ */ import_react16.default.createElement("p", { className: "text-base sm:text-xl leading-relaxed text-slate-200 font-light max-w-2xl mx-auto drop-shadow-sm" }, "Ranches, Farms, Agricultural & Residential Land for Sale Across Kenya \u2014 Protected by ArdhiSasa Title Checks and M-Pesa Escrow."), /* @__PURE__ */ import_react16.default.createElement("div", { className: "w-full max-w-3xl mx-auto pt-2" }, /* @__PURE__ */ import_react16.default.createElement(
-      "form",
-      {
-        onSubmit: handleSearch,
-        className: "bg-white/95 backdrop-blur-2xl rounded-3xl p-3 sm:p-4 shadow-2xl border border-white/40 text-slate-900 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:gap-3 transition-all duration-300 focus-within:ring-4 focus-within:ring-emerald-500/30"
-      },
-      /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex-1 flex items-center gap-3 px-3 py-1 bg-slate-50/80 rounded-2xl sm:bg-transparent sm:py-0" }, /* @__PURE__ */ import_react16.default.createElement(MapPin, { className: "h-5 w-5 text-emerald-600 shrink-0" }), /* @__PURE__ */ import_react16.default.createElement(
-        "input",
-        {
-          type: "text",
-          value: searchQuery,
-          onChange: (e) => setSearchQuery(e.target.value),
-          placeholder: "County, Town, Sub-county, or Parcel No...",
-          className: "w-full bg-transparent py-2.5 text-slate-900 placeholder:text-slate-500 font-semibold text-sm sm:text-base focus:outline-none"
-        }
-      )),
-      /* @__PURE__ */ import_react16.default.createElement("div", { className: "hidden md:flex items-center border-l border-slate-200 pl-3 pr-1 py-1" }, /* @__PURE__ */ import_react16.default.createElement(
-        "select",
-        {
-          value: propertyType,
-          onChange: (e) => setPropertyType(e.target.value),
-          className: "bg-transparent text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none cursor-pointer pr-2"
-        },
-        /* @__PURE__ */ import_react16.default.createElement("option", { value: "all" }, "All Land Types"),
-        /* @__PURE__ */ import_react16.default.createElement("option", { value: "Agricultural" }, "Agricultural Land"),
-        /* @__PURE__ */ import_react16.default.createElement("option", { value: "Residential" }, "Residential Plot"),
-        /* @__PURE__ */ import_react16.default.createElement("option", { value: "Commercial" }, "Commercial Plot"),
-        /* @__PURE__ */ import_react16.default.createElement("option", { value: "Ranch" }, "Ranches & Farms")
-      )),
-      /* @__PURE__ */ import_react16.default.createElement("div", { className: "hidden lg:flex items-center border-l border-slate-200 pl-3 pr-1 py-1" }, /* @__PURE__ */ import_react16.default.createElement(
-        "select",
-        {
-          value: priceRange,
-          onChange: (e) => setPriceRange(e.target.value),
-          className: "bg-transparent text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none cursor-pointer pr-2"
-        },
-        /* @__PURE__ */ import_react16.default.createElement("option", { value: "all" }, "Any Price"),
-        /* @__PURE__ */ import_react16.default.createElement("option", { value: "under_1m" }, "Under KES 1M"),
-        /* @__PURE__ */ import_react16.default.createElement("option", { value: "1m_5m" }, "KES 1M - 5M"),
-        /* @__PURE__ */ import_react16.default.createElement("option", { value: "5m_20m" }, "KES 5M - 20M"),
-        /* @__PURE__ */ import_react16.default.createElement("option", { value: "20m_plus" }, "KES 20M+")
-      )),
-      /* @__PURE__ */ import_react16.default.createElement(
-        Button,
-        {
-          type: "submit",
-          className: "w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 px-8 rounded-2xl sm:rounded-2xl transition duration-300 shadow-lg flex items-center justify-center gap-2 text-sm whitespace-nowrap shrink-0"
-        },
-        /* @__PURE__ */ import_react16.default.createElement(Search, { className: "h-4 w-4" }),
-        /* @__PURE__ */ import_react16.default.createElement("span", null, "Search Land")
-      )
-    )), /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex flex-wrap items-center justify-center gap-2 pt-2 text-xs" }, /* @__PURE__ */ import_react16.default.createElement("span", { className: "text-slate-400 font-medium mr-1" }, "Popular:"), popularTags.map((tag) => /* @__PURE__ */ import_react16.default.createElement(
-      "a",
-      {
-        key: tag.label,
-        href: `/parcels/?q=${encodeURIComponent(tag.query)}`,
-        className: "rounded-full bg-white/10 hover:bg-emerald-500/20 border border-white/15 hover:border-emerald-400/50 px-3.5 py-1 text-slate-200 hover:text-emerald-300 font-semibold transition duration-200 backdrop-blur-sm"
-      },
-      tag.label
-    ))), /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex flex-wrap items-center justify-center gap-8 pt-6 text-xs font-semibold text-slate-300 border-t border-white/10" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react16.default.createElement(ShieldCheck, { className: "h-4 w-4 text-emerald-400" }), /* @__PURE__ */ import_react16.default.createElement("span", null, "ArdhiSasa Registry Synchronized")), /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react16.default.createElement(WalletCards, { className: "h-4 w-4 text-teal-400" }), /* @__PURE__ */ import_react16.default.createElement("span", null, "100% Escrow Vault Protection")), /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react16.default.createElement(Gavel, { className: "h-4 w-4 text-amber-400" }), /* @__PURE__ */ import_react16.default.createElement("span", null, "Law Society Advocates Verified"))))
-  ));
+  return /* @__PURE__ */ import_react16.default.createElement("div", { className: "relative min-h-[calc(100vh-7rem)] overflow-hidden rounded-[2.5rem] border border-emerald-400/15 bg-slate-950 px-5 py-8 text-white shadow-2xl sm:px-10 sm:py-10 lg:px-16 lg:py-12" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "pointer-events-none absolute inset-0 opacity-30", style: { backgroundImage: "linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px)", backgroundSize: "42px 42px" } }), /* @__PURE__ */ import_react16.default.createElement("div", { className: "pointer-events-none absolute -right-24 -top-24 h-[34rem] w-[34rem] rounded-full bg-emerald-500/20 blur-[150px]" }), /* @__PURE__ */ import_react16.default.createElement("div", { className: "pointer-events-none absolute -bottom-40 left-1/4 h-[28rem] w-[28rem] rounded-full bg-cyan-500/10 blur-[140px]" }), !reducedMotion ? /* @__PURE__ */ import_react16.default.createElement("canvas", { ref: particlesRef, className: "pointer-events-none absolute inset-0 h-full w-full opacity-20 mix-blend-screen" }) : null, /* @__PURE__ */ import_react16.default.createElement("div", { className: "relative z-10 mx-auto flex min-h-[calc(100vh-11rem)] max-w-7xl flex-col justify-between gap-10" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex items-center justify-between gap-4" }, /* @__PURE__ */ import_react16.default.createElement("div", { ref: ctaRef, className: "inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-emerald-300" }, /* @__PURE__ */ import_react16.default.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_16px_rgba(52,211,153,0.9)]" }), " ", notice || "Digiland Protocol / Kenya"), /* @__PURE__ */ import_react16.default.createElement("div", { className: "hidden text-right text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 sm:block" }, "Secure land infrastructure", /* @__PURE__ */ import_react16.default.createElement("br", null), /* @__PURE__ */ import_react16.default.createElement("span", { className: "text-emerald-400" }, "Network online"))), /* @__PURE__ */ import_react16.default.createElement("div", { className: "grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "max-w-3xl" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "mb-5 text-xs font-black uppercase tracking-[0.28em] text-emerald-400" }, "Autonomous land registry & escrow protocol"), /* @__PURE__ */ import_react16.default.createElement("h1", { className: "text-4xl font-black leading-[0.98] tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl" }, "Kenya's Autonomous", /* @__PURE__ */ import_react16.default.createElement("br", null), /* @__PURE__ */ import_react16.default.createElement("span", { className: "bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent" }, "Land Registry & Escrow Protocol")), /* @__PURE__ */ import_react16.default.createElement("p", { className: "mt-6 max-w-2xl text-sm leading-7 text-slate-300 sm:text-lg sm:leading-8" }, "Automated ArdhiSasa land title validation, M-Pesa escrow vaulting, and cryptographic Law Society advocate authentication."), /* @__PURE__ */ import_react16.default.createElement("form", { onSubmit: handleSearch, className: "mt-8 flex max-w-2xl flex-col gap-3 rounded-[1.35rem] border border-white/10 bg-white/[0.07] p-2 backdrop-blur-xl sm:flex-row" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3" }, /* @__PURE__ */ import_react16.default.createElement(Search, { className: "h-5 w-5 shrink-0 text-emerald-400" }), /* @__PURE__ */ import_react16.default.createElement("input", { value: searchQuery, onChange: (e) => setSearchQuery(e.target.value), placeholder: "Search county, ward, or parcel number", className: "w-full bg-transparent py-3 text-sm text-white outline-none placeholder:text-slate-500" })), /* @__PURE__ */ import_react16.default.createElement(Button, { type: "submit", className: "h-12 rounded-xl bg-emerald-500 px-6 font-black text-slate-950 hover:bg-emerald-400" }, /* @__PURE__ */ import_react16.default.createElement(Search, { className: "mr-2 h-4 w-4" }), "Search")), /* @__PURE__ */ import_react16.default.createElement("div", { className: "mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-500" }, /* @__PURE__ */ import_react16.default.createElement("span", null, "Popular:"), ["Nairobi", "Nakuru", "Kiambu", "Kajiado"].map((tag) => /* @__PURE__ */ import_react16.default.createElement("a", { key: tag, href: `/parcels/?q=${encodeURIComponent(tag)}`, className: "text-slate-300 transition hover:text-emerald-300" }, tag))), /* @__PURE__ */ import_react16.default.createElement("div", { className: "mt-8 flex flex-wrap gap-3" }, /* @__PURE__ */ import_react16.default.createElement("a", { href: "/marketplace/", className: "inline-flex h-12 items-center justify-center rounded-full bg-emerald-500 px-6 text-sm font-black text-slate-950 transition hover:bg-emerald-400" }, "Launch Marketplace ", /* @__PURE__ */ import_react16.default.createElement(ArrowRight, { className: "ml-2 h-4 w-4" })), /* @__PURE__ */ import_react16.default.createElement("a", { href: "/features/", className: "inline-flex h-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] px-6 text-sm font-bold text-white transition hover:border-emerald-400/50 hover:bg-emerald-400/10" }, "Explore protocol"))), /* @__PURE__ */ import_react16.default.createElement("div", { className: "relative rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 shadow-[0_30px_100px_-45px_rgba(16,185,129,0.8)] backdrop-blur-2xl sm:p-7" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex items-center justify-between border-b border-white/10 pb-4" }, /* @__PURE__ */ import_react16.default.createElement("div", null, /* @__PURE__ */ import_react16.default.createElement("div", { className: "text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400" }, "System concept architecture"), /* @__PURE__ */ import_react16.default.createElement("div", { className: "mt-1 text-sm font-bold text-slate-300" }, "Three trust layers. One closing path.")), /* @__PURE__ */ import_react16.default.createElement(ShieldCheck, { className: "h-6 w-6 text-emerald-400" })), /* @__PURE__ */ import_react16.default.createElement("div", { className: "mt-5 space-y-3" }, [["01", "ArdhiSasa Registry Validation", "Government title deed check", Landmark], ["02", "Smart Escrow Vault", "M-Pesa STK & KCB bank deposit lock", WalletCards], ["03", "Cryptographic Advocate Sign-Off", "LSK lawyer title transfer", Gavel]].map(([number, title, description, Icon2]) => /* @__PURE__ */ import_react16.default.createElement("div", { key: String(number), className: "group flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-900/60 p-4 transition hover:border-emerald-400/40" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-xs font-black text-emerald-300" }, number), /* @__PURE__ */ import_react16.default.createElement("div", { className: "min-w-0 flex-1" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "text-sm font-black text-white" }, title), /* @__PURE__ */ import_react16.default.createElement("div", { className: "mt-1 text-xs text-slate-400" }, description)), /* @__PURE__ */ import_react16.default.createElement(Icon2, { className: "h-5 w-5 shrink-0 text-emerald-400" })))), /* @__PURE__ */ import_react16.default.createElement("div", { className: "mt-6 grid grid-cols-3 gap-2 border-t border-white/10 pt-5 text-center" }, /* @__PURE__ */ import_react16.default.createElement("div", null, /* @__PURE__ */ import_react16.default.createElement("div", { className: "text-lg font-black text-white" }, "24/7"), /* @__PURE__ */ import_react16.default.createElement("div", { className: "text-[9px] uppercase tracking-wider text-slate-500" }, "Monitoring")), /* @__PURE__ */ import_react16.default.createElement("div", null, /* @__PURE__ */ import_react16.default.createElement("div", { className: "text-lg font-black text-white" }, "M-Pesa"), /* @__PURE__ */ import_react16.default.createElement("div", { className: "text-[9px] uppercase tracking-wider text-slate-500" }, "Vaulting")), /* @__PURE__ */ import_react16.default.createElement("div", null, /* @__PURE__ */ import_react16.default.createElement("div", { className: "text-lg font-black text-white" }, "LSK"), /* @__PURE__ */ import_react16.default.createElement("div", { className: "text-[9px] uppercase tracking-wider text-slate-500" }, "Verified"))))), /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500" }, /* @__PURE__ */ import_react16.default.createElement("span", null, "ArdhiSasa synchronized"), /* @__PURE__ */ import_react16.default.createElement("span", null, "Escrow protected"), /* @__PURE__ */ import_react16.default.createElement("span", null, "Advocate authenticated"), /* @__PURE__ */ import_react16.default.createElement("span", { className: "text-emerald-400" }, "Protocol status: operational"))));
 }
 
 // src/components/landing/premium-footer.tsx
@@ -30316,40 +30230,37 @@ var NAV_COLUMNS = [
   {
     title: "Platform",
     links: [
-      { label: "Browse Land", href: "/parcels/" },
-      { label: "Sell Property", href: "/sell" },
-      { label: "Escrow Protection", href: "/escrow" },
-      { label: "KYC Verification", href: "/kyc" }
+      { label: "Browse Parcels", href: "/parcels/" },
+      { label: "List Property", href: "/parcels/upload/" },
+      { label: "Escrow Protection", href: "/escrow-acts/" },
+      { label: "Platform Features", href: "/features/" }
     ]
   },
   {
-    title: "Ecosystem",
+    title: "User Portals",
     links: [
-      { label: "Virtual Cities", href: "/virtual-cities" },
-      { label: "AI Agents", href: "/ai-agents" },
-      { label: "Land Analytics", href: "/analytics" },
-      { label: "Development Tools", href: "/dev-tools" },
-      { label: "NFT Assets", href: "/nft-assets" }
+      { label: "Buyer Dashboard", href: "/buyer-choice/" },
+      { label: "Seller Hub", href: "/parcels/upload/" },
+      { label: "Staff & Advocates", href: "/staff/login/" },
+      { label: "Admin Control Plane", href: "/admin/" }
     ]
   },
   {
-    title: "Resources",
+    title: "Legal & Escrow",
     links: [
-      { label: "Documentation", href: "/docs" },
-      { label: "API Reference", href: "/api-reference" },
-      { label: "Blog", href: "/blog" },
-      { label: "Help Center", href: "/help" },
-      { label: "Community", href: "/community" }
+      { label: "Legal Framework", href: "/escrow-acts/" },
+      { label: "Joint Ownership Laws", href: "/joint-laws/" },
+      { label: "ArdhiSasa Registry Sync", href: "/escrow-acts/" },
+      { label: "LSK Advocate Sign-Off", href: "/staff/login/" }
     ]
   },
   {
     title: "Company",
     links: [
-      { label: "About Us", href: "/about" },
-      { label: "Careers", href: "/careers" },
-      { label: "Press", href: "/press" },
-      { label: "Partners", href: "/partners" },
-      { label: "Contact", href: "/contact" }
+      { label: "About Digiland", href: "/features/" },
+      { label: "System Architecture", href: "/features/" },
+      { label: "Help & Support", href: "/support/" },
+      { label: "Partner Network", href: "/parcels/" }
     ]
   }
 ];
@@ -30362,23 +30273,23 @@ var CTA_COUNTERS = [
 var TRUST_ITEMS = [
   {
     icon: Lock,
-    label: "Bank-Grade Security",
-    description: "AES-256 encryption and SOC 2 compliant infrastructure."
+    label: "Bank-Grade Vault Security",
+    description: "AES-256 encrypted escrow deposits & SOC 2 compliant architecture."
   },
   {
     icon: Landmark,
-    label: "CBK Licensed Escrow",
-    description: "Fully regulated escrow under Central Bank of Kenya."
+    label: "CBK & M-Pesa Regulated",
+    description: "Automated settlement via Central Bank & Safaricom M-Pesa STK."
   },
   {
     icon: FileCheck2,
-    label: "ISO 27001 Compliant",
-    description: "Certified information security management system."
+    label: "ArdhiSasa Direct Sync",
+    description: "Instant title deed validation against Ministry of Lands databases."
   },
   {
     icon: Zap,
-    label: "24/7 Support",
-    description: "Dedicated support team available around the clock."
+    label: "LSK Advocate Sign-Off",
+    description: "Verified Law Society of Kenya lawyers execute title deeds."
   }
 ];
 var SOCIAL_LINKS = [
@@ -30504,7 +30415,7 @@ function SocialIcon({ icon: Icon2, label, href }) {
       target: "_blank",
       rel: "noopener noreferrer",
       "aria-label": label,
-      className: "group relative flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition-all duration-300 hover:scale-[1.2] hover:border-emerald-400/40 hover:bg-emerald-400/10 hover:text-emerald-400 hover:shadow-[0_0_18px_rgba(52,211,153,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+      className: "group relative flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition-all duration-300 hover:scale-[1.15] hover:border-emerald-400/40 hover:bg-emerald-400/10 hover:text-emerald-400 hover:shadow-[0_0_18px_rgba(52,211,153,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
     },
     /* @__PURE__ */ import_react17.default.createElement(Icon2, { className: "h-[18px] w-[18px]" })
   );
@@ -30567,7 +30478,7 @@ function PremiumFooter() {
     },
     [email]
   );
-  return /* @__PURE__ */ import_react17.default.createElement("footer", { className: "relative overflow-hidden bg-slate-950 text-white", role: "contentinfo" }, /* @__PURE__ */ import_react17.default.createElement(
+  return /* @__PURE__ */ import_react17.default.createElement("footer", { className: "relative overflow-hidden bg-slate-950 text-white border-t border-white/10", role: "contentinfo" }, /* @__PURE__ */ import_react17.default.createElement(
     "section",
     {
       ref: ctaRef,
@@ -30590,28 +30501,28 @@ function PremiumFooter() {
       }
     ),
     /* @__PURE__ */ import_react17.default.createElement(FilmGrainOverlay, null),
-    /* @__PURE__ */ import_react17.default.createElement("div", { className: "cta-reveal relative z-10 mx-auto max-w-5xl text-center", style: { opacity: 0 } }, /* @__PURE__ */ import_react17.default.createElement("h2", { className: "text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl" }, "Ready to Buy Land", " ", /* @__PURE__ */ import_react17.default.createElement("span", { className: "bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent" }, "With Confidence?")), /* @__PURE__ */ import_react17.default.createElement("p", { className: "mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8" }, "Join thousands of Kenyans who trust Digiland for verified land, escrow protection, and seamless transactions."), /* @__PURE__ */ import_react17.default.createElement("div", { className: "mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row" }, /* @__PURE__ */ import_react17.default.createElement("a", { href: "/accounts/signup/" }, /* @__PURE__ */ import_react17.default.createElement(
+    /* @__PURE__ */ import_react17.default.createElement("div", { className: "cta-reveal relative z-10 mx-auto max-w-5xl text-center", style: { opacity: 0 } }, /* @__PURE__ */ import_react17.default.createElement("h2", { className: "text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl font-serif" }, "Ready to Transact Land", " ", /* @__PURE__ */ import_react17.default.createElement("span", { className: "bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent italic font-sans font-extrabold" }, "With Absolute Trust?")), /* @__PURE__ */ import_react17.default.createElement("p", { className: "mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8 font-light" }, "Join thousands of buyers, sellers, and advocates across Kenya using Digiland for verified title deeds, M-Pesa escrow protection, and legal closing."), /* @__PURE__ */ import_react17.default.createElement("div", { className: "mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row" }, /* @__PURE__ */ import_react17.default.createElement("a", { href: "/accounts/signup/" }, /* @__PURE__ */ import_react17.default.createElement(
       Button,
       {
         size: "lg",
         className: "h-13 rounded-full bg-emerald-600 px-8 text-base font-bold text-white shadow-[0_0_28px_rgba(5,150,105,0.4)] transition-all duration-300 hover:bg-emerald-500 hover:shadow-[0_0_40px_rgba(5,150,105,0.55)]"
       },
-      "Get Started",
-      /* @__PURE__ */ import_react17.default.createElement(ArrowRight, { className: "ml-1 h-4 w-4" })
+      "Get Started Free",
+      /* @__PURE__ */ import_react17.default.createElement(ArrowRight, { className: "ml-2 h-4 w-4" })
     )), /* @__PURE__ */ import_react17.default.createElement("a", { href: "/parcels/" }, /* @__PURE__ */ import_react17.default.createElement(
       Button,
       {
         variant: "outline",
         size: "lg",
-        className: "h-13 rounded-full border-white/20 bg-transparent px-8 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-emerald-400/50 hover:bg-emerald-400/10 hover:text-emerald-300"
+        className: "h-13 rounded-full border-white/20 bg-white/5 px-8 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-emerald-400/50 hover:bg-emerald-400/10 hover:text-emerald-300"
       },
-      "Browse Parcels",
-      /* @__PURE__ */ import_react17.default.createElement(MapPin, { className: "ml-1 h-4 w-4" })
+      "Browse Marketplace",
+      /* @__PURE__ */ import_react17.default.createElement(MapPin, { className: "ml-2 h-4 w-4" })
     ))), /* @__PURE__ */ import_react17.default.createElement("div", { className: "mt-14 grid grid-cols-2 gap-6 sm:gap-10 lg:grid-cols-4" }, CTA_COUNTERS.map((stat) => /* @__PURE__ */ import_react17.default.createElement(
       "div",
       {
         key: stat.label,
-        className: "cta-reveal flex flex-col items-center rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-5 backdrop-blur-sm",
+        className: "cta-reveal flex flex-col items-center rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-5 backdrop-blur-md hover:border-emerald-500/30 transition duration-300",
         style: { opacity: 0 }
       },
       /* @__PURE__ */ import_react17.default.createElement(CounterCard, { stat, reduced })
@@ -30620,49 +30531,49 @@ function PremiumFooter() {
     "section",
     {
       ref: brandRef,
-      className: "relative border-t border-white/6 px-6 py-16",
+      className: "relative border-t border-white/10 px-6 py-16",
       "aria-label": "Digiland brand"
     },
     /* @__PURE__ */ import_react17.default.createElement(
       "div",
       {
-        className: "brand-reveal mx-auto flex max-w-7xl flex-col items-start gap-10 lg:flex-row lg:items-center lg:justify-between",
+        className: "brand-reveal mx-auto flex max-w-7xl flex-col items-start gap-12 lg:flex-row lg:items-start lg:justify-between",
         style: { opacity: 0 }
       },
-      /* @__PURE__ */ import_react17.default.createElement("div", { className: "max-w-md space-y-4" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex items-baseline gap-0", "aria-label": "Digiland" }, /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-2xl tracking-tight text-white", style: { fontWeight: 800 } }, "Digi"), /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-2xl tracking-tight text-emerald-400", style: { fontWeight: 800 } }, "land")), /* @__PURE__ */ import_react17.default.createElement("p", { className: "text-sm font-medium text-slate-300" }, "Secure land transactions for every Kenyan."), /* @__PURE__ */ import_react17.default.createElement("p", { className: "text-sm leading-6 text-slate-400" }, "Digiland is Kenya\u2019s trusted platform for verified land transactions. We combine escrow protection, AI-powered valuations, and county-level coverage to make buying and selling land transparent, safe, and accessible for everyone."), /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex items-center gap-3 pt-2" }, SOCIAL_LINKS.map((link) => /* @__PURE__ */ import_react17.default.createElement(SocialIcon, { key: link.label, ...link })))),
+      /* @__PURE__ */ import_react17.default.createElement("div", { className: "max-w-md space-y-4" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex items-baseline gap-0", "aria-label": "Digiland" }, /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-3xl font-black tracking-tight text-white" }, "Digi"), /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-3xl font-black tracking-tight text-emerald-400" }, "land")), /* @__PURE__ */ import_react17.default.createElement("span", { className: "rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-emerald-300" }, "\u{1F1F0}\u{1F1EA} Kenya Land Protocol")), /* @__PURE__ */ import_react17.default.createElement("p", { className: "text-sm font-semibold text-slate-200" }, "Kenya's Autonomous Land Registry & Escrow Infrastructure"), /* @__PURE__ */ import_react17.default.createElement("p", { className: "text-sm leading-6 text-slate-400 font-light" }, "Digiland connects land buyers, property sellers, and Law Society of Kenya advocates. We combine automated ArdhiSasa title verification, M-Pesa deposit vaulting, and legal oversight to make Kenya land commerce 100% transparent and safe."), /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex items-center gap-3 pt-2" }, SOCIAL_LINKS.map((link) => /* @__PURE__ */ import_react17.default.createElement(SocialIcon, { key: link.label, ...link })))),
       /* @__PURE__ */ import_react17.default.createElement(
         "nav",
         {
           ref: navRef,
-          className: "grid w-full grid-cols-1 gap-8 sm:grid-cols-2 lg:w-auto lg:max-w-2xl lg:grid-cols-4 lg:gap-12",
+          className: "grid w-full grid-cols-2 gap-8 sm:grid-cols-2 lg:w-auto lg:max-w-2xl lg:grid-cols-4 lg:gap-12",
           "aria-label": "Footer navigation"
         },
-        NAV_COLUMNS.map((col) => /* @__PURE__ */ import_react17.default.createElement("div", { key: col.title, className: "nav-col-reveal space-y-3", style: { opacity: 0 } }, /* @__PURE__ */ import_react17.default.createElement("h3", { className: "text-xs font-bold uppercase tracking-[0.18em] text-emerald-400" }, col.title), /* @__PURE__ */ import_react17.default.createElement("ul", { className: "space-y-2.5", role: "list" }, col.links.map((link) => /* @__PURE__ */ import_react17.default.createElement("li", { key: link.label }, /* @__PURE__ */ import_react17.default.createElement(FooterNavLink, { ...link }))))))
+        NAV_COLUMNS.map((col) => /* @__PURE__ */ import_react17.default.createElement("div", { key: col.title, className: "nav-col-reveal space-y-3", style: { opacity: 0 } }, /* @__PURE__ */ import_react17.default.createElement("h3", { className: "text-xs font-black uppercase tracking-[0.2em] text-emerald-400" }, col.title), /* @__PURE__ */ import_react17.default.createElement("ul", { className: "space-y-2.5", role: "list" }, col.links.map((link) => /* @__PURE__ */ import_react17.default.createElement("li", { key: link.label }, /* @__PURE__ */ import_react17.default.createElement(FooterNavLink, { ...link }))))))
       )
     )
-  ), /* @__PURE__ */ import_react17.default.createElement("section", { ref: trustRef, className: "relative px-6 py-12", "aria-label": "Trust and certifications" }, /* @__PURE__ */ import_react17.default.createElement(Card, { className: "mx-auto max-w-5xl !border-white/10 !bg-white/[0.03] !p-0 backdrop-blur-xl" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4" }, TRUST_ITEMS.map((item) => /* @__PURE__ */ import_react17.default.createElement(TrustCard, { key: item.label, ...item }))))), /* @__PURE__ */ import_react17.default.createElement("section", { ref: newsletterRef, className: "relative px-6 py-14", "aria-label": "Newsletter subscription" }, /* @__PURE__ */ import_react17.default.createElement(
+  ), /* @__PURE__ */ import_react17.default.createElement("section", { ref: trustRef, className: "relative px-6 py-10", "aria-label": "Trust and certifications" }, /* @__PURE__ */ import_react17.default.createElement(Card, { className: "mx-auto max-w-6xl !border-white/10 !bg-white/[0.03] !p-0 backdrop-blur-xl" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4" }, TRUST_ITEMS.map((item) => /* @__PURE__ */ import_react17.default.createElement(TrustCard, { key: item.label, ...item }))))), /* @__PURE__ */ import_react17.default.createElement("section", { ref: newsletterRef, className: "relative px-6 py-14", "aria-label": "Newsletter subscription" }, /* @__PURE__ */ import_react17.default.createElement(
     "div",
     {
       className: "pointer-events-none absolute left-1/2 top-0 h-56 w-56 -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[80px]",
       "aria-hidden": "true"
     }
-  ), /* @__PURE__ */ import_react17.default.createElement("div", { className: "newsletter-reveal relative z-10 mx-auto max-w-lg text-center", style: { opacity: 0 } }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex items-center justify-center gap-2" }, /* @__PURE__ */ import_react17.default.createElement(Mail, { className: "h-5 w-5 text-emerald-400" }), /* @__PURE__ */ import_react17.default.createElement("h3", { className: "text-lg font-bold text-white" }, "Stay Updated")), /* @__PURE__ */ import_react17.default.createElement("p", { className: "mt-2 text-sm leading-6 text-slate-400" }, "Get the latest land listings, market insights, and platform updates delivered to your inbox."), /* @__PURE__ */ import_react17.default.createElement("form", { onSubmit: handleSubscribe, className: "mt-6 flex items-center gap-2" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "relative flex-1" }, /* @__PURE__ */ import_react17.default.createElement(
+  ), /* @__PURE__ */ import_react17.default.createElement("div", { className: "newsletter-reveal relative z-10 mx-auto max-w-lg text-center", style: { opacity: 0 } }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex items-center justify-center gap-2" }, /* @__PURE__ */ import_react17.default.createElement(Mail, { className: "h-5 w-5 text-emerald-400" }), /* @__PURE__ */ import_react17.default.createElement("h3", { className: "text-lg font-bold text-white" }, "Stay Informed")), /* @__PURE__ */ import_react17.default.createElement("p", { className: "mt-2 text-sm leading-6 text-slate-300 font-light" }, "Receive updates on newly verified land listings, county price benchmarks, and legal policy updates across Kenya."), /* @__PURE__ */ import_react17.default.createElement("form", { onSubmit: handleSubscribe, className: "mt-6 flex items-center gap-2" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "relative flex-1" }, /* @__PURE__ */ import_react17.default.createElement(
     Input,
     {
       type: "email",
       required: true,
       value: email,
       onChange: (e) => setEmail(e.target.value),
-      placeholder: "you@example.com",
+      placeholder: "Enter your email address...",
       "aria-label": "Email address for newsletter",
-      className: "h-11 rounded-full border-white/12 bg-white/5 pl-5 pr-4 text-sm text-white placeholder:text-slate-500 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-slate-950"
+      className: "h-12 rounded-full border-white/15 bg-white/5 pl-5 pr-4 text-sm text-white placeholder:text-slate-500 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-slate-950"
     }
   )), /* @__PURE__ */ import_react17.default.createElement(
     Button,
     {
       type: "submit",
       disabled: submitting || subscribed,
-      className: "h-11 rounded-full bg-emerald-600 px-6 font-semibold text-white shadow-[0_0_18px_rgba(5,150,105,0.3)] transition-all duration-300 hover:bg-emerald-500 hover:shadow-[0_0_30px_rgba(5,150,105,0.45)] disabled:opacity-60"
+      className: "h-12 rounded-full bg-emerald-600 px-6 font-bold text-white shadow-[0_0_18px_rgba(5,150,105,0.3)] transition-all duration-300 hover:bg-emerald-500 hover:shadow-[0_0_30px_rgba(5,150,105,0.45)] disabled:opacity-60"
     },
     submitting ? /* @__PURE__ */ import_react17.default.createElement("span", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react17.default.createElement(
       "svg",
@@ -30691,29 +30602,36 @@ function PremiumFooter() {
           d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
         }
       )
-    ), /* @__PURE__ */ import_react17.default.createElement("span", { className: "sr-only" }, "Subscribing\u2026")) : subscribed ? /* @__PURE__ */ import_react17.default.createElement("span", { className: "flex items-center gap-1.5" }, /* @__PURE__ */ import_react17.default.createElement(CircleCheck, { className: "h-4 w-4" }), "Subscribed!") : /* @__PURE__ */ import_react17.default.createElement("span", { className: "flex items-center gap-1.5" }, /* @__PURE__ */ import_react17.default.createElement(Send, { className: "h-4 w-4" }), "Subscribe")
-  )), /* @__PURE__ */ import_react17.default.createElement("p", { className: "mt-3 text-xs text-slate-500" }, "No spam. Unsubscribe anytime."))), /* @__PURE__ */ import_react17.default.createElement("div", { className: "border-t border-white/10 px-6 py-6" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "mx-auto flex max-w-7xl flex-col items-center gap-4 text-xs text-slate-500 sm:flex-row sm:justify-between" }, /* @__PURE__ */ import_react17.default.createElement("p", null, "\xA9 2026 Digiland. All rights reserved."), /* @__PURE__ */ import_react17.default.createElement("nav", { className: "flex flex-wrap items-center justify-center gap-x-4 gap-y-1", "aria-label": "Legal links" }, /* @__PURE__ */ import_react17.default.createElement(
+    )) : subscribed ? /* @__PURE__ */ import_react17.default.createElement("span", { className: "flex items-center gap-1.5" }, /* @__PURE__ */ import_react17.default.createElement(CircleCheck, { className: "h-4 w-4" }), "Subscribed") : /* @__PURE__ */ import_react17.default.createElement("span", { className: "flex items-center gap-1.5" }, /* @__PURE__ */ import_react17.default.createElement(Send, { className: "h-4 w-4" }), "Subscribe")
+  )), /* @__PURE__ */ import_react17.default.createElement("p", { className: "mt-3 text-xs text-slate-500" }, "We respect your privacy. Unsubscribe anytime."))), /* @__PURE__ */ import_react17.default.createElement("div", { className: "border-t border-white/10 px-6 py-6 bg-slate-950/90" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "mx-auto flex max-w-7xl flex-col items-center gap-4 text-xs text-slate-400 sm:flex-row sm:justify-between" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react17.default.createElement("span", { className: "flex items-center gap-1.5 text-emerald-400 font-bold" }, /* @__PURE__ */ import_react17.default.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-400 animate-pulse" }), "All Systems Operational"), /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-slate-600" }, "\u2022"), /* @__PURE__ */ import_react17.default.createElement("p", null, "\xA9 2026 Digiland Kenya. All rights reserved.")), /* @__PURE__ */ import_react17.default.createElement("nav", { className: "flex flex-wrap items-center justify-center gap-x-5 gap-y-1 font-medium", "aria-label": "Legal links" }, /* @__PURE__ */ import_react17.default.createElement(
     "a",
     {
-      href: "/privacy",
-      className: "transition-colors duration-200 hover:text-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+      href: "/escrow-acts/",
+      className: "transition-colors duration-200 hover:text-emerald-400"
+    },
+    "Legal & Escrow Acts"
+  ), /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-white/20", "aria-hidden": "true" }, "\xB7"), /* @__PURE__ */ import_react17.default.createElement(
+    "a",
+    {
+      href: "/joint-laws/",
+      className: "transition-colors duration-200 hover:text-emerald-400"
+    },
+    "Joint Land Laws"
+  ), /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-white/20", "aria-hidden": "true" }, "\xB7"), /* @__PURE__ */ import_react17.default.createElement(
+    "a",
+    {
+      href: "/privacy/",
+      className: "transition-colors duration-200 hover:text-emerald-400"
     },
     "Privacy Policy"
-  ), /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-white/15", "aria-hidden": "true" }, "\xB7"), /* @__PURE__ */ import_react17.default.createElement(
+  ), /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-white/20", "aria-hidden": "true" }, "\xB7"), /* @__PURE__ */ import_react17.default.createElement(
     "a",
     {
-      href: "/terms",
-      className: "transition-colors duration-200 hover:text-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+      href: "/terms/",
+      className: "transition-colors duration-200 hover:text-emerald-400"
     },
     "Terms of Service"
-  ), /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-white/15", "aria-hidden": "true" }, "\xB7"), /* @__PURE__ */ import_react17.default.createElement(
-    "a",
-    {
-      href: "/cookies",
-      className: "transition-colors duration-200 hover:text-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
-    },
-    "Cookie Policy"
-  )), /* @__PURE__ */ import_react17.default.createElement("p", { className: "flex items-center gap-1.5 font-medium" }, "Made in Kenya ", /* @__PURE__ */ import_react17.default.createElement("span", { "aria-label": "Kenya flag" }, "\u{1F1F0}\u{1F1EA}")))));
+  )), /* @__PURE__ */ import_react17.default.createElement("p", { className: "flex items-center gap-1.5 font-bold text-slate-300" }, "Made in Kenya ", /* @__PURE__ */ import_react17.default.createElement("span", { "aria-label": "Kenya flag" }, "\u{1F1F0}\u{1F1EA}")))));
 }
 
 // src/App.tsx
@@ -30881,7 +30799,7 @@ function StatGrid() {
 function ParcelGrid() {
   const parcels = bootstrap.parcels || [];
   if (!parcels.length) {
-    return /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/90" }, /* @__PURE__ */ import_react18.default.createElement(CardContent, { className: "p-8 text-center" }, /* @__PURE__ */ import_react18.default.createElement(Landmark, { className: "mx-auto mb-3 h-10 w-10 text-muted-foreground" }), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-lg font-bold text-foreground" }, "No parcels found"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "mt-2 text-sm text-muted-foreground" }, "Listings will appear here once parcels are uploaded and reviewed.")));
+    return /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/90" }, /* @__PURE__ */ import_react18.default.createElement(CardContent, { className: "p-8 text-center" }, /* @__PURE__ */ import_react18.default.createElement(Landmark, { className: "mx-auto mb-3 h-10 w-10 text-muted-foreground" }), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-lg font-bold text-foreground" }, bootstrap.search_active ? `No parcels found for "${bootstrap.search_query || "that search"}"` : "No parcels found"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "mt-2 text-sm text-muted-foreground" }, bootstrap.search_active ? "Try a county, constituency, ward, parcel number, or a broader price range." : "Listings will appear here once parcels are uploaded and reviewed.")));
   }
   return /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid gap-4 md:grid-cols-2 xl:grid-cols-3" }, parcels.map((parcel) => /* @__PURE__ */ import_react18.default.createElement(ListingCard, { key: parcel.parcel_number, parcel })));
 }
@@ -31393,7 +31311,7 @@ function ParcelDetailPage() {
     ["Size", `${detail.land_size} Acres`],
     ["Registered owner", detail.registered_owner_id_masked],
     ["Price", `KES ${detail.displayed_price}`]
-  ].map(([label, value]) => /* @__PURE__ */ import_react18.default.createElement("div", { key: label, className: "rounded-2xl bg-muted/60 p-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground" }, label), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 font-semibold text-foreground" }, value)))), detail.ai_price ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-emerald-200 bg-emerald-50/70 p-5" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-bold uppercase tracking-[0.24em] text-emerald-700" }, "AI estimate"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-2 text-2xl font-black tracking-tight text-foreground" }, "KES ", detail.ai_price.total_value), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-sm text-muted-foreground" }, "Per acre: KES ", detail.ai_price.price_per_acre, " | Confidence: KES ", detail.ai_price.confidence_low, " - ", detail.ai_price.confidence_high)) : null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid gap-3 sm:grid-cols-2" }, /* @__PURE__ */ import_react18.default.createElement("a", { href: "/escrow-acts/", className: "inline-flex h-11 items-center justify-center rounded-full border border-border bg-white/80 px-5 text-sm font-semibold text-foreground hover:bg-muted" }, "Read legal checklist"), detail.can_use_joint_purchase ? /* @__PURE__ */ import_react18.default.createElement("a", { href: "/joint/laws/", className: "inline-flex h-11 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90" }, "Joint laws") : null))), /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, { className: "flex flex-row items-center justify-between pb-2" }, /* @__PURE__ */ import_react18.default.createElement(CardTitle, { className: "flex items-center gap-2 text-base" }, /* @__PURE__ */ import_react18.default.createElement(FileText, { className: "h-4 w-4 text-emerald-700" }), "Compliance documents"), detail.upload_document_url ? /* @__PURE__ */ import_react18.default.createElement("a", { href: detail.upload_document_url, className: "inline-flex h-9 items-center justify-center rounded-full border border-border bg-white px-4 text-xs font-semibold text-foreground hover:bg-muted" }, /* @__PURE__ */ import_react18.default.createElement(Upload, { className: "mr-2 h-4 w-4" }), " Upload Document") : null), /* @__PURE__ */ import_react18.default.createElement(CardContent, { className: "space-y-3" }, detail.documents.length ? detail.documents.map((doc) => /* @__PURE__ */ import_react18.default.createElement("div", { key: doc.id, className: "flex items-center justify-between gap-3 rounded-3xl border border-border/70 bg-muted/40 p-4" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-semibold text-foreground" }, doc.document_label), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm text-muted-foreground" }, "Uploaded ", doc.uploaded_at)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: doc.verification_status === "Match" ? "success" : doc.verification_status === "Mismatch" ? "danger" : "warning" }, doc.verification_status), doc.file_url ? /* @__PURE__ */ import_react18.default.createElement("a", { href: doc.file_url, target: "_blank", rel: "noreferrer", className: "inline-flex h-9 items-center justify-center rounded-full border border-border bg-white px-4 text-xs font-semibold text-foreground hover:bg-muted" }, "View") : null, doc.moderate_url ? /* @__PURE__ */ import_react18.default.createElement("a", { href: doc.moderate_url, className: "inline-flex h-9 items-center justify-center rounded-full border border-border bg-white px-4 text-xs font-semibold text-foreground hover:bg-muted" }, "Moderate") : null, doc.delete_url ? /* @__PURE__ */ import_react18.default.createElement("a", { href: doc.delete_url, className: "inline-flex h-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-4 text-xs font-semibold text-rose-600 hover:bg-rose-100" }, "Delete") : null))) : /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-sm text-muted-foreground" }, "No ownership or identity documents have been attached yet.")))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6" }, detail.agent_verify_url ? /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement(CardTitle, { className: "flex items-center gap-2 text-base" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-4 w-4 text-emerald-700" }), "Agent moderation"), /* @__PURE__ */ import_react18.default.createElement(CardDescription, null, "Verify or flag this parcel from the review queue.")), /* @__PURE__ */ import_react18.default.createElement(CardContent, null, /* @__PURE__ */ import_react18.default.createElement("form", { method: "post", action: detail.agent_verify_url, className: "grid gap-3" }, /* @__PURE__ */ import_react18.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: bootstrap.csrf_token || "" }), /* @__PURE__ */ import_react18.default.createElement(Button, { type: "submit", name: "verify_action", value: "verify", className: "w-full rounded-full" }, "Approve deed and title"), /* @__PURE__ */ import_react18.default.createElement(Button, { type: "submit", name: "verify_action", value: "reject", variant: "outline", className: "w-full rounded-full" }, "Flag as fraudulent")))) : null, detail.toggle_favorite_url ? /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement(CardTitle, { className: "flex items-center gap-2 text-base" }, /* @__PURE__ */ import_react18.default.createElement(Heart, { className: "h-4 w-4 text-rose-600" }), "Saved parcels")), /* @__PURE__ */ import_react18.default.createElement(CardContent, null, /* @__PURE__ */ import_react18.default.createElement("form", { method: "post", action: detail.toggle_favorite_url }, /* @__PURE__ */ import_react18.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: bootstrap.csrf_token || "" }), /* @__PURE__ */ import_react18.default.createElement(Button, { type: "submit", variant: detail.is_favorited ? "danger" : "outline", className: "w-full rounded-full" }, detail.is_favorited ? "Remove from saved" : "Save parcel")))) : null, detail.can_initiate_escrow ? /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement(CardTitle, { className: "flex items-center gap-2 text-base" }, /* @__PURE__ */ import_react18.default.createElement(WalletCards, { className: "h-4 w-4 text-emerald-700" }), "Commission request"), /* @__PURE__ */ import_react18.default.createElement(CardDescription, null, "Choose the purchase mode before creating a commission.")), /* @__PURE__ */ import_react18.default.createElement(CardContent, { className: "space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("form", { method: "post", action: detail.initiate_escrow_url, className: "space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: bootstrap.csrf_token || "" }), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-sm font-semibold text-foreground" }, "Purchase mode"), /* @__PURE__ */ import_react18.default.createElement(
+  ].map(([label, value]) => /* @__PURE__ */ import_react18.default.createElement("div", { key: label, className: "rounded-2xl bg-muted/60 p-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground" }, label), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 font-semibold text-foreground" }, value)))), detail.ai_price ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-emerald-200 bg-emerald-50/70 p-5" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-bold uppercase tracking-[0.24em] text-emerald-700" }, "AI estimate"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-2 text-2xl font-black tracking-tight text-foreground" }, "KES ", detail.ai_price.total_value), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-sm text-muted-foreground" }, "Per acre: KES ", detail.ai_price.price_per_acre, " | Confidence: KES ", detail.ai_price.confidence_low, " - ", detail.ai_price.confidence_high)) : null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid gap-3 sm:grid-cols-2" }, /* @__PURE__ */ import_react18.default.createElement("a", { href: "/escrow-acts/", className: "inline-flex h-11 items-center justify-center rounded-full border border-border bg-white/80 px-5 text-sm font-semibold text-foreground hover:bg-muted" }, "Read legal checklist"), detail.can_use_joint_purchase ? /* @__PURE__ */ import_react18.default.createElement("a", { href: "/joint/laws/", className: "inline-flex h-11 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90" }, "Joint laws") : null))), detail.google_maps_url ? /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement(CardTitle, { className: "flex items-center gap-2 text-base" }, /* @__PURE__ */ import_react18.default.createElement(MapPin, { className: "h-4 w-4 text-emerald-700" }), "Parcel access location")), /* @__PURE__ */ import_react18.default.createElement(CardContent, { className: "space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-sm text-muted-foreground" }, "Use Google Maps to navigate to the recorded parcel coordinates for an authorized site visit."), /* @__PURE__ */ import_react18.default.createElement("a", { href: detail.google_maps_url, target: "_blank", rel: "noreferrer", className: "inline-flex h-10 items-center justify-center rounded-full bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-700" }, /* @__PURE__ */ import_react18.default.createElement(MapPin, { className: "mr-2 h-4 w-4" }), "Open in Google Maps"))) : null, detail.access_locked && detail.confirm_access_url ? /* @__PURE__ */ import_react18.default.createElement(Card, { className: "border-amber-200 bg-amber-50/70" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement(CardTitle, { className: "flex items-center gap-2 text-base" }, /* @__PURE__ */ import_react18.default.createElement(Lock, { className: "h-4 w-4 text-amber-700" }), "Dual-signature access required"), /* @__PURE__ */ import_react18.default.createElement(CardDescription, null, "The seller must authorize this parcel before your PIN can unlock restricted documents.")), /* @__PURE__ */ import_react18.default.createElement(CardContent, null, /* @__PURE__ */ import_react18.default.createElement("form", { method: "post", action: detail.confirm_access_url, className: "flex gap-2" }, /* @__PURE__ */ import_react18.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: bootstrap.csrf_token || "" }), /* @__PURE__ */ import_react18.default.createElement(Input, { name: "pin", inputMode: "numeric", pattern: "[0-9]{6}", maxLength: 6, placeholder: "6-digit PIN", required: true }), /* @__PURE__ */ import_react18.default.createElement(Button, { type: "submit", className: "rounded-full" }, "Confirm access")))) : null, detail.request_access_url ? /* @__PURE__ */ import_react18.default.createElement(Card, { className: "border-emerald-200 bg-emerald-50/70" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement(CardTitle, { className: "flex items-center gap-2 text-base" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-4 w-4 text-emerald-700" }), "Authorize document access"), /* @__PURE__ */ import_react18.default.createElement(CardDescription, null, "Set or enter your 6-digit seller PIN to authorize the assigned reviewer.")), /* @__PURE__ */ import_react18.default.createElement(CardContent, null, /* @__PURE__ */ import_react18.default.createElement("form", { method: "post", action: detail.request_access_url, className: "flex gap-2" }, /* @__PURE__ */ import_react18.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: bootstrap.csrf_token || "" }), /* @__PURE__ */ import_react18.default.createElement(Input, { name: "pin", inputMode: "numeric", pattern: "[0-9]{6}", maxLength: 6, placeholder: "6-digit PIN", required: true }), /* @__PURE__ */ import_react18.default.createElement(Button, { type: "submit", className: "rounded-full" }, "Authorize reviewer")))) : null, /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, { className: "flex flex-row items-center justify-between pb-2" }, /* @__PURE__ */ import_react18.default.createElement(CardTitle, { className: "flex items-center gap-2 text-base" }, /* @__PURE__ */ import_react18.default.createElement(FileText, { className: "h-4 w-4 text-emerald-700" }), "Compliance documents"), detail.upload_document_url ? /* @__PURE__ */ import_react18.default.createElement("a", { href: detail.upload_document_url, className: "inline-flex h-9 items-center justify-center rounded-full border border-border bg-white px-4 text-xs font-semibold text-foreground hover:bg-muted" }, /* @__PURE__ */ import_react18.default.createElement(Upload, { className: "mr-2 h-4 w-4" }), " Upload Document") : null), /* @__PURE__ */ import_react18.default.createElement(CardContent, { className: "space-y-3" }, detail.documents.length ? detail.documents.map((doc) => /* @__PURE__ */ import_react18.default.createElement("div", { key: doc.id, className: "flex items-center justify-between gap-3 rounded-3xl border border-border/70 bg-muted/40 p-4" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-semibold text-foreground" }, doc.document_label), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm text-muted-foreground" }, "Uploaded ", doc.uploaded_at)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: doc.verification_status === "Match" ? "success" : doc.verification_status === "Mismatch" ? "danger" : "warning" }, doc.verification_status), doc.file_url ? /* @__PURE__ */ import_react18.default.createElement("a", { href: doc.file_url, target: "_blank", rel: "noreferrer", className: "inline-flex h-9 items-center justify-center rounded-full border border-border bg-white px-4 text-xs font-semibold text-foreground hover:bg-muted" }, "View") : null, doc.moderate_url ? /* @__PURE__ */ import_react18.default.createElement("a", { href: doc.moderate_url, className: "inline-flex h-9 items-center justify-center rounded-full border border-border bg-white px-4 text-xs font-semibold text-foreground hover:bg-muted" }, "Moderate") : null, doc.delete_url ? /* @__PURE__ */ import_react18.default.createElement("a", { href: doc.delete_url, className: "inline-flex h-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-4 text-xs font-semibold text-rose-600 hover:bg-rose-100" }, "Delete") : null))) : /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-sm text-muted-foreground" }, "No ownership or identity documents have been attached yet.")))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6" }, detail.agent_verify_url ? /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement(CardTitle, { className: "flex items-center gap-2 text-base" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-4 w-4 text-emerald-700" }), "Agent moderation"), /* @__PURE__ */ import_react18.default.createElement(CardDescription, null, "Verify or flag this parcel from the review queue.")), /* @__PURE__ */ import_react18.default.createElement(CardContent, null, /* @__PURE__ */ import_react18.default.createElement("form", { method: "post", action: detail.agent_verify_url, className: "grid gap-3" }, /* @__PURE__ */ import_react18.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: bootstrap.csrf_token || "" }), /* @__PURE__ */ import_react18.default.createElement(Button, { type: "submit", name: "verify_action", value: "verify", className: "w-full rounded-full" }, "Approve deed and title"), /* @__PURE__ */ import_react18.default.createElement(Button, { type: "submit", name: "verify_action", value: "reject", variant: "outline", className: "w-full rounded-full" }, "Flag as fraudulent")))) : null, detail.toggle_favorite_url ? /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement(CardTitle, { className: "flex items-center gap-2 text-base" }, /* @__PURE__ */ import_react18.default.createElement(Heart, { className: "h-4 w-4 text-rose-600" }), "Saved parcels")), /* @__PURE__ */ import_react18.default.createElement(CardContent, null, /* @__PURE__ */ import_react18.default.createElement("form", { method: "post", action: detail.toggle_favorite_url }, /* @__PURE__ */ import_react18.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: bootstrap.csrf_token || "" }), /* @__PURE__ */ import_react18.default.createElement(Button, { type: "submit", variant: detail.is_favorited ? "danger" : "outline", className: "w-full rounded-full" }, detail.is_favorited ? "Remove from saved" : "Save parcel")))) : null, detail.can_initiate_escrow ? /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement(CardTitle, { className: "flex items-center gap-2 text-base" }, /* @__PURE__ */ import_react18.default.createElement(WalletCards, { className: "h-4 w-4 text-emerald-700" }), "Commission request"), /* @__PURE__ */ import_react18.default.createElement(CardDescription, null, "Choose the purchase mode before creating a commission.")), /* @__PURE__ */ import_react18.default.createElement(CardContent, { className: "space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("form", { method: "post", action: detail.initiate_escrow_url, className: "space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: bootstrap.csrf_token || "" }), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-sm font-semibold text-foreground" }, "Purchase mode"), /* @__PURE__ */ import_react18.default.createElement(
     "select",
     {
       value: purchaseMode,
@@ -32571,6 +32489,7 @@ function ReactApp() {
   else if (page === "joint-groups") pageContent = /* @__PURE__ */ import_react18.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react18.default.createElement(JointGroupsPage, null));
   else if (page === "joint-group-detail") pageContent = /* @__PURE__ */ import_react18.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react18.default.createElement(JointGroupDetailPage, null));
   else if (page === "parcel-detail") pageContent = /* @__PURE__ */ import_react18.default.createElement(ParcelDetailPage, null);
+  else if (page === "lawyer-checklist") pageContent = /* @__PURE__ */ import_react18.default.createElement(LawyerChecklistPage, null);
   else if (page === "commission-detail") pageContent = /* @__PURE__ */ import_react18.default.createElement(CommissionDetailPage, null);
   else if (page === "agent-job-board") pageContent = /* @__PURE__ */ import_react18.default.createElement(AgentJobBoardPage, null);
   else if (page === "agent-commission-steps") pageContent = /* @__PURE__ */ import_react18.default.createElement(AgentCommissionStepsPage, null);

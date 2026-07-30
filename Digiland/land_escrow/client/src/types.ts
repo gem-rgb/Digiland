@@ -22,6 +22,7 @@ export type PageKind =
   | 'approvals'
   | 'user-review'
   | 'parcel-detail'
+  | 'lawyer-checklist'
   | 'commission-detail'
   | 'agent-job-board'
   | 'agent-commission-steps'
@@ -161,6 +162,9 @@ export interface ParcelSummary {
   displayed_price?: string | null;
   promotion_tier?: string | null;
   is_promoted?: boolean;
+  latitude?: string | null;
+  longitude?: string | null;
+  google_maps_url?: string | null;
 }
 
 export interface ParcelDocumentSummary {
@@ -760,6 +764,12 @@ export interface ParcelDetailData {
   delete_url?: string | null;
   toggle_favorite_url?: string | null;
   agent_verify_url?: string | null;
+  access_locked?: boolean;
+  request_access_url?: string | null;
+  confirm_access_url?: string | null;
+  latitude?: string | null;
+  longitude?: string | null;
+  google_maps_url?: string | null;
 }
 
 export interface TaskManagementData {
@@ -910,6 +920,10 @@ export interface BootstrapData {
   approvals_page?: ApprovalsPageData | null;
   user_review?: UserReviewPageData | null;
   parcels?: ParcelSummary[];
+  search_query?: string;
+  search_active?: boolean;
+  post_transaction_tasks?: Array<{ key: string; label: string; completed: boolean; notes?: string; evidence_url?: string }>;
+  transaction_id?: string;
   transactions?: TransactionSummary[];
   laws?: LawSummary[];
   checklist?: string[];

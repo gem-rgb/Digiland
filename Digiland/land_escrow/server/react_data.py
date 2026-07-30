@@ -169,6 +169,9 @@ def serialize_transaction(tx, user=None):
         action_label = 'Execute Sign-off'
 
     action_url = reverse('frontend:sign_contract', args=[tx.id])
+    if user and getattr(user, 'role', None) == 'Lawyer' and tx.status == 'Completed':
+        action_label = 'Post-transaction checklist'
+        action_url = reverse('frontend:lawyer_post_transaction_checklist', args=[tx.id])
     if action_label in {'Sign Agreement', 'Execute Sign-off'}:
         from django.core.signing import Signer
         signer = Signer()
