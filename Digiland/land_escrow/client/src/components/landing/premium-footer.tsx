@@ -261,7 +261,7 @@ function FooterNavLink({ label, href }: NavLink) {
   return (
     <a
       href={href}
-      className="group relative inline-block text-sm text-slate-400 transition-colors duration-200 hover:text-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+      className="group relative inline-block text-sm font-semibold text-slate-200 transition-colors duration-200 hover:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
     >
       {label}
       <span
@@ -280,7 +280,7 @@ function SocialIcon({ icon: Icon, label, href }: SocialLink) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="group relative flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition-all duration-300 hover:scale-[1.15] hover:border-emerald-400/40 hover:bg-emerald-400/10 hover:text-emerald-400 hover:shadow-[0_0_18px_rgba(52,211,153,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+      className="group relative flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-slate-200 transition-all duration-300 hover:scale-[1.15] hover:border-emerald-400/60 hover:bg-emerald-400/20 hover:text-emerald-300 hover:shadow-[0_0_18px_rgba(52,211,153,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
     >
       <Icon className="h-[18px] w-[18px]" />
     </a>
@@ -296,7 +296,7 @@ function CounterCard({ stat, reduced }: { stat: StatCounter; reduced: boolean })
     <div className="flex flex-col items-center gap-1.5 text-center">
       <div className="flex items-baseline gap-0.5">
         {stat.prefix && (
-          <span className="text-sm font-semibold text-slate-400 sm:text-base">{stat.prefix}</span>
+          <span className="text-sm font-bold text-slate-300 sm:text-base">{stat.prefix}</span>
         )}
         <span
           ref={numberRef}
@@ -306,7 +306,7 @@ function CounterCard({ stat, reduced }: { stat: StatCounter; reduced: boolean })
         </span>
         <span className="text-lg font-bold text-emerald-400 sm:text-xl lg:text-2xl">{stat.suffix}</span>
       </div>
-      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300/80 sm:text-sm">
+      <span className="text-xs font-black uppercase tracking-[0.18em] text-emerald-300 sm:text-sm">
         {stat.label}
       </span>
     </div>
@@ -316,13 +316,13 @@ function CounterCard({ stat, reduced }: { stat: StatCounter; reduced: boolean })
 /** Trust / certification card with icon, label, and description */
 function TrustCard({ icon: Icon, label, description }: TrustItem) {
   return (
-    <div className="footer-reveal-item flex items-start gap-3 rounded-2xl border border-white/8 bg-white/[0.03] p-4 backdrop-blur-sm transition-colors duration-200 hover:border-emerald-400/20 hover:bg-emerald-400/[0.04]">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10">
-        <Icon className="h-5 w-5 text-emerald-400" />
+    <div className="footer-reveal-item flex items-start gap-3 rounded-2xl border border-emerald-500/20 bg-slate-900/90 p-4 shadow-lg backdrop-blur-md transition-all duration-200 hover:border-emerald-400/50 hover:bg-slate-900">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-400/30 bg-emerald-500/20">
+        <Icon className="h-5 w-5 text-emerald-300" />
       </div>
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-white">{label}</p>
-        <p className="mt-0.5 text-xs leading-5 text-slate-400">{description}</p>
+        <p className="text-sm font-bold text-white">{label}</p>
+        <p className="mt-0.5 text-xs font-normal leading-5 text-slate-300">{description}</p>
       </div>
     </div>
   );
@@ -432,24 +432,19 @@ export function PremiumFooter() {
 
           {/* CTA Buttons */}
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <a href="/accounts/signup/">
-              <Button
-                size="lg"
-                className="h-13 rounded-full bg-emerald-600 px-8 text-base font-bold text-white shadow-[0_0_28px_rgba(5,150,105,0.4)] transition-all duration-300 hover:bg-emerald-500 hover:shadow-[0_0_40px_rgba(5,150,105,0.55)]"
-              >
-                Get Started Free
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+            <a
+              href="/accounts/signup/"
+              className="inline-flex h-13 items-center justify-center rounded-full bg-emerald-500 px-8 text-base font-extrabold text-slate-950 shadow-[0_0_30px_rgba(16,185,129,0.5)] transition-all duration-300 hover:bg-emerald-400 hover:shadow-[0_0_40px_rgba(16,185,129,0.7)]"
+            >
+              Get Started Free
+              <ArrowRight className="ml-2 h-4 w-4" />
             </a>
-            <a href="/parcels/">
-              <Button
-                variant="outline"
-                size="lg"
-                className="h-13 rounded-full border-white/20 bg-white/5 px-8 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-emerald-400/50 hover:bg-emerald-400/10 hover:text-emerald-300"
-              >
-                Browse Marketplace
-                <MapPin className="ml-2 h-4 w-4" />
-              </Button>
+            <a
+              href="/parcels/"
+              className="inline-flex h-13 items-center justify-center rounded-full border border-white/25 bg-white/10 px-8 text-base font-bold text-white shadow-lg backdrop-blur-md transition-all duration-300 hover:border-emerald-400 hover:bg-emerald-400/20 hover:text-emerald-300"
+            >
+              Browse Marketplace
+              <MapPin className="ml-2 h-4 w-4" />
             </a>
           </div>
 
@@ -488,16 +483,16 @@ export function PremiumFooter() {
                 <span className="text-3xl font-black tracking-tight text-white">Digi</span>
                 <span className="text-3xl font-black tracking-tight text-emerald-400">land</span>
               </div>
-              <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-emerald-300">
+              <span className="rounded-full bg-emerald-500/20 border border-emerald-400/40 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-emerald-300">
                 🇰🇪 Kenya Land Protocol
               </span>
             </div>
 
-            <p className="text-sm font-semibold text-slate-200">
+            <p className="text-sm font-bold text-slate-100">
               Kenya's Autonomous Land Registry & Escrow Infrastructure
             </p>
 
-            <p className="text-sm leading-6 text-slate-400 font-light">
+            <p className="text-sm leading-6 text-slate-300 font-normal">
               Digiland connects land buyers, property sellers, and Law Society of Kenya advocates. We combine automated ArdhiSasa title verification, M-Pesa deposit vaulting, and legal oversight to make Kenya land commerce 100% transparent and safe.
             </p>
 

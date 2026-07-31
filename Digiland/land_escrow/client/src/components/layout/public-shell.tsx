@@ -53,15 +53,15 @@ export function PublicShell({
 
   return (
     <div className={cn('min-h-screen flex flex-col', className)}>
-      <header className="sticky top-0 z-30 border-b border-border/70 bg-white/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/90 text-white backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
           <a href="/" className="flex items-center gap-3 rounded-full px-1 py-1 transition hover:opacity-90">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-soft">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500 text-slate-950 font-black shadow-[0_0_20px_rgba(16,185,129,0.4)]">
               <ShieldCheck className="h-5 w-5" />
             </span>
             <div className="leading-tight">
-              <div className="text-base font-extrabold tracking-tight text-foreground">Digiland</div>
-              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Land escrow</div>
+              <div className="text-base font-black tracking-tight text-white">Digiland</div>
+              <div className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-400">Land escrow</div>
             </div>
           </a>
 
@@ -72,8 +72,8 @@ export function PublicShell({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'rounded-full px-4 py-2 text-sm font-semibold transition-colors',
-                  item.active ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'
+                  'rounded-full px-4 py-2 text-sm font-bold transition-all duration-200',
+                  item.active ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' : 'text-slate-300 hover:text-white hover:bg-white/10'
                 )}
               >
                 {item.label}
@@ -85,20 +85,20 @@ export function PublicShell({
           <div className="ml-auto flex items-center gap-3 lg:ml-0">
             {user ? (
               <>
-                <Badge tone="outline" className="hidden sm:inline-flex">{user.role}</Badge>
-                <div className="hidden items-center gap-3 rounded-full border border-border bg-background/80 px-4 py-2 shadow-sm md:flex">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground font-bold">
+                <Badge tone="outline" className="hidden sm:inline-flex border-emerald-400/30 bg-emerald-500/10 text-emerald-300">{user.role}</Badge>
+                <div className="hidden items-center gap-3 rounded-full border border-white/10 bg-slate-900/80 px-4 py-2 shadow-sm md:flex">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300 font-black border border-emerald-500/30">
                     {(displayName || 'U').slice(0, 1).toUpperCase()}
                   </div>
                   <div className="leading-tight">
-                    <div className="text-sm font-semibold text-foreground">{displayName}</div>
-                    <div className="text-xs text-muted-foreground">{user.buyer_account_type ? `${user.buyer_account_type} buyer` : 'Authenticated'}</div>
+                    <div className="text-sm font-bold text-white">{displayName}</div>
+                    <div className="text-xs text-slate-400">{user.buyer_account_type ? `${user.buyer_account_type} buyer` : 'Authenticated'}</div>
                   </div>
                 </div>
                 {logoutUrl ? (
                   <form method="post" action={logoutUrl} className="hidden md:block">
                     <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken || ''} />
-                    <Button variant="outline" className="rounded-full" type="submit">
+                    <Button variant="outline" className="rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10" type="submit">
                       <LogOut className="h-4 w-4" />
                       Sign out
                     </Button>

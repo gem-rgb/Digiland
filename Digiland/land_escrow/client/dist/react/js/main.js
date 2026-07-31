@@ -26762,12 +26762,12 @@ function cn(...inputs) {
 
 // src/components/ui/badge.tsx
 var toneClasses = {
-  default: "bg-foreground text-background",
-  success: "bg-emerald-600 text-white",
-  warning: "bg-amber-500 text-white",
-  danger: "bg-rose-600 text-white",
-  muted: "bg-muted text-muted-foreground",
-  outline: "border border-border bg-background text-foreground"
+  default: "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30",
+  success: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40",
+  warning: "bg-amber-500/20 text-amber-300 border border-amber-500/40",
+  danger: "bg-rose-500/20 text-rose-300 border border-rose-500/40",
+  muted: "bg-slate-800 text-slate-300 border border-slate-700",
+  outline: "border border-emerald-400/30 bg-emerald-500/10 text-emerald-300"
 };
 function Badge({
   className,
@@ -26778,7 +26778,7 @@ function Badge({
     "span",
     {
       className: cn(
-        "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em]",
+        "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.18em]",
         toneClasses[tone],
         className
       ),
@@ -26838,12 +26838,12 @@ var buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/85",
-        outline: "border border-border bg-white/80 text-foreground hover:bg-muted",
-        ghost: "bg-transparent text-foreground hover:bg-muted",
-        accent: "bg-accent text-accent-foreground hover:bg-accent/80",
-        danger: "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        default: "bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-extrabold shadow-sm",
+        secondary: "bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700",
+        outline: "border border-white/20 bg-white/10 text-white hover:bg-white/20 hover:border-emerald-400/60 hover:text-emerald-300 backdrop-blur-md",
+        ghost: "bg-transparent text-slate-200 hover:bg-white/10 hover:text-white",
+        accent: "bg-emerald-600 text-white hover:bg-emerald-500",
+        danger: "bg-rose-600 text-white hover:bg-rose-500"
       },
       size: {
         sm: "h-9 px-4",
@@ -27152,18 +27152,18 @@ function PublicShell({
   hideFooter
 }) {
   const displayName = user?.full_name || user?.email || "Visitor";
-  return /* @__PURE__ */ import_react5.default.createElement("div", { className: cn("min-h-screen flex flex-col", className) }, /* @__PURE__ */ import_react5.default.createElement("header", { className: "sticky top-0 z-30 border-b border-border/70 bg-white/80 backdrop-blur-xl" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "mx-auto flex w-full max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8" }, /* @__PURE__ */ import_react5.default.createElement("a", { href: "/", className: "flex items-center gap-3 rounded-full px-1 py-1 transition hover:opacity-90" }, /* @__PURE__ */ import_react5.default.createElement("span", { className: "flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-soft" }, /* @__PURE__ */ import_react5.default.createElement(ShieldCheck, { className: "h-5 w-5" })), /* @__PURE__ */ import_react5.default.createElement("div", { className: "leading-tight" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "text-base font-extrabold tracking-tight text-foreground" }, "Digiland"), /* @__PURE__ */ import_react5.default.createElement("div", { className: "text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground" }, "Land escrow"))), /* @__PURE__ */ import_react5.default.createElement("nav", { className: "hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex" }, nav.map((item) => /* @__PURE__ */ import_react5.default.createElement(
+  return /* @__PURE__ */ import_react5.default.createElement("div", { className: cn("min-h-screen flex flex-col", className) }, /* @__PURE__ */ import_react5.default.createElement("header", { className: "sticky top-0 z-30 border-b border-white/10 bg-slate-950/90 text-white backdrop-blur-xl" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "mx-auto flex w-full max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8" }, /* @__PURE__ */ import_react5.default.createElement("a", { href: "/", className: "flex items-center gap-3 rounded-full px-1 py-1 transition hover:opacity-90" }, /* @__PURE__ */ import_react5.default.createElement("span", { className: "flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500 text-slate-950 font-black shadow-[0_0_20px_rgba(16,185,129,0.4)]" }, /* @__PURE__ */ import_react5.default.createElement(ShieldCheck, { className: "h-5 w-5" })), /* @__PURE__ */ import_react5.default.createElement("div", { className: "leading-tight" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "text-base font-black tracking-tight text-white" }, "Digiland"), /* @__PURE__ */ import_react5.default.createElement("div", { className: "text-xs font-bold uppercase tracking-[0.22em] text-emerald-400" }, "Land escrow"))), /* @__PURE__ */ import_react5.default.createElement("nav", { className: "hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex" }, nav.map((item) => /* @__PURE__ */ import_react5.default.createElement(
     "a",
     {
       key: item.href,
       href: item.href,
       className: cn(
-        "rounded-full px-4 py-2 text-sm font-semibold transition-colors",
-        item.active ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+        "rounded-full px-4 py-2 text-sm font-bold transition-all duration-200",
+        item.active ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/30" : "text-slate-300 hover:text-white hover:bg-white/10"
       )
     },
     item.label
-  ))), /* @__PURE__ */ import_react5.default.createElement("div", { className: "ml-auto flex items-center gap-3 lg:ml-0" }, user ? /* @__PURE__ */ import_react5.default.createElement(import_react5.default.Fragment, null, /* @__PURE__ */ import_react5.default.createElement(Badge, { tone: "outline", className: "hidden sm:inline-flex" }, user.role), /* @__PURE__ */ import_react5.default.createElement("div", { className: "hidden items-center gap-3 rounded-full border border-border bg-background/80 px-4 py-2 shadow-sm md:flex" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex h-9 w-9 items-center justify-center rounded-full bg-accent text-accent-foreground font-bold" }, (displayName || "U").slice(0, 1).toUpperCase()), /* @__PURE__ */ import_react5.default.createElement("div", { className: "leading-tight" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "text-sm font-semibold text-foreground" }, displayName), /* @__PURE__ */ import_react5.default.createElement("div", { className: "text-xs text-muted-foreground" }, user.buyer_account_type ? `${user.buyer_account_type} buyer` : "Authenticated"))), logoutUrl ? /* @__PURE__ */ import_react5.default.createElement("form", { method: "post", action: logoutUrl, className: "hidden md:block" }, /* @__PURE__ */ import_react5.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: csrfToken || "" }), /* @__PURE__ */ import_react5.default.createElement(Button, { variant: "outline", className: "rounded-full", type: "submit" }, /* @__PURE__ */ import_react5.default.createElement(LogOut, { className: "h-4 w-4" }), "Sign out")) : null) : /* @__PURE__ */ import_react5.default.createElement(import_react5.default.Fragment, null, actions?.map((action) => /* @__PURE__ */ import_react5.default.createElement(
+  ))), /* @__PURE__ */ import_react5.default.createElement("div", { className: "ml-auto flex items-center gap-3 lg:ml-0" }, user ? /* @__PURE__ */ import_react5.default.createElement(import_react5.default.Fragment, null, /* @__PURE__ */ import_react5.default.createElement(Badge, { tone: "outline", className: "hidden sm:inline-flex border-emerald-400/30 bg-emerald-500/10 text-emerald-300" }, user.role), /* @__PURE__ */ import_react5.default.createElement("div", { className: "hidden items-center gap-3 rounded-full border border-white/10 bg-slate-900/80 px-4 py-2 shadow-sm md:flex" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300 font-black border border-emerald-500/30" }, (displayName || "U").slice(0, 1).toUpperCase()), /* @__PURE__ */ import_react5.default.createElement("div", { className: "leading-tight" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "text-sm font-bold text-white" }, displayName), /* @__PURE__ */ import_react5.default.createElement("div", { className: "text-xs text-slate-400" }, user.buyer_account_type ? `${user.buyer_account_type} buyer` : "Authenticated"))), logoutUrl ? /* @__PURE__ */ import_react5.default.createElement("form", { method: "post", action: logoutUrl, className: "hidden md:block" }, /* @__PURE__ */ import_react5.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: csrfToken || "" }), /* @__PURE__ */ import_react5.default.createElement(Button, { variant: "outline", className: "rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10", type: "submit" }, /* @__PURE__ */ import_react5.default.createElement(LogOut, { className: "h-4 w-4" }), "Sign out")) : null) : /* @__PURE__ */ import_react5.default.createElement(import_react5.default.Fragment, null, actions?.map((action) => /* @__PURE__ */ import_react5.default.createElement(
     "a",
     {
       key: `${action.label}-${action.href}`,
@@ -30395,7 +30395,7 @@ function FooterNavLink({ label, href }) {
     "a",
     {
       href,
-      className: "group relative inline-block text-sm text-slate-400 transition-colors duration-200 hover:text-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+      className: "group relative inline-block text-sm font-semibold text-slate-200 transition-colors duration-200 hover:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
     },
     label,
     /* @__PURE__ */ import_react17.default.createElement(
@@ -30415,7 +30415,7 @@ function SocialIcon({ icon: Icon2, label, href }) {
       target: "_blank",
       rel: "noopener noreferrer",
       "aria-label": label,
-      className: "group relative flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition-all duration-300 hover:scale-[1.15] hover:border-emerald-400/40 hover:bg-emerald-400/10 hover:text-emerald-400 hover:shadow-[0_0_18px_rgba(52,211,153,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+      className: "group relative flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-slate-200 transition-all duration-300 hover:scale-[1.15] hover:border-emerald-400/60 hover:bg-emerald-400/20 hover:text-emerald-300 hover:shadow-[0_0_18px_rgba(52,211,153,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
     },
     /* @__PURE__ */ import_react17.default.createElement(Icon2, { className: "h-[18px] w-[18px]" })
   );
@@ -30423,17 +30423,17 @@ function SocialIcon({ icon: Icon2, label, href }) {
 function CounterCard({ stat, reduced }) {
   const numberRef = (0, import_react17.useRef)(null);
   useCounter(stat.target, stat.decimals ?? 0, numberRef, reduced);
-  return /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex flex-col items-center gap-1.5 text-center" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex items-baseline gap-0.5" }, stat.prefix && /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-sm font-semibold text-slate-400 sm:text-base" }, stat.prefix), /* @__PURE__ */ import_react17.default.createElement(
+  return /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex flex-col items-center gap-1.5 text-center" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex items-baseline gap-0.5" }, stat.prefix && /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-sm font-bold text-slate-300 sm:text-base" }, stat.prefix), /* @__PURE__ */ import_react17.default.createElement(
     "span",
     {
       ref: numberRef,
       className: "text-2xl font-extrabold tracking-tight text-white sm:text-3xl lg:text-4xl"
     },
     "0"
-  ), /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-lg font-bold text-emerald-400 sm:text-xl lg:text-2xl" }, stat.suffix)), /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300/80 sm:text-sm" }, stat.label));
+  ), /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-lg font-bold text-emerald-400 sm:text-xl lg:text-2xl" }, stat.suffix)), /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-xs font-black uppercase tracking-[0.18em] text-emerald-300 sm:text-sm" }, stat.label));
 }
 function TrustCard({ icon: Icon2, label, description }) {
-  return /* @__PURE__ */ import_react17.default.createElement("div", { className: "footer-reveal-item flex items-start gap-3 rounded-2xl border border-white/8 bg-white/[0.03] p-4 backdrop-blur-sm transition-colors duration-200 hover:border-emerald-400/20 hover:bg-emerald-400/[0.04]" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10" }, /* @__PURE__ */ import_react17.default.createElement(Icon2, { className: "h-5 w-5 text-emerald-400" })), /* @__PURE__ */ import_react17.default.createElement("div", { className: "min-w-0" }, /* @__PURE__ */ import_react17.default.createElement("p", { className: "text-sm font-semibold text-white" }, label), /* @__PURE__ */ import_react17.default.createElement("p", { className: "mt-0.5 text-xs leading-5 text-slate-400" }, description)));
+  return /* @__PURE__ */ import_react17.default.createElement("div", { className: "footer-reveal-item flex items-start gap-3 rounded-2xl border border-emerald-500/20 bg-slate-900/90 p-4 shadow-lg backdrop-blur-md transition-all duration-200 hover:border-emerald-400/50 hover:bg-slate-900" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-400/30 bg-emerald-500/20" }, /* @__PURE__ */ import_react17.default.createElement(Icon2, { className: "h-5 w-5 text-emerald-300" })), /* @__PURE__ */ import_react17.default.createElement("div", { className: "min-w-0" }, /* @__PURE__ */ import_react17.default.createElement("p", { className: "text-sm font-bold text-white" }, label), /* @__PURE__ */ import_react17.default.createElement("p", { className: "mt-0.5 text-xs font-normal leading-5 text-slate-300" }, description)));
 }
 function FilmGrainOverlay() {
   return /* @__PURE__ */ import_react17.default.createElement(
@@ -30501,24 +30501,23 @@ function PremiumFooter() {
       }
     ),
     /* @__PURE__ */ import_react17.default.createElement(FilmGrainOverlay, null),
-    /* @__PURE__ */ import_react17.default.createElement("div", { className: "cta-reveal relative z-10 mx-auto max-w-5xl text-center", style: { opacity: 0 } }, /* @__PURE__ */ import_react17.default.createElement("h2", { className: "text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl font-serif" }, "Ready to Transact Land", " ", /* @__PURE__ */ import_react17.default.createElement("span", { className: "bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent italic font-sans font-extrabold" }, "With Absolute Trust?")), /* @__PURE__ */ import_react17.default.createElement("p", { className: "mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8 font-light" }, "Join thousands of buyers, sellers, and advocates across Kenya using Digiland for verified title deeds, M-Pesa escrow protection, and legal closing."), /* @__PURE__ */ import_react17.default.createElement("div", { className: "mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row" }, /* @__PURE__ */ import_react17.default.createElement("a", { href: "/accounts/signup/" }, /* @__PURE__ */ import_react17.default.createElement(
-      Button,
+    /* @__PURE__ */ import_react17.default.createElement("div", { className: "cta-reveal relative z-10 mx-auto max-w-5xl text-center", style: { opacity: 0 } }, /* @__PURE__ */ import_react17.default.createElement("h2", { className: "text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl font-serif" }, "Ready to Transact Land", " ", /* @__PURE__ */ import_react17.default.createElement("span", { className: "bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent italic font-sans font-extrabold" }, "With Absolute Trust?")), /* @__PURE__ */ import_react17.default.createElement("p", { className: "mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8 font-light" }, "Join thousands of buyers, sellers, and advocates across Kenya using Digiland for verified title deeds, M-Pesa escrow protection, and legal closing."), /* @__PURE__ */ import_react17.default.createElement("div", { className: "mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row" }, /* @__PURE__ */ import_react17.default.createElement(
+      "a",
       {
-        size: "lg",
-        className: "h-13 rounded-full bg-emerald-600 px-8 text-base font-bold text-white shadow-[0_0_28px_rgba(5,150,105,0.4)] transition-all duration-300 hover:bg-emerald-500 hover:shadow-[0_0_40px_rgba(5,150,105,0.55)]"
+        href: "/accounts/signup/",
+        className: "inline-flex h-13 items-center justify-center rounded-full bg-emerald-500 px-8 text-base font-extrabold text-slate-950 shadow-[0_0_30px_rgba(16,185,129,0.5)] transition-all duration-300 hover:bg-emerald-400 hover:shadow-[0_0_40px_rgba(16,185,129,0.7)]"
       },
       "Get Started Free",
       /* @__PURE__ */ import_react17.default.createElement(ArrowRight, { className: "ml-2 h-4 w-4" })
-    )), /* @__PURE__ */ import_react17.default.createElement("a", { href: "/parcels/" }, /* @__PURE__ */ import_react17.default.createElement(
-      Button,
+    ), /* @__PURE__ */ import_react17.default.createElement(
+      "a",
       {
-        variant: "outline",
-        size: "lg",
-        className: "h-13 rounded-full border-white/20 bg-white/5 px-8 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:border-emerald-400/50 hover:bg-emerald-400/10 hover:text-emerald-300"
+        href: "/parcels/",
+        className: "inline-flex h-13 items-center justify-center rounded-full border border-white/25 bg-white/10 px-8 text-base font-bold text-white shadow-lg backdrop-blur-md transition-all duration-300 hover:border-emerald-400 hover:bg-emerald-400/20 hover:text-emerald-300"
       },
       "Browse Marketplace",
       /* @__PURE__ */ import_react17.default.createElement(MapPin, { className: "ml-2 h-4 w-4" })
-    ))), /* @__PURE__ */ import_react17.default.createElement("div", { className: "mt-14 grid grid-cols-2 gap-6 sm:gap-10 lg:grid-cols-4" }, CTA_COUNTERS.map((stat) => /* @__PURE__ */ import_react17.default.createElement(
+    )), /* @__PURE__ */ import_react17.default.createElement("div", { className: "mt-14 grid grid-cols-2 gap-6 sm:gap-10 lg:grid-cols-4" }, CTA_COUNTERS.map((stat) => /* @__PURE__ */ import_react17.default.createElement(
       "div",
       {
         key: stat.label,
@@ -30540,7 +30539,7 @@ function PremiumFooter() {
         className: "brand-reveal mx-auto flex max-w-7xl flex-col items-start gap-12 lg:flex-row lg:items-start lg:justify-between",
         style: { opacity: 0 }
       },
-      /* @__PURE__ */ import_react17.default.createElement("div", { className: "max-w-md space-y-4" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex items-baseline gap-0", "aria-label": "Digiland" }, /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-3xl font-black tracking-tight text-white" }, "Digi"), /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-3xl font-black tracking-tight text-emerald-400" }, "land")), /* @__PURE__ */ import_react17.default.createElement("span", { className: "rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-emerald-300" }, "\u{1F1F0}\u{1F1EA} Kenya Land Protocol")), /* @__PURE__ */ import_react17.default.createElement("p", { className: "text-sm font-semibold text-slate-200" }, "Kenya's Autonomous Land Registry & Escrow Infrastructure"), /* @__PURE__ */ import_react17.default.createElement("p", { className: "text-sm leading-6 text-slate-400 font-light" }, "Digiland connects land buyers, property sellers, and Law Society of Kenya advocates. We combine automated ArdhiSasa title verification, M-Pesa deposit vaulting, and legal oversight to make Kenya land commerce 100% transparent and safe."), /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex items-center gap-3 pt-2" }, SOCIAL_LINKS.map((link) => /* @__PURE__ */ import_react17.default.createElement(SocialIcon, { key: link.label, ...link })))),
+      /* @__PURE__ */ import_react17.default.createElement("div", { className: "max-w-md space-y-4" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex items-baseline gap-0", "aria-label": "Digiland" }, /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-3xl font-black tracking-tight text-white" }, "Digi"), /* @__PURE__ */ import_react17.default.createElement("span", { className: "text-3xl font-black tracking-tight text-emerald-400" }, "land")), /* @__PURE__ */ import_react17.default.createElement("span", { className: "rounded-full bg-emerald-500/20 border border-emerald-400/40 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-emerald-300" }, "\u{1F1F0}\u{1F1EA} Kenya Land Protocol")), /* @__PURE__ */ import_react17.default.createElement("p", { className: "text-sm font-bold text-slate-100" }, "Kenya's Autonomous Land Registry & Escrow Infrastructure"), /* @__PURE__ */ import_react17.default.createElement("p", { className: "text-sm leading-6 text-slate-300 font-normal" }, "Digiland connects land buyers, property sellers, and Law Society of Kenya advocates. We combine automated ArdhiSasa title verification, M-Pesa deposit vaulting, and legal oversight to make Kenya land commerce 100% transparent and safe."), /* @__PURE__ */ import_react17.default.createElement("div", { className: "flex items-center gap-3 pt-2" }, SOCIAL_LINKS.map((link) => /* @__PURE__ */ import_react17.default.createElement(SocialIcon, { key: link.label, ...link })))),
       /* @__PURE__ */ import_react17.default.createElement(
         "nav",
         {
