@@ -18,6 +18,14 @@ try:
         def __init__(self, app):
             self.app = app
         def __call__(self, environ, start_response):
+            # Keep the legacy marketplace URL working even if an older cached
+            # Django module is loaded by a serverless worker.
+            if environ.get('PATH_INFO', '').rstrip('/') == '/marketplace':
+                location = '/parcels/'
+                if environ.get('QUERY_STRING'):
+                    location += '?' + environ['QUERY_STRING']
+                start_response('302 Found', [('Location', location), ('Content-Type', 'text/plain')])
+                return [b'Redirecting to the marketplace.']
             try:
                 return self.app(environ, start_response)
             except Exception as e:
