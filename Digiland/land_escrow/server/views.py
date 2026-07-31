@@ -224,14 +224,14 @@ def home(request):
 
         # Build role-specific stats
         if request.user.role == 'Seller':
-            from django.db.models import Sum
+            from django.db.models import Sum, Avg
             completed_tx = Transaction.objects.filter(seller=request.user, status='Completed')
             escrow_tx = Transaction.objects.filter(seller=request.user, status__in=['Deposit_Paid', 'Under_Verification', 'Verification_Hiatus'])
             total_received = completed_tx.aggregate(total=Sum('agreed_price'))['total'] or 0
             in_escrow = escrow_tx.aggregate(total=Sum('agreed_price'))['total'] or 0
             # Simple rating: average of ratings given by buyers on transactions with this seller
-            seller_rating = AgentRating.objects.filter(agent=request.user).aggregate(avg=models.Avg('rating'))['avg']
-            rating_display = f"{seller_rating:.1f} ???" if seller_rating else 'No ratings yet'
+            seller_rating = AgentRating.objects.filter(agent=request.user).aggregate(avg=Avg('rating'))['avg']
+            rating_display = f"{seller_rating:.1f} / 5.0" if seller_rating else 'No ratings yet'
             stats = [
                 {'label': 'Listed parcels', 'value': str(LandParcel.objects.filter(listed_by=request.user).count()), 'tone': 'success'},
                 {'label': 'Seller rating', 'value': rating_display, 'tone': 'accent'},

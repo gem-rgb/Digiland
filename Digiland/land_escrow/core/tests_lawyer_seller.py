@@ -186,3 +186,11 @@ class LawyerSellerWorkflowTests(TestCase):
         self.assertTrue(task.is_completed)
         self.assertEqual(task.reference_number, 'REG/CAUTION/2026/99')
 
+    def test_seller_dashboard_access(self):
+        client = Client()
+        client.login(email='seller@test.com', password='password123')
+        seller_url = reverse('frontend:seller_dashboard')
+        resp = client.get(seller_url)
+        self.assertEqual(resp.status_code, 200)
+
+
