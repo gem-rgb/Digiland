@@ -132,3 +132,57 @@ class LawyerSellerWorkflowTests(TestCase):
         self.assertEqual(self.transaction.lawyer_lsk_number, 'P.105/12345/20')
         self.assertIsNotNone(self.transaction.lawyer_signature)
         self.assertIsNotNone(self.transaction.lawyer_signed_at)
+
+    def test_marketplace_redirect_and_search(self):
+        client = Client()
+        # Check /marketplace redirects to /parcels/ preserving query params
+        resp = client.get('/marketplace/?q=Nairobi')
+        self.assertIn(resp.status_code, [301, 302])
+        self.assertEqual(resp.headers['Location'], '/parcels/?q=Nairobi')
+
+        # Check searching parcel list works
+        resp = client.get(reverse('frontend:parcel_list') + '?q=Dagoretti')
+        self.assertEqual(resp.status_code, 200)
+
+    def test_dual_signature_document_access(self):
+        client = Client()
+        # Seller requests/authorizes document access
+        client.login(email='seller@test.com', password='password123')
+        req_url = reverse('frontend:request_document_access', args=[self.parcel.parcel_number])
+        resp = client.post(req_url, {'seller_pin': '123456'})
+        self.assertEqual(resp.status_code, 302)
+
+        # Lawyer confirms access
+        client.login(email='lawyer@test.com', password='password123')
+        conf_url = reverse('frontend:confirm_document_access', args=[self.parcel.parcel_number])
+        resp = client.post(conf_url, {'accessor_pin': '654321'})
+        self.assertEqual(resp.status_code, 302)
+
+        from core.models import DocumentAccessGrant
+        grant = DocumentAccessGrant.objects.filter(parcel=self.parcel, access_granted=True).first()
+        self.assertIsNotNone(grant)
+        self.assertTrue(grant.is_valid)
+
+    def test_lawyer_post_transaction_tasks(self):
+        client = Client()
+        client.login(email='lawyer@test.com', password='password123')
+        tasks_url = reverse('frontend:lawyer_post_transaction_tasks', args=[self.transaction.id])
+        
+        # GET initializes tasks
+        resp = client.get(tasks_url)
+        self.assertEqual(resp.status_code, 200)
+
+        # POST updates a task
+        resp = client.post(tasks_url, {
+            'task_key': 'lodge_caution',
+            'is_completed': 'true',
+            'reference_number': 'REG/CAUTION/2026/99',
+            'notes': 'Caution lodged at Nairobi Registry'
+        })
+        self.assertEqual(resp.status_code, 302)
+
+        from core.models import LawyerPostTransactionTask
+        task = LawyerPostTransactionTask.objects.get(transaction=self.transaction, task_key='lodge_caution')
+        self.assertTrue(task.is_completed)
+        self.assertEqual(task.reference_number, 'REG/CAUTION/2026/99')
+

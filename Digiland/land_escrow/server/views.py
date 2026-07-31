@@ -552,11 +552,20 @@ def parcel_list(request):
     if land_type:
         parcels = parcels.filter(land_use_type__iexact=land_type)
     try:
-        if price_filter and '-' in price_filter:
+        if price_filter == 'under_1m':
+            max_price = 1000000
+        elif price_filter == '1m_5m':
+            min_price, max_price = 1000000, 5000000
+        elif price_filter == '5m_20m':
+            min_price, max_price = 5000000, 20000000
+        elif price_filter == '20m_plus':
+            min_price = 20000000
+        elif price_filter and '-' in price_filter:
             min_price, max_price = [part.strip() for part in price_filter.split('-', 1)]
-        if min_price:
+
+        if min_price is not None and min_price != '':
             parcels = parcels.filter(asking_price__gte=float(min_price))
-        if max_price:
+        if max_price is not None and max_price != '':
             parcels = parcels.filter(asking_price__lte=float(max_price))
     except (TypeError, ValueError):
         pass
@@ -567,7 +576,16 @@ def parcel_list(request):
         actions = [{'label': 'Legal checklist', 'href': reverse('frontend:escrow_acts'), 'tone': 'outline'}, {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'}]
     else:
         actions = [{'label': 'Legal checklist', 'href': reverse('frontend:escrow_acts'), 'tone': 'outline'}, {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'}]
-    return render_react_shell(request, 'parcel-list', 'Marketplace', 'Verified parcels available for purchase or management.', parcels=[serialize_parcel(parcel, request.user) for parcel in parcels], actions=actions, search_query=search_query, search_active=bool(search_query or land_type or min_price or max_price))
+    return render_react_shell(
+        request, 'parcel-list', 'Marketplace',
+        'Verified parcels available for purchase or management.',
+        parcels=[serialize_parcel(parcel, request.user) for parcel in parcels],
+        actions=actions,
+        search_query=search_query,
+        land_type=land_type,
+        price_filter=price_filter,
+        search_active=bool(search_query or (land_type and land_type != 'all') or (price_filter and price_filter != 'all') or min_price or max_price)
+    )
 @login_required
 def agent_kyc(request):
     """KYC document submission for newly registered Agent users."""
@@ -2053,6 +2071,101 @@ def initiate_escrow(request, parcel_number):
 
     return redirect('frontend:parcel_detail', parcel_number=parcel_number)
 
+
+def _active_document_grant(parcel, user):
+    """Find active dual-signature access grant for a given parcel and accessor (Lawyer or Agent)."""
+    return DocumentAccessGrant.objects.filter(
+        parcel=parcel,
+        accessor=user,
+        access_granted=True,
+        expires_at__gt=timezone.now()
+    ).first()
+
+
+@login_required
+def request_document_access(request, parcel_number):
+    """
+    Seller initiates or approves a dual-signature document access authorization for a parcel.
+    Stores seller's cryptographic signature / authorization token.
+    """
+    parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
+    if request.user.role != 'Admin' and request.user.id != parcel.listed_by_id:
+        django_messages.error(request, 'Only the parcel seller or an admin can authorize document access.')
+        return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
+
+    if request.method == 'POST':
+        pin = (request.POST.get('seller_pin') or request.POST.get('auth_code') or '').strip()
+        if not pin:
+            django_messages.error(request, 'Please provide a seller authorization PIN or code.')
+            return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
+
+        import hashlib
+        seller_sig = hashlib.sha256(f"{parcel.id}:{request.user.id}:{pin}:{timezone.now().date()}".encode()).hexdigest()
+
+        grant, created = DocumentAccessGrant.objects.get_or_create(
+            parcel=parcel,
+            seller=request.user,
+            access_granted=False,
+            defaults={'created_at': timezone.now()}
+        )
+        grant.seller_auth_signature = seller_sig
+        grant.seller_signed_at = timezone.now()
+        grant.save()
+
+        django_messages.success(request, 'Seller document authorization recorded. The assigned advocate or agent can now confirm access.')
+    return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
+
+
+@login_required
+def confirm_document_access(request, parcel_number):
+    """
+    Assigned Lawyer or Agent provides their authorization signature / PIN to complete dual-signature access.
+    Unlocks land documents for 24 hours.
+    """
+    parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
+    if request.user.role not in {'Lawyer', 'Agent', 'Admin'}:
+        django_messages.error(request, 'Only advocates, agents, or admins can request document access.')
+        return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
+
+    if request.method == 'POST':
+        pin = (request.POST.get('accessor_pin') or request.POST.get('auth_code') or '').strip()
+        if not pin:
+            django_messages.error(request, 'Please enter your authorization PIN or credential code.')
+            return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
+
+        import hashlib
+        accessor_sig = hashlib.sha256(f"{parcel.id}:{request.user.id}:{pin}:{timezone.now().date()}".encode()).hexdigest()
+
+        grant = DocumentAccessGrant.objects.filter(
+            parcel=parcel,
+            seller_auth_signature__isnull=False,
+            access_granted=False
+        ).first()
+
+        if not grant:
+            grant = DocumentAccessGrant.objects.create(
+                parcel=parcel,
+                seller=parcel.listed_by,
+                accessor=request.user,
+                accessor_auth_signature=accessor_sig,
+                accessor_signed_at=timezone.now(),
+                access_granted=False
+            )
+            django_messages.info(request, 'Your access request and signature have been recorded. Waiting for seller authorization signature.')
+            return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
+
+        grant.accessor = request.user
+        grant.accessor_auth_signature = accessor_sig
+        grant.accessor_signed_at = timezone.now()
+        grant.access_granted = True
+        grant.granted_at = timezone.now()
+        grant.expires_at = timezone.now() + timedelta(hours=24)
+        grant.save()
+
+        django_messages.success(request, 'Dual-signature authorization verified! Land documents unlocked for 24 hours.')
+    return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
+
+
 @login_required
 def parcel_detail(request, parcel_number):
     parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
@@ -2402,6 +2515,95 @@ def support_tickets(request):
         actions=[{'label': 'Open new ticket', 'href': '#', 'tone': 'outline'}],
     )
 
+
+def initialize_lawyer_post_transaction_tasks(transaction, lawyer=None):
+    """
+    Initializes the mandatory 7 Kenyan post-signing conveyancing tasks for a transaction.
+    """
+    lawyer_obj = lawyer or transaction.agent or transaction.seller
+    for key, name in LawyerPostTransactionTask.POST_SIGNING_TASKS:
+        LawyerPostTransactionTask.objects.get_or_create(
+            transaction=transaction,
+            task_key=key,
+            defaults={
+                'task_name': name,
+                'lawyer': lawyer_obj if getattr(lawyer_obj, 'role', None) == 'Lawyer' else None,
+                'is_completed': False
+            }
+        )
+
+
+@login_required
+def lawyer_post_transaction_tasks(request, transaction_id):
+    """
+    View for Lawyer/Parties to manage and check off post-contract-execution conveyancing tasks.
+    """
+    transaction = get_object_or_404(Transaction, id=transaction_id)
+    if request.user.role not in {'Lawyer', 'Admin'} and request.user not in [transaction.buyer, transaction.seller]:
+        django_messages.error(request, 'Access restricted to involved parties and advocates.')
+        return redirect('frontend:transactions')
+
+    # Ensure tasks are initialized
+    initialize_lawyer_post_transaction_tasks(transaction, request.user if request.user.role == 'Lawyer' else None)
+
+    if request.method == 'POST' and request.user.role in {'Lawyer', 'Admin'}:
+        task_key = request.POST.get('task_key')
+        is_completed = request.POST.get('is_completed') == 'true' or request.POST.get('action') == 'complete'
+        ref_no = (request.POST.get('reference_number') or '').strip()
+        notes = (request.POST.get('notes') or '').strip()
+
+        task = LawyerPostTransactionTask.objects.filter(transaction=transaction, task_key=task_key).first()
+        if task:
+            task.is_completed = is_completed
+            task.completed_at = timezone.now() if is_completed else None
+            if ref_no:
+                task.reference_number = ref_no
+            if notes:
+                task.notes = notes
+            if request.user.role == 'Lawyer':
+                task.lawyer = request.user
+            task.save()
+            django_messages.success(request, f'Conveyancing task "{task.task_name}" updated.')
+        return redirect('frontend:lawyer_post_transaction_tasks', transaction_id=transaction.id)
+
+    tasks_qs = LawyerPostTransactionTask.objects.filter(transaction=transaction).order_by('created_at')
+    task_list = [
+        {
+            'id': str(t.id),
+            'task_key': t.task_key,
+            'task_name': t.task_name,
+            'is_completed': t.is_completed,
+            'completed_at': t.completed_at.strftime('%b %d, %Y %H:%M') if t.completed_at else None,
+            'notes': t.notes or '',
+            'reference_number': t.reference_number or '',
+            'lawyer_email': t.lawyer.email if t.lawyer else 'Pending Assignment',
+        }
+        for t in tasks_qs
+    ]
+
+    return render_react_shell(
+        request,
+        'lawyer-tasks',
+        'Post-Signing Conveyancing Tasks',
+        f'Property: {transaction.land_parcel.parcel_number}',
+        transaction_id=str(transaction.id),
+        parcel_number=transaction.land_parcel.parcel_number,
+        tasks=task_list,
+        completed_count=sum(1 for t in task_list if t['is_completed']),
+        total_count=len(task_list),
+        can_edit=bool(request.user.role in {'Lawyer', 'Admin'}),
+        actions=[
+            {'label': 'Back to contract', 'href': reverse('frontend:sign_contract', args=[transaction.id]), 'tone': 'outline'},
+            {'label': 'Transactions', 'href': reverse('frontend:transactions'), 'tone': 'secondary'},
+        ]
+    )
+
+
+def lawyer_post_transaction_checklist(request, transaction_id):
+    """Alias route for post-transaction conveyancing tasks."""
+    return lawyer_post_transaction_tasks(request, transaction_id)
+
+
 @login_required
 def sign_contract(request, transaction_id):
     transaction = get_object_or_404(
@@ -2450,8 +2652,9 @@ def sign_contract(request, transaction_id):
                     transaction.status = 'Under_Verification'
 
             transaction.save()
+            initialize_lawyer_post_transaction_tasks(transaction, request.user)
             from django.contrib import messages
-            messages.success(request, 'Advocate contract signature recorded and locked.')
+            messages.success(request, 'Advocate contract signature recorded and post-signing conveyancing checklist initialized.')
             return redirect('frontend:sign_contract', transaction_id=transaction.id)
 
         # Admin-only dual signing capability

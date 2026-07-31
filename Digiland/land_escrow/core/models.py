@@ -3,6 +3,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
+from django.utils import timezone
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -1870,6 +1871,200 @@ class PricePredictionLog(models.Model):
     confidence_low = models.DecimalField(max_digits=15, decimal_places=0)
     confidence_high = models.DecimalField(max_digits=15, decimal_places=0)
     confidence_label = models.CharField(max_length=50)
+    def __str__(self):
+        status = "enabled" if self.is_enabled else "disabled"
+        return f"MFA for {self.user.email} ({status})"
+
+
+class TrustedDevice(models.Model):
+    """Trusted device for MFA bypass."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='trusted_devices')
+    trust_token = models.CharField(max_length=128, db_index=True)
+    device_name = models.CharField(max_length=200, default='Unknown Device')
+    device_type = models.CharField(max_length=50, default='unknown')
+    user_agent = models.TextField(blank=True, default='')
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    expires_at = models.DateTimeField(db_index=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', 'trust_token'], name='idx_device_user_token'),
+            models.Index(fields=['user', 'expires_at'], name='idx_device_user_expires'),
+        ]
+    
+    def __str__(self):
+        return f"{self.device_name} - {self.user.email}"
+
+
+class UserSession(models.Model):
+    """Track user sessions for security and revocation."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sessions')
+    session_key = models.CharField(max_length=128, db_index=True)
+    refresh_token_jti = models.CharField(max_length=128, db_index=True, blank=True, default='')
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True, default='')
+    device_type = models.CharField(max_length=50, blank=True, default='')
+    location = models.CharField(max_length=200, blank=True, default='')
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_activity = models.DateTimeField(auto_now=True)
+    expires_at = models.DateTimeField(db_index=True)
+    
+    class Meta:
+        ordering = ['-last_activity']
+        indexes = [
+            models.Index(fields=['user', 'is_active'], name='idx_session_user_active'),
+            models.Index(fields=['refresh_token_jti'], name='idx_session_jti'),
+            models.Index(fields=['user', 'is_active', 'last_activity'], name='idx_session_user_activity'),
+        ]
+    
+    def __str__(self):
+        return f"Session {self.session_key[:8]}... for {self.user.email}"
+
+
+class OAuthProvider(models.Model):
+    """OAuth/SSO provider configuration."""
+    PROVIDER_CHOICES = [
+        ('google', 'Google'),
+        ('github', 'GitHub'),
+        ('microsoft', 'Microsoft'),
+        ('oidc', 'OpenID Connect'),
+        ('saml', 'SAML'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100)
+    provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES, db_index=True)
+    client_id = models.CharField(max_length=500)
+    client_secret = models.TextField()  # Encrypted at rest
+    authorization_url = models.URLField()
+    token_url = models.URLField()
+    userinfo_url = models.URLField(blank=True, default='')
+    scope = models.CharField(max_length=200, default='openid email profile')
+    is_active = models.BooleanField(default=True, db_index=True)
+    config = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['provider', 'is_active'], name='idx_oauth_provider_active'),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} ({self.provider})"
+
+
+class OAuthAccount(models.Model):
+    """Links OAuth provider accounts to local users."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='oauth_accounts')
+    provider = models.ForeignKey(OAuthProvider, on_delete=models.CASCADE, related_name='accounts')
+    provider_user_id = models.CharField(max_length=255, db_index=True)
+    email = models.EmailField(blank=True, default='')
+    access_token = models.TextField(blank=True, default='')  # Encrypted
+    refresh_token = models.TextField(blank=True, default='')  # Encrypted
+    token_expires_at = models.DateTimeField(null=True, blank=True)
+    profile_data = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('provider', 'provider_user_id')
+        indexes = [
+            models.Index(fields=['user', 'provider'], name='idx_oauth_user_provider'),
+            models.Index(fields=['provider', 'provider_user_id'], name='idx_oauth_provider_uid'),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.email} via {self.provider.name}"
+
+
+class Permission(models.Model):
+    """Granular permission for ABAC system."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    codename = models.CharField(max_length=100, unique=True, db_index=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default='')
+    resource_type = models.CharField(max_length=50, db_index=True)
+    action = models.CharField(max_length=50)  # create, read, update, delete, manage
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['resource_type', 'action']
+        indexes = [
+            models.Index(fields=['resource_type', 'action'], name='idx_perm_resource_action'),
+        ]
+    
+    def __str__(self):
+        return f"{self.codename}"
+
+
+class RolePermission(models.Model):
+    """Maps roles to permissions (RBAC + ABAC hybrid)."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    role = models.CharField(max_length=20, db_index=True)
+    permission = models.ForeignKey(Permission, on_delete=models.CASCADE, related_name='role_assignments')
+    conditions = models.JSONField(default=dict, blank=True, help_text='ABAC conditions for this role-permission mapping')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('role', 'permission')
+        indexes = [
+            models.Index(fields=['role'], name='idx_roleperm_role'),
+        ]
+    
+    def __str__(self):
+        return f"{self.role} -> {self.permission.codename}"
+
+
+class LoginAttempt(models.Model):
+    """Track login attempts for brute-force protection."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField(db_index=True)
+    ip_address = models.GenericIPAddressField(db_index=True)
+    user_agent = models.TextField(blank=True, default='')
+    success = models.BooleanField(default=False)
+    failure_reason = models.CharField(max_length=100, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['email', 'success', 'created_at'], name='idx_login_email_success'),
+            models.Index(fields=['ip_address', 'success', 'created_at'], name='idx_login_ip_success'),
+        ]
+    
+    def __str__(self):
+        status = "success" if self.success else "failed"
+        return f"{self.email} ({status}) at {self.created_at}"
+
+
+class PricePredictionLog(models.Model):
+    """Logs every price prediction for monitoring and model improvement."""
+    prediction_id = models.CharField(max_length=100, unique=True, editable=False)
+    county = models.CharField(max_length=100)
+    constituency = models.CharField(max_length=100, blank=True)
+    town = models.CharField(max_length=100, blank=True)
+    land_use = models.CharField(max_length=50)
+    size_acres = models.DecimalField(max_digits=10, decimal_places=2)
+    has_road_access = models.BooleanField(default=True)
+    has_water = models.BooleanField(default=True)
+    has_electricity = models.BooleanField(default=True)
+    proximity_to_tarmac_km = models.FloatField(null=True, blank=True)
+    proximity_to_school_km = models.FloatField(null=True, blank=True)
+    proximity_to_hospital_km = models.FloatField(null=True, blank=True)
+    plot_grade = models.CharField(max_length=1, blank=True)
+    predicted_price_per_acre = models.DecimalField(max_digits=15, decimal_places=0)
+    predicted_total_value = models.DecimalField(max_digits=18, decimal_places=0)
+    confidence_low = models.DecimalField(max_digits=15, decimal_places=0)
+    confidence_high = models.DecimalField(max_digits=15, decimal_places=0)
+    confidence_label = models.CharField(max_length=50)
     model_version = models.CharField(max_length=50)
     created_at = models.DateTimeField(auto_now_add=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
@@ -1883,3 +2078,82 @@ class PricePredictionLog(models.Model):
     
     def __str__(self):
         return f"Prediction {self.prediction_id[:8]}... {self.county} {self.land_use} KES {self.predicted_price_per_acre:,}/acre"
+
+
+class DocumentAccessGrant(models.Model):
+    """
+    Dual-signature cryptographic authorization gate:
+    Requires cryptographic authorization from BOTH the seller and the assigned lawyer/agent
+    before unredacted land documents and registry details are unlocked.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='access_grants')
+    commission = models.ForeignKey('PurchaseCommission', on_delete=models.SET_NULL, null=True, blank=True, related_name='access_grants')
+    accessor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='requested_access_grants', help_text="Lawyer or Agent requesting access")
+    seller = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_access_grants', help_text="Seller authorizing access")
+    
+    seller_auth_signature = models.TextField(blank=True, null=True, help_text="Cryptographic signature/hash from the seller authorizing access")
+    seller_signed_at = models.DateTimeField(blank=True, null=True)
+    
+    accessor_auth_signature = models.TextField(blank=True, null=True, help_text="Cryptographic signature/hash from lawyer or agent confirming request")
+    accessor_signed_at = models.DateTimeField(blank=True, null=True)
+    
+    access_granted = models.BooleanField(default=False)
+    granted_at = models.DateTimeField(blank=True, null=True)
+    expires_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['parcel', 'access_granted'], name='idx_dag_parcel_grant'),
+        ]
+
+    def __str__(self):
+        status = "GRANTED" if (self.access_granted and self.is_valid) else "PENDING"
+        acc_email = self.accessor.email if self.accessor else "Unknown"
+        return f"AccessGrant for {self.parcel.parcel_number} to {acc_email} [{status}]"
+
+    @property
+    def is_valid(self):
+        from django.utils import timezone
+        if not self.access_granted:
+            return False
+        if self.expires_at and self.expires_at < timezone.now():
+            return False
+        return True
+
+
+class LawyerPostTransactionTask(models.Model):
+    """
+    Tracks mandatory post-contract-execution conveyancing tasks for Kenyan land purchases.
+    """
+    POST_SIGNING_TASKS = [
+        ('lodge_caution', 'Lodge Registry Caution/Caveat (within 48 hours)'),
+        ('lcb_consent', 'Obtain Land Control Board (LCB) Consent'),
+        ('rates_clearance', 'Obtain County Land Rates Clearance Certificate'),
+        ('rent_clearance', 'Obtain Ministry Land Rent Clearance Certificate'),
+        ('stamp_duty', 'Calculate & Pay Stamp Duty to KRA'),
+        ('submit_transfer', 'Submit Transfer Documents to Land Registry'),
+        ('title_handover', 'Final Title Deed Handover to Buyer'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    transaction = models.ForeignKey(Transaction, on_delete=models.CASCADE, related_name='post_transaction_tasks')
+    lawyer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='conveyancing_tasks')
+    task_key = models.CharField(max_length=50, choices=POST_SIGNING_TASKS, default='lodge_caution')
+    task_name = models.CharField(max_length=200, default='')
+    is_completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    reference_number = models.CharField(max_length=100, blank=True, null=True, help_text="e.g. LCB Consent Ref, Stamp Duty Receipt No.")
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('transaction', 'task_key')
+        ordering = ['created_at']
+
+    def __str__(self):
+        status = "Done" if self.is_completed else "Pending"
+        return f"{self.task_name} for Tx {self.transaction.id.hex[:8]} [{status}]"

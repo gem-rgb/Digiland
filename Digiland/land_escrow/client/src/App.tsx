@@ -5259,7 +5259,7 @@ function ReactApp() {
   else if (page === 'joint-groups') pageContent = <AppShell {...shellProps}><JointGroupsPage /></AppShell>;
   else if (page === 'joint-group-detail') pageContent = <AppShell {...shellProps}><JointGroupDetailPage /></AppShell>;
   else if (page === 'parcel-detail') pageContent = <ParcelDetailPage />;
-  else if (page === 'lawyer-checklist') pageContent = <LawyerChecklistPage />;
+  else if (page === 'lawyer-checklist' || page === 'lawyer-tasks') pageContent = <LawyerTasksPage />;
   else if (page === 'commission-detail') pageContent = <CommissionDetailPage />;
   else if (page === 'agent-job-board') pageContent = <AgentJobBoardPage />;
   else if (page === 'agent-commission-steps') pageContent = <AgentCommissionStepsPage />;
@@ -5514,6 +5514,121 @@ function AdminFinancePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function LawyerTasksPage() {
+  const shellProps = {
+    title: bootstrap.title,
+    subtitle: bootstrap.subtitle,
+    user: bootstrap.user,
+    nav: bootstrap.nav,
+    logoutUrl: bootstrap.logout_url,
+    csrfToken: bootstrap.csrf_token,
+  };
+  const tasks = bootstrap.tasks || [];
+  const completedCount = bootstrap.completed_count || 0;
+  const totalCount = bootstrap.total_count || tasks.length || 7;
+  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  return (
+    <AppShell {...shellProps}>
+      <div className="mx-auto max-w-5xl space-y-6">
+        <PageHeader
+          kicker="Conveyancing Completion"
+          title={bootstrap.title || "Post-Signing Conveyancing Tasks"}
+          subtitle={bootstrap.subtitle || "Mandatory Advocate Statutory Completion Checklist (Kenyan Land Law)"}
+          actions={bootstrap.actions}
+        />
+
+        <Card className="bg-white/92 border-emerald-200 shadow-sm">
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-foreground">Completion Progress</h3>
+                <p className="text-xs text-muted-foreground">{completedCount} of {totalCount} mandatory conveyancing milestones verified</p>
+              </div>
+              <div className="text-2xl font-black text-emerald-700">{progressPercent}%</div>
+            </div>
+            <div className="h-3 w-full overflow-hidden rounded-full bg-emerald-100">
+              <div className="h-full bg-emerald-600 transition-all duration-500" style={{ width: `${progressPercent}%` }} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-4">
+          {tasks.map((task: any) => (
+            <Card key={task.task_key} className={cn("bg-white/92 transition-all shadow-sm", task.is_completed ? "border-emerald-300 bg-emerald-50/40" : "border-border")}>
+              <CardContent className="p-6">
+                <form method="post" action={`/transactions/${bootstrap.transaction_id}/lawyer-tasks/`} className="space-y-4">
+                  <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token} />
+                  <input type="hidden" name="task_key" value={task.task_key} />
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold", task.is_completed ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground")}>
+                        {task.is_completed ? "✓" : "!"}
+                      </div>
+                      <div>
+                        <h4 className="text-base font-bold text-foreground">{task.task_name}</h4>
+                        <p className="text-xs text-muted-foreground">Advocate: {task.lawyer_email} {task.completed_at ? `· Verified on ${task.completed_at}` : ""}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge tone={task.is_completed ? "success" : "warning"}>
+                        {task.is_completed ? "Verified & Completed" : "Pending"}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {bootstrap.can_edit ? (
+                    <div className="grid gap-3 pt-3 border-t border-border/60 sm:grid-cols-2">
+                      <div>
+                        <label className="text-xs font-semibold text-foreground">Reference / Registration No.</label>
+                        <input
+                          type="text"
+                          name="reference_number"
+                          defaultValue={task.reference_number}
+                          placeholder="e.g. LCB/2026/0491 or KRA-STAMP-8912"
+                          className="mt-1 flex h-9 w-full rounded-xl border border-input bg-white px-3 text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-foreground">Advocate Completion Notes</label>
+                        <input
+                          type="text"
+                          name="notes"
+                          defaultValue={task.notes}
+                          placeholder="Add confirmation notes..."
+                          className="mt-1 flex h-9 w-full rounded-xl border border-input bg-white px-3 text-xs"
+                        />
+                      </div>
+                      <div className="sm:col-span-2 flex justify-end gap-2 pt-2">
+                        {task.is_completed ? (
+                          <Button type="submit" name="is_completed" value="false" variant="outline" className="h-8 rounded-full text-xs">
+                            Mark Pending
+                          </Button>
+                        ) : (
+                          <Button type="submit" name="is_completed" value="true" className="h-8 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs">
+                            Mark Completed & Save
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ) : task.reference_number || task.notes ? (
+                    <div className="pt-2 text-xs text-muted-foreground space-y-1">
+                      {task.reference_number ? <div><strong>Reference:</strong> {task.reference_number}</div> : null}
+                      {task.notes ? <div><strong>Notes:</strong> {task.notes}</div> : null}
+                    </div>
+                  ) : null}
+                </form>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </AppShell>
   );
 }
 
