@@ -23,8 +23,14 @@ class CustomSignupForm(forms.Form):
             name_parts = full_name.split(' ', 1)
             user.first_name = name_parts[0]
             user.last_name = name_parts[1] if len(name_parts) > 1 else ''
-        user.role = None
-        user.is_onboarded = False
+
+        role = (request.POST.get('role') or request.GET.get('role') or '').strip().title()
+        if role in ['Buyer', 'Seller', 'Agent']:
+            user.role = role
+            user.is_onboarded = True
+        else:
+            user.role = None
+            user.is_onboarded = False
         user.save()
 
 class DocumentUploadForm(forms.ModelForm):

@@ -106,7 +106,7 @@ def _active_document_grant(parcel, accessor):
     ).order_by('-created_at').first()
 
 
-def render_react_shell(request, page, title, subtitle='', **extra):
+def render_react_shell(request, page, title, subtitle='', status=200, **extra):
     popup_context = extra.pop('popup_context', None)
     bootstrap = {
         'page': page,
@@ -124,7 +124,21 @@ def render_react_shell(request, page, title, subtitle='', **extra):
     except Exception:
         bootstrap['popup_ads'] = {'enabled': False, 'page': page, 'candidates': {}, 'primary': None}
     bootstrap.update(extra)
-    return render(request, 'frontend/react_shell.html', {'react_bootstrap': bootstrap})
+    return render(request, 'frontend/react_shell.html', {'react_bootstrap': bootstrap}, status=status)
+
+
+def custom_404_view(request, exception=None):
+    """Friendly, branded custom 404 error page."""
+    try:
+        return render_react_shell(
+            request,
+            '404',
+            'Page Not Found - Digiland',
+            'The page or resource you are looking for does not exist or has been moved.',
+            status=404
+        )
+    except Exception:
+        return render(request, '404.html', status=404)
 
 
 def public_marketing_page(request, page_key):
@@ -5054,6 +5068,27 @@ def sponsored_ads(request):
 
 @login_required
 def onboarding_select_role(request):
+    if request.user.role and getattr(request.user, 'is_onboarded', False):
+        if request.user.role == 'Buyer':
+            return redirect('frontend:buyer_dashboard')
+        elif request.user.role == 'Seller':
+            return redirect('frontend:seller_dashboard')
+        elif request.user.role == 'Agent':
+            return redirect('frontend:agent_signup_complete')
+        elif request.user.role == 'Admin':
+            return redirect('/admin/')
+
+    if request.method == 'POST':
+        role = (request.POST.get('role') or '').strip().title()
+        if role in ['Buyer', 'Seller']:
+            request.user.role = role
+            request.user.is_onboarded = True
+            request.user.save(update_fields=['role', 'is_onboarded'])
+            if role == 'Buyer':
+                return redirect('frontend:buyer_dashboard')
+            else:
+                return redirect('frontend:seller_dashboard')
+
     return render_react_shell(
         request,
         'onboarding-select-role',

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowRight, ArrowDown, Banknote, BarChart3, Camera, CheckCircle2, CircleCheckBig, Clock3, ExternalLink, Eye, FileSignature, FileText, Gavel, Heart, Landmark, Lock, Mail, MapPin, MessageSquare, Printer, ReceiptText, Search, ShieldAlert, ShieldCheck, Scale, Sparkles, Ticket, Upload, UserCheck, Users, WalletCards, ShoppingCart, Briefcase, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, ArrowRight, ArrowLeft, ArrowDown, Banknote, BarChart3, Camera, CheckCircle2, CircleCheckBig, Clock3, Compass, ExternalLink, Eye, FileSignature, FileText, Gavel, Grid2X2, Heart, HelpCircle, Landmark, Lock, Mail, MapPin, MessageSquare, Printer, ReceiptText, Search, ShieldAlert, ShieldCheck, Scale, Sparkles, Ticket, Upload, UserCheck, Users, WalletCards, ShoppingCart, Briefcase, type LucideIcon } from 'lucide-react';
 import type { FormEvent, ReactNode } from 'react';
 import { readBootstrap } from './lib/bootstrap.js';
 import { AppShell } from './components/layout/app-shell.js';
@@ -754,7 +754,7 @@ function DashboardPage() {
           <div className="flex flex-wrap items-center gap-2.5">
             {!isSeller && !isAdmin && !isAgent && !isLawyer && (
               <>
-                <a href="/marketplace/" className="inline-flex h-11 items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-5 text-xs font-bold transition shadow-md gap-2">
+                <a href="/parcels/" className="inline-flex h-11 items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-5 text-xs font-bold transition shadow-md gap-2">
                   <Grid2X2 className="h-4 w-4" /> Browse Marketplace
                 </a>
                 <a href="/buyer/dashboard/" className="inline-flex h-11 items-center justify-center rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-white px-5 text-xs font-bold transition gap-2">
@@ -5088,6 +5088,13 @@ function RoleSelectionPage({ shellProps }: RoleSelectionPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    if (bootstrap.user?.role && bootstrap.user?.is_onboarded) {
+      const targetUrl = bootstrap.user.role === 'Buyer' ? '/buyer/dashboard/' : '/seller/dashboard/';
+      window.location.href = targetUrl;
+    }
+  }, []);
+
   const handleContinue = async () => {
     if (!selectedRole) return;
     setLoading(true);
@@ -5106,7 +5113,8 @@ function RoleSelectionPage({ shellProps }: RoleSelectionPageProps) {
         throw new Error(data.error || 'Failed to select role. Please try again.');
       }
       // Success: redirect based on selected role
-      window.location.href = selectedRole === 'buyer' ? '/buyer/dashboard/' : '/seller/dashboard/';
+      const redirectUrl = data.redirect_url || (selectedRole === 'buyer' ? '/buyer/dashboard/' : '/seller/dashboard/');
+      window.location.href = redirectUrl;
     } catch (err: any) {
       setError(err.message || 'An error occurred. Please try again.');
     } finally {
@@ -5232,6 +5240,105 @@ function RoleSelectionPage({ shellProps }: RoleSelectionPageProps) {
 }
 
 
+function NotFoundPage() {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      window.location.href = `/parcels/?q=${encodeURIComponent(searchQuery.trim())}`;
+    } else {
+      window.location.href = '/parcels/';
+    }
+  };
+
+  return (
+    <PublicShell title="Page Not Found - Digiland" subtitle="The requested resource could not be found." nav={bootstrap.nav} user={bootstrap.user}>
+      <div className="flex min-h-[75vh] items-center justify-center px-4 py-12">
+        <div className="relative w-full max-w-3xl space-y-8 overflow-hidden rounded-[2.5rem] border border-emerald-500/20 bg-slate-950 p-8 text-center text-white shadow-2xl backdrop-blur-xl sm:p-12">
+          {/* Background Glow */}
+          <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-emerald-500/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-teal-500/15 blur-3xl" />
+
+          {/* Badge & Icon */}
+          <div className="relative z-10 flex flex-col items-center gap-4">
+            <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-emerald-400/30 bg-emerald-400/10 text-emerald-400 shadow-xl shadow-emerald-500/10">
+              <Compass className="h-10 w-10 animate-pulse" />
+            </div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-rose-400">
+              404 — Page Not Found
+            </span>
+          </div>
+
+          {/* Header text */}
+          <div className="relative z-10 space-y-3">
+            <h1 className="text-3xl font-black tracking-tight text-white sm:text-5xl">
+              Looking for a land parcel or page?
+            </h1>
+            <p className="mx-auto max-w-lg text-sm font-normal leading-relaxed text-slate-300 sm:text-base">
+              The page, document, or parcel listing you are trying to reach doesn't exist, has been moved, or may have been sold.
+            </p>
+          </div>
+
+          {/* Quick Search Bar */}
+          <form onSubmit={handleSearch} className="relative z-10 mx-auto flex max-w-md flex-col gap-2.5 rounded-2xl border border-white/15 bg-white/[0.08] p-2 backdrop-blur-xl sm:flex-row">
+            <div className="flex flex-1 items-center gap-2.5 px-3">
+              <Search className="h-4 w-4 shrink-0 text-emerald-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search county, ward, or parcel..."
+                className="w-full bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-500"
+              />
+            </div>
+            <Button type="submit" className="h-11 rounded-xl bg-emerald-500 px-6 font-bold text-slate-950 hover:bg-emerald-400 transition">
+              Search
+            </Button>
+          </form>
+
+          {/* Primary CTA Buttons */}
+          <div className="relative z-10 flex flex-wrap items-center justify-center gap-3 pt-2">
+            <a
+              href="/parcels/"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-emerald-500 px-6 text-sm font-bold text-slate-950 transition hover:bg-emerald-400 shadow-lg shadow-emerald-500/20"
+            >
+              <Grid2X2 className="h-4 w-4" /> Browse Marketplace
+            </a>
+            <a
+              href="/"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-6 text-sm font-bold text-white transition hover:bg-white/20"
+            >
+              <ArrowLeft className="h-4 w-4" /> Return to Home
+            </a>
+            <a
+              href="/support/"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-6 text-sm font-bold text-slate-300 transition hover:bg-white/20 hover:text-white"
+            >
+              <HelpCircle className="h-4 w-4" /> Support
+            </a>
+          </div>
+
+          {/* Quick Popular Searches */}
+          <div className="relative z-10 flex flex-wrap items-center justify-center gap-3 pt-6 border-t border-white/10 text-xs text-slate-400">
+            <span>Popular Locations:</span>
+            {['Nairobi', 'Nakuru', 'Kiambu', 'Kajiado'].map((tag) => (
+              <a
+                key={tag}
+                href={`/parcels/?q=${encodeURIComponent(tag)}`}
+                className="text-slate-300 hover:text-emerald-400 transition underline underline-offset-4 decoration-emerald-500/30"
+              >
+                {tag}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </PublicShell>
+  );
+}
+
+
 function ReactApp() {
   const page = bootstrap.page;
   const shellProps = {
@@ -5246,7 +5353,9 @@ function ReactApp() {
   let pageContent: ReactNode = null;
 
   if (page === 'landing') pageContent = <LandingPage />;
+  else if (page === '404') pageContent = <NotFoundPage />;
   else if (page === 'features') pageContent = <FeaturesPage />;
+
   else if (page === 'onboarding-select-role') pageContent = <RoleSelectionPage shellProps={shellProps} />;
   else if (page === 'content') pageContent = <ContentPage />;
   else if (page === 'status') pageContent = <StatusPage />;

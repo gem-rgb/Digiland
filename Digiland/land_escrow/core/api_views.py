@@ -13,6 +13,7 @@ from django.views import View
 from django.utils import timezone
 from django.db.models import Count, Sum, Avg, Q, F
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 
 from rest_framework import viewsets, status, generics, filters, permissions
 from rest_framework.decorators import api_view, action, permission_classes, throttle_classes
@@ -2575,8 +2576,11 @@ def onboarding_select_role_api(request):
     user.is_onboarded = True
     user.save(update_fields=['role', 'is_onboarded'])
 
+    redirect_url = reverse('frontend:buyer_dashboard') if user.role == 'Buyer' else reverse('frontend:seller_dashboard')
+
     return Response({
         "authenticated": True,
         "role": user.role.lower(),
         "is_onboarded": user.is_onboarded,
+        "redirect_url": redirect_url,
     }, status=status.HTTP_200_OK)

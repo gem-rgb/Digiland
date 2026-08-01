@@ -93,7 +93,11 @@ def _required_env(name):
 SECRET_KEY = _required_env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
+IS_VERCEL = bool(os.getenv("VERCEL") or os.getenv("VERCEL_ENV"))
 DEBUG = config('DEBUG', default=False, cast=bool)
+if IS_VERCEL and os.getenv("VERCEL_ENV") == "production":
+    DEBUG = False
+
 TESTING = "test" in sys.argv
 
 ALLOWED_HOSTS = [

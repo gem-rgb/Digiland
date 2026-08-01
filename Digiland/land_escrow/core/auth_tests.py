@@ -904,6 +904,87 @@ class TestEmailVerificationGateMiddleware(TestCase):
         self.assertEqual(response.status_code, 200)
 
 
+class TestRoleSelectionAndRedirect(TestCase):
+    """Tests for role selection onboarding and dashboard redirection."""
+
+    def test_onboarding_select_role_api_buyer(self):
+        from django.test import Client
+        from django.urls import reverse
+        user = _make_user(email="unonboarded-buyer@digiland.co.ke")
+        user.role = None
+        user.is_onboarded = False
+        user.save()
+
+        client = Client()
+        client.force_login(user)
+
+        response = client.post("/api/onboarding/select-role/", {"role": "buyer"}, content_type="application/json")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data.get("role"), "buyer")
+        self.assertTrue(data.get("is_onboarded"))
+        self.assertEqual(data.get("redirect_url"), reverse("frontend:buyer_dashboard"))
+
+        user.refresh_from_db()
+        self.assertEqual(user.role, "Buyer")
+        self.assertTrue(user.is_onboarded)
+
+    def test_onboarding_select_role_api_seller(self):
+        from django.test import Client
+        from django.urls import reverse
+        user = _make_user(email="unonboarded-seller@digiland.co.ke")
+        user.role = None
+        user.is_onboarded = False
+        user.save()
+
+        client = Client()
+        client.force_login(user)
+
+        response = client.post("/api/onboarding/select-role/", {"role": "seller"}, content_type="application/json")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data.get("role"), "seller")
+        self.assertTrue(data.get("is_onboarded"))
+        self.assertEqual(data.get("redirect_url"), reverse("frontend:seller_dashboard"))
+
+        user.refresh_from_db()
+        self.assertEqual(user.role, "Seller")
+        self.assertTrue(user.is_onboarded)
+
+    def test_onboarding_select_role_view_already_onboarded(self):
+        from django.test import Client
+        from django.urls import reverse
+        user = _make_user(email="onboarded-buyer@digiland.co.ke", role="Buyer")
+        user.is_onboarded = True
+        user.save(update_fields=["role", "is_onboarded"])
+
+        client = Client()
+        client.force_login(user)
+
+        response = client.get("/onboarding/select-role/")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("frontend:buyer_dashboard"))
+
+    def test_onboarding_select_role_view_post_html(self):
+        from django.test import Client
+        from django.urls import reverse
+        user = _make_user(email="html-post-seller@digiland.co.ke")
+        user.role = None
+        user.is_onboarded = False
+        user.save()
+
+        client = Client()
+        client.force_login(user)
+
+        response = client.post("/onboarding/select-role/", {"role": "seller"})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("frontend:seller_dashboard"))
+
+        user.refresh_from_db()
+        self.assertEqual(user.role, "Seller")
+        self.assertTrue(user.is_onboarded)
+
+
 class TestCanonicalBackendHostMiddleware(TestCase):
     """Regression: local OAuth requests should be forced to one backend origin."""
 

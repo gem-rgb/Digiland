@@ -144,6 +144,12 @@ class LawyerSellerWorkflowTests(TestCase):
         resp = client.get(reverse('frontend:parcel_list') + '?q=Dagoretti')
         self.assertEqual(resp.status_code, 200)
 
+    def test_custom_404_handler(self):
+        client = Client()
+        resp = client.get('/nonexistent-page-url-12345/')
+        self.assertEqual(resp.status_code, 404)
+
+
     def test_dual_signature_document_access(self):
         client = Client()
         # Seller requests/authorizes document access
