@@ -32434,7 +32434,17 @@ function RoleSelectionPage({ shellProps }) {
         },
         body: JSON.stringify({ role: selectedRole })
       });
-      const data = await response.json();
+      let data = {};
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        if (response.ok) {
+          data = { redirect_url: selectedRole === "buyer" ? "/buyer/dashboard/" : "/seller/dashboard/" };
+        } else {
+          throw new Error("Failed to select role. Please try again.");
+        }
+      }
       if (!response.ok) {
         throw new Error(data.error || "Failed to select role. Please try again.");
       }
@@ -32446,7 +32456,7 @@ function RoleSelectionPage({ shellProps }) {
       setLoading(false);
     }
   };
-  return /* @__PURE__ */ import_react18.default.createElement(PublicShell, { title: "Welcome to Digiland", subtitle: "Choose how you'd like to get started", nav: bootstrap.nav, user: bootstrap.user }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex min-h-[70vh] items-center justify-center px-4 py-12" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "w-full max-w-4xl space-y-8 text-center" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("h1", { className: "text-4xl font-black tracking-tight text-slate-900 sm:text-5xl" }, "What brings you here?"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "mx-auto max-w-2xl text-base text-slate-500" }, "Choose how you'd like to use the platform. You can change this later if your account supports multiple roles.")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-8 grid gap-6 md:grid-cols-2" }, /* @__PURE__ */ import_react18.default.createElement(
+  return /* @__PURE__ */ import_react18.default.createElement(PublicShell, { title: "Welcome to Digiland", subtitle: "Choose how you'd like to get started", nav: [], user: bootstrap.user }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex min-h-[70vh] items-center justify-center px-4 py-12" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "w-full max-w-4xl space-y-8 text-center" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("h1", { className: "text-4xl font-black tracking-tight text-slate-900 sm:text-5xl" }, "What brings you here?"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "mx-auto max-w-2xl text-base text-slate-500" }, "Choose how you'd like to use the platform. You can change this later if your account supports multiple roles.")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-8 grid gap-6 md:grid-cols-2" }, /* @__PURE__ */ import_react18.default.createElement(
     "div",
     {
       onClick: () => setSelectedRole("buyer"),

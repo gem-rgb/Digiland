@@ -5108,7 +5108,17 @@ function RoleSelectionPage({ shellProps }: RoleSelectionPageProps) {
         },
         body: JSON.stringify({ role: selectedRole }),
       });
-      const data = await response.json();
+      let data: any = {};
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        if (response.ok) {
+          data = { redirect_url: selectedRole === 'buyer' ? '/buyer/dashboard/' : '/seller/dashboard/' };
+        } else {
+          throw new Error('Failed to select role. Please try again.');
+        }
+      }
       if (!response.ok) {
         throw new Error(data.error || 'Failed to select role. Please try again.');
       }
@@ -5123,7 +5133,7 @@ function RoleSelectionPage({ shellProps }: RoleSelectionPageProps) {
   };
 
   return (
-    <PublicShell title="Welcome to Digiland" subtitle="Choose how you'd like to get started" nav={bootstrap.nav} user={bootstrap.user}>
+    <PublicShell title="Welcome to Digiland" subtitle="Choose how you'd like to get started" nav={[]} user={bootstrap.user}>
       <div className="flex min-h-[70vh] items-center justify-center px-4 py-12">
         <div className="w-full max-w-4xl space-y-8 text-center">
           {/* Header */}
