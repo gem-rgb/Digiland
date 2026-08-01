@@ -652,6 +652,7 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
+SITE_ID = 1
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 # allauth 65.x modern settings (replaces deprecated EMAIL_REQUIRED / USERNAME_REQUIRED / AUTHENTICATION_METHOD)
 ACCOUNT_LOGIN_METHODS = {'email'}
@@ -660,6 +661,8 @@ ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_SIGNUP_FORM_CLASS = 'core.forms.CustomSignupForm'
 ACCOUNT_ADAPTER = 'core.adapter.RoleBasedAccountAdapter'
 SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
