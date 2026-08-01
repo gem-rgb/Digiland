@@ -1,6 +1,7 @@
 import logging
 
 from allauth.account.adapter import DefaultAccountAdapter
+from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.conf import settings
 from django.urls import reverse
 from django.shortcuts import redirect
@@ -193,3 +194,56 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
                 )
 
         return super().pre_login(request, user, **kwargs)
+
+
+class RoleBasedSocialAccountAdapter(DefaultSocialAccountAdapter):
+    def get_app(self, request, provider, config=None):
+        """
+        Safely retrieve or provision SocialApp for provider (e.g. google, github).
+        Prevents SocialApp.DoesNotExist 500 errors during OAuth callbacks.
+        """
+        from allauth.socialaccount.models import SocialApp
+        from django.contrib.sites.models import Site
+
+        try:
+            return super().get_app(request, provider, config=config)
+        except Exception:
+            pass
+
+        provider_config = getattr(settings, 'SOCIALACCOUNT_PROVIDERS', {}).get(provider, {})
+        app_config = provider_config.get('APP', {})
+        client_id = app_config.get('client_id') or getattr(settings, f'{provider.upper()}_OAUTH_CLIENT_ID', '') or getattr(settings, f'{provider.upper()}_CLIENT_ID', '')
+        secret = app_config.get('secret') or getattr(settings, f'{provider.upper()}_OAUTH_CLIENT_SECRET', '') or getattr(settings, f'{provider.upper()}_CLIENT_SECRET', '')
+
+        site, _ = Site.objects.get_or_create(id=1, defaults={'domain': 'digiland-six.vercel.app', 'name': 'Digiland'})
+
+        app, created = SocialApp.objects.get_or_create(
+            provider=provider,
+            defaults={
+                'name': provider.title(),
+                'client_id': client_id or 'placeholder-client-id',
+                'secret': secret or 'placeholder-secret',
+            }
+        )
+        if client_id and app.client_id != client_id:
+            app.client_id = client_id
+            app.secret = secret or app.secret
+            app.save()
+
+        if site not in app.sites.all():
+            app.sites.add(site)
+        return app
+
+    def populate_user(self, request, sociallogin, data):
+        user = super().populate_user(request, sociallogin, data)
+        if not user.email and sociallogin.account.extra_data.get('email'):
+            user.email = sociallogin.account.extra_data['email']
+        user.is_email_verified = True
+        return user
+
+    def save_user(self, request, sociallogin, form=None):
+        user = super().save_user(request, sociallogin, form=form)
+        user.is_email_verified = True
+        user.save(update_fields=['is_email_verified'])
+        return user
+

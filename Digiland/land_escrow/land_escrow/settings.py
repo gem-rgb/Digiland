@@ -660,6 +660,7 @@ ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_SIGNUP_FORM_CLASS = 'core.forms.CustomSignupForm'
 ACCOUNT_ADAPTER = 'core.adapter.RoleBasedAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'core.adapter.RoleBasedSocialAccountAdapter'
 SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
