@@ -86,6 +86,26 @@ def init_django_app() -> None:
         admin_user.is_onboarded = True
         admin_user.save()
 
+        # Provision Seller account for demo parcel upload
+        seller_email = "seller_demo@example.com"
+        seller_user, _created = User.objects.get_or_create(
+            email=seller_email,
+            defaults={
+                "username": "seller_demo",
+                "first_name": "Demo",
+                "last_name": "Seller",
+                "role": "Seller",
+                "is_email_verified": True,
+                "is_identity_verified": True,
+                "is_onboarded": True,
+            }
+        )
+        seller_user.set_password("SellerDigiland2026!")
+        seller_user.role = "Seller"
+        seller_user.is_email_verified = True
+        seller_user.is_onboarded = True
+        seller_user.save()
+
     except Exception as exc:
         print(f"[deploy_bootstrap] DB init exception: {exc}")
 
