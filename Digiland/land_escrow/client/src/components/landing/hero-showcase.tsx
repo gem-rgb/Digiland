@@ -10,7 +10,7 @@ import {
   Gavel,
   Landmark,
   MapPin,
-  Search,
+  Search as SearchIcon,
   Sparkles,
   Ticket,
   Upload,
@@ -410,8 +410,8 @@ export function HeroShowcase({ notice, csrfToken, isAuthenticated = false }: Her
             <p className="mt-6 max-w-2xl text-sm leading-7 text-slate-300 sm:text-lg sm:leading-8">Automated ArdhiSasa land title validation, M-Pesa escrow vaulting, and cryptographic Law Society advocate authentication.</p>
 
             <form onSubmit={handleSearch} className="mt-8 flex max-w-2xl flex-col gap-3 rounded-[1.35rem] border border-white/10 bg-white/[0.07] p-2 backdrop-blur-xl sm:flex-row">
-              <div className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3"><Search className="h-5 w-5 shrink-0 text-emerald-400" /><input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search county, ward, or parcel number" className="w-full bg-transparent py-3 text-sm text-white outline-none placeholder:text-slate-500" /></div>
-              <Button type="submit" className="h-12 rounded-xl bg-emerald-500 px-6 font-black text-slate-950 hover:bg-emerald-400"><Search className="mr-2 h-4 w-4" />Search</Button>
+              <div className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3"><SearchIcon className="h-5 w-5 shrink-0 text-emerald-400" /><input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search county, ward, or parcel number" className="w-full bg-transparent py-3 text-sm text-white outline-none placeholder:text-slate-500" /></div>
+              <Button type="submit" className="h-12 rounded-xl bg-emerald-500 px-6 font-black text-slate-950 hover:bg-emerald-400"><SearchIcon className="mr-2 h-4 w-4" />Search</Button>
             </form>
             <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-500"><span>Popular:</span>{['Nairobi', 'Nakuru', 'Kiambu', 'Kajiado'].map((tag) => <a key={tag} href={`/parcels/?q=${encodeURIComponent(tag)}`} className="text-slate-300 transition hover:text-emerald-300">{tag}</a>)}</div>
             <div className="mt-8 flex flex-wrap gap-3"><a href="/parcels/" className="inline-flex h-12 items-center justify-center rounded-full bg-emerald-500 px-6 text-sm font-black text-slate-950 transition hover:bg-emerald-400">Launch Marketplace <ArrowRight className="ml-2 h-4 w-4" /></a><a href="/features/" className="inline-flex h-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] px-6 text-sm font-bold text-white transition hover:border-emerald-400/50 hover:bg-emerald-400/10">Explore protocol</a></div>
