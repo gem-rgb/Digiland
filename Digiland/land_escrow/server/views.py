@@ -1841,7 +1841,7 @@ def escrow_release(request):
     )
 
 @login_required
-@user_passes_test(is_seller_or_agent, login_url='/parcels/', redirect_field_name=None)
+@user_passes_test(is_seller_or_agent, login_url='/accounts/login/', redirect_field_name=None)
 def parcel_upload(request):
     if request.method == 'POST':
         form = LandParcelUploadForm(request.POST, request.FILES)

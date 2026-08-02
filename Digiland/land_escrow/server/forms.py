@@ -17,3 +17,16 @@ class LandParcelUploadForm(forms.ModelForm):
             'asking_price': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Target Price in KES'}),
             'lowest_negotiable_price': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Lowest Acceptable Price in KES'}),
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        asking_price = cleaned_data.get('asking_price')
+        lowest_negotiable_price = cleaned_data.get('lowest_negotiable_price')
+
+        if asking_price is not None and lowest_negotiable_price is not None:
+            if lowest_negotiable_price >= asking_price:
+                self.add_error(
+                    'lowest_negotiable_price',
+                    'The lowest negotiable price must be strictly lower than the asking price.'
+                )
+        return cleaned_data

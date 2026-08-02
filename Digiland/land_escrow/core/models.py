@@ -267,6 +267,15 @@ class LandParcel(models.Model):
             models.Index(fields=['tenant_id', 'land_use_type', 'county'], name='idx_lp_tenant_lut_county'),
         ]
 
+    def clean(self):
+        super().clean()
+        if self.asking_price is not None and self.lowest_negotiable_price is not None:
+            if self.lowest_negotiable_price >= self.asking_price:
+                from django.core.exceptions import ValidationError
+                raise ValidationError({
+                    'lowest_negotiable_price': 'Lowest negotiable price must be strictly lower than asking price.'
+                })
+
     def __str__(self):
         return self.parcel_number
 
