@@ -197,7 +197,7 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
 
 
 class RoleBasedSocialAccountAdapter(DefaultSocialAccountAdapter):
-    def get_app(self, request, provider, config=None):
+    def get_app(self, request, provider, client_id=None, config=None, **kwargs):
         """
         Safely retrieve or provision SocialApp for provider (e.g. google, github).
         Prevents SocialApp.DoesNotExist 500 errors during OAuth callbacks.
@@ -206,7 +206,7 @@ class RoleBasedSocialAccountAdapter(DefaultSocialAccountAdapter):
         from django.contrib.sites.models import Site
 
         try:
-            return super().get_app(request, provider, config=config)
+            return super().get_app(request, provider, client_id=client_id, config=config, **kwargs)
         except Exception:
             pass
 
