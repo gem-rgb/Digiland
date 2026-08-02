@@ -317,7 +317,7 @@ STORAGES = {
         'BACKEND': DEFAULT_STORAGE_BACKEND,
     },
     'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
     },
 }
 
