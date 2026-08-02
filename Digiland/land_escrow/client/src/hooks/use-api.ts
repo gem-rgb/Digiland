@@ -93,7 +93,7 @@ export function useApiRequest<T = unknown>(
           setError(apiError);
           setIsLoading(false);
           setIsRetrying(false);
-          setReferenceId(apiError.referenceId);
+          setReferenceId(apiError.referenceId ?? null);
         }
       }
     },
@@ -241,7 +241,7 @@ export function useApiMutation<TData = unknown, TVariables = unknown>(
           setError(apiError);
           setIsLoading(false);
           setIsRetrying(false);
-          setReferenceId(apiError.referenceId);
+          setReferenceId(apiError.referenceId ?? null);
         }
 
         throw apiError;

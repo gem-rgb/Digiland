@@ -68,7 +68,7 @@ export function PaymentMethodSelector({
 
   const options: PaymentOption[] = [
     {
-      id: 'mpesa',
+      id: 'mpesa' as PaymentMethod,
       label: 'M-Pesa',
       description: 'Pay via M-Pesa STK Push. Enter your phone number and confirm on your device.',
       icon: <Smartphone className="h-5 w-5" />,
@@ -76,28 +76,28 @@ export function PaymentMethodSelector({
       badge: 'Recommended',
     },
     {
-      id: 'stripe',
+      id: 'stripe' as PaymentMethod,
       label: 'Card Payment',
       description: 'Pay with Visa or Mastercard via Stripe secure checkout.',
       icon: <CreditCard className="h-5 w-5" />,
       available: stripeEnabled,
     },
     {
-      id: 'paystack',
+      id: 'paystack' as PaymentMethod,
       label: 'Paystack',
       description: 'Pay via Paystack — supports mobile money and card payments.',
       icon: <CreditCard className="h-5 w-5" />,
       available: paystackEnabled,
     },
     {
-      id: 'bank_transfer',
+      id: 'bank_transfer' as PaymentMethod,
       label: 'Bank Transfer',
       description: 'Transfer directly to the escrow bank account.',
       icon: <Building2 className="h-5 w-5" />,
       available: bankTransferEnabled,
     },
     {
-      id: 'escrow_wallet',
+      id: 'escrow_wallet' as PaymentMethod,
       label: 'Escrow Wallet',
       description: 'Pay from your Digiland escrow wallet balance.',
       icon: <Wallet className="h-5 w-5" />,

@@ -10,6 +10,7 @@ import {
   Gavel,
   Landmark,
   MapPin,
+  Search,
   Sparkles,
   Ticket,
   Upload,
@@ -419,7 +420,16 @@ export function HeroShowcase({ notice, csrfToken, isAuthenticated = false }: Her
           <div className="relative rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 shadow-[0_30px_100px_-45px_rgba(16,185,129,0.8)] backdrop-blur-2xl sm:p-7">
             <div className="flex items-center justify-between border-b border-white/10 pb-4"><div><div className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400">System concept architecture</div><div className="mt-1 text-sm font-bold text-slate-300">Three trust layers. One closing path.</div></div><ShieldCheck className="h-6 w-6 text-emerald-400" /></div>
             <div className="mt-5 space-y-3">
-              {[['01', 'ArdhiSasa Registry Validation', 'Government title deed check', Landmark], ['02', 'Smart Escrow Vault', 'M-Pesa STK & KCB bank deposit lock', WalletCards], ['03', 'Cryptographic Advocate Sign-Off', 'LSK lawyer title transfer', Gavel]].map(([number, title, description, Icon]) => <div key={String(number)} className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-900/60 p-4 transition hover:border-emerald-400/40"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-xs font-black text-emerald-300">{number}</div><div className="min-w-0 flex-1"><div className="text-sm font-black text-white">{title}</div><div className="mt-1 text-xs text-slate-400">{description}</div></div><Icon className="h-5 w-5 shrink-0 text-emerald-400" /></div>)}
+              {([['01', 'ArdhiSasa Registry Validation', 'Government title deed check', Landmark], ['02', 'Smart Escrow Vault', 'M-Pesa STK & KCB bank deposit lock', WalletCards], ['03', 'Cryptographic Advocate Sign-Off', 'LSK lawyer title transfer', Gavel]] as const).map(([number, title, description, Icon]) => {
+                const IconComp = Icon as LucideIcon;
+                return (
+                  <div key={String(number)} className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-900/60 p-4 transition hover:border-emerald-400/40">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-xs font-black text-emerald-300">{number}</div>
+                    <div className="min-w-0 flex-1"><div className="text-sm font-black text-white">{title}</div><div className="mt-1 text-xs text-slate-400">{description}</div></div>
+                    <IconComp className="h-5 w-5 shrink-0 text-emerald-400" />
+                  </div>
+                );
+              })}
             </div>
             <div className="mt-6 grid grid-cols-3 gap-2 border-t border-white/10 pt-5 text-center"><div><div className="text-lg font-black text-white">24/7</div><div className="text-[9px] uppercase tracking-wider text-slate-500">Monitoring</div></div><div><div className="text-lg font-black text-white">M-Pesa</div><div className="text-[9px] uppercase tracking-wider text-slate-500">Vaulting</div></div><div><div className="text-lg font-black text-white">LSK</div><div className="text-[9px] uppercase tracking-wider text-slate-500">Verified</div></div></div>
           </div>

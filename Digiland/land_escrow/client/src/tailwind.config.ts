@@ -78,10 +78,6 @@ export default {
           5: 'hsl(var(--chart-5))',
         },
       },
-      opacity: {
-        '88': '0.88',
-        '92': '0.92',
-      },
       borderRadius: {
         xl: '1rem',
         '2xl': '1.35rem',

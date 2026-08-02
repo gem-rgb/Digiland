@@ -99,7 +99,14 @@ def serialize_parcel(parcel, user=None):
     
     # Check for active promotion tier
     active_promo = parcel.promotions.filter(is_active=True, payment_status='Paid').first()
-    promotion_tier = active_promo.tier if active_promo else None
+    promotion_tier = active_promo.tier.name if (active_promo and getattr(active_promo, 'tier', None)) else None
+    
+    image_url = None
+    try:
+        if getattr(parcel, 'image', None) and bool(parcel.image):
+            image_url = parcel.image.url
+    except Exception:
+        image_url = None
     
     return {
         'parcel_number': str(parcel.parcel_number),
@@ -109,7 +116,7 @@ def serialize_parcel(parcel, user=None):
         'land_size': str(parcel.land_size),
         'land_use_type': parcel.land_use_type,
         'verification_status': parcel.verification_status,
-        'image_url': parcel.image.url if getattr(parcel, 'image', None) else None,
+        'image_url': image_url,
         'details_url': reverse('frontend:parcel_detail', args=[parcel.parcel_number]),
         'edit_url': reverse('frontend:parcel_edit', args=[parcel.parcel_number]) if (is_owner or is_admin) else None,
         'delete_url': reverse('frontend:parcel_delete', args=[parcel.parcel_number]) if (is_owner or is_admin) else None,

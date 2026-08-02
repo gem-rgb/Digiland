@@ -30,6 +30,7 @@ export interface FeedParcel extends ParcelSummary {
   is_sponsored?: boolean;
   sponsor_label?: string;
   price_trend?: 'up' | 'down' | 'stable';
+  is_favorited?: boolean;
 }
 
 export interface FeedSection {
