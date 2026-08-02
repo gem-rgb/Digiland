@@ -62,12 +62,13 @@ def init_django_app() -> None:
         cache.delete("email:karanitaitumu@gmail.com")
         cache.delete("email:karanitaitumu")
 
+        from allauth.account.models import EmailAddress
+
         # Provision Admin account for karanitaitumu@gmail.com
         admin_email = "karanitaitumu@gmail.com"
         admin_user, _created = User.objects.get_or_create(
             email=admin_email,
             defaults={
-                "username": "karanitaitumu",
                 "first_name": "Karani",
                 "last_name": "Taitumu",
                 "role": "Admin",
@@ -78,20 +79,19 @@ def init_django_app() -> None:
                 "is_onboarded": True,
             }
         )
-        admin_user.username = "karanitaitumu"
         admin_user.set_password("AdminDigiland2026!")
         admin_user.role = "Admin"
         admin_user.is_staff = True
         admin_user.is_superuser = True
         admin_user.is_onboarded = True
         admin_user.save()
+        EmailAddress.objects.update_or_create(user=admin_user, email=admin_email, defaults={"verified": True, "primary": True})
 
         # Provision Seller account for demo parcel upload
         seller_email = "seller_demo@example.com"
         seller_user, _created = User.objects.get_or_create(
             email=seller_email,
             defaults={
-                "username": "seller_demo",
                 "first_name": "Demo",
                 "last_name": "Seller",
                 "role": "Seller",
@@ -105,7 +105,29 @@ def init_django_app() -> None:
         seller_user.is_email_verified = True
         seller_user.is_onboarded = True
         seller_user.save()
+        EmailAddress.objects.update_or_create(user=seller_user, email=seller_email, defaults={"verified": True, "primary": True})
+
+        # Provision legalhusla Seller account
+        legal_email = "legalhusla@gmail.com"
+        legal_user, _created = User.objects.get_or_create(
+            email=legal_email,
+            defaults={
+                "first_name": "Legal",
+                "last_name": "Husla",
+                "role": "Seller",
+                "is_email_verified": True,
+                "is_identity_verified": True,
+                "is_onboarded": True,
+            }
+        )
+        legal_user.set_password("LegalHusla2026!")
+        legal_user.role = "Seller"
+        legal_user.is_email_verified = True
+        legal_user.is_onboarded = True
+        legal_user.save()
+        EmailAddress.objects.update_or_create(user=legal_user, email=legal_email, defaults={"verified": True, "primary": True})
 
     except Exception as exc:
         print(f"[deploy_bootstrap] DB init exception: {exc}")
+
 

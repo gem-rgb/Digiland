@@ -23,7 +23,18 @@ class LandParcelUploadForm(forms.ModelForm):
         asking_price = cleaned_data.get('asking_price')
         lowest_negotiable_price = cleaned_data.get('lowest_negotiable_price')
 
-        if asking_price is not None and lowest_negotiable_price is not None:
+        if asking_price is not None and asking_price <= 0:
+            self.add_error('asking_price', 'Asking price must be a positive amount.')
+
+        if lowest_negotiable_price is not None and lowest_negotiable_price <= 0:
+            self.add_error('lowest_negotiable_price', 'Lowest negotiable price must be a positive amount.')
+
+        if lowest_negotiable_price is not None and asking_price is None:
+            self.add_error(
+                'asking_price',
+                'An asking price is required if a lowest negotiable price is specified.'
+            )
+        elif asking_price is not None and lowest_negotiable_price is not None:
             if lowest_negotiable_price >= asking_price:
                 self.add_error(
                     'lowest_negotiable_price',
