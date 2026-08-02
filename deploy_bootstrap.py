@@ -58,11 +58,16 @@ def init_django_app() -> None:
             site.name = "Digiland"
             site.save()
 
+        from django.core.cache import cache
+        cache.delete("email:karanitaitumu@gmail.com")
+        cache.delete("email:karanitaitumu")
+
         # Provision Admin account for karanitaitumu@gmail.com
         admin_email = "karanitaitumu@gmail.com"
         admin_user, _created = User.objects.get_or_create(
             email=admin_email,
             defaults={
+                "username": "karanitaitumu",
                 "first_name": "Karani",
                 "last_name": "Taitumu",
                 "role": "Admin",
@@ -73,6 +78,7 @@ def init_django_app() -> None:
                 "is_onboarded": True,
             }
         )
+        admin_user.username = "karanitaitumu"
         admin_user.set_password("AdminDigiland2026!")
         admin_user.role = "Admin"
         admin_user.is_staff = True

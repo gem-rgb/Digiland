@@ -819,8 +819,8 @@ EMERGENCY_INCIDENT_RESPONDERS = [
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'APP': {
-            'client_id': _optional_env('GOOGLE_OAUTH_CLIENT_ID', 'GOOGLE_CLIENT_ID'),
-            'secret': _optional_env('GOOGLE_OAUTH_CLIENT_SECRET', 'GOOGLE_CLIENT_SECRET'),
+            'client_id': _optional_env('GOOGLE_OAUTH_CLIENT_ID', 'GOOGLE_CLIENT_ID') or '100000000000-placeholder.apps.googleusercontent.com',
+            'secret': _optional_env('GOOGLE_OAUTH_CLIENT_SECRET', 'GOOGLE_CLIENT_SECRET') or 'GOCSPX-placeholder-secret',
             'key': '',
         },
         'SCOPE': ['profile', 'email'],
@@ -828,16 +828,16 @@ SOCIALACCOUNT_PROVIDERS = {
     },
     'github': {
         'APP': {
-            'client_id': _optional_env('GITHUB_OAUTH_CLIENT_ID', 'GITHUB_CLIENT_ID'),
-            'secret': _optional_env('GITHUB_OAUTH_CLIENT_SECRET', 'GITHUB_CLIENT_SECRET'),
+            'client_id': _optional_env('GITHUB_OAUTH_CLIENT_ID', 'GITHUB_CLIENT_ID') or 'placeholder-github-client-id',
+            'secret': _optional_env('GITHUB_OAUTH_CLIENT_SECRET', 'GITHUB_CLIENT_SECRET') or 'placeholder-github-secret',
             'key': '',
         },
         'SCOPE': ['user:email'],
     },
     'microsoft': {
         'APP': {
-            'client_id': _optional_env('MICROSOFT_OAUTH_CLIENT_ID', 'MICROSOFT_CLIENT_ID'),
-            'secret': _optional_env('MICROSOFT_OAUTH_CLIENT_SECRET', 'MICROSOFT_CLIENT_SECRET'),
+            'client_id': _optional_env('MICROSOFT_OAUTH_CLIENT_ID', 'MICROSOFT_CLIENT_ID') or 'placeholder-microsoft-client-id',
+            'secret': _optional_env('MICROSOFT_OAUTH_CLIENT_SECRET', 'MICROSOFT_CLIENT_SECRET') or 'placeholder-microsoft-secret',
             'key': '',
         },
     },
