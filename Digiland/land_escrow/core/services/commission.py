@@ -139,9 +139,108 @@ def create_commission(buyer, land_parcel, *, is_joint_purchase=False, joint_grou
         return commission
 
 
+def check_agent_exclusivity_lock(agent):
+    """
+    Server-side Exclusivity Lock:
+    An agent cannot accept any new job if they hold an active, unfinalized parcel or commission assignment,
+    unless the assignment has passed its 30-day expiration policy without finalization.
+    """
+    if getattr(agent, 'role', None) == 'Admin':
+        return  # Admins exempt from lock
+
+    active_parcel_statuses = [
+        'AGENT_ASSIGNED',
+        'AWAITING_SELLER_ACCESS_GRANT',
+        'AGENT_VERIFYING',
+        'AGENT_APPROVED',
+        'BUYER_OFFER_RECEIVED',
+        'LAWYER_REVIEW',
+        'LAWYER_APPROVED',
+    ]
+    active_parcels = LandParcel.objects.filter(
+        assigned_agent=agent,
+        verification_status__in=active_parcel_statuses,
+    )
+    for p in active_parcels:
+        if p.assignment_expires_at and p.assignment_expires_at < timezone.now():
+            # Exclusivity lock auto-expires after 30 days of inactivity
+            p.verification_status = 'AGENT_RELEASED'
+            p.assigned_agent = None
+            p.save(update_fields=['verification_status', 'assigned_agent', 'updated_at'])
+            AuditLog.objects.create(
+                user=agent,
+                action=f'Exclusivity Lock expired (30-day limit) for parcel {p.parcel_number}',
+                metadata={'parcel_id': str(p.id)},
+            )
+
+    # Re-evaluate active parcels after expiration check
+    remaining_parcels = LandParcel.objects.filter(
+        assigned_agent=agent,
+        verification_status__in=active_parcel_statuses,
+    )
+    if remaining_parcels.exists():
+        first_parcel = remaining_parcels.first()
+        raise ValidationError(
+            f"Exclusivity Lock: You are currently assigned to parcel {first_parcel.parcel_number}. "
+            "You cannot accept a new job until your active assignment reaches finalization."
+        )
+
+    active_commission_statuses = [
+        'Accepted',
+        'Documents_Review',
+        'Lawyer_Verification',
+        'Site_Visit_Scheduled',
+        'Site_Visit_Complete',
+        'Closing',
+    ]
+    active_commissions = PurchaseCommission.objects.filter(
+        accepted_by=agent,
+        status__in=active_commission_statuses,
+    )
+    if active_commissions.exists():
+        first_comm = active_commissions.first()
+        raise ValidationError(
+            f"Exclusivity Lock: You currently hold an active commission job for parcel {first_comm.land_parcel.parcel_number}. "
+            "You must finalize your current job before accepting new assignments."
+        )
+
+
+def accept_parcel_verification_job(agent, parcel):
+    """Allow an agent to claim an unassigned parcel verification job (Stage 2 -> Stage 3)."""
+    if agent.role != 'Agent' and agent.role != 'Admin':
+        raise ValidationError('Only agents can accept parcel verification jobs.')
+
+    check_agent_exclusivity_lock(agent)
+
+    from datetime import timedelta
+
+    with db_transaction.atomic():
+        locked_parcel = LandParcel.objects.select_for_update().get(id=parcel.id)
+        if locked_parcel.verification_status not in {'AGENT_JOB_POSTED', 'AI_APPROVED', 'Pending'}:
+            raise ValidationError(f'Parcel {parcel.parcel_number} is not available for job assignment.')
+        if locked_parcel.assigned_agent_id and locked_parcel.assigned_agent_id != agent.id:
+            raise ValidationError('This parcel verification job has already been claimed by another agent.')
+
+        locked_parcel.assigned_agent = agent
+        locked_parcel.verification_status = 'AGENT_ASSIGNED'
+        locked_parcel.assignment_expires_at = timezone.now() + timedelta(days=30)
+        locked_parcel.last_agent_checkin_at = timezone.now()
+        locked_parcel.save(update_fields=['assigned_agent', 'verification_status', 'assignment_expires_at', 'last_agent_checkin_at', 'updated_at'])
+
+        AuditLog.objects.create(
+            user=agent,
+            action=f'Claimed verification job for parcel {parcel.parcel_number}',
+            metadata={'parcel_id': str(parcel.id), 'parcel_number': parcel.parcel_number, 'expires_at': locked_parcel.assignment_expires_at.isoformat()},
+        )
+        return locked_parcel
+
+
+
 def accept_commission(agent, commission):
     if agent.role != 'Agent' or not agent.is_active or not agent.is_identity_verified:
         raise ValidationError('Only verified agents can accept commissions.')
+
+    check_agent_exclusivity_lock(agent)
 
     county, constituency, source = resolve_agent_region(agent)
     matched_agents = find_nearby_agents(commission.target_county, commission.target_constituency)
@@ -158,6 +257,7 @@ def accept_commission(agent, commission):
         locked.accepted_by = agent
         locked.accepted_at = timezone.now()
         locked.status = 'Accepted'
+
         locked.updated_by = agent
         locked.save(update_fields=['accepted_by', 'accepted_at', 'status', 'updated_by', 'updated_at'])
 

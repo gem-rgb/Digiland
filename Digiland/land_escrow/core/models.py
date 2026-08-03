@@ -211,6 +211,26 @@ class LandParcel(models.Model):
         ('Agricultural', 'Agricultural'),
     ]
     VERIFICATION_STATUS_CHOICES = [
+        # Pipeline Stages (7-stage verification workflow)
+        ('DRAFT', 'Draft'),
+        ('DOCS_SUBMITTED', 'Documents Submitted'),
+        ('AI_VERIFYING', 'AI Verification In Progress'),
+        ('AI_REJECTED', 'AI Verification Failed'),
+        ('AI_APPROVED', 'AI Verification Passed'),
+        ('AGENT_JOB_POSTED', 'Agent Job Posted'),
+        ('AGENT_ASSIGNED', 'Agent Assigned'),
+        ('AWAITING_SELLER_ACCESS_GRANT', 'Awaiting Seller Access Grant'),
+        ('AGENT_VERIFYING', 'Agent Manual Verification In Progress'),
+        ('AGENT_REJECTED', 'Agent Rejected'),
+        ('ADMIN_ESCALATED', 'Admin Escalated Review'),
+        ('AGENT_APPROVED', 'Agent Approved (Unlocked for Buyers)'),
+        ('BUYER_OFFER_RECEIVED', 'Buyer Offer Received'),
+        ('LAWYER_REVIEW', 'Lawyer Review In Progress'),
+        ('LAWYER_APPROVED', 'Lawyer Approved'),
+        ('PURCHASE_FINALIZED', 'Purchase Finalized'),
+        ('AGENT_RELEASED', 'Agent Released'),
+
+        # Legacy backward-compatibility choices
         ('Awaiting_Documents', 'Awaiting Documents'),
         ('Pending', 'Pending'),
         ('Verified', 'Verified'),
@@ -227,9 +247,22 @@ class LandParcel(models.Model):
     ward = models.CharField(max_length=100)
     land_size = models.DecimalField(max_digits=10, decimal_places=4)
     registered_owner_id = models.CharField(max_length=100, help_text="ID number of registered owner")
-    verification_status = models.CharField(max_length=20, choices=VERIFICATION_STATUS_CHOICES, default='Pending')
+    verification_status = models.CharField(max_length=50, choices=VERIFICATION_STATUS_CHOICES, default='Pending')
+
     ardhisasa_last_synced = models.DateTimeField(null=True, blank=True)
     current_risk_score = models.FloatField(default=0.0)
+
+    # AI Verification & Document Metrics
+    ai_verification_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="AI document authenticity score (0-100)")
+    ai_discrepancy_flags = models.JSONField(default=list, blank=True, help_text="List of document discrepancy flags detected by AI")
+
+    # Agent Job Posting, Exclusivity & Check-in Expirations
+    job_posted_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when job was posted to regional agents")
+    job_expires_at = models.DateTimeField(null=True, blank=True, help_text="Expiry date for agent job board listing (default 7 days)")
+    assignment_expires_at = models.DateTimeField(null=True, blank=True, help_text="Expiry date for agent exclusivity lock (default 30 days)")
+    last_agent_checkin_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp of agent's last weekly check-in")
+    agent_checkin_notes = models.JSONField(default=list, blank=True, help_text="Log of weekly check-in notes submitted by assigned agent")
+
     image = models.ImageField(upload_to='land_images/', null=True, blank=True, help_text="Upload a photo of the land")
     listed_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='listed_parcels', help_text="The seller who listed this parcel")
     assigned_agent = models.ForeignKey(
@@ -250,6 +283,7 @@ class LandParcel(models.Model):
     dist_to_transport_hub = models.FloatField(default=3.0, help_text="Distance to closest transport hub in km")
 
     updated_at = models.DateTimeField(auto_now=True)
+
     deleted_at = models.DateTimeField(null=True, blank=True, help_text='Soft delete timestamp — null means active record')
     updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='%(class)s_updates', help_text='Last user who modified this record')
     @property
@@ -605,6 +639,37 @@ class Document(models.Model):
 
     def __str__(self):
         return f"{self.document_type} - {self.id}"
+
+
+class AuthenticDocumentReference(models.Model):
+    """Reference corpus of authentic sample documents for AI authenticity verification."""
+    DOCUMENT_TYPE_CHOICES = [
+        ('Title_Deed', 'Title Deed'),
+        ('ID_Card', 'National ID Card'),
+        ('Passport_Photo', 'Passport Photo'),
+        ('Spousal_Consent', 'Spousal Consent'),
+        ('Search_Certificate', 'Official Land Search Certificate'),
+        ('Land_Rates_Clearance', 'Land Rates Clearance'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    doc_type = models.CharField(max_length=50, choices=DOCUMENT_TYPE_CHOICES, db_index=True)
+    issuing_authority = models.CharField(max_length=150, default='Ministry of Lands')
+    version_label = models.CharField(max_length=50, default='v1.0')
+    layout_structure_hash = models.CharField(max_length=128, blank=True, null=True)
+    required_seal_features = models.JSONField(default=dict, blank=True, help_text='Expected stamp, seal, and header features')
+    sample_file = models.FileField(upload_to='authentic_references/', blank=True, null=True)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['doc_type', '-created_at']
+
+    def __str__(self):
+        return f"Authentic Reference: {self.doc_type} ({self.version_label})"
+
 
 class DocumentAccessGrant(models.Model):
     """Short-lived dual-signature authorization for restricted parcel documents."""
@@ -2087,82 +2152,3 @@ class PricePredictionLog(models.Model):
     
     def __str__(self):
         return f"Prediction {self.prediction_id[:8]}... {self.county} {self.land_use} KES {self.predicted_price_per_acre:,}/acre"
-
-
-class DocumentAccessGrant(models.Model):
-    """
-    Dual-signature cryptographic authorization gate:
-    Requires cryptographic authorization from BOTH the seller and the assigned lawyer/agent
-    before unredacted land documents and registry details are unlocked.
-    """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='access_grants')
-    commission = models.ForeignKey('PurchaseCommission', on_delete=models.SET_NULL, null=True, blank=True, related_name='access_grants')
-    accessor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='requested_access_grants', help_text="Lawyer or Agent requesting access")
-    seller = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_access_grants', help_text="Seller authorizing access")
-    
-    seller_auth_signature = models.TextField(blank=True, null=True, help_text="Cryptographic signature/hash from the seller authorizing access")
-    seller_signed_at = models.DateTimeField(blank=True, null=True)
-    
-    accessor_auth_signature = models.TextField(blank=True, null=True, help_text="Cryptographic signature/hash from lawyer or agent confirming request")
-    accessor_signed_at = models.DateTimeField(blank=True, null=True)
-    
-    access_granted = models.BooleanField(default=False)
-    granted_at = models.DateTimeField(blank=True, null=True)
-    expires_at = models.DateTimeField(blank=True, null=True)
-    created_at = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['parcel', 'access_granted'], name='idx_dag_parcel_grant'),
-        ]
-
-    def __str__(self):
-        status = "GRANTED" if (self.access_granted and self.is_valid) else "PENDING"
-        acc_email = self.accessor.email if self.accessor else "Unknown"
-        return f"AccessGrant for {self.parcel.parcel_number} to {acc_email} [{status}]"
-
-    @property
-    def is_valid(self):
-        from django.utils import timezone
-        if not self.access_granted:
-            return False
-        if self.expires_at and self.expires_at < timezone.now():
-            return False
-        return True
-
-
-class LawyerPostTransactionTask(models.Model):
-    """
-    Tracks mandatory post-contract-execution conveyancing tasks for Kenyan land purchases.
-    """
-    POST_SIGNING_TASKS = [
-        ('lodge_caution', 'Lodge Registry Caution/Caveat (within 48 hours)'),
-        ('lcb_consent', 'Obtain Land Control Board (LCB) Consent'),
-        ('rates_clearance', 'Obtain County Land Rates Clearance Certificate'),
-        ('rent_clearance', 'Obtain Ministry Land Rent Clearance Certificate'),
-        ('stamp_duty', 'Calculate & Pay Stamp Duty to KRA'),
-        ('submit_transfer', 'Submit Transfer Documents to Land Registry'),
-        ('title_handover', 'Final Title Deed Handover to Buyer'),
-    ]
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    transaction = models.ForeignKey(Transaction, on_delete=models.CASCADE, related_name='post_transaction_tasks')
-    lawyer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='conveyancing_tasks')
-    task_key = models.CharField(max_length=50, choices=POST_SIGNING_TASKS, default='lodge_caution')
-    task_name = models.CharField(max_length=200, default='')
-    is_completed = models.BooleanField(default=False)
-    completed_at = models.DateTimeField(blank=True, null=True)
-    notes = models.TextField(blank=True, null=True)
-    reference_number = models.CharField(max_length=100, blank=True, null=True, help_text="e.g. LCB Consent Ref, Stamp Duty Receipt No.")
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        unique_together = ('transaction', 'task_key')
-        ordering = ['created_at']
-
-    def __str__(self):
-        status = "Done" if self.is_completed else "Pending"
-        return f"{self.task_name} for Tx {self.transaction.id.hex[:8]} [{status}]"

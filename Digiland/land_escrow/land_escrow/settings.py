@@ -642,6 +642,12 @@ API_RETRY_ATTEMPTS = config('API_RETRY_ATTEMPTS', default=3, cast=int)
 ENABLE_API_LOGGING = config('ENABLE_API_LOGGING', default=True, cast=bool)
 LOG_LEVEL = config('LOG_LEVEL', default='INFO')
 
+# AI Feature Flags (Scoped controls)
+ENABLE_AI_AD_CAMPAIGNS = config('ENABLE_AI_AD_CAMPAIGNS', default=True, cast=bool)
+ENABLE_AI_DOC_VERIFICATION = config('ENABLE_AI_DOC_VERIFICATION', default=True, cast=bool)
+ENABLE_AI_PRICE_PREDICTION = config('ENABLE_AI_PRICE_PREDICTION', default=True, cast=bool)
+
+
 # Allauth Configuration
 SITE_ID = 1
 AUTHENTICATION_BACKENDS = [
@@ -879,3 +885,9 @@ OBSERVABILITY_ERROR_RATE_WINDOW = config(
 SENTRY_DSN = config('SENTRY_DSN', default='')
 SENTRY_TRACES_SAMPLE_RATE = config('SENTRY_TRACES_SAMPLE_RATE', default=0.1, cast=float)
 SENTRY_ENVIRONMENT = DJANGO_ENV
+
+# ── AI Feature Reactivation & Scoping Flags ──────────────────────────────────
+ENABLE_AI_AD_CAMPAIGNS = config('ENABLE_AI_AD_CAMPAIGNS', default=True, cast=bool)
+ENABLE_AI_DOC_VERIFICATION = config('ENABLE_AI_DOC_VERIFICATION', default=True, cast=bool)
+ENABLE_AI_PRICE_PREDICTION = config('ENABLE_AI_PRICE_PREDICTION', default=False, cast=bool)  # Explicitly disabled per user instruction
+

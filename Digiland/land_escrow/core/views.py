@@ -164,11 +164,13 @@ class LandParcelViewSet(viewsets.ModelViewSet):
         if user.role == 'Admin':
             return LandParcel.objects.all()
         # For list/retrieve, show verified parcels + user's own
+        PUBLIC_STATUSES = ['AGENT_APPROVED', 'Verified', 'BUYER_OFFER_RECEIVED', 'LAWYER_REVIEW', 'LAWYER_APPROVED', 'PURCHASE_FINALIZED', 'Completed']
         return LandParcel.objects.filter(
-            models.Q(verification_status='Verified') |
+            models.Q(verification_status__in=PUBLIC_STATUSES) |
             models.Q(listed_by=user) |
             models.Q(assigned_agent=user)
         ).distinct()
+
 
     def perform_create(self, serializer):
         """Set the listed_by field to the current user."""

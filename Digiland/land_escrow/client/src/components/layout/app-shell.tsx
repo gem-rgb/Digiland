@@ -96,6 +96,15 @@ export function AppShell({ title, subtitle, user, nav, children, actions, logout
                 <div className="text-[11px] font-medium text-slate-500">{user?.buyer_account_type ? `${user.buyer_account_type} buyer` : 'Authenticated session'}</div>
               </div>
             </div>
+            {logoutUrl ? (
+              <form method="post" action={logoutUrl}>
+                <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken || ''} />
+                <Button variant="outline" size="sm" className="rounded-full h-10 px-4 text-xs font-bold border-red-200/80 text-red-700 hover:bg-red-50 hover:border-red-300" type="submit">
+                  <LogOut className="h-3.5 w-3.5 mr-1.5" />
+                  Sign out
+                </Button>
+              </form>
+            ) : null}
           </div>
         </div>
       </header>
@@ -153,10 +162,19 @@ export function AppShell({ title, subtitle, user, nav, children, actions, logout
             <Button variant="outline" size="icon" className="rounded-full">
               <Menu className="h-4 w-4" />
             </Button>
-            <div>
+            <div className="flex-1">
               <div className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">{title}</div>
               {subtitle ? <div className="text-xs text-muted-foreground">{subtitle}</div> : null}
             </div>
+            {logoutUrl ? (
+              <form method="post" action={logoutUrl}>
+                <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken || ''} />
+                <Button variant="outline" size="sm" className="rounded-full h-9 px-3 text-xs font-bold border-red-200/80 text-red-700 hover:bg-red-50" type="submit">
+                  <LogOut className="h-3.5 w-3.5 mr-1" />
+                  Sign out
+                </Button>
+              </form>
+            ) : null}
           </div>
           {children}
         </main>

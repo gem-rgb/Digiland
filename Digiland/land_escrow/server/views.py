@@ -208,7 +208,9 @@ def can_view_commission(user, commission):
 def home(request):
     from django.db.models import Q
     active_tx_statuses = ['Initiated', 'Deposit_Paid', 'Under_Verification', 'Completed']
-    parcels = LandParcel.objects.filter(verification_status='Verified').exclude(transactions__status__in=active_tx_statuses).order_by('-ardhisasa_last_synced')[:5]
+    public_buyer_statuses = ['AGENT_APPROVED', 'Verified', 'BUYER_OFFER_RECEIVED', 'LAWYER_REVIEW', 'LAWYER_APPROVED', 'PURCHASE_FINALIZED', 'Completed']
+    parcels = LandParcel.objects.filter(verification_status__in=public_buyer_statuses).exclude(transactions__status__in=active_tx_statuses).order_by('-ardhisasa_last_synced')[:5]
+
     
     transactions = None
     if request.user.is_authenticated:
@@ -1360,17 +1362,65 @@ def task_management(request):
 @login_required
 def request_document_access(request, parcel_number):
     parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
-    if request.user.id != parcel.listed_by_id:
+    if request.user.id != parcel.listed_by_id and request.user.role != 'Admin':
         return redirect('frontend:parcel_detail', parcel_number=parcel_number)
     if request.method == 'POST':
         try:
-            token = _verify_or_set_access_pin(request.user, request.POST.get('pin', '').strip(), parcel)
+            pin = request.POST.get('pin', '').strip()
+            channel = request.POST.get('channel', 'inhouse').strip().lower()
+            token = _verify_or_set_access_pin(request.user, pin, parcel)
+
             commission = parcel.commissions.exclude(accepted_by__isnull=True).order_by('-updated_at').first()
-            accessor = (commission.assigned_lawyer or commission.accepted_by) if commission else None
+            accessor = (commission.assigned_lawyer or commission.accepted_by or parcel.assigned_agent) if commission else parcel.assigned_agent
+
             if not accessor:
-                raise ValidationError('No assigned lawyer or agent is available for this parcel yet.')
-            DocumentAccessGrant.objects.update_or_create(parcel=parcel, accessor=accessor, access_granted=False, defaults={'commission': commission, 'seller_auth_token': token, 'seller_signed_at': timezone.now()})
-            django_messages.success(request, 'Seller authorization recorded. The assigned reviewer must now enter their PIN.')
+                raise ValidationError('No assigned reviewer (agent or lawyer) is available for this parcel yet.')
+
+            grant, _ = DocumentAccessGrant.objects.update_or_create(
+                parcel=parcel,
+                accessor=accessor,
+                access_granted=False,
+                defaults={'commission': commission, 'seller_auth_token': token, 'seller_signed_at': timezone.now()}
+            )
+
+            # Advance parcel pipeline state to AGENT_VERIFYING
+            if parcel.verification_status in {'AGENT_ASSIGNED', 'AWAITING_SELLER_ACCESS_GRANT', 'AI_APPROVED'}:
+                parcel.verification_status = 'AGENT_VERIFYING'
+                parcel.save(update_fields=['verification_status', 'updated_at'])
+
+            # Send in-house secure message with access PIN
+            content = f"SECURITY NOTICE: Seller {request.user.email} has granted document access authorization for parcel {parcel.parcel_number}. Use PIN code '{pin}' to complete verification."
+            inhouse_msg_success = True
+            try:
+                Message.objects.create(
+                    sender=request.user,
+                    receiver=accessor,
+                    content=content,
+                )
+            except Exception as exc:
+                logger.warning("Failed to deliver in-house security message: %s", exc)
+                inhouse_msg_success = False
+
+            # WhatsApp / SMS Fallback if requested or if in-house messaging failed
+            if channel == 'whatsapp' or not inhouse_msg_success:
+                try:
+                    from external_services.adapters.sms import AfricasTalkingAdapter
+                    sms_adapter = AfricasTalkingAdapter()
+                    phone = getattr(accessor, 'phone_number', '') or '+254700000000'
+                    sms_adapter.send_sms(
+                        recipients=[phone],
+                        message=f"Digiland Security Code for Parcel {parcel.parcel_number}: {pin}. Enter code to confirm document access."
+                    )
+                    django_messages.info(request, f"Security code fallback dispatched to agent phone/WhatsApp ({phone}).")
+                except Exception as sms_exc:
+                    logger.warning("Failed to send WhatsApp/SMS security code fallback: %s", sms_exc)
+
+            AuditLog.objects.create(
+                user=request.user,
+                action=f"Granted document access PIN for parcel {parcel.parcel_number}",
+                metadata={'parcel_id': str(parcel.id), 'accessor_id': str(accessor.id), 'channel': channel},
+            )
+            django_messages.success(request, 'Seller authorization PIN recorded and dispatched securely to assigned reviewer.')
         except ValidationError as exc:
             django_messages.error(request, str(exc))
     return redirect('frontend:parcel_detail', parcel_number=parcel_number)
@@ -1431,55 +1481,112 @@ def agent_verify_parcel(request, parcel_number):
                 if not grant or not grant.is_valid():
                     django_messages.error(request, 'Dual-signature document access is required before verification.')
                     return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
-            parcel.verification_status = 'Verified'
-            parcel.save()
-            return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
-        elif action == 'reject':
-            from core.models import Message as PlatformMessage
+            parcel.verification_status = 'AGENT_APPROVED'
+            parcel.save(update_fields=['verification_status', 'updated_at'])
 
+            AuditLog.objects.create(
+                user=request.user,
+                action=f"Agent {request.user.email} approved parcel {parcel.parcel_number} (Stage 4 passed)",
+                metadata={'parcel_id': str(parcel.id), 'status': 'AGENT_APPROVED'},
+            )
+            django_messages.success(request, f'Parcel {parcel.parcel_number} successfully verified by agent! Listing is now unlocked for buyers on the marketplace.')
+            return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
+
+        elif action == 'reject':
             seller = parcel.listed_by
             parcel_label = parcel.parcel_number
 
-            # Send automated fraud notification to the seller
             if seller:
-                fraud_message = (
-                    f"DIGILAND PLATFORM NOTICE — Parcel {parcel_label} Rejected\n\n"
+                rejection_message = (
+                    f"DIGILAND PLATFORM NOTICE — Parcel {parcel_label} Escalated for Admin Review\n\n"
                     f"Dear {seller.email},\n\n"
-                    f"Your listing for parcel {parcel_label} has been flagged and rejected "
-                    f"by a verified Digiland agent after review.\n\n"
-                    f"Reason: The parcel failed verification checks and has been classified "
-                    f"as potentially fraudulent under the Land Registration Act (Cap. 300) "
-                    f"and the platform's anti-fraud policy.\n\n"
-                    f"Action taken: The listing has been permanently marked as fraudulent and hidden from the marketplace.\n\n"
-                    f"If you believe this is an error, please contact Digiland support "
-                    f"with your original title documents for re-evaluation.\n\n"
+                    f"Your listing for parcel {parcel_label} was reviewed by assigned agent {request.user.email} "
+                    f"and failed Stage 4 manual verification.\n\n"
+                    f"Status: ADMIN_ESCALATED. This parcel has been escalated directly to Digiland Platform Administrators for secondary review.\n\n"
                     f"— Digiland Escrow Platform"
                 )
-                PlatformMessage.objects.create(
+                Message.objects.create(
                     sender=request.user,
                     receiver=seller,
-                    content=fraud_message,
+                    content=rejection_message,
                 )
 
-            # Audit log
+            parcel.verification_status = 'ADMIN_ESCALATED'
+            parcel.save(update_fields=['verification_status', 'updated_at'])
+
             AuditLog.objects.create(
                 user=request.user,
-                action=f"Parcel {parcel_label} flagged as fraudulent",
-                metadata={
-                    'parcel_number': parcel_label,
-                    'seller_email': seller.email if seller else 'unknown',
-                    'agent_email': request.user.email,
-                }
+                action=f"Agent {request.user.email} rejected parcel {parcel_label} (Escalated to Admin)",
+                metadata={'parcel_id': str(parcel.id), 'status': 'ADMIN_ESCALATED'},
             )
-
-            # Flag the parcel as fraudulent
-            parcel.verification_status = 'Fraudulent'
-            parcel.save()
-
-            from django.contrib import messages as django_messages
-            django_messages.success(request, f'Parcel {parcel_label} has been flagged as fraudulent and the seller has been notified.')
+            django_messages.warning(request, f'Parcel {parcel_label} verification rejected and escalated to Admin for review.')
             return redirect('frontend:agent_dashboard')
+
     return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
+
+
+@login_required
+@user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
+def agent_submit_checkin(request, parcel_number):
+    """Allows an assigned agent to log a weekly check-in progress update with Admin."""
+    parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
+    if request.user != parcel.assigned_agent and request.user.role != 'Admin':
+        django_messages.error(request, 'Only the assigned agent can submit progress check-ins.')
+        return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+
+    if request.method == 'POST':
+        note_text = request.POST.get('checkin_note', '').strip()
+        if not note_text:
+            django_messages.error(request, 'Please provide progress details for your check-in.')
+            return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+
+        notes_log = parcel.agent_checkin_notes or []
+        notes_log.append({
+            'agent_email': request.user.email,
+            'timestamp': timezone.now().isoformat(),
+            'note': note_text,
+        })
+
+        parcel.agent_checkin_notes = notes_log
+        parcel.last_agent_checkin_at = timezone.now()
+        parcel.save(update_fields=['agent_checkin_notes', 'last_agent_checkin_at', 'updated_at'])
+
+        AuditLog.objects.create(
+            user=request.user,
+            action=f"Agent weekly check-in logged for parcel {parcel.parcel_number}",
+            metadata={'parcel_id': str(parcel.id), 'note': note_text},
+        )
+        django_messages.success(request, 'Weekly agent progress check-in recorded successfully.')
+
+    return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+
+
+@login_required
+def admin_extend_job_posting(request, parcel_number):
+    """Admin-only: extend the job board posting duration for a parcel."""
+    if request.user.role != 'Admin':
+        django_messages.error(request, 'Only administrators can extend job posting time.')
+        return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+
+    parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
+    if request.method == 'POST':
+        extra_days = int(request.POST.get('extra_days', 7))
+        base_time = parcel.job_expires_at if (parcel.job_expires_at and parcel.job_expires_at > timezone.now()) else timezone.now()
+        parcel.job_expires_at = base_time + timedelta(days=extra_days)
+        if parcel.verification_status not in {'AGENT_JOB_POSTED', 'AI_APPROVED'}:
+            parcel.verification_status = 'AGENT_JOB_POSTED'
+
+        parcel.save(update_fields=['job_expires_at', 'verification_status', 'updated_at'])
+
+        AuditLog.objects.create(
+            user=request.user,
+            action=f"Admin extended job posting for parcel {parcel.parcel_number} by {extra_days} days",
+            metadata={'parcel_id': str(parcel.id), 'new_expiry': parcel.job_expires_at.isoformat()},
+        )
+        django_messages.success(request, f'Job posting for parcel {parcel.parcel_number} extended by {extra_days} days.')
+
+    return redirect('frontend:parcel_detail', parcel_number=parcel_number)
+
 
 @login_required
 def approve_agent(request, user_id):
@@ -2535,16 +2642,16 @@ def initialize_lawyer_post_transaction_tasks(transaction, lawyer=None):
     Initializes the mandatory 7 Kenyan post-signing conveyancing tasks for a transaction.
     """
     lawyer_obj = lawyer or transaction.agent or transaction.seller
-    for key, name in LawyerPostTransactionTask.POST_SIGNING_TASKS:
+    for key, name in LawyerPostTransactionTask.TASK_CHOICES:
         LawyerPostTransactionTask.objects.get_or_create(
             transaction=transaction,
             task_key=key,
             defaults={
-                'task_name': name,
                 'lawyer': lawyer_obj if getattr(lawyer_obj, 'role', None) == 'Lawyer' else None,
-                'is_completed': False
+                'completed': False
             }
         )
+
 
 
 @login_required
@@ -2562,34 +2669,34 @@ def lawyer_post_transaction_tasks(request, transaction_id):
 
     if request.method == 'POST' and request.user.role in {'Lawyer', 'Admin'}:
         task_key = request.POST.get('task_key')
-        is_completed = request.POST.get('is_completed') == 'true' or request.POST.get('action') == 'complete'
-        ref_no = (request.POST.get('reference_number') or '').strip()
+        is_completed = request.POST.get('completed') == 'true' or request.POST.get('action') == 'complete'
+        evidence = (request.POST.get('evidence_url') or '').strip()
         notes = (request.POST.get('notes') or '').strip()
 
         task = LawyerPostTransactionTask.objects.filter(transaction=transaction, task_key=task_key).first()
         if task:
-            task.is_completed = is_completed
+            task.completed = is_completed
             task.completed_at = timezone.now() if is_completed else None
-            if ref_no:
-                task.reference_number = ref_no
+            if evidence:
+                task.evidence_url = evidence
             if notes:
                 task.notes = notes
             if request.user.role == 'Lawyer':
                 task.lawyer = request.user
             task.save()
-            django_messages.success(request, f'Conveyancing task "{task.task_name}" updated.')
+            django_messages.success(request, f'Conveyancing task "{task.get_task_key_display()}" updated.')
         return redirect('frontend:lawyer_post_transaction_tasks', transaction_id=transaction.id)
 
-    tasks_qs = LawyerPostTransactionTask.objects.filter(transaction=transaction).order_by('created_at')
+    tasks_qs = LawyerPostTransactionTask.objects.filter(transaction=transaction).order_by('task_key')
     task_list = [
         {
             'id': str(t.id),
             'task_key': t.task_key,
-            'task_name': t.task_name,
-            'is_completed': t.is_completed,
+            'task_name': t.get_task_key_display(),
+            'is_completed': t.completed,
             'completed_at': t.completed_at.strftime('%b %d, %Y %H:%M') if t.completed_at else None,
             'notes': t.notes or '',
-            'reference_number': t.reference_number or '',
+            'evidence_url': t.evidence_url or '',
             'lawyer_email': t.lawyer.email if t.lawyer else 'Pending Assignment',
         }
         for t in tasks_qs
@@ -2603,7 +2710,7 @@ def lawyer_post_transaction_tasks(request, transaction_id):
         transaction_id=str(transaction.id),
         parcel_number=transaction.land_parcel.parcel_number,
         tasks=task_list,
-        completed_count=sum(1 for t in task_list if t['is_completed']),
+        completed_count=sum(1 for t in task_list if t.get('is_completed')),
         total_count=len(task_list),
         can_edit=bool(request.user.role in {'Lawyer', 'Admin'}),
         actions=[
@@ -4218,10 +4325,22 @@ def recommendations(request):
 @login_required
 def price_prediction(request):
     """Interactive land price prediction tool."""
+    from django.conf import settings
+    if not getattr(settings, 'ENABLE_AI_PRICE_PREDICTION', True):
+        django_messages.warning(request, "The AI Price Estimation feature has been disabled platform-wide by configuration.")
+        return render_react_shell(
+            request,
+            'info',
+            'Land Price Estimator (Disabled)',
+            'The AI Price Estimation feature is currently disabled by administrative policy.',
+            info_message="The AI Price Estimation module is currently disabled. Other AI features (AI Ad Campaigns and AI Document Verification) remain active.",
+        )
+
     from core.services.price_prediction import (
         predict_price, KENYA_COUNTIES, LAND_USE_TYPES,
         get_model_info
     )
+
 
     form = PricePredictionForm(
         request.POST or None,
