@@ -302,14 +302,30 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': config('CLOUDINARY_API_SECRET', default='')
 }
 
-if config('CLOUDINARY_CLOUD_NAME', default=''):
-    # Use Raw Storage to support PDFs and Docx uploaded for Land Titles
+# ── File Storage Configuration (Amazon S3 / Cloudinary / Local FileSystem) ────
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
+AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='')
+AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='us-east-1')
+AWS_S3_ENDPOINT_URL = config('AWS_S3_ENDPOINT_URL', default='')
+AWS_S3_CUSTOM_DOMAIN = config('AWS_S3_CUSTOM_DOMAIN', default='')
+AWS_QUERYSTRING_AUTH = config('AWS_QUERYSTRING_AUTH', default=False, cast=bool)
+AWS_S3_FILE_OVERWRITE = config('AWS_S3_FILE_OVERWRITE', default=False, cast=bool)
+
+if AWS_STORAGE_BUCKET_NAME and AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
+    DEFAULT_STORAGE_BACKEND = 'storages.backends.s3boto3.S3Boto3Storage'
+    if AWS_S3_CUSTOM_DOMAIN:
+        MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
+    else:
+        MEDIA_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/'
+elif config('CLOUDINARY_CLOUD_NAME', default=''):
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.RawMediaCloudinaryStorage'
     DEFAULT_STORAGE_BACKEND = 'cloudinary_storage.storage.RawMediaCloudinaryStorage'
 else:
-    # Fallback to local
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
+    import os
+    os.makedirs(MEDIA_ROOT, exist_ok=True)
     DEFAULT_STORAGE_BACKEND = 'django.core.files.storage.FileSystemStorage'
 
 STORAGES = {
