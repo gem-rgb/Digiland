@@ -55,16 +55,18 @@ def _is_admin_path(path: str) -> bool:
 
 
 def _client_ip(request) -> str:
-    """Extract the client IP from the request, respecting trusted proxies.
+    """Extract the client IP from the request, respecting Cloudflare & trusted proxies.
 
-    Uses ``X-Forwarded-For`` when the request arrives through a trusted
-    reverse proxy (configured via ``ADMIN_TRUSTED_PROXY_COUNT``).
+    Prioritizes ``CF-Connecting-IP`` if behind Cloudflare, then ``X-Forwarded-For``,
+    falling back to ``REMOTE_ADDR``.
     """
+    cf_ip = request.META.get("HTTP_CF_CONNECTING_IP")
+    if cf_ip:
+        return cf_ip.strip()
+
     xff = request.META.get("HTTP_X_FORWARDED_FOR")
     if xff:
-        # Use the rightmost untrusted IP, or the first IP if no trusted
-        # proxy count is configured.  For simplicity, we take the first
-        # IP in the chain (leftmost = original client behind one proxy).
+        # Use leftmost IP in X-Forwarded-For chain (client IP)
         return xff.split(",")[0].strip()
     return request.META.get("REMOTE_ADDR", "0.0.0.0")
 

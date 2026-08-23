@@ -30,13 +30,26 @@ logger = logging.getLogger(__name__)
 
 
 def database_config_from_url(database_url, conn_max_age=60, ssl_require=False):
-    """Resolve DATABASE_URL with or without dj-database-url installed."""
+    """Resolve DATABASE_URL with or without dj-database-url installed.
+
+    Includes automatic detection of serverless connection poolers (Neon, Supabase)
+    and disables server-side cursors in transaction pooling mode.
+    """
+    disable_cursors = config(
+        "DB_DISABLE_SERVER_SIDE_CURSORS",
+        default="pooler." in database_url,
+        cast=bool,
+    )
+
     if dj_database_url is not None:
-        return dj_database_url.config(
+        db_conf = dj_database_url.config(
             default=database_url,
             conn_max_age=conn_max_age,
             ssl_require=ssl_require,
         )
+        if disable_cursors:
+            db_conf["DISABLE_SERVER_SIDE_CURSORS"] = True
+        return db_conf
 
     parsed = urlparse(database_url)
     scheme = (parsed.scheme or "").lower()
@@ -64,8 +77,10 @@ def database_config_from_url(database_url, conn_max_age=60, ssl_require=False):
             "PORT": str(parsed.port or 5432),
             "CONN_MAX_AGE": conn_max_age,
         }
-        if ssl_require:
+        if ssl_require or "sslmode=require" in database_url:
             config_dict["OPTIONS"] = {"sslmode": "require"}
+        if disable_cursors:
+            config_dict["DISABLE_SERVER_SIDE_CURSORS"] = True
         return config_dict
 
     return {
@@ -115,6 +130,11 @@ CSRF_TRUSTED_ORIGINS = [
     ).split(',')
     if o.strip()
 ]
+
+# ── Cloudflare / Reverse Proxy Configuration ──────────────────────────────────
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = config('USE_X_FORWARDED_HOST', default=True, cast=bool)
+USE_X_FORWARDED_PORT = config('USE_X_FORWARDED_PORT', default=True, cast=bool)
 
 
 # Application definition

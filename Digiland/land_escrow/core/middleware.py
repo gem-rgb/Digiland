@@ -292,14 +292,28 @@ class RateLimitMiddleware:
 
         return self.get_response(request)
 
+def get_client_ip(request) -> str:
+    """Extract client IP address, prioritizing Cloudflare's CF-Connecting-IP header.
+
+    Falls back to X-Forwarded-For (client IP) and REMOTE_ADDR.
+    """
+    cf_ip = request.META.get("HTTP_CF_CONNECTING_IP")
+    if cf_ip:
+        return cf_ip.strip()
+
+    xff = request.META.get("HTTP_X_FORWARDED_FOR")
+    if xff:
+        # First IP in X-Forwarded-For is the originating client IP
+        return xff.split(",")[0].strip()
+
+    return request.META.get("REMOTE_ADDR", "0.0.0.0")
+
+
     # ── helpers ────────────────────────────────────────────────────────────
 
     @staticmethod
     def _client_ip(request):
-        xff = request.META.get("HTTP_X_FORWARDED_FOR")
-        if xff:
-            return xff.split(",")[-1].strip()
-        return request.META.get("REMOTE_ADDR", "0.0.0.0")
+        return get_client_ip(request)
 
     @staticmethod
     def _cache_key(request):

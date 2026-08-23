@@ -38,7 +38,19 @@ def bootstrap() -> Path:
     return PROJECT_DIR
 
 
+_BOOTSTRAP_DONE = False
+_MARKER_FILE = Path("/tmp/.digiland_bootstrapped") if os.environ.get("VERCEL") == "1" else None
+
+
 def init_django_app() -> None:
+    global _BOOTSTRAP_DONE
+    if _BOOTSTRAP_DONE:
+        return
+
+    if _MARKER_FILE and _MARKER_FILE.exists():
+        _BOOTSTRAP_DONE = True
+        return
+
     try:
         import django
         from django.conf import settings
@@ -49,24 +61,22 @@ def init_django_app() -> None:
         from django.core.management import call_command
         from django.contrib.sites.models import Site
         from core.models import User
+        from allauth.account.models import EmailAddress
 
-        call_command("migrate", interactive=False, verbosity=0)
+        # Only run migration on ephemeral SQLite on cold start if db doesn't exist
+        db_url = os.environ.get("DATABASE_URL", "")
+        if db_url.startswith("sqlite") or not db_url:
+            call_command("migrate", interactive=False, verbosity=0)
 
         site, _ = Site.objects.get_or_create(id=1, defaults={"domain": "digiland-six.vercel.app", "name": "Digiland"})
         if site.domain != "digiland-six.vercel.app":
             site.domain = "digiland-six.vercel.app"
             site.name = "Digiland"
-            site.save()
+            site.save(update_fields=["domain", "name"])
 
-        from django.core.cache import cache
-        cache.delete("email:karanitaitumu@gmail.com")
-        cache.delete("email:karanitaitumu")
-
-        from allauth.account.models import EmailAddress
-
-        # Provision Admin account for karanitaitumu@gmail.com
+        # Provision Admin account if not present
         admin_email = "karanitaitumu@gmail.com"
-        admin_user, _created = User.objects.get_or_create(
+        admin_user, admin_created = User.objects.get_or_create(
             email=admin_email,
             defaults={
                 "first_name": "Karani",
@@ -79,17 +89,14 @@ def init_django_app() -> None:
                 "is_onboarded": True,
             }
         )
-        admin_user.set_password("AdminDigiland2026!")
-        admin_user.role = "Admin"
-        admin_user.is_staff = True
-        admin_user.is_superuser = True
-        admin_user.is_onboarded = True
-        admin_user.save()
-        EmailAddress.objects.update_or_create(user=admin_user, email=admin_email, defaults={"verified": True, "primary": True})
+        if admin_created:
+            admin_user.set_password("AdminDigiland2026!")
+            admin_user.save()
+            EmailAddress.objects.update_or_create(user=admin_user, email=admin_email, defaults={"verified": True, "primary": True})
 
-        # Provision Seller account for demo parcel upload
+        # Provision Seller account if not present
         seller_email = "seller_demo@example.com"
-        seller_user, _created = User.objects.get_or_create(
+        seller_user, seller_created = User.objects.get_or_create(
             email=seller_email,
             defaults={
                 "first_name": "Demo",
@@ -100,16 +107,14 @@ def init_django_app() -> None:
                 "is_onboarded": True,
             }
         )
-        seller_user.set_password("SellerDigiland2026!")
-        seller_user.role = "Seller"
-        seller_user.is_email_verified = True
-        seller_user.is_onboarded = True
-        seller_user.save()
-        EmailAddress.objects.update_or_create(user=seller_user, email=seller_email, defaults={"verified": True, "primary": True})
+        if seller_created:
+            seller_user.set_password("SellerDigiland2026!")
+            seller_user.save()
+            EmailAddress.objects.update_or_create(user=seller_user, email=seller_email, defaults={"verified": True, "primary": True})
 
-        # Provision legalhusla Seller account
+        # Provision legalhusla Seller account if not present
         legal_email = "legalhusla@gmail.com"
-        legal_user, _created = User.objects.get_or_create(
+        legal_user, legal_created = User.objects.get_or_create(
             email=legal_email,
             defaults={
                 "first_name": "Legal",
@@ -120,12 +125,17 @@ def init_django_app() -> None:
                 "is_onboarded": True,
             }
         )
-        legal_user.set_password("LegalHusla2026!")
-        legal_user.role = "Seller"
-        legal_user.is_email_verified = True
-        legal_user.is_onboarded = True
-        legal_user.save()
-        EmailAddress.objects.update_or_create(user=legal_user, email=legal_email, defaults={"verified": True, "primary": True})
+        if legal_created:
+            legal_user.set_password("LegalHusla2026!")
+            legal_user.save()
+            EmailAddress.objects.update_or_create(user=legal_user, email=legal_email, defaults={"verified": True, "primary": True})
+
+        _BOOTSTRAP_DONE = True
+        if _MARKER_FILE:
+            try:
+                _MARKER_FILE.write_text("1")
+            except Exception:
+                pass
 
     except Exception as exc:
         print(f"[deploy_bootstrap] DB init exception: {exc}")

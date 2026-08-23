@@ -1,0 +1,26 @@
+# =============================================================================
+# Render Blueprint Configuration for Digiland (Auto-Scaling / Pay-per-use)
+# =============================================================================
+services:
+  - type: web
+    name: digiland-web
+    runtime: docker
+    dockerfilePath: land_escrow/config/Dockerfile
+    dockerContext: land_escrow
+    plan: free # or starter
+    region: frankfurt # Low latency to East Africa
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: land_escrow.settings_production
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: USE_REDIS_CACHE
+        value: "True"
+      - key: DB_DISABLE_SERVER_SIDE_CURSORS
+        value: "True"

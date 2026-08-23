@@ -74,36 +74,54 @@
 .hero-card-title { font-size: 1.85rem !important; }
 
 /* CTA Buttons — gradient with glow */
+.lp-hero__actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 1.25rem !important;
+  margin: 2.25rem 0 1.75rem !important;
+  align-items: center !important;
+}
 .lp-btn-primary {
   background: linear-gradient(135deg, #10b981, #059669) !important;
   color: #fff !important;
   border: none !important;
-  font-weight: 700 !important;
-  font-size: 1rem !important;
-  padding: 0.9rem 2rem !important;
-  border-radius: 12px !important;
-  box-shadow: 0 4px 20px rgba(16,185,129,.4), 0 1px 3px rgba(0,0,0,.2) !important;
+  font-weight: 800 !important;
+  font-size: 1.125rem !important;
+  padding: 1.15rem 2.75rem !important;
+  min-width: 250px !important;
+  justify-content: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  border-radius: 999px !important;
+  box-shadow: 0 6px 28px rgba(16,185,129,.45), 0 2px 6px rgba(0,0,0,.2) !important;
   text-shadow: 0 1px 2px rgba(0,0,0,.15) !important;
   letter-spacing: -0.01em !important;
+  transition: all .2s ease-in-out !important;
 }
 .lp-btn-primary:hover {
   background: linear-gradient(135deg, #059669, #047857) !important;
-  box-shadow: 0 8px 32px rgba(16,185,129,.5), 0 2px 6px rgba(0,0,0,.3) !important;
-  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 36px rgba(16,185,129,.6), 0 3px 8px rgba(0,0,0,.3) !important;
+  transform: translateY(-2px) scale(1.02) !important;
   color: #fff !important;
 }
 .lp-btn-ghost {
   background: rgba(255,255,255,.07) !important;
   border: 1px solid rgba(255,255,255,.2) !important;
   color: #f5f0eb !important;
-  font-weight: 600 !important;
-  font-size: 1rem !important;
-  padding: 0.9rem 2rem !important;
-  border-radius: 12px !important;
+  font-weight: 700 !important;
+  font-size: 1.05rem !important;
+  padding: 1.15rem 2.25rem !important;
+  min-width: 170px !important;
+  justify-content: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  border-radius: 999px !important;
+  transition: all .2s ease-in-out !important;
 }
 .lp-btn-ghost:hover {
   background: rgba(255,255,255,.12) !important;
   border-color: rgba(255,255,255,.35) !important;
+  transform: translateY(-2px) !important;
   color: #fff !important;
 }
 

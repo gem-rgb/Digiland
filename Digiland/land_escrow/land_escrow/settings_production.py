@@ -38,11 +38,16 @@ CSRF_TRUSTED_ORIGINS = [
     if o.strip()
 ]
 
-# ── SSL / TLS ─────────────────────────────────────────────────────────────────
+# ── SSL / TLS / Cloudflare Proxy ─────────────────────────────────────────────
 # Canonical browser-visible backend origin used by OAuth callbacks and auth links.
 PUBLIC_BACKEND_URL = config("PUBLIC_BACKEND_URL", default="").strip()
 
-SECURE_SSL_REDIRECT = True
+# Cloudflare / Reverse Proxy SSL Termination
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = config("USE_X_FORWARDED_HOST", default=True, cast=bool)
+USE_X_FORWARDED_PORT = config("USE_X_FORWARDED_PORT", default=True, cast=bool)
+
+SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=True, cast=bool)
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_BROWSER_XSS_FILTER = True

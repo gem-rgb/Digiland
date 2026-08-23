@@ -9,11 +9,13 @@ import {
   BarChart3,
   Gavel,
   Landmark,
+  LogIn,
   MapPin,
   Search as SearchIcon,
   Sparkles,
   Ticket,
   Upload,
+  UserPlus,
   ShieldCheck,
   WalletCards,
   type LucideIcon,
@@ -396,11 +398,41 @@ export function HeroShowcase({ notice, csrfToken, isAuthenticated = false }: Her
       {!reducedMotion ? <canvas ref={particlesRef} className="pointer-events-none absolute inset-0 h-full w-full opacity-20 mix-blend-screen" /> : null}
 
       <div className="relative z-10 mx-auto flex min-h-[calc(100vh-11rem)] max-w-7xl flex-col justify-between gap-10">
-        <div className="flex items-center justify-between gap-4">
+        {/* Top bar */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div ref={ctaRef} className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-emerald-300">
             <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_16px_rgba(52,211,153,0.9)]" /> {notice || 'Digiland Protocol / Kenya'}
           </div>
-          <div className="hidden text-right text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 sm:block">Secure land infrastructure<br /><span className="text-emerald-400">Network online</span></div>
+          <div className="flex items-center gap-3">
+            {!isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                <a
+                  href="/accounts/login/"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-4 py-1.5 text-xs font-bold text-slate-200 backdrop-blur-md transition-all duration-200 hover:border-emerald-400/50 hover:bg-emerald-400/15 hover:text-emerald-300"
+                >
+                  <LogIn className="h-3.5 w-3.5 text-emerald-400" />
+                  Sign In
+                </a>
+                <a
+                  href="/accounts/signup/"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-1.5 text-xs font-black text-slate-950 shadow-[0_0_16px_rgba(16,185,129,0.35)] transition-all duration-200 hover:shadow-[0_0_22px_rgba(16,185,129,0.6)] hover:brightness-110"
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                  Sign Up
+                </a>
+              </div>
+            ) : (
+              <a
+                href="/parcels/"
+                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold text-emerald-300 transition hover:bg-emerald-500/20"
+              >
+                Dashboard Active
+              </a>
+            )}
+            <div className="hidden text-right text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 sm:block">
+              Secure land infrastructure<br /><span className="text-emerald-400">Network online</span>
+            </div>
+          </div>
         </div>
 
         <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
@@ -414,7 +446,57 @@ export function HeroShowcase({ notice, csrfToken, isAuthenticated = false }: Her
               <Button type="submit" className="h-12 rounded-xl bg-emerald-500 px-6 font-black text-slate-950 hover:bg-emerald-400"><SearchIcon className="mr-2 h-4 w-4" />Search</Button>
             </form>
             <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-500"><span>Popular:</span>{['Nairobi', 'Nakuru', 'Kiambu', 'Kajiado'].map((tag) => <a key={tag} href={`/parcels/?q=${encodeURIComponent(tag)}`} className="text-slate-300 transition hover:text-emerald-300">{tag}</a>)}</div>
-            <div className="mt-8 flex flex-wrap gap-3"><a href="/parcels/" className="inline-flex h-12 items-center justify-center rounded-full bg-emerald-500 px-6 text-sm font-black text-slate-950 transition hover:bg-emerald-400">Launch Marketplace <ArrowRight className="ml-2 h-4 w-4" /></a><a href="/features/" className="inline-flex h-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] px-6 text-sm font-bold text-white transition hover:border-emerald-400/50 hover:bg-emerald-400/10">Explore protocol</a>{!isAuthenticated && (<><a href="/accounts/login/" className="inline-flex h-12 items-center justify-center rounded-full border border-emerald-400/40 bg-emerald-400/15 px-6 text-sm font-black text-emerald-300 transition hover:bg-emerald-400/25 hover:border-emerald-400/60">Sign In</a><a href="/accounts/signup/" className="inline-flex h-12 items-center justify-center rounded-full bg-white/10 border border-white/20 px-6 text-sm font-bold text-white transition hover:bg-white/20">Sign Up</a></>)}</div>
+
+            {/* Action buttons */}
+            <div className="my-8 sm:my-10 flex flex-wrap items-center gap-4 sm:gap-5">
+              {!isAuthenticated ? (
+                <>
+                  <a
+                    href="/accounts/signup/"
+                    className="inline-flex h-14 sm:h-16 min-w-[240px] sm:min-w-[280px] items-center justify-center gap-3 rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-400 px-8 sm:px-10 text-base sm:text-lg font-black text-slate-950 shadow-[0_6px_30px_rgba(16,185,129,0.45)] ring-2 ring-emerald-400/50 ring-offset-2 ring-offset-slate-950 transition-all duration-200 hover:scale-[1.03] hover:shadow-[0_10px_40px_rgba(16,185,129,0.65)] hover:brightness-110 active:scale-[0.98]"
+                  >
+                    <UserPlus className="h-5 w-5" />
+                    Get Started — Free
+                    <ArrowRight className="h-5 w-5" />
+                  </a>
+                  <a
+                    href="/accounts/login/"
+                    className="inline-flex h-14 sm:h-16 min-w-[160px] sm:min-w-[180px] items-center justify-center gap-2.5 rounded-full border-2 border-emerald-400/40 bg-emerald-400/15 px-8 text-base font-bold text-emerald-300 backdrop-blur-md transition-all duration-200 hover:border-emerald-400/80 hover:bg-emerald-400/25 hover:text-white hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <LogIn className="h-5 w-5 text-emerald-400" />
+                    Sign In
+                  </a>
+                  <a
+                    href="/parcels/"
+                    className="inline-flex h-14 sm:h-16 min-w-[160px] items-center justify-center gap-2 rounded-full border border-white/20 bg-white/[0.08] px-7 text-base font-bold text-white backdrop-blur-md transition-all duration-200 hover:border-white/40 hover:bg-white/15"
+                  >
+                    Browse Land
+                  </a>
+                  <a
+                    href="/features/"
+                    className="inline-flex h-14 sm:h-16 items-center justify-center rounded-full border border-white/10 px-6 text-sm font-medium text-slate-400 transition hover:border-white/25 hover:text-slate-200"
+                  >
+                    Explore Protocol
+                  </a>
+                </>
+              ) : (
+                <>
+                  <a
+                    href="/parcels/"
+                    className="inline-flex h-14 sm:h-16 min-w-[250px] items-center justify-center gap-3 rounded-full bg-emerald-500 px-8 text-base font-black text-slate-950 shadow-[0_6px_25px_rgba(16,185,129,0.4)] transition-all duration-200 hover:scale-[1.02] hover:bg-emerald-400"
+                  >
+                    Launch Marketplace
+                    <ArrowRight className="h-5 w-5" />
+                  </a>
+                  <a
+                    href="/features/"
+                    className="inline-flex h-14 sm:h-16 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-8 text-base font-bold text-white transition hover:border-emerald-400/50 hover:bg-emerald-400/10"
+                  >
+                    Explore Protocol
+                  </a>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="relative rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 shadow-[0_30px_100px_-45px_rgba(16,185,129,0.8)] backdrop-blur-2xl sm:p-7">

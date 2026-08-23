@@ -37,13 +37,19 @@ class RequestIDMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # Use the X-Request-ID header from nginx if available, else generate
-        request_id = request.META.get('HTTP_X_REQUEST_ID') or str(uuid.uuid4())
+        # Prioritize Cloudflare CF-Ray trace ID, then Nginx X-Request-ID, else generate a UUID
+        request_id = (
+            request.META.get('HTTP_CF_RAY')
+            or request.META.get('HTTP_X_REQUEST_ID')
+            or str(uuid.uuid4())
+        )
         set_request_id(request_id)
         request.request_id = request_id
 
         response = self.get_response(request)
         response['X-Request-ID'] = request_id
+        if request.META.get('HTTP_CF_RAY'):
+            response['CF-Ray'] = request.META.get('HTTP_CF_RAY')
         return response
 
 

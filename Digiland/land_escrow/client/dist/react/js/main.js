@@ -23917,6 +23917,13 @@ var Lock = createLucideIcon("Lock", [
   ["path", { d: "M7 11V7a5 5 0 0 1 10 0v4", key: "fwvmzm" }]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/log-in.js
+var LogIn = createLucideIcon("LogIn", [
+  ["path", { d: "M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4", key: "u53s6r" }],
+  ["polyline", { points: "10 17 15 12 10 7", key: "1ail0h" }],
+  ["line", { x1: "15", x2: "3", y1: "12", y2: "12", key: "v6grx8" }]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/log-out.js
 var LogOut = createLucideIcon("LogOut", [
   ["path", { d: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", key: "1uf3rs" }],
@@ -24202,6 +24209,14 @@ var Upload = createLucideIcon("Upload", [
   ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }],
   ["polyline", { points: "17 8 12 3 7 8", key: "t8dd8p" }],
   ["line", { x1: "12", x2: "12", y1: "3", y2: "15", key: "widbto" }]
+]);
+
+// node_modules/lucide-react/dist/esm/icons/user-plus.js
+var UserPlus = createLucideIcon("UserPlus", [
+  ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
+  ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }],
+  ["line", { x1: "19", x2: "19", y1: "8", y2: "14", key: "1bvyxn" }],
+  ["line", { x1: "22", x2: "16", y1: "11", y2: "11", key: "1shjgl" }]
 ]);
 
 // node_modules/lucide-react/dist/esm/icons/users.js
@@ -30221,7 +30236,76 @@ function HeroShowcase({ notice, csrfToken, isAuthenticated = false }) {
     { label: "Ranches & Farms", query: "Ranch" },
     { label: "ArdhiSasa Verified", query: "Verified" }
   ];
-  return /* @__PURE__ */ import_react16.default.createElement("div", { className: "relative min-h-[calc(100vh-7rem)] overflow-hidden rounded-[2.5rem] border border-emerald-400/15 bg-slate-950 px-5 py-8 text-white shadow-2xl sm:px-10 sm:py-10 lg:px-16 lg:py-12" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "pointer-events-none absolute inset-0 opacity-30", style: { backgroundImage: "linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px)", backgroundSize: "42px 42px" } }), /* @__PURE__ */ import_react16.default.createElement("div", { className: "pointer-events-none absolute -right-24 -top-24 h-[34rem] w-[34rem] rounded-full bg-emerald-500/20 blur-[150px]" }), /* @__PURE__ */ import_react16.default.createElement("div", { className: "pointer-events-none absolute -bottom-40 left-1/4 h-[28rem] w-[28rem] rounded-full bg-cyan-500/10 blur-[140px]" }), !reducedMotion ? /* @__PURE__ */ import_react16.default.createElement("canvas", { ref: particlesRef, className: "pointer-events-none absolute inset-0 h-full w-full opacity-20 mix-blend-screen" }) : null, /* @__PURE__ */ import_react16.default.createElement("div", { className: "relative z-10 mx-auto flex min-h-[calc(100vh-11rem)] max-w-7xl flex-col justify-between gap-10" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex items-center justify-between gap-4" }, /* @__PURE__ */ import_react16.default.createElement("div", { ref: ctaRef, className: "inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-emerald-300" }, /* @__PURE__ */ import_react16.default.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_16px_rgba(52,211,153,0.9)]" }), " ", notice || "Digiland Protocol / Kenya"), /* @__PURE__ */ import_react16.default.createElement("div", { className: "hidden text-right text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 sm:block" }, "Secure land infrastructure", /* @__PURE__ */ import_react16.default.createElement("br", null), /* @__PURE__ */ import_react16.default.createElement("span", { className: "text-emerald-400" }, "Network online"))), /* @__PURE__ */ import_react16.default.createElement("div", { className: "grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "max-w-3xl" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "mb-5 text-xs font-black uppercase tracking-[0.28em] text-emerald-400" }, "Autonomous land registry & escrow protocol"), /* @__PURE__ */ import_react16.default.createElement("h1", { className: "text-4xl font-black leading-[0.98] tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl" }, "Kenya's Autonomous", /* @__PURE__ */ import_react16.default.createElement("br", null), /* @__PURE__ */ import_react16.default.createElement("span", { className: "bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent" }, "Land Registry & Escrow Protocol")), /* @__PURE__ */ import_react16.default.createElement("p", { className: "mt-6 max-w-2xl text-sm leading-7 text-slate-300 sm:text-lg sm:leading-8" }, "Automated ArdhiSasa land title validation, M-Pesa escrow vaulting, and cryptographic Law Society advocate authentication."), /* @__PURE__ */ import_react16.default.createElement("form", { onSubmit: handleSearch, className: "mt-8 flex max-w-2xl flex-col gap-3 rounded-[1.35rem] border border-white/10 bg-white/[0.07] p-2 backdrop-blur-xl sm:flex-row" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3" }, /* @__PURE__ */ import_react16.default.createElement(Search, { className: "h-5 w-5 shrink-0 text-emerald-400" }), /* @__PURE__ */ import_react16.default.createElement("input", { value: searchQuery, onChange: (e) => setSearchQuery(e.target.value), placeholder: "Search county, ward, or parcel number", className: "w-full bg-transparent py-3 text-sm text-white outline-none placeholder:text-slate-500" })), /* @__PURE__ */ import_react16.default.createElement(Button, { type: "submit", className: "h-12 rounded-xl bg-emerald-500 px-6 font-black text-slate-950 hover:bg-emerald-400" }, /* @__PURE__ */ import_react16.default.createElement(Search, { className: "mr-2 h-4 w-4" }), "Search")), /* @__PURE__ */ import_react16.default.createElement("div", { className: "mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-500" }, /* @__PURE__ */ import_react16.default.createElement("span", null, "Popular:"), ["Nairobi", "Nakuru", "Kiambu", "Kajiado"].map((tag) => /* @__PURE__ */ import_react16.default.createElement("a", { key: tag, href: `/parcels/?q=${encodeURIComponent(tag)}`, className: "text-slate-300 transition hover:text-emerald-300" }, tag))), /* @__PURE__ */ import_react16.default.createElement("div", { className: "mt-8 flex flex-wrap gap-3" }, /* @__PURE__ */ import_react16.default.createElement("a", { href: "/parcels/", className: "inline-flex h-12 items-center justify-center rounded-full bg-emerald-500 px-6 text-sm font-black text-slate-950 transition hover:bg-emerald-400" }, "Launch Marketplace ", /* @__PURE__ */ import_react16.default.createElement(ArrowRight, { className: "ml-2 h-4 w-4" })), /* @__PURE__ */ import_react16.default.createElement("a", { href: "/features/", className: "inline-flex h-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] px-6 text-sm font-bold text-white transition hover:border-emerald-400/50 hover:bg-emerald-400/10" }, "Explore protocol"), !isAuthenticated && /* @__PURE__ */ import_react16.default.createElement(import_react16.default.Fragment, null, /* @__PURE__ */ import_react16.default.createElement("a", { href: "/accounts/login/", className: "inline-flex h-12 items-center justify-center rounded-full border border-emerald-400/40 bg-emerald-400/15 px-6 text-sm font-black text-emerald-300 transition hover:bg-emerald-400/25 hover:border-emerald-400/60" }, "Sign In"), /* @__PURE__ */ import_react16.default.createElement("a", { href: "/accounts/signup/", className: "inline-flex h-12 items-center justify-center rounded-full bg-white/10 border border-white/20 px-6 text-sm font-bold text-white transition hover:bg-white/20" }, "Sign Up")))), /* @__PURE__ */ import_react16.default.createElement("div", { className: "relative rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 shadow-[0_30px_100px_-45px_rgba(16,185,129,0.8)] backdrop-blur-2xl sm:p-7" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex items-center justify-between border-b border-white/10 pb-4" }, /* @__PURE__ */ import_react16.default.createElement("div", null, /* @__PURE__ */ import_react16.default.createElement("div", { className: "text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400" }, "System concept architecture"), /* @__PURE__ */ import_react16.default.createElement("div", { className: "mt-1 text-sm font-bold text-slate-300" }, "Three trust layers. One closing path.")), /* @__PURE__ */ import_react16.default.createElement(ShieldCheck, { className: "h-6 w-6 text-emerald-400" })), /* @__PURE__ */ import_react16.default.createElement("div", { className: "mt-5 space-y-3" }, [["01", "ArdhiSasa Registry Validation", "Government title deed check", Landmark], ["02", "Smart Escrow Vault", "M-Pesa STK & KCB bank deposit lock", WalletCards], ["03", "Cryptographic Advocate Sign-Off", "LSK lawyer title transfer", Gavel]].map(([number, title, description, Icon2]) => {
+  return /* @__PURE__ */ import_react16.default.createElement("div", { className: "relative min-h-[calc(100vh-7rem)] overflow-hidden rounded-[2.5rem] border border-emerald-400/15 bg-slate-950 px-5 py-8 text-white shadow-2xl sm:px-10 sm:py-10 lg:px-16 lg:py-12" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "pointer-events-none absolute inset-0 opacity-30", style: { backgroundImage: "linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px)", backgroundSize: "42px 42px" } }), /* @__PURE__ */ import_react16.default.createElement("div", { className: "pointer-events-none absolute -right-24 -top-24 h-[34rem] w-[34rem] rounded-full bg-emerald-500/20 blur-[150px]" }), /* @__PURE__ */ import_react16.default.createElement("div", { className: "pointer-events-none absolute -bottom-40 left-1/4 h-[28rem] w-[28rem] rounded-full bg-cyan-500/10 blur-[140px]" }), !reducedMotion ? /* @__PURE__ */ import_react16.default.createElement("canvas", { ref: particlesRef, className: "pointer-events-none absolute inset-0 h-full w-full opacity-20 mix-blend-screen" }) : null, /* @__PURE__ */ import_react16.default.createElement("div", { className: "relative z-10 mx-auto flex min-h-[calc(100vh-11rem)] max-w-7xl flex-col justify-between gap-10" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-4" }, /* @__PURE__ */ import_react16.default.createElement("div", { ref: ctaRef, className: "inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-emerald-300" }, /* @__PURE__ */ import_react16.default.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_16px_rgba(52,211,153,0.9)]" }), " ", notice || "Digiland Protocol / Kenya"), /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex items-center gap-3" }, !isAuthenticated ? /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react16.default.createElement(
+    "a",
+    {
+      href: "/accounts/login/",
+      className: "inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-4 py-1.5 text-xs font-bold text-slate-200 backdrop-blur-md transition-all duration-200 hover:border-emerald-400/50 hover:bg-emerald-400/15 hover:text-emerald-300"
+    },
+    /* @__PURE__ */ import_react16.default.createElement(LogIn, { className: "h-3.5 w-3.5 text-emerald-400" }),
+    "Sign In"
+  ), /* @__PURE__ */ import_react16.default.createElement(
+    "a",
+    {
+      href: "/accounts/signup/",
+      className: "inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-1.5 text-xs font-black text-slate-950 shadow-[0_0_16px_rgba(16,185,129,0.35)] transition-all duration-200 hover:shadow-[0_0_22px_rgba(16,185,129,0.6)] hover:brightness-110"
+    },
+    /* @__PURE__ */ import_react16.default.createElement(UserPlus, { className: "h-3.5 w-3.5" }),
+    "Sign Up"
+  )) : /* @__PURE__ */ import_react16.default.createElement(
+    "a",
+    {
+      href: "/parcels/",
+      className: "inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold text-emerald-300 transition hover:bg-emerald-500/20"
+    },
+    "Dashboard Active"
+  ), /* @__PURE__ */ import_react16.default.createElement("div", { className: "hidden text-right text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 sm:block" }, "Secure land infrastructure", /* @__PURE__ */ import_react16.default.createElement("br", null), /* @__PURE__ */ import_react16.default.createElement("span", { className: "text-emerald-400" }, "Network online")))), /* @__PURE__ */ import_react16.default.createElement("div", { className: "grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "max-w-3xl" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "mb-5 text-xs font-black uppercase tracking-[0.28em] text-emerald-400" }, "Autonomous land registry & escrow protocol"), /* @__PURE__ */ import_react16.default.createElement("h1", { className: "text-4xl font-black leading-[0.98] tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl" }, "Kenya's Autonomous", /* @__PURE__ */ import_react16.default.createElement("br", null), /* @__PURE__ */ import_react16.default.createElement("span", { className: "bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent" }, "Land Registry & Escrow Protocol")), /* @__PURE__ */ import_react16.default.createElement("p", { className: "mt-6 max-w-2xl text-sm leading-7 text-slate-300 sm:text-lg sm:leading-8" }, "Automated ArdhiSasa land title validation, M-Pesa escrow vaulting, and cryptographic Law Society advocate authentication."), /* @__PURE__ */ import_react16.default.createElement("form", { onSubmit: handleSearch, className: "mt-8 flex max-w-2xl flex-col gap-3 rounded-[1.35rem] border border-white/10 bg-white/[0.07] p-2 backdrop-blur-xl sm:flex-row" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3" }, /* @__PURE__ */ import_react16.default.createElement(Search, { className: "h-5 w-5 shrink-0 text-emerald-400" }), /* @__PURE__ */ import_react16.default.createElement("input", { value: searchQuery, onChange: (e) => setSearchQuery(e.target.value), placeholder: "Search county, ward, or parcel number", className: "w-full bg-transparent py-3 text-sm text-white outline-none placeholder:text-slate-500" })), /* @__PURE__ */ import_react16.default.createElement(Button, { type: "submit", className: "h-12 rounded-xl bg-emerald-500 px-6 font-black text-slate-950 hover:bg-emerald-400" }, /* @__PURE__ */ import_react16.default.createElement(Search, { className: "mr-2 h-4 w-4" }), "Search")), /* @__PURE__ */ import_react16.default.createElement("div", { className: "mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-500" }, /* @__PURE__ */ import_react16.default.createElement("span", null, "Popular:"), ["Nairobi", "Nakuru", "Kiambu", "Kajiado"].map((tag) => /* @__PURE__ */ import_react16.default.createElement("a", { key: tag, href: `/parcels/?q=${encodeURIComponent(tag)}`, className: "text-slate-300 transition hover:text-emerald-300" }, tag))), /* @__PURE__ */ import_react16.default.createElement("div", { className: "my-8 sm:my-10 flex flex-wrap items-center gap-4 sm:gap-5" }, !isAuthenticated ? /* @__PURE__ */ import_react16.default.createElement(import_react16.default.Fragment, null, /* @__PURE__ */ import_react16.default.createElement(
+    "a",
+    {
+      href: "/accounts/signup/",
+      className: "inline-flex h-14 sm:h-16 min-w-[240px] sm:min-w-[280px] items-center justify-center gap-3 rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-400 px-8 sm:px-10 text-base sm:text-lg font-black text-slate-950 shadow-[0_6px_30px_rgba(16,185,129,0.45)] ring-2 ring-emerald-400/50 ring-offset-2 ring-offset-slate-950 transition-all duration-200 hover:scale-[1.03] hover:shadow-[0_10px_40px_rgba(16,185,129,0.65)] hover:brightness-110 active:scale-[0.98]"
+    },
+    /* @__PURE__ */ import_react16.default.createElement(UserPlus, { className: "h-5 w-5" }),
+    "Get Started \u2014 Free",
+    /* @__PURE__ */ import_react16.default.createElement(ArrowRight, { className: "h-5 w-5" })
+  ), /* @__PURE__ */ import_react16.default.createElement(
+    "a",
+    {
+      href: "/accounts/login/",
+      className: "inline-flex h-14 sm:h-16 min-w-[160px] sm:min-w-[180px] items-center justify-center gap-2.5 rounded-full border-2 border-emerald-400/40 bg-emerald-400/15 px-8 text-base font-bold text-emerald-300 backdrop-blur-md transition-all duration-200 hover:border-emerald-400/80 hover:bg-emerald-400/25 hover:text-white hover:scale-[1.02] active:scale-[0.98]"
+    },
+    /* @__PURE__ */ import_react16.default.createElement(LogIn, { className: "h-5 w-5 text-emerald-400" }),
+    "Sign In"
+  ), /* @__PURE__ */ import_react16.default.createElement(
+    "a",
+    {
+      href: "/parcels/",
+      className: "inline-flex h-14 sm:h-16 min-w-[160px] items-center justify-center gap-2 rounded-full border border-white/20 bg-white/[0.08] px-7 text-base font-bold text-white backdrop-blur-md transition-all duration-200 hover:border-white/40 hover:bg-white/15"
+    },
+    "Browse Land"
+  ), /* @__PURE__ */ import_react16.default.createElement(
+    "a",
+    {
+      href: "/features/",
+      className: "inline-flex h-14 sm:h-16 items-center justify-center rounded-full border border-white/10 px-6 text-sm font-medium text-slate-400 transition hover:border-white/25 hover:text-slate-200"
+    },
+    "Explore Protocol"
+  )) : /* @__PURE__ */ import_react16.default.createElement(import_react16.default.Fragment, null, /* @__PURE__ */ import_react16.default.createElement(
+    "a",
+    {
+      href: "/parcels/",
+      className: "inline-flex h-14 sm:h-16 min-w-[250px] items-center justify-center gap-3 rounded-full bg-emerald-500 px-8 text-base font-black text-slate-950 shadow-[0_6px_25px_rgba(16,185,129,0.4)] transition-all duration-200 hover:scale-[1.02] hover:bg-emerald-400"
+    },
+    "Launch Marketplace",
+    /* @__PURE__ */ import_react16.default.createElement(ArrowRight, { className: "h-5 w-5" })
+  ), /* @__PURE__ */ import_react16.default.createElement(
+    "a",
+    {
+      href: "/features/",
+      className: "inline-flex h-14 sm:h-16 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-8 text-base font-bold text-white transition hover:border-emerald-400/50 hover:bg-emerald-400/10"
+    },
+    "Explore Protocol"
+  )))), /* @__PURE__ */ import_react16.default.createElement("div", { className: "relative rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 shadow-[0_30px_100px_-45px_rgba(16,185,129,0.8)] backdrop-blur-2xl sm:p-7" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex items-center justify-between border-b border-white/10 pb-4" }, /* @__PURE__ */ import_react16.default.createElement("div", null, /* @__PURE__ */ import_react16.default.createElement("div", { className: "text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400" }, "System concept architecture"), /* @__PURE__ */ import_react16.default.createElement("div", { className: "mt-1 text-sm font-bold text-slate-300" }, "Three trust layers. One closing path.")), /* @__PURE__ */ import_react16.default.createElement(ShieldCheck, { className: "h-6 w-6 text-emerald-400" })), /* @__PURE__ */ import_react16.default.createElement("div", { className: "mt-5 space-y-3" }, [["01", "ArdhiSasa Registry Validation", "Government title deed check", Landmark], ["02", "Smart Escrow Vault", "M-Pesa STK & KCB bank deposit lock", WalletCards], ["03", "Cryptographic Advocate Sign-Off", "LSK lawyer title transfer", Gavel]].map(([number, title, description, Icon2]) => {
     const IconComp = Icon2;
     return /* @__PURE__ */ import_react16.default.createElement("div", { key: String(number), className: "group flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-900/60 p-4 transition hover:border-emerald-400/40" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 text-xs font-black text-emerald-300" }, number), /* @__PURE__ */ import_react16.default.createElement("div", { className: "min-w-0 flex-1" }, /* @__PURE__ */ import_react16.default.createElement("div", { className: "text-sm font-black text-white" }, title), /* @__PURE__ */ import_react16.default.createElement("div", { className: "mt-1 text-xs text-slate-400" }, description)), /* @__PURE__ */ import_react16.default.createElement(IconComp, { className: "h-5 w-5 shrink-0 text-emerald-400" }));
   })), /* @__PURE__ */ import_react16.default.createElement("div", { className: "mt-6 grid grid-cols-3 gap-2 border-t border-white/10 pt-5 text-center" }, /* @__PURE__ */ import_react16.default.createElement("div", null, /* @__PURE__ */ import_react16.default.createElement("div", { className: "text-lg font-black text-white" }, "24/7"), /* @__PURE__ */ import_react16.default.createElement("div", { className: "text-[9px] uppercase tracking-wider text-slate-500" }, "Monitoring")), /* @__PURE__ */ import_react16.default.createElement("div", null, /* @__PURE__ */ import_react16.default.createElement("div", { className: "text-lg font-black text-white" }, "M-Pesa"), /* @__PURE__ */ import_react16.default.createElement("div", { className: "text-[9px] uppercase tracking-wider text-slate-500" }, "Vaulting")), /* @__PURE__ */ import_react16.default.createElement("div", null, /* @__PURE__ */ import_react16.default.createElement("div", { className: "text-lg font-black text-white" }, "LSK"), /* @__PURE__ */ import_react16.default.createElement("div", { className: "text-[9px] uppercase tracking-wider text-slate-500" }, "Verified"))))), /* @__PURE__ */ import_react16.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500" }, /* @__PURE__ */ import_react16.default.createElement("span", null, "ArdhiSasa synchronized"), /* @__PURE__ */ import_react16.default.createElement("span", null, "Escrow protected"), /* @__PURE__ */ import_react16.default.createElement("span", null, "Advocate authenticated"), /* @__PURE__ */ import_react16.default.createElement("span", { className: "text-emerald-400" }, "Protocol status: operational"))));
@@ -33389,6 +33473,14 @@ lucide-react/dist/esm/icons/lock.js:
    * See the LICENSE file in the root directory of this source tree.
    *)
 
+lucide-react/dist/esm/icons/log-in.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
 lucide-react/dist/esm/icons/log-out.js:
   (**
    * @license lucide-react v0.453.0 - ISC
@@ -33614,6 +33706,14 @@ lucide-react/dist/esm/icons/twitter.js:
    *)
 
 lucide-react/dist/esm/icons/upload.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
+lucide-react/dist/esm/icons/user-plus.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *
