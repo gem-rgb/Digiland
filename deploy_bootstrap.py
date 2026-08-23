@@ -63,10 +63,12 @@ def init_django_app() -> None:
         from core.models import User
         from allauth.account.models import EmailAddress
 
-        # Only run migration on ephemeral SQLite on cold start if db doesn't exist
-        db_url = os.environ.get("DATABASE_URL", "")
-        if db_url.startswith("sqlite") or not db_url:
+        # Apply any pending migrations on database during container cold start
+        try:
             call_command("migrate", interactive=False, verbosity=0)
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning("Bootstrap migrate failed: %s", exc)
 
         site, _ = Site.objects.get_or_create(id=1, defaults={"domain": "digiland-six.vercel.app", "name": "Digiland"})
         if site.domain != "digiland-six.vercel.app":
