@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ReactNode } from 'react';
-import { LogOut, ShieldCheck } from 'lucide-react';
+import { LogIn, LogOut, ShieldCheck, UserPlus } from 'lucide-react';
 import type { ActionLink, NavItem, UserSummary } from '../../types.js';
 import { Badge } from '../ui/badge.js';
 import { Button } from '../ui/button.js';
@@ -82,7 +82,7 @@ export function PublicShell({
           </nav>
 
           {/* Right actions */}
-          <div className="ml-auto flex items-center gap-3 lg:ml-0">
+          <div className="ml-auto flex items-center gap-2.5 sm:gap-3 lg:ml-0">
             {user ? (
               <>
                 <Badge tone="outline" className="hidden sm:inline-flex border-emerald-400/30 bg-emerald-500/10 text-emerald-300">{user.role}</Badge>
@@ -106,19 +106,35 @@ export function PublicShell({
                 ) : null}
               </>
             ) : (
-              <>
-                {actions?.map((action) => (
-                  <a
-                    key={`${action.label}-${action.href}`}
-                    href={action.href}
-                    target={action.external ? '_blank' : undefined}
-                    rel={action.external ? 'noreferrer' : undefined}
-                    className={actionClass(action.tone)}
-                  >
-                    {action.label}
-                  </a>
-                ))}
-              </>
+              <div className="flex items-center gap-2 sm:gap-3">
+                {actions && actions.length > 0 ? (
+                  actions.map((action) => (
+                    <a
+                      key={`${action.label}-${action.href}`}
+                      href={action.href}
+                      target={action.external ? '_blank' : undefined}
+                      rel={action.external ? 'noreferrer' : undefined}
+                      className={actionClass(action.tone)}
+                    >
+                      {action.label}
+                    </a>
+                  ))
+                ) : null}
+                <a
+                  href="/accounts/login/"
+                  className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-white/20 bg-white/[0.08] px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-bold text-white backdrop-blur-md transition-all duration-200 hover:border-emerald-400/50 hover:bg-emerald-400/15 hover:text-emerald-300"
+                >
+                  <LogIn className="h-4 w-4 text-emerald-400" />
+                  <span>Sign In</span>
+                </a>
+                <a
+                  href="/accounts/signup/"
+                  className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-emerald-400/40 bg-gradient-to-r from-emerald-500 to-teal-500 px-3.5 sm:px-5 py-2 text-xs sm:text-sm font-black text-slate-950 shadow-[0_0_18px_rgba(16,185,129,0.4)] transition-all duration-200 hover:shadow-[0_0_24px_rgba(16,185,129,0.7)] hover:brightness-110"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span>Sign Up</span>
+                </a>
+              </div>
             )}
           </div>
         </div>
