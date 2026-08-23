@@ -24,6 +24,8 @@ from land_escrow.health_views import health_check
 
 from core import api_views
 
+ADMIN_URL_PATH = getattr(settings, 'DJANGO_ADMIN_URL', 'admin/')
+
 urlpatterns = [
     path('favicon.ico', RedirectView.as_view(url=settings.STATIC_URL + 'images/favicon.ico', permanent=True)),
     path('health/', health_check, name='health-check'),
@@ -31,8 +33,8 @@ urlpatterns = [
     path('browse/', RedirectView.as_view(url='/parcels/', permanent=False)),
     path('marketplace', RedirectView.as_view(url='/parcels/', permanent=False, query_string=True)),
     path('marketplace/', RedirectView.as_view(url='/parcels/', permanent=False, query_string=True)),
-    path('admin/', admin.site.urls),
-    path('admin/', include(admin_urls)),
+    path(ADMIN_URL_PATH, admin.site.urls),
+    path(ADMIN_URL_PATH, include(admin_urls)),
     path('api/v1/auth/', include('core.auth_urls')),
     path('api/auth/me/', api_views.auth_me_api, name='auth_me_api'),
     path('api/onboarding/select-role/', api_views.onboarding_select_role_api, name='onboarding_select_role_api'),

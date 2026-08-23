@@ -524,15 +524,17 @@ def staff_login(request):
 
         if user is None:
             error = 'Invalid credentials. Please try again.'
-        elif getattr(user, 'role', None) not in STAFF_ROLES:
-            error = 'This portal is restricted to Staff (Admin / Agent) accounts only.'
+        elif getattr(user, 'role', None) == 'Admin' or getattr(user, 'is_superuser', False):
+            from core.auth_services import AuditService
+            AuditService.log_event("ADMIN_LOGIN_BLOCKED_ON_STAFF_PORTAL", user=user, ip_address=request.META.get('REMOTE_ADDR', ''))
+            error = 'Administrative accounts cannot log in via the Staff Portal. Please access the dedicated Administrative Control Plane.'
+        elif getattr(user, 'role', None) != 'Agent':
+            error = 'This portal is restricted to licensed Agent accounts only.'
         elif not user.is_active:
             error = 'Your account has been deactivated. Contact the system administrator.'
         else:
             auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            if user.role == 'Admin':
-                return redirect('/admin/')
-            if user.role == 'Agent' and not user.is_identity_verified:
+            if not user.is_identity_verified:
                 # Check if KYC docs have already been submitted
                 try:
                     if user.kyc_application.kyc_submitted:

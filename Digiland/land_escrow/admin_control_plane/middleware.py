@@ -166,6 +166,18 @@ class AdminNetworkIsolationMiddleware:
         if path.startswith("/static/") or path.startswith("/media/"):
             return self.get_response(request)
 
+        # Enforce dedicated admin host/domain if configured
+        admin_allowed_host = getattr(settings, "ADMIN_ALLOWED_HOST", "").strip()
+        if admin_allowed_host:
+            request_host = request.get_host().split(":")[0].strip().lower()
+            if request_host != admin_allowed_host.lower():
+                logger.warning(
+                    "Admin access blocked: requested host '%s' does not match ADMIN_ALLOWED_HOST '%s'",
+                    request_host, admin_allowed_host
+                )
+                from django.http import Http404
+                raise Http404("Page not found")
+
         # Resolve allowed IP ranges
         allowed_ranges = list(
             getattr(settings, "ADMIN_ALLOWED_IP_RANGES", [])

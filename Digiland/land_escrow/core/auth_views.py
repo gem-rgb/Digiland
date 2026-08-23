@@ -331,6 +331,18 @@ def login_view(request):
     if not user.is_active:
         return Response({"error": "Account is disabled."}, status=status.HTTP_403_FORBIDDEN)
 
+    if getattr(user, "role", "") == "Admin" or getattr(user, "is_superuser", False):
+        AuditService.log_event(
+            "ADMIN_LOGIN_BLOCKED_ON_PUBLIC_API",
+            user=user,
+            ip_address=ip_address,
+            metadata={"email": user.email},
+        )
+        return Response(
+            {"error": "Administrative accounts cannot authenticate via the public API. Please use the dedicated Administrative Control Plane."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
     if not getattr(user, "is_email_verified", False):
         start_pending_verification_session(request, user, flow="api-login")
         pending_verification = _build_pending_verification_payload(request, user)

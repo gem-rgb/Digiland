@@ -931,3 +931,18 @@ ENABLE_AI_AD_CAMPAIGNS = config('ENABLE_AI_AD_CAMPAIGNS', default=True, cast=boo
 ENABLE_AI_DOC_VERIFICATION = config('ENABLE_AI_DOC_VERIFICATION', default=True, cast=bool)
 ENABLE_AI_PRICE_PREDICTION = config('ENABLE_AI_PRICE_PREDICTION', default=False, cast=bool)  # Explicitly disabled per user instruction
 
+# ── Admin Portal Isolation ───────────────────────────────────────────────────
+# Configurable secret / dedicated prefix for administrative interface.
+# Example: DJANGO_ADMIN_URL="control-plane-vault-9x/"
+_admin_url_raw = config("DJANGO_ADMIN_URL", default="admin/").strip().strip("/")
+DJANGO_ADMIN_URL = f"{_admin_url_raw}/" if _admin_url_raw else "admin/"
+ADMIN_PATH_PREFIXES = [
+    f"/{DJANGO_ADMIN_URL}",
+    "/api/v1/admin/",
+]
+
+# Dedicated Admin Domain Isolation (optional)
+# Example: ADMIN_ALLOWED_HOST="admin.digiland.app" or "admin-digiland.vercel.app"
+ADMIN_ALLOWED_HOST = config("ADMIN_ALLOWED_HOST", default="").strip()
+
+

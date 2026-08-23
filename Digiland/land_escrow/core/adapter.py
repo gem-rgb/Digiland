@@ -171,11 +171,25 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
     def pre_login(self, request, user, **kwargs):
         """
         Routing rules for /accounts/login/ (the public login page):
-          - Admin:              Direct access to /admin/
+          - Admin:              ALWAYS blocked -> must use dedicated Control Plane
           - Agent (any state):  ALWAYS blocked -> must use /staff/login/
           - Buyer / Seller:     ALWAYS allowed
         """
         role = getattr(user, 'role', None)
+        is_admin = role == 'Admin' or getattr(user, 'is_superuser', False)
+
+        if is_admin and '/accounts/login' in request.path:
+            from allauth.exceptions import ImmediateHttpResponse
+            from django.contrib import messages
+            messages.error(
+                request,
+                "Administrative accounts are strictly prohibited from logging in on public portals. Please use the dedicated Administrative Control Plane."
+            )
+            request.session['admin_blocked'] = True
+            raise ImmediateHttpResponse(
+                redirect(reverse('account_login'))
+            )
+
         block = role == 'Agent'
 
         if block and '/accounts/login' in request.path:
