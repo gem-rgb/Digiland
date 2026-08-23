@@ -1,9 +1,0 @@
-/* =============================================================================
-   Digiland — Auth Stylesheet (DEPRECATED)
-
-   This file is no longer loaded by any template.
-   All auth pages now extend account/base_auth.html which uses Tailwind utility
-   classes and the React styles.css design tokens directly.
-
-   Retained as a reference only. Do NOT link this stylesheet from any page.
-   ============================================================================= */
