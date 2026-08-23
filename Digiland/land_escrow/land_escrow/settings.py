@@ -183,6 +183,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'core.middleware.ExceptionLoggerMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'core.middleware.CanonicalBackendHostMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',

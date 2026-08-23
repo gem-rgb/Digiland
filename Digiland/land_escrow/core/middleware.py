@@ -9,6 +9,21 @@ from django.core.cache import cache
 from django.http import JsonResponse
 
 
+class ExceptionLoggerMiddleware:
+    """Catch unhandled view/middleware exceptions and output the traceback."""
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        return self.get_response(request)
+
+    def process_exception(self, request, exception):
+        import traceback
+        from django.http import HttpResponse
+        tb = traceback.format_exc()
+        return HttpResponse(f"<h1>Application Exception</h1><pre style='background:#111;color:#ff6b6b;padding:1.5rem;border-radius:8px;font-size:13px;line-height:1.5;overflow:auto;'>{tb}</pre>", status=500, content_type="text/html")
+
+
 class LegacyBrowseRedirectMiddleware:
     """Redirect the old /browse alias to the marketplace page."""
 
