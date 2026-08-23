@@ -1,3 +1,4 @@
+import sys
 import time
 import logging
 from urllib.parse import urlsplit, urlunsplit
