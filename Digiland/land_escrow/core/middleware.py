@@ -224,6 +224,23 @@ class AgentKYCGateMiddleware:
         return self.get_response(request)
 
 
+def get_client_ip(request) -> str:
+    """Extract client IP address, prioritizing Cloudflare's CF-Connecting-IP header.
+
+    Falls back to X-Forwarded-For (client IP) and REMOTE_ADDR.
+    """
+    cf_ip = request.META.get("HTTP_CF_CONNECTING_IP")
+    if cf_ip:
+        return cf_ip.strip()
+
+    xff = request.META.get("HTTP_X_FORWARDED_FOR")
+    if xff:
+        # First IP in X-Forwarded-For is the originating client IP
+        return xff.split(",")[0].strip()
+
+    return request.META.get("REMOTE_ADDR", "0.0.0.0")
+
+
 # ── Rate Limiting Middleware ──────────────────────────────────────────────────
 
 
@@ -250,7 +267,7 @@ class RateLimitMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if getattr(settings, "TESTING", False):
+        if getattr(settings, "TESTING", False) or "test" in sys.argv:
             return self.get_response(request)
 
         # Skip for static / media / admin paths
@@ -258,29 +275,50 @@ class RateLimitMiddleware:
         if path.startswith("/static/") or path.startswith("/media/"):
             return self.get_response(request)
 
-        rate_limit = self._get_rate_limit(path)
-        max_requests, window_seconds = self._parse_rate(rate_limit)
+        # Skip for superusers / staff
+        user = getattr(request, "user", None)
+        if user and getattr(user, "is_authenticated", False) and (user.is_superuser or user.is_staff):
+            return self.get_response(request)
 
-        cache_key = self._cache_key(request)
+        # Only apply in production or when explicitly enabled
+        if not getattr(settings, "RATE_LIMIT_ENABLED", not settings.DEBUG):
+            return self.get_response(request)
+
+        rate_str = self._get_rate_limit(path)
+        limit, window_seconds = self._parse_rate(rate_str)
+
+        key = self._cache_key(request)
         now = time.time()
 
-        # Fetch current window state from cache
-        window_data = cache.get(cache_key, {"count": 0, "window_start": now})
+        try:
+            from django.core.cache import cache
 
-        # Reset window if expired
-        if now - window_data["window_start"] >= window_seconds:
-            window_data = {"count": 0, "window_start": now}
+            window_data = cache.get(key)
+            if window_data is None:
+                cache.set(key, {"count": 1, "window_start": now}, timeout=window_seconds)
+                return self.get_response(request)
 
-        window_data["count"] += 1
-        cache.set(cache_key, window_data, timeout=window_seconds + 10)
+            # Check if window expired
+            if now - window_data["window_start"] > window_seconds:
+                cache.set(key, {"count": 1, "window_start": now}, timeout=window_seconds)
+                return self.get_response(request)
 
-        if window_data["count"] > max_requests:
+            if window_data["count"] < limit:
+                window_data["count"] += 1
+                cache.set(
+                    key,
+                    window_data,
+                    timeout=int(window_seconds - (now - window_data["window_start"])),
+                )
+                return self.get_response(request)
+
+            # Limit reached
             logger.warning(
-                "RateLimitMiddleware: IP %s exceeded %d req/%ds on %s",
+                "Rate limit exceeded for IP %s on %s (%d requests in %ds)",
                 self._client_ip(request),
-                max_requests,
-                window_seconds,
                 path,
+                window_data["count"],
+                window_seconds,
             )
             return JsonResponse(
                 {
@@ -289,25 +327,10 @@ class RateLimitMiddleware:
                 },
                 status=429,
             )
-
-        return self.get_response(request)
-
-def get_client_ip(request) -> str:
-    """Extract client IP address, prioritizing Cloudflare's CF-Connecting-IP header.
-
-    Falls back to X-Forwarded-For (client IP) and REMOTE_ADDR.
-    """
-    cf_ip = request.META.get("HTTP_CF_CONNECTING_IP")
-    if cf_ip:
-        return cf_ip.strip()
-
-    xff = request.META.get("HTTP_X_FORWARDED_FOR")
-    if xff:
-        # First IP in X-Forwarded-For is the originating client IP
-        return xff.split(",")[0].strip()
-
-    return request.META.get("REMOTE_ADDR", "0.0.0.0")
-
+        except Exception as e:
+            # Cache failure must never block requests
+            logger.error("Rate limit check failed: %s", e)
+            return self.get_response(request)
 
     # ── helpers ────────────────────────────────────────────────────────────
 
