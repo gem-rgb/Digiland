@@ -283,7 +283,8 @@ class RateLimitMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if getattr(settings, "TESTING", False) or "test" in sys.argv:
+        import sys
+        if getattr(settings, "TESTING", False) or (hasattr(sys, "argv") and "test" in sys.argv):
             return self.get_response(request)
 
         # Skip for static / media / admin paths
