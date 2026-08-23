@@ -47,10 +47,6 @@ def init_django_app() -> None:
     if _BOOTSTRAP_DONE:
         return
 
-    if _MARKER_FILE and _MARKER_FILE.exists():
-        _BOOTSTRAP_DONE = True
-        return
-
     try:
         import django
         from django.conf import settings

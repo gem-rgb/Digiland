@@ -218,7 +218,19 @@ def home(request):
     from django.db.models import Q
     active_tx_statuses = ['Initiated', 'Deposit_Paid', 'Under_Verification', 'Completed']
     public_buyer_statuses = ['AGENT_APPROVED', 'Verified', 'BUYER_OFFER_RECEIVED', 'LAWYER_REVIEW', 'LAWYER_APPROVED', 'PURCHASE_FINALIZED', 'Completed']
-    parcels = LandParcel.objects.filter(verification_status__in=public_buyer_statuses).exclude(transactions__status__in=active_tx_statuses).order_by('-ardhisasa_last_synced')[:5]
+    try:
+        parcels_qs = LandParcel.objects.filter(verification_status__in=public_buyer_statuses).exclude(transactions__status__in=active_tx_statuses).order_by('-ardhisasa_last_synced')[:5]
+        parcels = list(parcels_qs)
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("Home parcel query fallback triggered: %s", exc)
+        try:
+            from django.core.management import call_command
+            call_command("migrate", interactive=False, verbosity=0)
+            parcels_qs = LandParcel.objects.filter(verification_status__in=public_buyer_statuses).exclude(transactions__status__in=active_tx_statuses).order_by('-ardhisasa_last_synced')[:5]
+            parcels = list(parcels_qs)
+        except Exception:
+            parcels = []
 
     
     transactions = None
@@ -326,7 +338,7 @@ def home(request):
         'Secure land listings, verified contracts, and joint purchase support.',
         parcels=[serialize_parcel(parcel) for parcel in parcels],
         stats=[
-            {'label': 'Verified parcels', 'value': str(parcels.count()), 'tone': 'success'},
+            {'label': 'Verified parcels', 'value': str(len(parcels)), 'tone': 'success'},
             {'label': 'Active transactions', 'value': str(transactions.count() if transactions else 0), 'tone': 'accent'},
             {'label': 'Joint-ready', 'value': 'Yes', 'tone': 'warning'},
             {'label': 'Status', 'value': 'Live', 'tone': 'default'},
