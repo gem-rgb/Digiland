@@ -87,9 +87,10 @@ def database_config_from_url(database_url, conn_max_age=60, ssl_require=False):
             config_dict["DISABLE_SERVER_SIDE_CURSORS"] = True
         return config_dict
 
+    default_sqlite_name = Path('/tmp/db.sqlite3') if os.environ.get('VERCEL') or not os.access(str(BASE_DIR), os.W_OK) else BASE_DIR / 'db.sqlite3'
     return {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": default_sqlite_name,
     }
 
 
@@ -253,10 +254,11 @@ if DATABASE_URL:
         )
     }
 else:
+    default_db_path = Path('/tmp/db.sqlite3') if os.environ.get('VERCEL') or not os.access(str(BASE_DIR), os.W_OK) else BASE_DIR / 'db.sqlite3'
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': default_db_path,
         }
     }
 

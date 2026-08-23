@@ -25,7 +25,7 @@ def bootstrap() -> Path:
             load_dotenv(env_path, override=False)
 
     # Vercel environment: redirect SQLite to writable /tmp directory
-    if os.environ.get("VERCEL") == "1":
+    if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
         db_url = os.environ.get("DATABASE_URL", "")
         if not db_url or db_url.startswith("sqlite"):
             os.environ["DATABASE_URL"] = "sqlite:////tmp/db.sqlite3"
@@ -39,7 +39,7 @@ def bootstrap() -> Path:
 
 
 _BOOTSTRAP_DONE = False
-_MARKER_FILE = Path("/tmp/.digiland_bootstrapped") if os.environ.get("VERCEL") == "1" else None
+_MARKER_FILE = Path("/tmp/.digiland_bootstrapped") if (os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV")) else None
 
 
 def init_django_app() -> None:
