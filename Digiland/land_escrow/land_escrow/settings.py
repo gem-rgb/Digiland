@@ -55,15 +55,19 @@ def database_config_from_url(database_url, conn_max_age=60, ssl_require=False):
     scheme = (parsed.scheme or "").lower()
 
     if scheme in {"sqlite", "sqlite3"}:
-        path = unquote(parsed.path or "").lstrip("/")
-        if not path:
+        raw_path = unquote(parsed.path or "")
+        if not raw_path:
             return {
                 "ENGINE": "django.db.backends.sqlite3",
                 "NAME": ":memory:",
             }
+        if raw_path.startswith("/") or os.path.isabs(raw_path):
+            db_name = raw_path
+        else:
+            db_name = str(BASE_DIR / raw_path.lstrip("/"))
         return {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / path,
+            "NAME": db_name,
         }
 
     if scheme in {"postgres", "postgresql"}:
