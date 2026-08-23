@@ -347,9 +347,15 @@ elif config('CLOUDINARY_CLOUD_NAME', default=''):
     DEFAULT_STORAGE_BACKEND = 'cloudinary_storage.storage.RawMediaCloudinaryStorage'
 else:
     MEDIA_URL = '/media/'
-    MEDIA_ROOT = BASE_DIR / 'media'
     import os
-    os.makedirs(MEDIA_ROOT, exist_ok=True)
+    if os.environ.get('VERCEL') or not os.access(str(BASE_DIR), os.W_OK):
+        MEDIA_ROOT = Path('/tmp/media')
+    else:
+        MEDIA_ROOT = BASE_DIR / 'media'
+    try:
+        os.makedirs(MEDIA_ROOT, exist_ok=True)
+    except OSError:
+        pass
     DEFAULT_STORAGE_BACKEND = 'django.core.files.storage.FileSystemStorage'
 
 STORAGES = {
