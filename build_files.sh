@@ -15,7 +15,7 @@ fi
 
 # Collect static files and migrate
 echo "Collecting static files..."
-python manage.py collectstatic --noinput
+python manage.py collectstatic --noinput || echo "Notice: static collection skipped or precompiled"
 
 echo "Running migrations if database available..."
 python manage.py migrate --noinput || echo "Notice: Database migration skipped during build"

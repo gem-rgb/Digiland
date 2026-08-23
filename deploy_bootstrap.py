@@ -47,6 +47,10 @@ def init_django_app() -> None:
     if _BOOTSTRAP_DONE:
         return
 
+    # Skip database operations if running build / check commands
+    if any(cmd in sys.argv for cmd in ("collectstatic", "makemigrations", "check", "test")):
+        return
+
     try:
         import django
         from django.conf import settings
