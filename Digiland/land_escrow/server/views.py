@@ -141,6 +141,15 @@ def custom_404_view(request, exception=None):
         return render(request, '404.html', status=404)
 
 
+def custom_500_view(request):
+    """Diagnose and render internal server errors cleanly."""
+    import sys, traceback
+    from django.http import HttpResponse
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    tb_str = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback)) if exc_type else "No traceback available."
+    return HttpResponse(f"<h1>Server Error (500)</h1><pre style='background:#111;color:#ff6b6b;padding:1rem;border-radius:8px;'>{tb_str}</pre>", status=500, content_type="text/html")
+
+
 def public_marketing_page(request, page_key):
     page = PUBLIC_PAGES.get(page_key)
     if not page:
