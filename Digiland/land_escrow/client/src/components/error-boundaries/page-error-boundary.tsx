@@ -56,11 +56,22 @@ function PageErrorFallback({ error, resetError }: { error: Error; resetError: ()
           </p>
         </div>
 
-        <div className="rounded-3xl border border-border/70 bg-white/92 p-5 shadow-soft">
-          <p className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">
-            Reference ID
-          </p>
-          <p className="mt-1 font-mono text-sm font-semibold text-foreground">{referenceId}</p>
+        <div className="rounded-3xl border border-border/70 bg-white/92 p-5 shadow-soft text-left space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">
+              Reference ID
+            </p>
+            <p className="font-mono text-xs font-semibold text-foreground">{referenceId}</p>
+          </div>
+          {error?.message && (
+            <details className="mt-2 text-xs">
+              <summary className="cursor-pointer font-semibold text-rose-600">Technical Details</summary>
+              <pre className="mt-2 max-h-40 overflow-auto rounded-xl bg-slate-900 p-3 font-mono text-[11px] text-rose-300">
+                {error.message}
+                {error.stack ? `\n\n${error.stack}` : ''}
+              </pre>
+            </details>
+          )}
         </div>
 
         <nav aria-label="Error recovery options" className="flex flex-col gap-3">

@@ -63,7 +63,7 @@ interface AppShellProps {
 }
 
 export function AppShell({
-  title,
+  title = 'Digiland',
   subtitle,
   user,
   nav,
@@ -77,40 +77,41 @@ export function AppShell({
   const currentRole = user?.role || 'Guest';
   const displayName = user?.full_name || (user?.email ? user.email.split('@')[0] : 'User');
   const userInitial = displayName.charAt(0).toUpperCase();
+  const safeTitle = (title || 'Digiland').toLowerCase();
 
   // Core App Rail navigation icons
   const railItems = [
-    { label: 'Home', href: '/', icon: Home, active: activeNav === 'home' || title.toLowerCase().includes('home') },
+    { label: 'Home', href: '/', icon: Home, active: activeNav === 'home' || safeTitle.includes('home') },
     {
       label: 'Dashboard',
       href: user?.role === 'Seller' ? '/seller/dashboard/' : user?.role === 'Buyer' ? '/buyer/dashboard/' : '/parcels/',
       icon: LayoutDashboard,
-      active: title.toLowerCase().includes('dashboard') || title.toLowerCase().includes('workspace'),
+      active: safeTitle.includes('dashboard') || safeTitle.includes('workspace'),
     },
     {
       label: 'Chat',
       href: '/messages/',
       icon: MessageSquare,
-      active: activeNav === 'messages' || title.toLowerCase().includes('message'),
+      active: activeNav === 'messages' || safeTitle.includes('message'),
       badge: 'DM',
     },
     {
       label: 'Parcels',
       href: '/parcels/',
       icon: Grid2X2,
-      active: title.toLowerCase().includes('parcel') || title.toLowerCase().includes('marketplace'),
+      active: safeTitle.includes('parcel') || safeTitle.includes('marketplace'),
     },
     {
       label: 'Escrow',
       href: '/transactions/',
       icon: ReceiptText,
-      active: title.toLowerCase().includes('transaction') || title.toLowerCase().includes('escrow'),
+      active: safeTitle.includes('transaction') || safeTitle.includes('escrow'),
     },
     {
       label: 'Legal',
       href: user?.role === 'Seller' ? '/seller/laws/' : '/escrow-acts/',
       icon: Scale,
-      active: title.toLowerCase().includes('legal') || title.toLowerCase().includes('act'),
+      active: safeTitle.includes('legal') || safeTitle.includes('act'),
     },
   ];
 
@@ -209,7 +210,7 @@ export function AppShell({
 
             <div className="flex items-center gap-2">
               <span className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">
-                {title.split(' - ')[0]}
+                {(title || 'Digiland').split(' - ')[0]}
               </span>
               {subtitle && (
                 <>

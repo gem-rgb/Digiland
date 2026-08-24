@@ -27060,7 +27060,7 @@ function ShieldCheckIcon(props) {
 
 // src/components/layout/app-shell.tsx
 function AppShell({
-  title,
+  title = "Digiland",
   subtitle,
   user,
   nav,
@@ -27074,38 +27074,39 @@ function AppShell({
   const currentRole = user?.role || "Guest";
   const displayName = user?.full_name || (user?.email ? user.email.split("@")[0] : "User");
   const userInitial = displayName.charAt(0).toUpperCase();
+  const safeTitle = (title || "Digiland").toLowerCase();
   const railItems = [
-    { label: "Home", href: "/", icon: House, active: activeNav === "home" || title.toLowerCase().includes("home") },
+    { label: "Home", href: "/", icon: House, active: activeNav === "home" || safeTitle.includes("home") },
     {
       label: "Dashboard",
       href: user?.role === "Seller" ? "/seller/dashboard/" : user?.role === "Buyer" ? "/buyer/dashboard/" : "/parcels/",
       icon: LayoutDashboard,
-      active: title.toLowerCase().includes("dashboard") || title.toLowerCase().includes("workspace")
+      active: safeTitle.includes("dashboard") || safeTitle.includes("workspace")
     },
     {
       label: "Chat",
       href: "/messages/",
       icon: MessageSquare,
-      active: activeNav === "messages" || title.toLowerCase().includes("message"),
+      active: activeNav === "messages" || safeTitle.includes("message"),
       badge: "DM"
     },
     {
       label: "Parcels",
       href: "/parcels/",
       icon: Grid2x2,
-      active: title.toLowerCase().includes("parcel") || title.toLowerCase().includes("marketplace")
+      active: safeTitle.includes("parcel") || safeTitle.includes("marketplace")
     },
     {
       label: "Escrow",
       href: "/transactions/",
       icon: ReceiptText,
-      active: title.toLowerCase().includes("transaction") || title.toLowerCase().includes("escrow")
+      active: safeTitle.includes("transaction") || safeTitle.includes("escrow")
     },
     {
       label: "Legal",
       href: user?.role === "Seller" ? "/seller/laws/" : "/escrow-acts/",
       icon: Scale,
-      active: title.toLowerCase().includes("legal") || title.toLowerCase().includes("act")
+      active: safeTitle.includes("legal") || safeTitle.includes("act")
     }
   ];
   return /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex min-h-screen bg-[#0d121f] text-slate-100 antialiased selection:bg-emerald-500 selection:text-slate-950 font-sans" }, /* @__PURE__ */ import_react4.default.createElement("aside", { className: "hidden w-[72px] shrink-0 flex-col items-center justify-between border-r border-white/[0.08] bg-[#080b13] py-4 md:flex z-40" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex flex-col items-center gap-6" }, /* @__PURE__ */ import_react4.default.createElement(
@@ -27159,7 +27160,7 @@ function AppShell({
       className: "flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.06] text-slate-300 md:hidden"
     },
     /* @__PURE__ */ import_react4.default.createElement(Menu, { className: "h-5 w-5" })
-  ), /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react4.default.createElement("span", { className: "text-xs font-black uppercase tracking-[0.2em] text-emerald-400" }, title.split(" - ")[0]), subtitle && /* @__PURE__ */ import_react4.default.createElement(import_react4.default.Fragment, null, /* @__PURE__ */ import_react4.default.createElement("span", { className: "hidden text-slate-600 sm:inline" }, "\u2022"), /* @__PURE__ */ import_react4.default.createElement("span", { className: "hidden truncate text-xs font-medium text-slate-400 sm:inline max-w-md" }, subtitle)))), /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex items-center gap-3" }, actions?.map((action) => /* @__PURE__ */ import_react4.default.createElement(
+  ), /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react4.default.createElement("span", { className: "text-xs font-black uppercase tracking-[0.2em] text-emerald-400" }, (title || "Digiland").split(" - ")[0]), subtitle && /* @__PURE__ */ import_react4.default.createElement(import_react4.default.Fragment, null, /* @__PURE__ */ import_react4.default.createElement("span", { className: "hidden text-slate-600 sm:inline" }, "\u2022"), /* @__PURE__ */ import_react4.default.createElement("span", { className: "hidden truncate text-xs font-medium text-slate-400 sm:inline max-w-md" }, subtitle)))), /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex items-center gap-3" }, actions?.map((action) => /* @__PURE__ */ import_react4.default.createElement(
     "a",
     {
       key: `${action.label}-${action.href}`,
@@ -33204,7 +33205,9 @@ function PageErrorFallback({ error, resetError }) {
       "aria-live": "assertive",
       className: "flex min-h-screen items-center justify-center bg-gradient-to-b from-stone-50 to-white p-6"
     },
-    /* @__PURE__ */ import_react19.default.createElement("div", { className: "w-full max-w-lg space-y-8 text-center" }, /* @__PURE__ */ import_react19.default.createElement("div", { className: "mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-rose-50" }, /* @__PURE__ */ import_react19.default.createElement(TriangleAlert, { className: "h-8 w-8 text-rose-600", "aria-hidden": "true" })), /* @__PURE__ */ import_react19.default.createElement("div", { className: "space-y-3" }, /* @__PURE__ */ import_react19.default.createElement("h1", { className: "text-2xl font-black tracking-tight text-foreground" }, "Something went wrong"), /* @__PURE__ */ import_react19.default.createElement("p", { className: "text-sm leading-7 text-muted-foreground" }, "We encountered an unexpected error while loading this page. Our team has been notified and is working on a fix. Your data is safe.")), /* @__PURE__ */ import_react19.default.createElement("div", { className: "rounded-3xl border border-border/70 bg-white/92 p-5 shadow-soft" }, /* @__PURE__ */ import_react19.default.createElement("p", { className: "text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground" }, "Reference ID"), /* @__PURE__ */ import_react19.default.createElement("p", { className: "mt-1 font-mono text-sm font-semibold text-foreground" }, referenceId)), /* @__PURE__ */ import_react19.default.createElement("nav", { "aria-label": "Error recovery options", className: "flex flex-col gap-3" }, /* @__PURE__ */ import_react19.default.createElement(
+    /* @__PURE__ */ import_react19.default.createElement("div", { className: "w-full max-w-lg space-y-8 text-center" }, /* @__PURE__ */ import_react19.default.createElement("div", { className: "mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-rose-50" }, /* @__PURE__ */ import_react19.default.createElement(TriangleAlert, { className: "h-8 w-8 text-rose-600", "aria-hidden": "true" })), /* @__PURE__ */ import_react19.default.createElement("div", { className: "space-y-3" }, /* @__PURE__ */ import_react19.default.createElement("h1", { className: "text-2xl font-black tracking-tight text-foreground" }, "Something went wrong"), /* @__PURE__ */ import_react19.default.createElement("p", { className: "text-sm leading-7 text-muted-foreground" }, "We encountered an unexpected error while loading this page. Our team has been notified and is working on a fix. Your data is safe.")), /* @__PURE__ */ import_react19.default.createElement("div", { className: "rounded-3xl border border-border/70 bg-white/92 p-5 shadow-soft text-left space-y-2" }, /* @__PURE__ */ import_react19.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react19.default.createElement("p", { className: "text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground" }, "Reference ID"), /* @__PURE__ */ import_react19.default.createElement("p", { className: "font-mono text-xs font-semibold text-foreground" }, referenceId)), error?.message && /* @__PURE__ */ import_react19.default.createElement("details", { className: "mt-2 text-xs" }, /* @__PURE__ */ import_react19.default.createElement("summary", { className: "cursor-pointer font-semibold text-rose-600" }, "Technical Details"), /* @__PURE__ */ import_react19.default.createElement("pre", { className: "mt-2 max-h-40 overflow-auto rounded-xl bg-slate-900 p-3 font-mono text-[11px] text-rose-300" }, error.message, error.stack ? `
+
+${error.stack}` : ""))), /* @__PURE__ */ import_react19.default.createElement("nav", { "aria-label": "Error recovery options", className: "flex flex-col gap-3" }, /* @__PURE__ */ import_react19.default.createElement(
       "button",
       {
         type: "button",
