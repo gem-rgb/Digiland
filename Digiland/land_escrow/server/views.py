@@ -242,8 +242,11 @@ def home(request):
     
     if request.user.is_authenticated:
         if request.user.role == 'Seller':
-            seller_parcels = LandParcel.objects.filter(listed_by=request.user).order_by('-updated_at')
-            recent_parcels = [serialize_parcel(parcel, request.user) for parcel in seller_parcels]
+            try:
+                seller_parcels = LandParcel.objects.filter(listed_by=request.user).order_by('-updated_at')
+                recent_parcels = [serialize_parcel(parcel, request.user) for parcel in seller_parcels]
+            except Exception:
+                recent_parcels = []
         else:
             recent_parcels = [serialize_parcel(parcel, request.user) for parcel in parcels]
         recent_transactions = [serialize_transaction(tx, request.user) for tx in transactions] if transactions else []

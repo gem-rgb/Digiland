@@ -20,7 +20,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
 from core import admin_urls
-from land_escrow.health_views import health_check
+from land_escrow.health_views import health_check, run_migrations
 
 from core import api_views
 
@@ -29,6 +29,7 @@ ADMIN_URL_PATH = getattr(settings, 'DJANGO_ADMIN_URL', 'admin/')
 urlpatterns = [
     path('favicon.ico', RedirectView.as_view(url=settings.STATIC_URL + 'images/favicon.ico', permanent=True)),
     path('health/', health_check, name='health-check'),
+    path('health/migrate/', run_migrations, name='run-migrations'),
     path('browse', RedirectView.as_view(url='/parcels/', permanent=False)),
     path('browse/', RedirectView.as_view(url='/parcels/', permanent=False)),
     path('marketplace', RedirectView.as_view(url='/parcels/', permanent=False, query_string=True)),
