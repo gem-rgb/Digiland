@@ -2484,6 +2484,10 @@ function MessagesPage() {
   const isChannelMode = Boolean(activeChannelId);
   const currentChannel = officialChannels.find((c) => c.id === activeChannelId);
 
+  const safeRecipientName = selectedRecipient?.name || (selectedRecipient?.email ? selectedRecipient.email.split('@')[0] : 'Escrow Desk');
+  const safeRecipientEmail = selectedRecipient?.email || 'support@digiland.co.ke';
+  const safeRecipientRole = selectedRecipient?.role || 'Support';
+
   return (
     <AppShell {...shellProps} activeNav="messages">
       <div className="flex h-[calc(100vh-8rem)] min-h-[640px] flex-col overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#0c111e] shadow-2xl backdrop-blur-xl md:flex-row">
@@ -2567,17 +2571,20 @@ function MessagesPage() {
                     </button>
                   </div>
                 ) : (
-                  filteredThreads.map((thread) => {
-                    const isSelected = !isChannelMode && selectedPartnerEmail.toLowerCase() === thread.partner.email.toLowerCase();
-                    const avatar = getAvatarInfo(thread.partner.email, thread.partner.role);
-                    const latestMsg = thread.messages[0];
+                  filteredThreads.map((thread, tIdx) => {
+                    const partnerEmail = thread?.partner?.email || `contact-${tIdx}@digiland.co.ke`;
+                    const partnerRole = thread?.partner?.role || 'User';
+                    const partnerName = thread?.partner?.name || partnerEmail.split('@')[0];
+                    const isSelected = !isChannelMode && selectedPartnerEmail.toLowerCase() === partnerEmail.toLowerCase();
+                    const avatar = getAvatarInfo(partnerEmail, partnerRole);
+                    const latestMsg = thread?.messages && thread.messages[0];
 
                     return (
                       <button
-                        key={thread.partner.email}
+                        key={partnerEmail}
                         onClick={() => {
                           setActiveChannelId(null);
-                          setSelectedPartnerEmail(thread.partner.email);
+                          setSelectedPartnerEmail(partnerEmail);
                         }}
                         className={cn(
                           'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-all duration-150',
@@ -2596,7 +2603,7 @@ function MessagesPage() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-1">
                             <span className={cn('truncate text-xs font-bold', isSelected ? 'text-white' : 'text-slate-300')}>
-                              {thread.partner.name || thread.partner.email.split('@')[0]}
+                              {partnerName}
                             </span>
                             <span className="text-[9px] text-slate-500 shrink-0">{thread.latest_timestamp || ''}</span>
                           </div>
@@ -2637,14 +2644,14 @@ function MessagesPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-black text-white">
-                    {isChannelMode ? currentChannel?.name : (selectedRecipient.name || selectedRecipient.email)}
+                    {isChannelMode ? currentChannel?.name : safeRecipientName}
                   </h3>
                   <Badge tone="outline" className="bg-white/[0.04] text-[9px] uppercase font-bold py-0 text-slate-300">
-                    {isChannelMode ? 'Platform Channel' : selectedRecipient.role}
+                    {isChannelMode ? 'Platform Channel' : safeRecipientRole}
                   </Badge>
                 </div>
                 <div className="text-[10px] text-slate-400 truncate max-w-xl">
-                  {isChannelMode ? currentChannel?.topic : `Direct encrypted session • ${selectedRecipient.email}`}
+                  {isChannelMode ? currentChannel?.topic : `Direct encrypted session • ${safeRecipientEmail}`}
                 </div>
               </div>
             </div>
@@ -2724,7 +2731,7 @@ function MessagesPage() {
                   </div>
                 </div>
               </div>
-            ) : !activeThread || activeThread.messages.length === 0 ? (
+            ) : !activeThread || !activeThread.messages || activeThread.messages.length === 0 ? (
               /* Empty DM State */
               <div className="mx-auto my-auto max-w-md p-8 text-center space-y-4 rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-xl">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400">
@@ -2732,7 +2739,7 @@ function MessagesPage() {
                 </div>
                 <div>
                   <h4 className="text-base font-extrabold text-white">
-                    Direct channel with {selectedRecipient.name || selectedRecipient.email}
+                    Direct channel with {safeRecipientName}
                   </h4>
                   <p className="mt-1 text-xs text-slate-400 leading-relaxed">
                     Messages sent here are private and protected by Digiland escrow dual-signature mediation.
@@ -2760,16 +2767,15 @@ function MessagesPage() {
             ) : (
               /* Active DM Messages Feed (Discord / Slack style) */
               <div className="space-y-4">
-                {[...activeThread.messages].reverse().map((msg, idx) => {
-                  const isSelf = msg.is_self;
-                  const avatar = getAvatarInfo(
-                    isSelf ? bootstrap.user?.email || 'You' : selectedRecipient.email,
-                    isSelf ? bootstrap.user?.role : selectedRecipient.role
-                  );
+                {[...(activeThread.messages || [])].reverse().map((msg, idx) => {
+                  const isSelf = Boolean(msg?.is_self);
+                  const senderEmail = isSelf ? (bootstrap.user?.email || 'You') : safeRecipientEmail;
+                  const senderRole = isSelf ? (bootstrap.user?.role || 'User') : safeRecipientRole;
+                  const avatar = getAvatarInfo(senderEmail, senderRole);
 
                   return (
                     <div
-                      key={msg.id || idx}
+                      key={msg?.id || idx}
                       className={cn(
                         'group flex items-start gap-3 rounded-2xl p-3 transition-colors hover:bg-white/[0.03]',
                         isSelf ? 'border-l-2 border-emerald-500/60 bg-emerald-500/[0.03]' : ''
@@ -2787,25 +2793,25 @@ function MessagesPage() {
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex items-center gap-2">
                           <span className={cn('text-xs font-extrabold', isSelf ? 'text-emerald-300' : 'text-white')}>
-                            {isSelf ? 'You' : (selectedRecipient.name || selectedRecipient.email)}
+                            {isSelf ? 'You' : safeRecipientName}
                           </span>
                           <span
                             className={cn(
                               'rounded px-1.5 py-0.2 text-[9px] font-black uppercase tracking-wider',
-                              (isSelf ? bootstrap.user?.role : selectedRecipient.role) === 'Admin'
+                              senderRole === 'Admin'
                                 ? 'bg-purple-500/20 text-purple-300'
-                                : (isSelf ? bootstrap.user?.role : selectedRecipient.role) === 'Agent'
+                                : senderRole === 'Agent'
                                 ? 'bg-emerald-500/20 text-emerald-300'
                                 : 'bg-slate-700 text-slate-300'
                             )}
                           >
-                            {isSelf ? bootstrap.user?.role : selectedRecipient.role}
+                            {senderRole}
                           </span>
-                          <span className="text-[10px] text-slate-500 font-medium">{msg.timestamp}</span>
+                          <span className="text-[10px] text-slate-500 font-medium">{msg?.timestamp || ''}</span>
                         </div>
 
                         <div className="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
-                          {msg.content}
+                          {msg?.content || ''}
                         </div>
                       </div>
                     </div>
@@ -2830,12 +2836,7 @@ function MessagesPage() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (isChannelMode) {
-                  // If in channel mode, send to Admin desk
-                  handleSendMessage();
-                } else {
-                  handleSendMessage();
-                }
+                handleSendMessage();
               }}
               className="relative flex items-center rounded-2xl border border-white/15 bg-[#121727] p-1.5 transition-all focus-within:border-emerald-500/60 focus-within:ring-2 focus-within:ring-emerald-500/20"
             >
@@ -2845,8 +2846,8 @@ function MessagesPage() {
                 onChange={(e) => setInputMessage(e.target.value)}
                 placeholder={
                   isChannelMode
-                    ? `Message #${currentChannel?.name}...`
-                    : `Message @${selectedRecipient.name || selectedRecipient.email}...`
+                    ? `Message #${currentChannel?.name || 'general'}...`
+                    : `Message @${safeRecipientName}...`
                 }
                 disabled={isSending}
                 className="h-10 w-full bg-transparent px-3 text-xs sm:text-sm text-slate-100 placeholder:text-slate-500 outline-none"
@@ -2884,7 +2885,7 @@ function MessagesPage() {
             </div>
 
             <div className="mt-4 space-y-2 max-h-72 overflow-y-auto pr-1">
-              {page.allowed_recipients.map((recipient) => {
+              {(page.allowed_recipients || []).map((recipient) => {
                 const avatar = getAvatarInfo(recipient.email, recipient.role);
                 return (
                   <button
