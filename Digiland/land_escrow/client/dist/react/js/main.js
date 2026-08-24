@@ -23895,7 +23895,7 @@ var Layers = createLucideIcon("Layers", [
 ]);
 
 // node_modules/lucide-react/dist/esm/icons/layout-dashboard.js
-var LayoutDashboard2 = createLucideIcon("LayoutDashboard", [
+var LayoutDashboard = createLucideIcon("LayoutDashboard", [
   ["rect", { width: "7", height: "9", x: "3", y: "3", rx: "1", key: "10lvy0" }],
   ["rect", { width: "7", height: "5", x: "14", y: "3", rx: "1", key: "16une8" }],
   ["rect", { width: "7", height: "9", x: "14", y: "12", rx: "1", key: "1hutg5" }],
@@ -27092,7 +27092,7 @@ function AppShell({
     {
       label: "Dashboard",
       href: user?.role === "Seller" ? "/seller/dashboard/" : user?.role === "Buyer" ? "/buyer/dashboard/" : "/parcels/",
-      icon: LayoutDashboard2,
+      icon: LayoutDashboard,
       active: safeTitle.includes("dashboard") || safeTitle.includes("workspace")
     },
     {
