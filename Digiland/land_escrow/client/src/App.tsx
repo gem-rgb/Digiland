@@ -2707,6 +2707,55 @@ function MessagesPage() {
     });
   }, [threads, searchQuery, roleFilter]);
 
+  const [modalSearch, setModalSearch] = useState('');
+  const [modalRoleFilter, setModalRoleFilter] = useState<'All' | 'Lawyer' | 'Agent' | 'Seller' | 'Buyer' | 'Admin'>('All');
+
+  // Background polling for real-time back-and-forth messaging updates
+  useEffect(() => {
+    if (!selectedPartnerEmail || isChannelMode) return;
+    const interval = setInterval(async () => {
+      try {
+        const partner = (page.allowed_recipients || []).find(
+          (r) => r.email && r.email.toLowerCase() === selectedPartnerEmail.toLowerCase()
+        );
+        const partnerId = partner?.id || activeThread?.partner?.id;
+        if (!partnerId) return;
+
+        const resp = await fetch(`/messages/thread/${partnerId}/`, {
+          headers: { 'Accept': 'application/json' },
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.thread && data.thread.messages) {
+            setThreads((prev) => {
+              const exists = prev.some(
+                (t) => t.partner?.email?.toLowerCase() === selectedPartnerEmail.toLowerCase()
+              );
+              if (exists) {
+                return prev.map((t) =>
+                  t.partner?.email?.toLowerCase() === selectedPartnerEmail.toLowerCase()
+                    ? {
+                        ...t,
+                        messages: data.thread.messages,
+                        count: data.thread.count,
+                        latest_timestamp: data.thread.latest_timestamp,
+                      }
+                    : t
+                );
+              } else {
+                return [data.thread, ...prev];
+              }
+            });
+          }
+        }
+      } catch {
+        // silent background poll
+      }
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, [selectedPartnerEmail, isChannelMode, page.allowed_recipients, activeThread?.partner?.id]);
+
   // Auto-scroll on active thread change or new messages
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -3216,8 +3265,8 @@ function MessagesPage() {
 
       {/* Start New Chat Modal */}
       {isNewChatOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0f1523] p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-md">
+          <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-[#0f1523] p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-emerald-400" />
@@ -3231,34 +3280,96 @@ function MessagesPage() {
               </button>
             </div>
 
-            <div className="mt-4 space-y-2 max-h-72 overflow-y-auto pr-1">
-              {(page.allowed_recipients || []).map((recipient) => {
-                const avatar = getAvatarInfo(recipient.email, recipient.role);
-                return (
-                  <button
-                    key={recipient.email}
-                    onClick={() => {
-                      setActiveChannelId(null);
-                      setSelectedPartnerEmail(recipient.email);
-                      setIsNewChatOpen(false);
-                    }}
-                    className="flex w-full items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-left transition hover:border-emerald-500/40 hover:bg-emerald-500/10"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className={cn('flex h-8 w-8 items-center justify-center rounded-lg text-xs font-black', avatar.bg)}>
-                        {avatar.initial}
+            {/* Search Input */}
+            <div className="mt-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-500" />
+                <input
+                  type="text"
+                  placeholder="Search by name, email, or role..."
+                  value={modalSearch}
+                  onChange={(e) => setModalSearch(e.target.value)}
+                  className="h-9 w-full rounded-xl border border-white/10 bg-[#0a0e18] pl-9 pr-3 text-xs text-slate-200 placeholder:text-slate-500 outline-none focus:border-emerald-500/60"
+                />
+              </div>
+            </div>
+
+            {/* Role Filter Tabs */}
+            <div className="mt-3 flex flex-wrap gap-1.5 border-b border-white/10 pb-3">
+              {(['All', 'Lawyer', 'Agent', 'Seller', 'Buyer', 'Admin'] as const).map((rTab) => (
+                <button
+                  key={rTab}
+                  onClick={() => setModalRoleFilter(rTab)}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg text-[11px] font-bold transition',
+                    modalRoleFilter === rTab
+                      ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                      : 'bg-white/[0.04] text-slate-400 hover:bg-white/[0.08] hover:text-slate-200'
+                  )}
+                >
+                  {rTab}
+                </button>
+              ))}
+            </div>
+
+            {/* Recipients List */}
+            <div className="mt-3 space-y-2 max-h-80 overflow-y-auto pr-1">
+              {(page.allowed_recipients || [])
+                .filter((recipient) => {
+                  if (modalRoleFilter !== 'All' && recipient.role !== modalRoleFilter) {
+                    return false;
+                  }
+                  if (modalSearch.trim()) {
+                    const q = modalSearch.toLowerCase();
+                    const matches =
+                      (recipient.email && recipient.email.toLowerCase().includes(q)) ||
+                      (recipient.name && recipient.name.toLowerCase().includes(q)) ||
+                      (recipient.role && recipient.role.toLowerCase().includes(q));
+                    if (!matches) return false;
+                  }
+                  return true;
+                })
+                .map((recipient) => {
+                  const avatar = getAvatarInfo(recipient.email, recipient.role);
+                  return (
+                    <button
+                      key={recipient.email}
+                      onClick={() => {
+                        setActiveChannelId(null);
+                        setSelectedPartnerEmail(recipient.email);
+                        setIsNewChatOpen(false);
+                      }}
+                      className="flex w-full items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-left transition hover:border-emerald-500/40 hover:bg-emerald-500/10"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl text-xs font-black shrink-0', avatar.bg)}>
+                          {avatar.initial}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-slate-200 truncate">{recipient.name || recipient.email}</div>
+                          <div className="text-[10px] text-slate-400 truncate">{recipient.email}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs font-bold text-slate-200">{recipient.name || recipient.email}</div>
-                        <div className="text-[10px] text-slate-500">{recipient.email}</div>
-                      </div>
-                    </div>
-                    <Badge tone="outline" className="text-[9px] uppercase font-bold text-slate-300">
-                      {recipient.role}
-                    </Badge>
-                  </button>
-                );
-              })}
+                      <Badge
+                        tone="outline"
+                        className={cn(
+                          'text-[9px] uppercase font-black px-2 py-0.5',
+                          recipient.role === 'Lawyer'
+                            ? 'border-blue-500/40 text-blue-300 bg-blue-500/10'
+                            : recipient.role === 'Agent'
+                            ? 'border-emerald-500/40 text-emerald-300 bg-emerald-500/10'
+                            : recipient.role === 'Seller'
+                            ? 'border-amber-500/40 text-amber-300 bg-amber-500/10'
+                            : recipient.role === 'Admin'
+                            ? 'border-purple-500/40 text-purple-300 bg-purple-500/10'
+                            : 'border-slate-600 text-slate-300 bg-slate-800/40'
+                        )}
+                      >
+                        {recipient.role}
+                      </Badge>
+                    </button>
+                  );
+                })}
             </div>
           </div>
         </div>

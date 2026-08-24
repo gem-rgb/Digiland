@@ -2465,16 +2465,9 @@ def messages_list(request):
                 threads[partner] = []
             threads[partner].append(msg)
 
-    # Determine who this user is ALLOWED to compose to
-    # Rule: Buyers & Sellers can ONLY contact Admins/Agents
-    # Rule: Admins/Agents can contact anyone
+    # Allow messaging across all platform roles: Lawyer, Seller, Buyer, Agent, Admin
     try:
-        if current_user.role in ['Buyer', 'Seller']:
-            allowed_recipients = CoreUser.objects.filter(
-                role__in=['Admin', 'Agent', 'Lawyer']
-            ).exclude(id=current_user.id)
-        else:  # Admin / Agent
-            allowed_recipients = CoreUser.objects.exclude(id=current_user.id)
+        allowed_recipients = CoreUser.objects.filter(is_active=True).exclude(id=current_user.id).order_by('role', 'email')
         serialized_recipients = [serialize_user(recipient) for recipient in allowed_recipients]
     except Exception:
         serialized_recipients = []
@@ -2482,37 +2475,14 @@ def messages_list(request):
     context = {
         'allowed_recipients': serialized_recipients,
         'msg_error': request.session.pop('msg_error', None),
+        'header': 'Messages & Communications',
+        'threads': [
+            serialize_message_thread(partner, msgs, current_user)
+            for partner, msgs in threads.items()
+            if partner
+        ],
+        'mode': 'single',
     }
-
-    if current_user.role == 'Buyer':
-        context['header'] = 'My Inbox'
-        context['threads'] = [
-            serialize_message_thread(partner, msgs, current_user)
-            for partner, msgs in threads.items()
-            if partner and getattr(partner, 'role', '') in ['Admin', 'Agent', 'Lawyer']
-        ]
-        context['mode'] = 'single'
-    elif current_user.role == 'Seller':
-        context['header'] = 'My Inbox'
-        context['threads'] = [
-            serialize_message_thread(partner, msgs, current_user)
-            for partner, msgs in threads.items()
-            if partner and getattr(partner, 'role', '') in ['Admin', 'Agent', 'Lawyer']
-        ]
-        context['mode'] = 'single'
-    else:  # Admin / Agent
-        context['header'] = 'Platform Communications'
-        context['buyer_threads'] = [
-            serialize_message_thread(partner, msgs, current_user)
-            for partner, msgs in threads.items()
-            if partner and getattr(partner, 'role', '') == 'Buyer'
-        ]
-        context['seller_threads'] = [
-            serialize_message_thread(partner, msgs, current_user)
-            for partner, msgs in threads.items()
-            if partner and getattr(partner, 'role', '') == 'Seller'
-        ]
-        context['mode'] = 'dual'
 
     return render_react_shell(
         request,
@@ -2668,19 +2638,6 @@ def send_message(request):
         if is_ajax:
             return JsonResponse({'error': 'Recipient not specified or not found'}, status=404)
         return redirect('frontend:messages')
-
-    # Strict mediation: Buyers and Sellers CANNOT message each other directly unless part of an active transaction
-    if sender.role in ['Buyer', 'Seller'] and receiver.role in ['Buyer', 'Seller']:
-        from django.db.models import Q
-        # Check if they share a transaction
-        has_shared_tx = Transaction.objects.filter(
-            (Q(buyer=sender, seller=receiver) | Q(buyer=receiver, seller=sender))
-        ).exists()
-        if not has_shared_tx:
-            if is_ajax:
-                return JsonResponse({'error': 'Direct buyer-seller messaging is restricted to active transactions.'}, status=403)
-            request.session['msg_error'] = 'Direct buyer-seller messaging is restricted to active transactions.'
-            return redirect('frontend:messages')
 
     msg = Message.objects.create(sender=sender, receiver=receiver, content=content)
     
