@@ -23881,6 +23881,19 @@ var Landmark = createLucideIcon("Landmark", [
   ["polygon", { points: "12 2 20 7 4 7", key: "jkujk7" }]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/layers.js
+var Layers = createLucideIcon("Layers", [
+  [
+    "path",
+    {
+      d: "m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z",
+      key: "8b97xw"
+    }
+  ],
+  ["path", { d: "m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65", key: "dd6zsq" }],
+  ["path", { d: "m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65", key: "ep9fru" }]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/layout-dashboard.js
 var LayoutDashboard = createLucideIcon("LayoutDashboard", [
   ["rect", { width: "7", height: "9", x: "3", y: "3", rx: "1", key: "10lvy0" }],
@@ -27076,7 +27089,6 @@ function AppShell({
   const userInitial = displayName.charAt(0).toUpperCase();
   const safeTitle = (title || "Digiland").toLowerCase();
   const railItems = [
-    { label: "Home", href: "/", icon: House, active: activeNav === "home" || safeTitle.includes("home") },
     {
       label: "Dashboard",
       href: user?.role === "Seller" ? "/seller/dashboard/" : user?.role === "Buyer" ? "/buyer/dashboard/" : "/parcels/",
@@ -27084,29 +27096,35 @@ function AppShell({
       active: safeTitle.includes("dashboard") || safeTitle.includes("workspace")
     },
     {
-      label: "Chat",
+      label: "My Parcels",
+      href: "/parcels/",
+      icon: Grid2x2,
+      active: safeTitle.includes("parcel") || safeTitle.includes("marketplace")
+    },
+    {
+      label: "Promotions",
+      href: user?.role === "Seller" ? "/seller/promotions/" : "/features/",
+      icon: Layers,
+      active: safeTitle.includes("promotion") || safeTitle.includes("ad") || safeTitle.includes("tier")
+    },
+    {
+      label: "Transactions",
+      href: "/transactions/",
+      icon: ReceiptText,
+      active: safeTitle.includes("transaction") || safeTitle.includes("escrow")
+    },
+    {
+      label: "Messages",
       href: "/messages/",
       icon: MessageSquare,
       active: activeNav === "messages" || safeTitle.includes("message"),
       badge: "DM"
     },
     {
-      label: "Parcels",
-      href: "/parcels/",
-      icon: Grid2x2,
-      active: safeTitle.includes("parcel") || safeTitle.includes("marketplace")
-    },
-    {
-      label: "Escrow",
-      href: "/transactions/",
-      icon: ReceiptText,
-      active: safeTitle.includes("transaction") || safeTitle.includes("escrow")
-    },
-    {
       label: "Legal",
       href: user?.role === "Seller" ? "/seller/laws/" : "/escrow-acts/",
       icon: Scale,
-      active: safeTitle.includes("legal") || safeTitle.includes("act")
+      active: safeTitle.includes("legal") || safeTitle.includes("law") || safeTitle.includes("act")
     }
   ];
   return /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex min-h-screen bg-[#0d121f] text-slate-100 antialiased selection:bg-emerald-500 selection:text-slate-950 font-sans" }, /* @__PURE__ */ import_react4.default.createElement("aside", { className: "hidden w-[72px] shrink-0 flex-col items-center justify-between border-r border-white/[0.08] bg-[#080b13] py-4 md:flex z-40" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex flex-col items-center gap-6" }, /* @__PURE__ */ import_react4.default.createElement(
@@ -27250,7 +27268,7 @@ function PublicShell({
   hideFooter
 }) {
   const displayName = user?.full_name || user?.email || "Visitor";
-  return /* @__PURE__ */ import_react5.default.createElement("div", { className: cn("min-h-screen flex flex-col", className) }, /* @__PURE__ */ import_react5.default.createElement("header", { className: "sticky top-0 z-30 border-b border-white/10 bg-slate-950/90 text-white backdrop-blur-xl" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "mx-auto flex w-full max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8" }, /* @__PURE__ */ import_react5.default.createElement("a", { href: "/", className: "flex items-center gap-3 rounded-full px-1 py-1 transition hover:opacity-90" }, /* @__PURE__ */ import_react5.default.createElement("span", { className: "flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500 text-slate-950 font-black shadow-[0_0_20px_rgba(16,185,129,0.4)]" }, /* @__PURE__ */ import_react5.default.createElement(ShieldCheck, { className: "h-5 w-5" })), /* @__PURE__ */ import_react5.default.createElement("div", { className: "leading-tight" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "text-base font-black tracking-tight text-white" }, "Digiland"), /* @__PURE__ */ import_react5.default.createElement("div", { className: "text-xs font-bold uppercase tracking-[0.22em] text-emerald-400" }, "Land escrow"))), /* @__PURE__ */ import_react5.default.createElement("nav", { className: "hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex" }, nav.map((item) => /* @__PURE__ */ import_react5.default.createElement(
+  return /* @__PURE__ */ import_react5.default.createElement("div", { className: cn("min-h-screen flex flex-col", className) }, /* @__PURE__ */ import_react5.default.createElement("header", { className: "sticky top-0 z-30 border-b border-white/10 bg-slate-950/90 text-white backdrop-blur-xl" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "mx-auto flex w-full max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8" }, /* @__PURE__ */ import_react5.default.createElement("a", { href: "/", className: "flex items-center gap-3 rounded-full px-1 py-1 transition hover:opacity-90" }, /* @__PURE__ */ import_react5.default.createElement("span", { className: "flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500 text-slate-950 font-black shadow-[0_0_20px_rgba(16,185,129,0.4)]" }, /* @__PURE__ */ import_react5.default.createElement(ShieldCheck, { className: "h-5 w-5" })), /* @__PURE__ */ import_react5.default.createElement("div", { className: "leading-tight" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "text-base font-black tracking-tight text-white" }, "Digiland"), /* @__PURE__ */ import_react5.default.createElement("div", { className: "text-xs font-bold uppercase tracking-[0.22em] text-emerald-400" }, "Land escrow"))), /* @__PURE__ */ import_react5.default.createElement("nav", { className: "hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex" }, !user && nav.map((item) => /* @__PURE__ */ import_react5.default.createElement(
     "a",
     {
       key: item.href,
@@ -33787,6 +33805,14 @@ lucide-react/dist/esm/icons/instagram.js:
    *)
 
 lucide-react/dist/esm/icons/landmark.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
+lucide-react/dist/esm/icons/layers.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *

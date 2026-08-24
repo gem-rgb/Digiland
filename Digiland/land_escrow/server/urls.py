@@ -111,6 +111,7 @@ urlpatterns = [
     path('cookies/', views.public_marketing_page, {'page_key': 'cookies'}, name='cookies'),
     path('escrow-acts/', views.legal_requirements, name='escrow_acts'),
     path('seller-laws/', views.seller_legal_requirements, name='seller_laws'),
+    path('seller/laws/', views.seller_legal_requirements, name='seller_laws_slash'),
     path('dashboard/finance/', views.admin_finance, name='admin_finance'),
     path('dashboard/finance/verify/', views.admin_finance_verify, name='admin_finance_verify'),
     path('dashboard/admin/withdraw/', views.admin_withdraw, name='admin_withdraw'),

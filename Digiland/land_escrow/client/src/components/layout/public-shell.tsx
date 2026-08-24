@@ -65,20 +65,21 @@ export function PublicShell({
             </div>
           </a>
 
-          {/* Nav links - centered */}
+          {/* Nav links - centered (public only) */}
           <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex">
-            {nav.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'rounded-full px-4 py-2 text-sm font-bold transition-all duration-200',
-                  item.active ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' : 'text-slate-300 hover:text-white hover:bg-white/10'
-                )}
-              >
-                {item.label}
-              </a>
-            ))}
+            {!user &&
+              nav.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'rounded-full px-4 py-2 text-sm font-bold transition-all duration-200',
+                    item.active ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' : 'text-slate-300 hover:text-white hover:bg-white/10'
+                  )}
+                >
+                  {item.label}
+                </a>
+              ))}
           </nav>
 
           {/* Right actions */}

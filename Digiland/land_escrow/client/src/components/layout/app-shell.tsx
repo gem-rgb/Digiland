@@ -79,9 +79,8 @@ export function AppShell({
   const userInitial = displayName.charAt(0).toUpperCase();
   const safeTitle = (title || 'Digiland').toLowerCase();
 
-  // Core App Rail navigation icons
+  // Core App Rail navigation icons with all features
   const railItems = [
-    { label: 'Home', href: '/', icon: Home, active: activeNav === 'home' || safeTitle.includes('home') },
     {
       label: 'Dashboard',
       href: user?.role === 'Seller' ? '/seller/dashboard/' : user?.role === 'Buyer' ? '/buyer/dashboard/' : '/parcels/',
@@ -89,29 +88,35 @@ export function AppShell({
       active: safeTitle.includes('dashboard') || safeTitle.includes('workspace'),
     },
     {
-      label: 'Chat',
+      label: 'My Parcels',
+      href: '/parcels/',
+      icon: Grid2X2,
+      active: safeTitle.includes('parcel') || safeTitle.includes('marketplace'),
+    },
+    {
+      label: 'Promotions',
+      href: user?.role === 'Seller' ? '/seller/promotions/' : '/features/',
+      icon: Layers,
+      active: safeTitle.includes('promotion') || safeTitle.includes('ad') || safeTitle.includes('tier'),
+    },
+    {
+      label: 'Transactions',
+      href: '/transactions/',
+      icon: ReceiptText,
+      active: safeTitle.includes('transaction') || safeTitle.includes('escrow'),
+    },
+    {
+      label: 'Messages',
       href: '/messages/',
       icon: MessageSquare,
       active: activeNav === 'messages' || safeTitle.includes('message'),
       badge: 'DM',
     },
     {
-      label: 'Parcels',
-      href: '/parcels/',
-      icon: Grid2X2,
-      active: safeTitle.includes('parcel') || safeTitle.includes('marketplace'),
-    },
-    {
-      label: 'Escrow',
-      href: '/transactions/',
-      icon: ReceiptText,
-      active: safeTitle.includes('transaction') || safeTitle.includes('escrow'),
-    },
-    {
       label: 'Legal',
       href: user?.role === 'Seller' ? '/seller/laws/' : '/escrow-acts/',
       icon: Scale,
-      active: safeTitle.includes('legal') || safeTitle.includes('act'),
+      active: safeTitle.includes('legal') || safeTitle.includes('law') || safeTitle.includes('act'),
     },
   ];
 
