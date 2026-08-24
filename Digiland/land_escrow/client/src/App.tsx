@@ -718,6 +718,7 @@ function DashboardPage() {
     Buyer: [
       { id: 'overview', name: 'overview', icon: LayoutDashboard },
       { id: 'commissions', name: 'my-commissions', icon: ShieldCheck, badge: `${(bootstrap.active_commissions || []).length}` },
+      { id: 'promotions', name: 'promotions-deals', icon: Sparkles },
       { id: 'transactions', name: 'escrow-deposits', icon: ReceiptText },
       { id: 'parcels', name: 'marketplace', icon: Grid2X2 },
       { id: 'legal', name: 'legal-clearance', icon: Scale },
@@ -1147,24 +1148,48 @@ function DashboardPage() {
           {activeTab === 'promotions' && (
             <div className="space-y-4 text-left">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-black text-white">Promotions & Boost Campaigns</h4>
-                <a href="/seller/promotions/" className="text-xs font-bold text-emerald-400 hover:underline">
-                  Promotions Hub →
-                </a>
-              </div>
-              <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-6 text-center space-y-3">
-                <Sparkles className="mx-auto h-8 w-8 text-amber-400" />
-                <div className="text-sm font-bold text-white">Boost your parcels to the top of Kenyan land buyer searches.</div>
-                <p className="text-xs text-slate-400 max-w-md mx-auto">
-                  Sponsored cards, featured homepage badges, and high-priority WhatsApp/SMS notifications.
-                </p>
+                <h4 className="text-sm font-black text-white">
+                  {isSeller ? 'Promotions & Boost Campaigns' : 'Featured Promotions & Exclusive Land Deals'}
+                </h4>
                 <a
-                  href="/seller/promotions/"
-                  className="inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold px-5 text-xs shadow-lg"
+                  href={isSeller ? '/seller/promotions/' : '/parcels/'}
+                  className="text-xs font-bold text-emerald-400 hover:underline"
                 >
-                  Manage Boost Campaigns
+                  {isSeller ? 'Promotions Hub →' : 'Browse All Marketplace Deals →'}
                 </a>
               </div>
+
+              {isSeller ? (
+                <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-6 text-center space-y-3">
+                  <Sparkles className="mx-auto h-8 w-8 text-amber-400" />
+                  <div className="text-sm font-bold text-white">Boost your parcels to the top of Kenyan land buyer searches.</div>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    Sponsored cards, featured homepage badges, and high-priority WhatsApp/SMS notifications.
+                  </p>
+                  <a
+                    href="/seller/promotions/"
+                    className="inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold px-5 text-xs shadow-lg"
+                  >
+                    Manage Boost Campaigns
+                  </a>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/40 to-[#080c16] p-6 text-left space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-emerald-300 border border-emerald-500/30">
+                        Buyer Exclusive
+                      </span>
+                      <span className="text-xs text-slate-400">Zero-Fraud Escrow Guarantee</span>
+                    </div>
+                    <h3 className="text-base font-black text-white">Verified Title Deed Listings with Subsidized Legal Clearance</h3>
+                    <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                      All promoted parcels feature pre-verified Ministry of Lands search certificates, beacon survey validation, and discounted advocate conveyancing fees.
+                    </p>
+                  </div>
+                  <ParcelGrid />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -6192,7 +6217,7 @@ function ReactApp() {
   else if (page === 'form' || page === 'staff-login' || page === 'agent-kyc' || page === 'payment-onboarding') pageContent = <GenericFormPage />;
   else if (page === 'ai-kyc') pageContent = <AIKYCPage />;
   else if (page === 'buyer-choice') pageContent = <AppShell {...shellProps}><BuyerChoicePage /></AppShell>;
-  else if (page === 'legal' || page === 'joint-laws') pageContent = <LegalPage />;
+  else if (page === 'legal' || page === 'joint-laws') pageContent = <AppShell {...shellProps} activeNav="legal"><LegalPage /></AppShell>;
   else if (page === 'parcel-list') pageContent = <AppShell {...shellProps}><ParcelListPage /></AppShell>;
   else if (page === 'transactions') pageContent = <AppShell {...shellProps}><TransactionsPage /></AppShell>;
   else if (page === 'joint-groups') pageContent = <AppShell {...shellProps}><JointGroupsPage /></AppShell>;

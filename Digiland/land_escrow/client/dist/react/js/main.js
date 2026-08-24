@@ -31043,6 +31043,7 @@ function DashboardPage() {
     Buyer: [
       { id: "overview", name: "overview", icon: LayoutDashboard },
       { id: "commissions", name: "my-commissions", icon: ShieldCheck, badge: `${(bootstrap.active_commissions || []).length}` },
+      { id: "promotions", name: "promotions-deals", icon: Sparkles },
       { id: "transactions", name: "escrow-deposits", icon: ReceiptText },
       { id: "parcels", name: "marketplace", icon: Grid2x2 },
       { id: "legal", name: "legal-clearance", icon: Scale }
@@ -31153,14 +31154,21 @@ function DashboardPage() {
       className: "inline-flex h-9 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-4 text-xs font-bold transition hover:bg-emerald-500/30"
     },
     "View Official Legal Checklist"
-  )))), activeTab === "promotions" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-white" }, "Promotions & Boost Campaigns"), /* @__PURE__ */ import_react18.default.createElement("a", { href: "/seller/promotions/", className: "text-xs font-bold text-emerald-400 hover:underline" }, "Promotions Hub \u2192")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/[0.08] bg-[#080b14] p-6 text-center space-y-3" }, /* @__PURE__ */ import_react18.default.createElement(Sparkles, { className: "mx-auto h-8 w-8 text-amber-400" }), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-bold text-white" }, "Boost your parcels to the top of Kenyan land buyer searches."), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-400 max-w-md mx-auto" }, "Sponsored cards, featured homepage badges, and high-priority WhatsApp/SMS notifications."), /* @__PURE__ */ import_react18.default.createElement(
+  )))), activeTab === "promotions" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-white" }, isSeller ? "Promotions & Boost Campaigns" : "Featured Promotions & Exclusive Land Deals"), /* @__PURE__ */ import_react18.default.createElement(
+    "a",
+    {
+      href: isSeller ? "/seller/promotions/" : "/parcels/",
+      className: "text-xs font-bold text-emerald-400 hover:underline"
+    },
+    isSeller ? "Promotions Hub \u2192" : "Browse All Marketplace Deals \u2192"
+  )), isSeller ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/[0.08] bg-[#080b14] p-6 text-center space-y-3" }, /* @__PURE__ */ import_react18.default.createElement(Sparkles, { className: "mx-auto h-8 w-8 text-amber-400" }), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-bold text-white" }, "Boost your parcels to the top of Kenyan land buyer searches."), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-400 max-w-md mx-auto" }, "Sponsored cards, featured homepage badges, and high-priority WhatsApp/SMS notifications."), /* @__PURE__ */ import_react18.default.createElement(
     "a",
     {
       href: "/seller/promotions/",
       className: "inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold px-5 text-xs shadow-lg"
     },
     "Manage Boost Campaigns"
-  ))))));
+  )) : /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/40 to-[#080c16] p-6 text-left space-y-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-emerald-300 border border-emerald-500/30" }, "Buyer Exclusive"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-xs text-slate-400" }, "Zero-Fraud Escrow Guarantee")), /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-base font-black text-white" }, "Verified Title Deed Listings with Subsidized Legal Clearance"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-300 max-w-2xl leading-relaxed" }, "All promoted parcels feature pre-verified Ministry of Lands search certificates, beacon survey validation, and discounted advocate conveyancing fees.")), /* @__PURE__ */ import_react18.default.createElement(ParcelGrid, null))))));
 }
 function ParcelListPage() {
   return /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react18.default.createElement(
@@ -33098,7 +33106,7 @@ function ReactApp() {
   else if (page === "form" || page === "staff-login" || page === "agent-kyc" || page === "payment-onboarding") pageContent = /* @__PURE__ */ import_react18.default.createElement(GenericFormPage, null);
   else if (page === "ai-kyc") pageContent = /* @__PURE__ */ import_react18.default.createElement(AIKYCPage, null);
   else if (page === "buyer-choice") pageContent = /* @__PURE__ */ import_react18.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react18.default.createElement(BuyerChoicePage, null));
-  else if (page === "legal" || page === "joint-laws") pageContent = /* @__PURE__ */ import_react18.default.createElement(LegalPage, null);
+  else if (page === "legal" || page === "joint-laws") pageContent = /* @__PURE__ */ import_react18.default.createElement(AppShell, { ...shellProps, activeNav: "legal" }, /* @__PURE__ */ import_react18.default.createElement(LegalPage, null));
   else if (page === "parcel-list") pageContent = /* @__PURE__ */ import_react18.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react18.default.createElement(ParcelListPage, null));
   else if (page === "transactions") pageContent = /* @__PURE__ */ import_react18.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react18.default.createElement(TransactionsPage, null));
   else if (page === "joint-groups") pageContent = /* @__PURE__ */ import_react18.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react18.default.createElement(JointGroupsPage, null));
