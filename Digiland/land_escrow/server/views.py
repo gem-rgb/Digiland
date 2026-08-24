@@ -2529,6 +2529,7 @@ def message_thread_detail(request, partner_id):
     from django.shortcuts import get_object_or_404
     from django.middleware.csrf import get_token
     from core.models import User as CoreUser
+    from django.http import JsonResponse
 
     user = request.user
     partner = get_object_or_404(CoreUser, id=partner_id)
@@ -2548,6 +2549,12 @@ def message_thread_detail(request, partner_id):
         'url': reverse('frontend:message_thread_detail', args=[partner.id]),
         'messages': []
     }
+
+    if request.headers.get('accept') == 'application/json' or request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'ok',
+            'thread': thread_data,
+        })
 
     return render_react_shell(
         request,
@@ -2582,17 +2589,34 @@ def clear_message_thread(request, partner_id):
 @login_required
 def send_message(request):
     from core.models import User as CoreUser
+    from django.http import JsonResponse
     if request.method != 'POST':
         return redirect('frontend:messages')
 
     sender = request.user
-    content = request.POST.get('content', '').strip()
-    receiver_id = request.POST.get('receiver_id', '').strip()
-    receiver_email = request.POST.get('receiver_email', '').strip()
+    
+    # Support JSON or Form Data
+    if request.content_type == 'application/json':
+        import json
+        try:
+            payload = json.loads(request.body)
+        except Exception:
+            payload = {}
+        content = payload.get('content', '').strip()
+        receiver_id = payload.get('receiver_id', '').strip()
+        receiver_email = payload.get('receiver_email', '').strip()
+        recipient_type = payload.get('recipient_type', 'single').strip()
+    else:
+        content = request.POST.get('content', '').strip()
+        receiver_id = request.POST.get('receiver_id', '').strip()
+        receiver_email = request.POST.get('receiver_email', '').strip()
+        recipient_type = request.POST.get('recipient_type', 'single').strip()
 
-    recipient_type = request.POST.get('recipient_type', 'single').strip()
+    is_ajax = request.headers.get('accept') == 'application/json' or request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json'
 
     if not content:
+        if is_ajax:
+            return JsonResponse({'error': 'Message content cannot be empty'}, status=400)
         return redirect('frontend:messages')
 
     if sender.role in ['Admin', 'Agent'] and recipient_type != 'single':
@@ -2609,6 +2633,8 @@ def send_message(request):
         for user in recipients:
             Message.objects.create(sender=sender, receiver=user, content=content)
         
+        if is_ajax:
+            return JsonResponse({'status': 'ok', 'count': len(recipients), 'type': recipient_type})
         from django.contrib import messages
         messages.success(request, f'Message sent to {len(recipients)} {recipient_type}.')
         return redirect('frontend:messages')
@@ -2623,18 +2649,44 @@ def send_message(request):
         try:
             receiver = CoreUser.objects.get(email__iexact=receiver_email)
         except CoreUser.DoesNotExist:
+            if is_ajax:
+                return JsonResponse({'error': f'No account found with email: {receiver_email}'}, status=404)
             request.session['msg_error'] = f'No account found with email: {receiver_email}'
             return redirect('frontend:messages')
 
     if not receiver:
+        if is_ajax:
+            return JsonResponse({'error': 'Recipient not specified or not found'}, status=404)
         return redirect('frontend:messages')
 
-    # Strict mediation: Buyers and Sellers CANNOT message each other directly
+    # Strict mediation: Buyers and Sellers CANNOT message each other directly unless part of an active transaction
     if sender.role in ['Buyer', 'Seller'] and receiver.role in ['Buyer', 'Seller']:
-        request.session['msg_error'] = 'You cannot message another Buyer or Seller directly.'
-        return redirect('frontend:messages')
+        from django.db.models import Q
+        # Check if they share a transaction
+        has_shared_tx = Transaction.objects.filter(
+            (Q(buyer=sender, seller=receiver) | Q(buyer=receiver, seller=sender))
+        ).exists()
+        if not has_shared_tx:
+            if is_ajax:
+                return JsonResponse({'error': 'Direct buyer-seller messaging is restricted to active transactions.'}, status=403)
+            request.session['msg_error'] = 'Direct buyer-seller messaging is restricted to active transactions.'
+            return redirect('frontend:messages')
 
-    Message.objects.create(sender=sender, receiver=receiver, content=content)
+    msg = Message.objects.create(sender=sender, receiver=receiver, content=content)
+    
+    if is_ajax:
+        return JsonResponse({
+            'status': 'ok',
+            'message': {
+                'id': str(msg.id),
+                'sender_email': msg.sender.email,
+                'content': msg.content,
+                'timestamp': msg.timestamp.strftime('%b %d, %Y %H:%M'),
+                'is_self': True,
+            },
+            'partner': serialize_user(receiver),
+        })
+
     return redirect('frontend:messages')
 
 @login_required

@@ -23647,6 +23647,12 @@ var ChartColumn = createLucideIcon("ChartColumn", [
   ["path", { d: "M8 17v-3", key: "17ska0" }]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/check-check.js
+var CheckCheck = createLucideIcon("CheckCheck", [
+  ["path", { d: "M18 6 7 17l-5-5", key: "116fxf" }],
+  ["path", { d: "m22 10-7.5 7.5L13 16", key: "ke71qq" }]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/check.js
 var Check = createLucideIcon("Check", [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]]);
 
@@ -23702,6 +23708,12 @@ var Compass = createLucideIcon("Compass", [
     }
   ],
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }]
+]);
+
+// node_modules/lucide-react/dist/esm/icons/corner-down-left.js
+var CornerDownLeft = createLucideIcon("CornerDownLeft", [
+  ["polyline", { points: "9 10 4 15 9 20", key: "r3jprv" }],
+  ["path", { d: "M20 4v7a4 4 0 0 1-4 4H4", key: "6o5b7l" }]
 ]);
 
 // node_modules/lucide-react/dist/esm/icons/crown.js
@@ -24174,6 +24186,15 @@ var Ticket = createLucideIcon("Ticket", [
   ["path", { d: "M13 11v2", key: "1wjjxi" }]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/trash-2.js
+var Trash2 = createLucideIcon("Trash2", [
+  ["path", { d: "M3 6h18", key: "d0wm0j" }],
+  ["path", { d: "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6", key: "4alrt4" }],
+  ["path", { d: "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2", key: "v07s0e" }],
+  ["line", { x1: "10", x2: "10", y1: "11", y2: "17", key: "1uufr5" }],
+  ["line", { x1: "14", x2: "14", y1: "11", y2: "17", key: "xtxkd" }]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/trending-up.js
 var TrendingUp = createLucideIcon("TrendingUp", [
   ["polyline", { points: "22 7 13.5 15.5 8.5 10.5 2 17", key: "126l90" }],
@@ -24212,7 +24233,7 @@ var Upload = createLucideIcon("Upload", [
 ]);
 
 // node_modules/lucide-react/dist/esm/icons/user-plus.js
-var UserPlus = createLucideIcon("UserPlus", [
+var UserPlus2 = createLucideIcon("UserPlus", [
   ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
   ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }],
   ["line", { x1: "19", x2: "19", y1: "8", y2: "14", key: "1bvyxn" }],
@@ -27202,7 +27223,7 @@ function PublicShell({
       href: "/accounts/signup/",
       className: "inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-emerald-400/40 bg-gradient-to-r from-emerald-500 to-teal-500 px-3.5 sm:px-5 py-2 text-xs sm:text-sm font-black text-slate-950 shadow-[0_0_18px_rgba(16,185,129,0.4)] transition-all duration-200 hover:shadow-[0_0_24px_rgba(16,185,129,0.7)] hover:brightness-110"
     },
-    /* @__PURE__ */ import_react5.default.createElement(UserPlus, { className: "h-4 w-4" }),
+    /* @__PURE__ */ import_react5.default.createElement(UserPlus2, { className: "h-4 w-4" }),
     /* @__PURE__ */ import_react5.default.createElement("span", null, "Sign Up")
   ))))), /* @__PURE__ */ import_react5.default.createElement("main", { className: "flex-1 mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8" }, children), !hideFooter && /* @__PURE__ */ import_react5.default.createElement("footer", { className: "border-t border-border/60 bg-white/80 backdrop-blur-xl py-6 mt-auto" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" }, footer ? footer : /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex flex-col sm:flex-row items-center justify-between gap-4" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react5.default.createElement(ShieldCheck, { className: "h-4 w-4 text-emerald-700" }), /* @__PURE__ */ import_react5.default.createElement("span", { className: "text-xs font-semibold text-foreground" }, "Digiland"), /* @__PURE__ */ import_react5.default.createElement("span", { className: "text-xs text-muted-foreground" }, "\xA9 2026 Secure land escrow platform.")), /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex items-center gap-6 text-xs text-muted-foreground" }, /* @__PURE__ */ import_react5.default.createElement("a", { href: "/escrow-acts/", className: "hover:text-emerald-700 transition-colors font-semibold" }, "Legal"), /* @__PURE__ */ import_react5.default.createElement("a", { href: "/parcels/", className: "hover:text-emerald-700 transition-colors font-semibold" }, "Marketplace"), /* @__PURE__ */ import_react5.default.createElement("a", { href: "/accounts/login/", className: "hover:text-emerald-700 transition-colors font-semibold" }, "Sign in"))))), /* @__PURE__ */ import_react5.default.createElement(LocationPermissionModal, null));
 }
@@ -30265,7 +30286,7 @@ function HeroShowcase({ notice, csrfToken, isAuthenticated = false }) {
       href: "/accounts/signup/",
       className: "inline-flex h-14 sm:h-16 min-w-[240px] sm:min-w-[280px] items-center justify-center gap-3 rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-400 px-8 sm:px-10 text-base sm:text-lg font-black text-slate-950 shadow-[0_6px_30px_rgba(16,185,129,0.45)] ring-2 ring-emerald-400/50 ring-offset-2 ring-offset-slate-950 transition-all duration-200 hover:scale-[1.03] hover:shadow-[0_10px_40px_rgba(16,185,129,0.65)] hover:brightness-110 active:scale-[0.98]"
     },
-    /* @__PURE__ */ import_react16.default.createElement(UserPlus, { className: "h-5 w-5" }),
+    /* @__PURE__ */ import_react16.default.createElement(UserPlus2, { className: "h-5 w-5" }),
     "Get Started \u2014 Free",
     /* @__PURE__ */ import_react16.default.createElement(ArrowRight, { className: "h-5 w-5" })
   ) : /* @__PURE__ */ import_react16.default.createElement(
@@ -31529,30 +31550,422 @@ function MessagesPage() {
     logoutUrl: bootstrap.logout_url,
     csrfToken: bootstrap.csrf_token
   };
-  const renderThread = (thread) => {
-    const latestMessage = thread.messages[0];
-    const previewText = latestMessage?.content.length > 60 ? latestMessage.content.slice(0, 60) + "..." : latestMessage?.content;
-    return /* @__PURE__ */ import_react18.default.createElement("a", { href: thread.url, key: thread.partner.email, className: "block transition-transform hover:-translate-y-1" }, /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/92 transition-colors hover:border-emerald-200 hover:bg-white" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-start justify-between gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement(CardTitle, { className: "text-base text-emerald-800" }, thread.partner.email), /* @__PURE__ */ import_react18.default.createElement(CardDescription, null, thread.partner.role)), /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "outline" }, thread.count, " msgs"))), /* @__PURE__ */ import_react18.default.createElement(CardContent, null, latestMessage ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm text-muted-foreground italic" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-semibold not-italic" }, latestMessage.is_self ? "You" : thread.partner.email, ":"), " ", previewText) : null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-4 flex items-center text-xs font-semibold text-emerald-600" }, "View full conversation ", /* @__PURE__ */ import_react18.default.createElement(ArrowRight, { className: "ml-1 h-3 w-3" })))));
+  const initialThreads = (0, import_react18.useMemo)(() => {
+    if (page.mode === "dual") {
+      return [...page.buyer_threads || [], ...page.seller_threads || []];
+    }
+    return page.threads || [];
+  }, [page]);
+  const [threads, setThreads] = (0, import_react18.useState)(initialThreads);
+  const [selectedPartnerEmail, setSelectedPartnerEmail] = (0, import_react18.useState)(
+    initialThreads[0]?.partner?.email || page.allowed_recipients[0]?.email || ""
+  );
+  const [searchQuery, setSearchQuery] = (0, import_react18.useState)("");
+  const [roleFilter, setRoleFilter] = (0, import_react18.useState)("all");
+  const [inputMessage, setInputMessage] = (0, import_react18.useState)("");
+  const [isSending, setIsSending] = (0, import_react18.useState)(false);
+  const [sendError, setSendError] = (0, import_react18.useState)(null);
+  const [isNewChatOpen, setIsNewChatOpen] = (0, import_react18.useState)(false);
+  const [newChatEmail, setNewChatEmail] = (0, import_react18.useState)("");
+  const [newChatRole, setNewChatRole] = (0, import_react18.useState)("single");
+  const chatBottomRef = (0, import_react18.useRef)(null);
+  const activeThread = (0, import_react18.useMemo)(() => {
+    return threads.find((t) => t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase());
+  }, [threads, selectedPartnerEmail]);
+  const selectedRecipient = (0, import_react18.useMemo)(() => {
+    if (activeThread) return activeThread.partner;
+    return page.allowed_recipients.find((r2) => r2.email.toLowerCase() === selectedPartnerEmail.toLowerCase()) || {
+      id: "",
+      email: selectedPartnerEmail,
+      name: selectedPartnerEmail.split("@")[0],
+      role: "Support",
+      is_staff: false,
+      is_superuser: false
+    };
+  }, [activeThread, page.allowed_recipients, selectedPartnerEmail]);
+  const filteredThreads = (0, import_react18.useMemo)(() => {
+    return threads.filter((t) => {
+      const matchesSearch = t.partner.email.toLowerCase().includes(searchQuery.toLowerCase()) || t.partner.name && t.partner.name.toLowerCase().includes(searchQuery.toLowerCase()) || t.messages[0]?.content && t.messages[0].content.toLowerCase().includes(searchQuery.toLowerCase());
+      if (!matchesSearch) return false;
+      if (roleFilter === "admin") return t.partner.role === "Admin" || t.partner.is_staff;
+      if (roleFilter === "agent") return t.partner.role === "Agent";
+      if (roleFilter === "lawyer") return t.partner.role === "Lawyer";
+      return true;
+    });
+  }, [threads, searchQuery, roleFilter]);
+  (0, import_react18.useEffect)(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [activeThread?.messages, selectedPartnerEmail]);
+  const handleSendMessage = async (contentToSend) => {
+    const text = (contentToSend || inputMessage).trim();
+    if (!text || !selectedPartnerEmail || isSending) return;
+    setIsSending(true);
+    setSendError(null);
+    const tempId = `temp-${Date.now()}`;
+    const newMsg = {
+      id: tempId,
+      sender_email: bootstrap.user?.email || "You",
+      content: text,
+      timestamp: "Just now",
+      is_self: true
+    };
+    setThreads((prevThreads) => {
+      const existing = prevThreads.find((t) => t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase());
+      if (existing) {
+        return prevThreads.map(
+          (t) => t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase() ? {
+            ...t,
+            count: t.count + 1,
+            latest_timestamp: "Just now",
+            messages: [newMsg, ...t.messages]
+          } : t
+        );
+      } else {
+        const newThread = {
+          partner: selectedRecipient,
+          latest_timestamp: "Just now",
+          count: 1,
+          url: `/messages/`,
+          messages: [newMsg]
+        };
+        return [newThread, ...prevThreads];
+      }
+    });
+    setInputMessage("");
+    try {
+      const resp = await fetch(page.compose_action, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-CSRFToken": page.csrf_token
+        },
+        body: JSON.stringify({
+          receiver_email: selectedPartnerEmail,
+          content: text,
+          recipient_type: "single"
+        })
+      });
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to deliver message");
+      }
+      const data = await resp.json();
+      if (data.message) {
+        setThreads(
+          (prevThreads) => prevThreads.map((t) => {
+            if (t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase()) {
+              return {
+                ...t,
+                messages: t.messages.map((m) => m.id === tempId ? data.message : m)
+              };
+            }
+            return t;
+          })
+        );
+      }
+    } catch (err) {
+      setSendError(err.message || "Could not send message. Please check connection.");
+    } finally {
+      setIsSending(false);
+    }
   };
-  const composeForm = /* @__PURE__ */ import_react18.default.createElement("form", { method: "post", action: page.compose_action, className: "space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: page.csrf_token }), bootstrap.user?.role === "Admin" || bootstrap.user?.role === "Agent" ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-sm font-semibold text-foreground" }, "Recipient type"), /* @__PURE__ */ import_react18.default.createElement(
-    "select",
+  const getAvatarInfo = (email, role) => {
+    const initial = (email || "?").charAt(0).toUpperCase();
+    let bg = "bg-slate-700 text-white";
+    if (role === "Admin" || role === "Support") bg = "bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-purple-500/20";
+    else if (role === "Agent") bg = "bg-gradient-to-tr from-emerald-600 to-teal-600 text-white shadow-emerald-500/20";
+    else if (role === "Lawyer") bg = "bg-gradient-to-tr from-blue-600 to-cyan-600 text-white shadow-blue-500/20";
+    else if (role === "Seller") bg = "bg-gradient-to-tr from-amber-600 to-orange-600 text-white shadow-amber-500/20";
+    else if (role === "Buyer") bg = "bg-gradient-to-tr from-teal-600 to-emerald-600 text-white shadow-teal-500/20";
+    return { initial, bg };
+  };
+  const quickPrompts = [
+    "Inquire about land title deed verification status",
+    "When is the escrow deposit release scheduled?",
+    "Please review the survey map and deed plan",
+    "Request assistance with LSK advocate sign-off"
+  ];
+  return /* @__PURE__ */ import_react18.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ import_react18.default.createElement(
+    PageHeader,
     {
-      name: "recipient_type",
-      className: "flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm",
-      onChange: (e) => {
-        const el = document.getElementById("receiver_email_container");
-        if (el) el.style.display = e.target.value === "single" ? "block" : "none";
-        const input = document.getElementById("receiver_email_input");
-        if (input) input.required = e.target.value === "single";
+      kicker: "Communications",
+      title: "Direct Messages",
+      subtitle: "Real-time encrypted messaging with Digiland escrow administration, verified agents, and legal advocates."
+    }
+  ), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-[760px] min-h-[600px] flex-col overflow-hidden rounded-[2rem] border border-border/80 bg-white shadow-2xl backdrop-blur-xl md:flex-row dark:border-white/10 dark:bg-slate-900/90" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex w-full flex-col border-b border-border/60 bg-slate-50/70 md:w-80 md:border-r md:border-b-0 lg:w-96 dark:border-white/10 dark:bg-slate-950/60" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "p-4 space-y-3 border-b border-border/60 dark:border-white/10" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(MessageSquare, { className: "h-5 w-5 text-emerald-600 dark:text-emerald-400" }), /* @__PURE__ */ import_react18.default.createElement("h3", { className: "font-extrabold text-foreground text-base" }, "Conversations")), /* @__PURE__ */ import_react18.default.createElement(
+    Button,
+    {
+      size: "sm",
+      onClick: () => setIsNewChatOpen(true),
+      className: "h-8 gap-1.5 rounded-full bg-emerald-600 px-3 text-xs font-bold text-white shadow-sm hover:bg-emerald-500"
+    },
+    /* @__PURE__ */ import_react18.default.createElement(Plus, { className: "h-3.5 w-3.5" }),
+    "New Chat"
+  )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react18.default.createElement(Search, { className: "absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" }), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      placeholder: "Search contacts or chats...",
+      value: searchQuery,
+      onChange: (e) => setSearchQuery(e.target.value),
+      className: "h-9 w-full rounded-full border border-border/80 bg-white pl-9 pr-4 text-xs shadow-sm outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:border-white/15 dark:bg-slate-900"
+    }
+  ), searchQuery && /* @__PURE__ */ import_react18.default.createElement(
+    "button",
+    {
+      onClick: () => setSearchQuery(""),
+      className: "absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+    },
+    /* @__PURE__ */ import_react18.default.createElement(X, { className: "h-3.5 w-3.5" })
+  )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] no-scrollbar" }, [
+    { id: "all", label: "All" },
+    { id: "admin", label: "Support & Admin" },
+    { id: "agent", label: "Agents" },
+    { id: "lawyer", label: "Lawyers" }
+  ].map((tab) => /* @__PURE__ */ import_react18.default.createElement(
+    "button",
+    {
+      key: tab.id,
+      onClick: () => setRoleFilter(tab.id),
+      className: cn(
+        "whitespace-nowrap rounded-full px-2.5 py-1 font-bold transition-all",
+        roleFilter === tab.id ? "bg-emerald-600 text-white shadow-sm" : "bg-white/80 text-muted-foreground hover:bg-white hover:text-foreground dark:bg-slate-800/80 dark:hover:bg-slate-800"
+      )
+    },
+    tab.label
+  )))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex-1 overflow-y-auto p-2 space-y-1" }, filteredThreads.length === 0 ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "p-8 text-center space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400" }, /* @__PURE__ */ import_react18.default.createElement(MessageSquare, { className: "h-6 w-6" })), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs font-semibold text-muted-foreground" }, searchQuery ? "No matching conversations" : "No active conversations yet"), /* @__PURE__ */ import_react18.default.createElement(
+    Button,
+    {
+      size: "sm",
+      variant: "outline",
+      onClick: () => setIsNewChatOpen(true),
+      className: "h-8 rounded-full text-xs"
+    },
+    "Start a conversation"
+  )) : filteredThreads.map((thread) => {
+    const isSelected = selectedPartnerEmail.toLowerCase() === thread.partner.email.toLowerCase();
+    const avatar = getAvatarInfo(thread.partner.email, thread.partner.role);
+    const latestMsg = thread.messages[0];
+    const previewText = latestMsg?.content ? latestMsg.content.length > 45 ? latestMsg.content.slice(0, 45) + "..." : latestMsg.content : "Start conversation";
+    return /* @__PURE__ */ import_react18.default.createElement(
+      "button",
+      {
+        key: thread.partner.email,
+        onClick: () => {
+          setSelectedPartnerEmail(thread.partner.email);
+          setIsNewChatOpen(false);
+        },
+        className: cn(
+          "group flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-all duration-150",
+          isSelected ? "bg-white shadow-sm ring-1 ring-emerald-500/30 dark:bg-slate-800 dark:ring-emerald-400/40" : "hover:bg-white/60 dark:hover:bg-slate-800/50"
+        )
+      },
+      /* @__PURE__ */ import_react18.default.createElement("div", { className: "relative shrink-0" }, /* @__PURE__ */ import_react18.default.createElement(
+        "div",
+        {
+          className: cn(
+            "flex h-11 w-11 items-center justify-center rounded-2xl font-black text-sm shadow-sm",
+            avatar.bg
+          )
+        },
+        avatar.initial
+      ), /* @__PURE__ */ import_react18.default.createElement("span", { className: "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 shadow-sm dark:border-slate-900" })),
+      /* @__PURE__ */ import_react18.default.createElement("div", { className: "min-w-0 flex-1" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between gap-1" }, /* @__PURE__ */ import_react18.default.createElement(
+        "span",
+        {
+          className: cn(
+            "truncate text-xs font-black tracking-tight",
+            isSelected ? "text-foreground" : "text-slate-800 dark:text-slate-200"
+          )
+        },
+        thread.partner.name || thread.partner.email.split("@")[0]
+      ), /* @__PURE__ */ import_react18.default.createElement("span", { className: "shrink-0 text-[10px] font-semibold text-muted-foreground" }, thread.latest_timestamp || "")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-0.5 flex items-center justify-between gap-2" }, /* @__PURE__ */ import_react18.default.createElement("p", { className: "truncate text-xs text-muted-foreground" }, latestMsg?.is_self ? /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-emerald-600 dark:text-emerald-400" }, "You: ") : null, previewText), /* @__PURE__ */ import_react18.default.createElement(
+        "span",
+        {
+          className: cn(
+            "shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider",
+            thread.partner.role === "Admin" ? "bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300" : thread.partner.role === "Agent" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300" : thread.partner.role === "Lawyer" ? "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+          )
+        },
+        thread.partner.role
+      )))
+    );
+  })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "border-t border-border/60 p-3 bg-white/50 dark:border-white/10 dark:bg-slate-900/50" }, /* @__PURE__ */ import_react18.default.createElement(
+    "button",
+    {
+      onClick: () => {
+        const adminUser = page.allowed_recipients.find((r2) => r2.role === "Admin") || {
+          id: "",
+          email: "support@digiland.co.ke",
+          name: "Digiland Escrow Support",
+          role: "Admin",
+          is_staff: true,
+          is_superuser: false
+        };
+        setSelectedPartnerEmail(adminUser.email);
+        setIsNewChatOpen(false);
+      },
+      className: "flex w-full items-center justify-between rounded-xl bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-emerald-500/10 p-2.5 text-xs font-bold text-foreground transition hover:brightness-105"
+    },
+    /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-7 w-7 items-center justify-center rounded-lg bg-purple-600 text-white" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-4 w-4" })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-extrabold text-[11px]" }, "Escrow Support Desk"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-muted-foreground" }, "24/7 Platform Assistance"))),
+    /* @__PURE__ */ import_react18.default.createElement(ArrowRight, { className: "h-4 w-4 text-purple-600" })
+  ))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-1 flex-col bg-gradient-to-b from-white/95 to-slate-50/90 dark:from-slate-900 dark:to-slate-950" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-16 items-center justify-between border-b border-border/60 px-5 backdrop-blur-md dark:border-white/10" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react18.default.createElement(
+    "div",
+    {
+      className: cn(
+        "flex h-10 w-10 items-center justify-center rounded-2xl font-black text-sm shadow-sm",
+        getAvatarInfo(selectedRecipient.email, selectedRecipient.role).bg
+      )
+    },
+    getAvatarInfo(selectedRecipient.email, selectedRecipient.role).initial
+  ), /* @__PURE__ */ import_react18.default.createElement("span", { className: "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-slate-900" })), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-foreground" }, selectedRecipient.name || selectedRecipient.email), /* @__PURE__ */ import_react18.default.createElement(
+    Badge,
+    {
+      tone: selectedRecipient.role === "Admin" ? "accent" : selectedRecipient.role === "Agent" ? "success" : selectedRecipient.role === "Lawyer" ? "outline" : "default",
+      className: "text-[9px] uppercase tracking-wider py-0 px-2 font-extrabold"
+    },
+    selectedRecipient.role === "Admin" ? "Platform Admin" : selectedRecipient.role === "Agent" ? "Verified Agent" : selectedRecipient.role === "Lawyer" ? "Legal Advocate" : selectedRecipient.role
+  )), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-[10px] text-muted-foreground flex items-center gap-1.5" }, /* @__PURE__ */ import_react18.default.createElement(Lock, { className: "h-2.5 w-2.5 text-emerald-600" }), /* @__PURE__ */ import_react18.default.createElement("span", null, selectedRecipient.email), /* @__PURE__ */ import_react18.default.createElement("span", null, "\u2022"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-emerald-600 font-bold dark:text-emerald-400" }, "Direct Channel")))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, bootstrap.user?.role === "Admin" && activeThread && /* @__PURE__ */ import_react18.default.createElement(
+    "form",
+    {
+      method: "post",
+      action: `/messages/thread/${activeThread.partner.id || ""}/clear/`,
+      onSubmit: (e) => {
+        if (!window.confirm("Clear this entire conversation?")) e.preventDefault();
       }
     },
-    /* @__PURE__ */ import_react18.default.createElement("option", { value: "single" }, "Single user"),
-    /* @__PURE__ */ import_react18.default.createElement("option", { value: "all" }, "All users"),
-    /* @__PURE__ */ import_react18.default.createElement("option", { value: "buyers" }, "All buyers"),
-    /* @__PURE__ */ import_react18.default.createElement("option", { value: "sellers" }, "All sellers"),
-    /* @__PURE__ */ import_react18.default.createElement("option", { value: "agents" }, "All agents")
-  )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2", id: "receiver_email_container" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-sm font-semibold text-foreground" }, "Recipient email"), /* @__PURE__ */ import_react18.default.createElement(Input, { id: "receiver_email_input", name: "receiver_email", type: "email", placeholder: "user@example.com", required: true }))) : /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-sm font-semibold text-foreground" }, "Send to"), /* @__PURE__ */ import_react18.default.createElement("select", { name: "receiver_email", className: "flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm", required: true }, /* @__PURE__ */ import_react18.default.createElement("option", { value: "" }, "Select a recipient"), page.allowed_recipients.map((recipient) => /* @__PURE__ */ import_react18.default.createElement("option", { key: recipient.email, value: recipient.email }, recipient.email, " (", recipient.role, ")")))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-sm font-semibold text-foreground" }, "Message"), /* @__PURE__ */ import_react18.default.createElement(Textarea, { name: "content", rows: 5, placeholder: "Write your message here", required: true })), /* @__PURE__ */ import_react18.default.createElement(Button, { type: "submit", className: "w-full rounded-full" }, "Send message"));
-  return /* @__PURE__ */ import_react18.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid gap-6 xl:grid-cols-[1.2fr_0.8fr]" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react18.default.createElement(PageHeader, { kicker: "Messages", title: bootstrap.title, subtitle: bootstrap.subtitle }), page.mode === "single" ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4" }, page.threads.length ? page.threads.map(renderThread) : /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react18.default.createElement(CardContent, { className: "p-8 text-center text-sm text-muted-foreground" }, "No messages in your inbox yet."))) : /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid gap-4 lg:grid-cols-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement(CardTitle, { className: "text-base" }, "Buyer threads"))), page.buyer_threads?.length ? page.buyer_threads.map(renderThread) : /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react18.default.createElement(CardContent, { className: "p-6 text-sm text-muted-foreground" }, "No buyer threads yet."))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement(CardTitle, { className: "text-base" }, "Seller threads"))), page.seller_threads?.length ? page.seller_threads.map(renderThread) : /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react18.default.createElement(CardContent, { className: "p-6 text-sm text-muted-foreground" }, "No seller threads yet."))))), /* @__PURE__ */ import_react18.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react18.default.createElement(CardHeader, null, /* @__PURE__ */ import_react18.default.createElement(CardTitle, { className: "flex items-center gap-2 text-base" }, /* @__PURE__ */ import_react18.default.createElement(MessageSquare, { className: "h-4 w-4 text-emerald-700" }), "Compose message"), /* @__PURE__ */ import_react18.default.createElement(CardDescription, null, "Buyers and sellers can message staff only. Staff can message any user.")), /* @__PURE__ */ import_react18.default.createElement(CardContent, null, composeForm))));
+    /* @__PURE__ */ import_react18.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: page.csrf_token }),
+    /* @__PURE__ */ import_react18.default.createElement(Button, { type: "submit", variant: "danger", size: "sm", className: "h-8 rounded-full text-xs gap-1" }, /* @__PURE__ */ import_react18.default.createElement(Trash2, { className: "h-3 w-3" }), "Clear")
+  ), /* @__PURE__ */ import_react18.default.createElement("div", { className: "hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-3.5 w-3.5" }), /* @__PURE__ */ import_react18.default.createElement("span", null, "Escrow Verified")))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" }, !activeThread || activeThread.messages.length === 0 ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "mx-auto my-auto max-w-md p-6 text-center space-y-4 rounded-3xl border border-border/70 bg-white/80 p-8 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "mx-auto flex h-14 w-14 items-center justify-center rounded-3xl bg-emerald-500/10 text-emerald-600 shadow-inner dark:text-emerald-400" }, /* @__PURE__ */ import_react18.default.createElement(MessageSquare, { className: "h-7 w-7" })), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-base font-extrabold text-foreground" }, "Start direct message with ", selectedRecipient.name || selectedRecipient.email), /* @__PURE__ */ import_react18.default.createElement("p", { className: "mt-1 text-xs text-muted-foreground leading-relaxed" }, "Send a message regarding property verification, title deed inspection, escrow funding, or legal conveyancing.")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2 pt-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase tracking-widest text-muted-foreground" }, "Quick Suggestions"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid gap-2" }, quickPrompts.map((prompt) => /* @__PURE__ */ import_react18.default.createElement(
+    "button",
+    {
+      key: prompt,
+      onClick: () => handleSendMessage(prompt),
+      className: "flex items-center justify-between rounded-xl border border-border/80 bg-white p-2.5 text-left text-xs font-semibold text-slate-700 transition hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-900 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+    },
+    /* @__PURE__ */ import_react18.default.createElement("span", null, prompt),
+    /* @__PURE__ */ import_react18.default.createElement(CornerDownLeft, { className: "h-3.5 w-3.5 text-emerald-600 shrink-0" })
+  ))))) : /* @__PURE__ */ import_react18.default.createElement(import_react18.default.Fragment, null, [...activeThread.messages].reverse().map((msg, idx) => {
+    const isSelf = msg.is_self;
+    return /* @__PURE__ */ import_react18.default.createElement(
+      "div",
+      {
+        key: msg.id || idx,
+        className: cn("flex items-end gap-2", isSelf ? "justify-end" : "justify-start")
+      },
+      !isSelf && /* @__PURE__ */ import_react18.default.createElement(
+        "div",
+        {
+          className: cn(
+            "mb-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-[10px] font-black",
+            getAvatarInfo(selectedRecipient.email, selectedRecipient.role).bg
+          )
+        },
+        getAvatarInfo(selectedRecipient.email, selectedRecipient.role).initial
+      ),
+      /* @__PURE__ */ import_react18.default.createElement(
+        "div",
+        {
+          className: cn(
+            "group relative max-w-[80%] sm:max-w-[70%] rounded-2xl px-4 py-3 text-sm shadow-sm transition-all",
+            isSelf ? "rounded-br-xs bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-emerald-500/15" : "rounded-bl-xs border border-border/70 bg-white text-foreground dark:border-white/10 dark:bg-slate-800"
+          )
+        },
+        !isSelf && /* @__PURE__ */ import_react18.default.createElement("div", { className: "mb-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400" }, selectedRecipient.name || selectedRecipient.email),
+        /* @__PURE__ */ import_react18.default.createElement("div", { className: "whitespace-pre-wrap leading-relaxed text-xs sm:text-sm" }, msg.content),
+        /* @__PURE__ */ import_react18.default.createElement(
+          "div",
+          {
+            className: cn(
+              "mt-1.5 flex items-center justify-end gap-1 text-[9px] font-semibold",
+              isSelf ? "text-emerald-100/80" : "text-muted-foreground"
+            )
+          },
+          /* @__PURE__ */ import_react18.default.createElement("span", null, msg.timestamp),
+          isSelf && /* @__PURE__ */ import_react18.default.createElement(CheckCheck, { className: "h-3 w-3 text-emerald-200" })
+        )
+      )
+    );
+  }), /* @__PURE__ */ import_react18.default.createElement("div", { ref: chatBottomRef }))), sendError && /* @__PURE__ */ import_react18.default.createElement("div", { className: "mx-4 mb-2 flex items-center justify-between rounded-xl bg-rose-500/10 border border-rose-500/20 px-3 py-2 text-xs font-semibold text-rose-600" }, /* @__PURE__ */ import_react18.default.createElement("span", null, sendError), /* @__PURE__ */ import_react18.default.createElement("button", { onClick: () => setSendError(null), className: "hover:opacity-75" }, /* @__PURE__ */ import_react18.default.createElement(X, { className: "h-3.5 w-3.5" }))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "border-t border-border/60 bg-white/90 p-3 sm:p-4 backdrop-blur-md dark:border-white/10 dark:bg-slate-900/90" }, /* @__PURE__ */ import_react18.default.createElement(
+    "form",
+    {
+      onSubmit: (e) => {
+        e.preventDefault();
+        handleSendMessage();
+      },
+      className: "relative flex items-center gap-2"
+    },
+    /* @__PURE__ */ import_react18.default.createElement(
+      "input",
+      {
+        type: "text",
+        value: inputMessage,
+        onChange: (e) => setInputMessage(e.target.value),
+        placeholder: `Message ${selectedRecipient.name || selectedRecipient.email}... (Enter to send)`,
+        disabled: isSending,
+        className: "h-12 w-full rounded-2xl border border-border/80 bg-slate-50/80 px-4 pr-12 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-white/15 dark:bg-slate-800/80 dark:focus:bg-slate-800"
+      }
+    ),
+    /* @__PURE__ */ import_react18.default.createElement(
+      Button,
+      {
+        type: "submit",
+        disabled: !inputMessage.trim() || isSending,
+        className: "absolute right-1.5 top-1.5 h-9 w-9 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 p-0 text-white shadow-md shadow-emerald-500/20 transition-all hover:scale-105 hover:brightness-110 disabled:opacity-40 disabled:hover:scale-100"
+      },
+      /* @__PURE__ */ import_react18.default.createElement(Send, { className: "h-4 w-4" })
+    )
+  ), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1.5 flex items-center justify-between px-2 text-[10px] text-muted-foreground" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "Press ", /* @__PURE__ */ import_react18.default.createElement("strong", null, "Enter"), " to send"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-3 w-3" }), " Encrypted Escrow DM"))))), isNewChatOpen && /* @__PURE__ */ import_react18.default.createElement("div", { className: "fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "w-full max-w-lg rounded-3xl border border-border/80 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between pb-4 border-b border-border/60 dark:border-white/10" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" }, /* @__PURE__ */ import_react18.default.createElement(UserPlus, { className: "h-4 w-4" })), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-base font-black text-foreground" }, "New Direct Message"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-muted-foreground" }, "Select an escrow officer, agent, or advocate"))), /* @__PURE__ */ import_react18.default.createElement(
+    "button",
+    {
+      onClick: () => setIsNewChatOpen(false),
+      className: "rounded-full p-1.5 text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+    },
+    /* @__PURE__ */ import_react18.default.createElement(X, { className: "h-4 w-4" })
+  )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-4 space-y-4" }, bootstrap.user?.role === "Admin" || bootstrap.user?.role === "Agent" ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-xs font-bold text-foreground" }, "Enter Recipient Email"), /* @__PURE__ */ import_react18.default.createElement(
+    Input,
+    {
+      type: "email",
+      placeholder: "user@example.com",
+      value: newChatEmail,
+      onChange: (e) => setNewChatEmail(e.target.value),
+      className: "rounded-xl"
+    }
+  )) : null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-xs font-bold text-foreground" }, "Available Contacts"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "max-h-60 overflow-y-auto space-y-1.5 pr-1" }, page.allowed_recipients.map((recipient) => {
+    const avatar = getAvatarInfo(recipient.email, recipient.role);
+    return /* @__PURE__ */ import_react18.default.createElement(
+      "button",
+      {
+        key: recipient.email,
+        onClick: () => {
+          setSelectedPartnerEmail(recipient.email);
+          setIsNewChatOpen(false);
+        },
+        className: "flex w-full items-center justify-between rounded-xl border border-border/70 p-3 text-left transition hover:border-emerald-500 hover:bg-emerald-50/50 dark:border-white/10 dark:hover:bg-slate-800"
+      },
+      /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: cn("flex h-9 w-9 items-center justify-center rounded-xl text-xs font-black", avatar.bg) }, avatar.initial), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-black text-foreground" }, recipient.name || recipient.email), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-muted-foreground" }, recipient.email))),
+      /* @__PURE__ */ import_react18.default.createElement(
+        Badge,
+        {
+          tone: recipient.role === "Admin" ? "accent" : recipient.role === "Agent" ? "success" : "default",
+          className: "text-[9px] uppercase font-bold"
+        },
+        recipient.role
+      )
+    );
+  }))), bootstrap.user?.role === "Admin" && newChatEmail ? /* @__PURE__ */ import_react18.default.createElement(
+    Button,
+    {
+      onClick: () => {
+        setSelectedPartnerEmail(newChatEmail);
+        setIsNewChatOpen(false);
+      },
+      className: "w-full rounded-full bg-emerald-600 text-white font-bold"
+    },
+    "Start Chat with ",
+    newChatEmail
+  ) : null)))));
 }
 function SupportPage() {
   const page = bootstrap.support_page;
@@ -33204,6 +33617,14 @@ lucide-react/dist/esm/icons/chart-column.js:
    * See the LICENSE file in the root directory of this source tree.
    *)
 
+lucide-react/dist/esm/icons/check-check.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
 lucide-react/dist/esm/icons/check.js:
   (**
    * @license lucide-react v0.453.0 - ISC
@@ -33269,6 +33690,14 @@ lucide-react/dist/esm/icons/clock-3.js:
    *)
 
 lucide-react/dist/esm/icons/compass.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
+lucide-react/dist/esm/icons/corner-down-left.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *
@@ -33645,6 +34074,14 @@ lucide-react/dist/esm/icons/target.js:
    *)
 
 lucide-react/dist/esm/icons/ticket.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
+lucide-react/dist/esm/icons/trash-2.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *

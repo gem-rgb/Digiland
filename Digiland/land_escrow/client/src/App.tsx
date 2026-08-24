@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowRight, ArrowLeft, ArrowDown, Banknote, BarChart3, Camera, CheckCircle2, CircleCheckBig, Clock3, Compass, ExternalLink, Eye, FileSignature, FileText, Gavel, Grid2X2, Heart, HelpCircle, Landmark, Lock, Mail, MapPin, MessageSquare, Printer, ReceiptText, Search, ShieldAlert, ShieldCheck, Scale, Sparkles, Ticket, Upload, UserCheck, Users, WalletCards, ShoppingCart, Briefcase, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, ArrowRight, ArrowLeft, ArrowDown, Banknote, BarChart3, Camera, CheckCircle2, CircleCheckBig, Clock3, Compass, ExternalLink, Eye, FileSignature, FileText, Gavel, Grid2X2, Heart, HelpCircle, Landmark, Lock, Mail, MapPin, MessageSquare, Printer, ReceiptText, Search, ShieldAlert, ShieldCheck, Scale, Sparkles, Ticket, Upload, UserCheck, Users, WalletCards, ShoppingCart, Briefcase, Send, CheckCheck, Plus, X, Trash2, User, Phone, Info, CornerDownLeft, Filter, type LucideIcon } from 'lucide-react';
 import type { FormEvent, ReactNode } from 'react';
 import { readBootstrap } from './lib/bootstrap.js';
 import { AppShell } from './components/layout/app-shell.js';
@@ -2280,14 +2280,20 @@ function AgentCommissionStepsPage() {
 function MessagesPage() {
   const page = bootstrap.messages_page;
   if (!page) {
-    return <AppShell {...{
-      title: bootstrap.title,
-      subtitle: bootstrap.subtitle,
-      user: bootstrap.user,
-      nav: bootstrap.nav,
-      logoutUrl: bootstrap.logout_url,
-      csrfToken: bootstrap.csrf_token,
-    }}><Card className="bg-white/92"><CardContent className="p-8 text-center text-sm text-muted-foreground">Messages are unavailable.</CardContent></Card></AppShell>;
+    return (
+      <AppShell {...{
+        title: bootstrap.title,
+        subtitle: bootstrap.subtitle,
+        user: bootstrap.user,
+        nav: bootstrap.nav,
+        logoutUrl: bootstrap.logout_url,
+        csrfToken: bootstrap.csrf_token,
+      }}>
+        <Card className="bg-white/92">
+          <CardContent className="p-8 text-center text-sm text-muted-foreground">Messages are unavailable.</CardContent>
+        </Card>
+      </AppShell>
+    );
   }
 
   const shellProps = {
@@ -2299,116 +2305,689 @@ function MessagesPage() {
     csrfToken: bootstrap.csrf_token,
   };
 
-  const renderThread = (thread: NonNullable<typeof page.threads>[number]) => {
-    const latestMessage = thread.messages[0];
-    const previewText = latestMessage?.content.length > 60 ? latestMessage.content.slice(0, 60) + '...' : latestMessage?.content;
+  // Combine threads from single or dual mode
+  const initialThreads = useMemo(() => {
+    if (page.mode === 'dual') {
+      return [...(page.buyer_threads || []), ...(page.seller_threads || [])];
+    }
+    return page.threads || [];
+  }, [page]);
 
-    return (
-      <a href={thread.url} key={thread.partner.email} className="block transition-transform hover:-translate-y-1">
-        <Card className="bg-white/92 transition-colors hover:border-emerald-200 hover:bg-white">
-          <CardHeader>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <CardTitle className="text-base text-emerald-800">{thread.partner.email}</CardTitle>
-                <CardDescription>{thread.partner.role}</CardDescription>
-              </div>
-              <Badge tone="outline">{thread.count} msgs</Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {latestMessage ? (
-              <div className="text-sm text-muted-foreground italic">
-                <span className="font-semibold not-italic">{latestMessage.is_self ? 'You' : thread.partner.email}:</span> {previewText}
-              </div>
-            ) : null}
-            <div className="mt-4 flex items-center text-xs font-semibold text-emerald-600">
-              View full conversation <ArrowRight className="ml-1 h-3 w-3" />
-            </div>
-          </CardContent>
-        </Card>
-      </a>
-    );
+  const [threads, setThreads] = useState(initialThreads);
+  const [selectedPartnerEmail, setSelectedPartnerEmail] = useState<string>(
+    initialThreads[0]?.partner?.email || page.allowed_recipients[0]?.email || ''
+  );
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'agent' | 'lawyer'>('all');
+  const [inputMessage, setInputMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+  const [newChatEmail, setNewChatEmail] = useState('');
+  const [newChatRole, setNewChatRole] = useState('single');
+  const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  // Active thread lookup
+  const activeThread = useMemo(() => {
+    return threads.find((t) => t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase());
+  }, [threads, selectedPartnerEmail]);
+
+  // Selected recipient (if starting a chat with someone not yet in threads)
+  const selectedRecipient = useMemo(() => {
+    if (activeThread) return activeThread.partner;
+    return page.allowed_recipients.find((r) => r.email.toLowerCase() === selectedPartnerEmail.toLowerCase()) || {
+      id: '',
+      email: selectedPartnerEmail,
+      name: selectedPartnerEmail.split('@')[0],
+      role: 'Support',
+      is_staff: false,
+      is_superuser: false,
+    };
+  }, [activeThread, page.allowed_recipients, selectedPartnerEmail]);
+
+  // Filtered threads
+  const filteredThreads = useMemo(() => {
+    return threads.filter((t) => {
+      const matchesSearch =
+        t.partner.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (t.partner.name && t.partner.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (t.messages[0]?.content && t.messages[0].content.toLowerCase().includes(searchQuery.toLowerCase()));
+
+      if (!matchesSearch) return false;
+
+      if (roleFilter === 'admin') return t.partner.role === 'Admin' || t.partner.is_staff;
+      if (roleFilter === 'agent') return t.partner.role === 'Agent';
+      if (roleFilter === 'lawyer') return t.partner.role === 'Lawyer';
+      return true;
+    });
+  }, [threads, searchQuery, roleFilter]);
+
+  // Auto-scroll on active thread change or new messages
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [activeThread?.messages, selectedPartnerEmail]);
+
+  // Send message handler
+  const handleSendMessage = async (contentToSend?: string) => {
+    const text = (contentToSend || inputMessage).trim();
+    if (!text || !selectedPartnerEmail || isSending) return;
+
+    setIsSending(true);
+    setSendError(null);
+
+    const tempId = `temp-${Date.now()}`;
+    const newMsg = {
+      id: tempId,
+      sender_email: bootstrap.user?.email || 'You',
+      content: text,
+      timestamp: 'Just now',
+      is_self: true,
+    };
+
+    // Optimistic UI update
+    setThreads((prevThreads) => {
+      const existing = prevThreads.find((t) => t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase());
+      if (existing) {
+        return prevThreads.map((t) =>
+          t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase()
+            ? {
+                ...t,
+                count: t.count + 1,
+                latest_timestamp: 'Just now',
+                messages: [newMsg, ...t.messages],
+              }
+            : t
+        );
+      } else {
+        const newThread = {
+          partner: selectedRecipient,
+          latest_timestamp: 'Just now',
+          count: 1,
+          url: `/messages/`,
+          messages: [newMsg],
+        };
+        return [newThread, ...prevThreads];
+      }
+    });
+
+    setInputMessage('');
+
+    try {
+      const resp = await fetch(page.compose_action, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRFToken': page.csrf_token,
+        },
+        body: JSON.stringify({
+          receiver_email: selectedPartnerEmail,
+          content: text,
+          recipient_type: 'single',
+        }),
+      });
+
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to deliver message');
+      }
+
+      const data = await resp.json();
+      if (data.message) {
+        // Update temp message with server message id and timestamp
+        setThreads((prevThreads) =>
+          prevThreads.map((t) => {
+            if (t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase()) {
+              return {
+                ...t,
+                messages: t.messages.map((m) => (m.id === tempId ? data.message : m)),
+              };
+            }
+            return t;
+          })
+        );
+      }
+    } catch (err: any) {
+      setSendError(err.message || 'Could not send message. Please check connection.');
+    } finally {
+      setIsSending(false);
+    }
   };
 
-  const composeForm = (
-    <form method="post" action={page.compose_action} className="space-y-4">
-      <input type="hidden" name="csrfmiddlewaretoken" value={page.csrf_token} />
-      {bootstrap.user?.role === 'Admin' || bootstrap.user?.role === 'Agent' ? (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-foreground">Recipient type</label>
-            <select
-              name="recipient_type"
-              className="flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm"
-              onChange={(e) => {
-                const el = document.getElementById('receiver_email_container');
-                if (el) el.style.display = e.target.value === 'single' ? 'block' : 'none';
-                const input = document.getElementById('receiver_email_input') as HTMLInputElement;
-                if (input) input.required = e.target.value === 'single';
-              }}
-            >
-              <option value="single">Single user</option>
-              <option value="all">All users</option>
-              <option value="buyers">All buyers</option>
-              <option value="sellers">All sellers</option>
-              <option value="agents">All agents</option>
-            </select>
-          </div>
-          <div className="space-y-2" id="receiver_email_container">
-            <label className="text-sm font-semibold text-foreground">Recipient email</label>
-            <Input id="receiver_email_input" name="receiver_email" type="email" placeholder="user@example.com" required />
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-foreground">Send to</label>
-          <select name="receiver_email" className="flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm" required>
-            <option value="">Select a recipient</option>
-            {page.allowed_recipients.map((recipient) => (
-              <option key={recipient.email} value={recipient.email}>
-                {recipient.email} ({recipient.role})
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-      <div className="space-y-2">
-        <label className="text-sm font-semibold text-foreground">Message</label>
-        <Textarea name="content" rows={5} placeholder="Write your message here" required />
-      </div>
-      <Button type="submit" className="w-full rounded-full">Send message</Button>
-    </form>
-  );
+  // Helper avatar initials & color
+  const getAvatarInfo = (email: string, role?: string) => {
+    const initial = (email || '?').charAt(0).toUpperCase();
+    let bg = 'bg-slate-700 text-white';
+    if (role === 'Admin' || role === 'Support') bg = 'bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-purple-500/20';
+    else if (role === 'Agent') bg = 'bg-gradient-to-tr from-emerald-600 to-teal-600 text-white shadow-emerald-500/20';
+    else if (role === 'Lawyer') bg = 'bg-gradient-to-tr from-blue-600 to-cyan-600 text-white shadow-blue-500/20';
+    else if (role === 'Seller') bg = 'bg-gradient-to-tr from-amber-600 to-orange-600 text-white shadow-amber-500/20';
+    else if (role === 'Buyer') bg = 'bg-gradient-to-tr from-teal-600 to-emerald-600 text-white shadow-teal-500/20';
+    return { initial, bg };
+  };
+
+  const quickPrompts = [
+    'Inquire about land title deed verification status',
+    'When is the escrow deposit release scheduled?',
+    'Please review the survey map and deed plan',
+    'Request assistance with LSK advocate sign-off',
+  ];
 
   return (
     <AppShell {...shellProps}>
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="space-y-6">
-          <PageHeader kicker="Messages" title={bootstrap.title} subtitle={bootstrap.subtitle} />
-          {page.mode === 'single' ? (
-            <div className="space-y-4">
-              {page.threads.length ? page.threads.map(renderThread) : <Card className="bg-white/92"><CardContent className="p-8 text-center text-sm text-muted-foreground">No messages in your inbox yet.</CardContent></Card>}
-            </div>
-          ) : (
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div className="space-y-4">
-                <Card className="bg-white/92"><CardHeader><CardTitle className="text-base">Buyer threads</CardTitle></CardHeader></Card>
-                {page.buyer_threads?.length ? page.buyer_threads.map(renderThread) : <Card className="bg-white/92"><CardContent className="p-6 text-sm text-muted-foreground">No buyer threads yet.</CardContent></Card>}
+      <div className="space-y-4">
+        <PageHeader
+          kicker="Communications"
+          title="Direct Messages"
+          subtitle="Real-time encrypted messaging with Digiland escrow administration, verified agents, and legal advocates."
+        />
+
+        {/* Main 2-Pane Chat Container */}
+        <div className="flex h-[760px] min-h-[600px] flex-col overflow-hidden rounded-[2rem] border border-border/80 bg-white shadow-2xl backdrop-blur-xl md:flex-row dark:border-white/10 dark:bg-slate-900/90">
+          {/* Left Sidebar: Conversations & Contacts */}
+          <div className="flex w-full flex-col border-b border-border/60 bg-slate-50/70 md:w-80 md:border-r md:border-b-0 lg:w-96 dark:border-white/10 dark:bg-slate-950/60">
+            {/* Sidebar Header */}
+            <div className="p-4 space-y-3 border-b border-border/60 dark:border-white/10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  <h3 className="font-extrabold text-foreground text-base">Conversations</h3>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => setIsNewChatOpen(true)}
+                  className="h-8 gap-1.5 rounded-full bg-emerald-600 px-3 text-xs font-bold text-white shadow-sm hover:bg-emerald-500"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  New Chat
+                </Button>
               </div>
-              <div className="space-y-4">
-                <Card className="bg-white/92"><CardHeader><CardTitle className="text-base">Seller threads</CardTitle></CardHeader></Card>
-                {page.seller_threads?.length ? page.seller_threads.map(renderThread) : <Card className="bg-white/92"><CardContent className="p-6 text-sm text-muted-foreground">No seller threads yet.</CardContent></Card>}
+
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search contacts or chats..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="h-9 w-full rounded-full border border-border/80 bg-white pl-9 pr-4 text-xs shadow-sm outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:border-white/15 dark:bg-slate-900"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Role Filter Chips */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] no-scrollbar">
+                {[
+                  { id: 'all', label: 'All' },
+                  { id: 'admin', label: 'Support & Admin' },
+                  { id: 'agent', label: 'Agents' },
+                  { id: 'lawyer', label: 'Lawyers' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setRoleFilter(tab.id as any)}
+                    className={cn(
+                      'whitespace-nowrap rounded-full px-2.5 py-1 font-bold transition-all',
+                      roleFilter === tab.id
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'bg-white/80 text-muted-foreground hover:bg-white hover:text-foreground dark:bg-slate-800/80 dark:hover:bg-slate-800'
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
             </div>
-          )}
+
+            {/* Conversation List */}
+            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+              {filteredThreads.length === 0 ? (
+                <div className="p-8 text-center space-y-3">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
+                    <MessageSquare className="h-6 w-6" />
+                  </div>
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    {searchQuery ? 'No matching conversations' : 'No active conversations yet'}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsNewChatOpen(true)}
+                    className="h-8 rounded-full text-xs"
+                  >
+                    Start a conversation
+                  </Button>
+                </div>
+              ) : (
+                filteredThreads.map((thread) => {
+                  const isSelected = selectedPartnerEmail.toLowerCase() === thread.partner.email.toLowerCase();
+                  const avatar = getAvatarInfo(thread.partner.email, thread.partner.role);
+                  const latestMsg = thread.messages[0];
+                  const previewText = latestMsg?.content
+                    ? latestMsg.content.length > 45
+                      ? latestMsg.content.slice(0, 45) + '...'
+                      : latestMsg.content
+                    : 'Start conversation';
+
+                  return (
+                    <button
+                      key={thread.partner.email}
+                      onClick={() => {
+                        setSelectedPartnerEmail(thread.partner.email);
+                        setIsNewChatOpen(false);
+                      }}
+                      className={cn(
+                        'group flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-all duration-150',
+                        isSelected
+                          ? 'bg-white shadow-sm ring-1 ring-emerald-500/30 dark:bg-slate-800 dark:ring-emerald-400/40'
+                          : 'hover:bg-white/60 dark:hover:bg-slate-800/50'
+                      )}
+                    >
+                      {/* Avatar with status dot */}
+                      <div className="relative shrink-0">
+                        <div
+                          className={cn(
+                            'flex h-11 w-11 items-center justify-center rounded-2xl font-black text-sm shadow-sm',
+                            avatar.bg
+                          )}
+                        >
+                          {avatar.initial}
+                        </div>
+                        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 shadow-sm dark:border-slate-900" />
+                      </div>
+
+                      {/* Info & Last snippet */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span
+                            className={cn(
+                              'truncate text-xs font-black tracking-tight',
+                              isSelected ? 'text-foreground' : 'text-slate-800 dark:text-slate-200'
+                            )}
+                          >
+                            {thread.partner.name || thread.partner.email.split('@')[0]}
+                          </span>
+                          <span className="shrink-0 text-[10px] font-semibold text-muted-foreground">
+                            {thread.latest_timestamp || ''}
+                          </span>
+                        </div>
+
+                        <div className="mt-0.5 flex items-center justify-between gap-2">
+                          <p className="truncate text-xs text-muted-foreground">
+                            {latestMsg?.is_self ? (
+                              <span className="font-bold text-emerald-600 dark:text-emerald-400">You: </span>
+                            ) : null}
+                            {previewText}
+                          </p>
+                          <span
+                            className={cn(
+                              'shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider',
+                              thread.partner.role === 'Admin'
+                                ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300'
+                                : thread.partner.role === 'Agent'
+                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                : thread.partner.role === 'Lawyer'
+                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
+                                : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                            )}
+                          >
+                            {thread.partner.role}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Quick Support Launcher at bottom of sidebar */}
+            <div className="border-t border-border/60 p-3 bg-white/50 dark:border-white/10 dark:bg-slate-900/50">
+              <button
+                onClick={() => {
+                  const adminUser = page.allowed_recipients.find((r) => r.role === 'Admin') || {
+                    id: '',
+                    email: 'support@digiland.co.ke',
+                    name: 'Digiland Escrow Support',
+                    role: 'Admin',
+                    is_staff: true,
+                    is_superuser: false,
+                  };
+                  setSelectedPartnerEmail(adminUser.email);
+                  setIsNewChatOpen(false);
+                }}
+                className="flex w-full items-center justify-between rounded-xl bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-emerald-500/10 p-2.5 text-xs font-bold text-foreground transition hover:brightness-105"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-600 text-white">
+                    <ShieldCheck className="h-4 w-4" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-extrabold text-[11px]">Escrow Support Desk</div>
+                    <div className="text-[10px] text-muted-foreground">24/7 Platform Assistance</div>
+                  </div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-purple-600" />
+              </button>
+            </div>
+          </div>
+
+          {/* Right Pane: Active Chat Conversation */}
+          <div className="flex flex-1 flex-col bg-gradient-to-b from-white/95 to-slate-50/90 dark:from-slate-900 dark:to-slate-950">
+            {/* Chat Header Bar */}
+            <div className="flex h-16 items-center justify-between border-b border-border/60 px-5 backdrop-blur-md dark:border-white/10">
+              <div className="flex items-center gap-3">
+                {/* Contact Avatar */}
+                <div className="relative">
+                  <div
+                    className={cn(
+                      'flex h-10 w-10 items-center justify-center rounded-2xl font-black text-sm shadow-sm',
+                      getAvatarInfo(selectedRecipient.email, selectedRecipient.role).bg
+                    )}
+                  >
+                    {getAvatarInfo(selectedRecipient.email, selectedRecipient.role).initial}
+                  </div>
+                  <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-slate-900" />
+                </div>
+
+                {/* Contact Details */}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-black text-foreground">
+                      {selectedRecipient.name || selectedRecipient.email}
+                    </h4>
+                    <Badge
+                      tone={
+                        selectedRecipient.role === 'Admin'
+                          ? 'accent'
+                          : selectedRecipient.role === 'Agent'
+                          ? 'success'
+                          : selectedRecipient.role === 'Lawyer'
+                          ? 'outline'
+                          : 'default'
+                      }
+                      className="text-[9px] uppercase tracking-wider py-0 px-2 font-extrabold"
+                    >
+                      {selectedRecipient.role === 'Admin'
+                        ? 'Platform Admin'
+                        : selectedRecipient.role === 'Agent'
+                        ? 'Verified Agent'
+                        : selectedRecipient.role === 'Lawyer'
+                        ? 'Legal Advocate'
+                        : selectedRecipient.role}
+                    </Badge>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+                    <Lock className="h-2.5 w-2.5 text-emerald-600" />
+                    <span>{selectedRecipient.email}</span>
+                    <span>•</span>
+                    <span className="text-emerald-600 font-bold dark:text-emerald-400">Direct Channel</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Header Right Actions */}
+              <div className="flex items-center gap-2">
+                {bootstrap.user?.role === 'Admin' && activeThread && (
+                  <form
+                    method="post"
+                    action={`/messages/thread/${activeThread.partner.id || ''}/clear/`}
+                    onSubmit={(e) => {
+                      if (!window.confirm('Clear this entire conversation?')) e.preventDefault();
+                    }}
+                  >
+                    <input type="hidden" name="csrfmiddlewaretoken" value={page.csrf_token} />
+                    <Button type="submit" variant="danger" size="sm" className="h-8 rounded-full text-xs gap-1">
+                      <Trash2 className="h-3 w-3" />
+                      Clear
+                    </Button>
+                  </form>
+                )}
+                <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  <span>Escrow Verified</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Chat Message Stream */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              {!activeThread || activeThread.messages.length === 0 ? (
+                <div className="mx-auto my-auto max-w-md p-6 text-center space-y-4 rounded-3xl border border-border/70 bg-white/80 p-8 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-3xl bg-emerald-500/10 text-emerald-600 shadow-inner dark:text-emerald-400">
+                    <MessageSquare className="h-7 w-7" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-extrabold text-foreground">
+                      Start direct message with {selectedRecipient.name || selectedRecipient.email}
+                    </h4>
+                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                      Send a message regarding property verification, title deed inspection, escrow funding, or legal conveyancing.
+                    </p>
+                  </div>
+
+                  {/* Quick Prompts */}
+                  <div className="space-y-2 pt-2">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                      Quick Suggestions
+                    </div>
+                    <div className="grid gap-2">
+                      {quickPrompts.map((prompt) => (
+                        <button
+                          key={prompt}
+                          onClick={() => handleSendMessage(prompt)}
+                          className="flex items-center justify-between rounded-xl border border-border/80 bg-white p-2.5 text-left text-xs font-semibold text-slate-700 transition hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-900 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                        >
+                          <span>{prompt}</span>
+                          <CornerDownLeft className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Messages Feed in chronological order */}
+                  {[...activeThread.messages].reverse().map((msg, idx) => {
+                    const isSelf = msg.is_self;
+
+                    return (
+                      <div
+                        key={msg.id || idx}
+                        className={cn('flex items-end gap-2', isSelf ? 'justify-end' : 'justify-start')}
+                      >
+                        {!isSelf && (
+                          <div
+                            className={cn(
+                              'mb-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-[10px] font-black',
+                              getAvatarInfo(selectedRecipient.email, selectedRecipient.role).bg
+                            )}
+                          >
+                            {getAvatarInfo(selectedRecipient.email, selectedRecipient.role).initial}
+                          </div>
+                        )}
+
+                        <div
+                          className={cn(
+                            'group relative max-w-[80%] sm:max-w-[70%] rounded-2xl px-4 py-3 text-sm shadow-sm transition-all',
+                            isSelf
+                              ? 'rounded-br-xs bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-emerald-500/15'
+                              : 'rounded-bl-xs border border-border/70 bg-white text-foreground dark:border-white/10 dark:bg-slate-800'
+                          )}
+                        >
+                          {!isSelf && (
+                            <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                              {selectedRecipient.name || selectedRecipient.email}
+                            </div>
+                          )}
+
+                          <div className="whitespace-pre-wrap leading-relaxed text-xs sm:text-sm">{msg.content}</div>
+
+                          <div
+                            className={cn(
+                              'mt-1.5 flex items-center justify-end gap-1 text-[9px] font-semibold',
+                              isSelf ? 'text-emerald-100/80' : 'text-muted-foreground'
+                            )}
+                          >
+                            <span>{msg.timestamp}</span>
+                            {isSelf && <CheckCheck className="h-3 w-3 text-emerald-200" />}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div ref={chatBottomRef} />
+                </>
+              )}
+            </div>
+
+            {/* Error Banner */}
+            {sendError && (
+              <div className="mx-4 mb-2 flex items-center justify-between rounded-xl bg-rose-500/10 border border-rose-500/20 px-3 py-2 text-xs font-semibold text-rose-600">
+                <span>{sendError}</span>
+                <button onClick={() => setSendError(null)} className="hover:opacity-75">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Chat Input Area */}
+            <div className="border-t border-border/60 bg-white/90 p-3 sm:p-4 backdrop-blur-md dark:border-white/10 dark:bg-slate-900/90">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSendMessage();
+                }}
+                className="relative flex items-center gap-2"
+              >
+                <input
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  placeholder={`Message ${selectedRecipient.name || selectedRecipient.email}... (Enter to send)`}
+                  disabled={isSending}
+                  className="h-12 w-full rounded-2xl border border-border/80 bg-slate-50/80 px-4 pr-12 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-white/15 dark:bg-slate-800/80 dark:focus:bg-slate-800"
+                />
+
+                <Button
+                  type="submit"
+                  disabled={!inputMessage.trim() || isSending}
+                  className="absolute right-1.5 top-1.5 h-9 w-9 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 p-0 text-white shadow-md shadow-emerald-500/20 transition-all hover:scale-105 hover:brightness-110 disabled:opacity-40 disabled:hover:scale-100"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </form>
+              <div className="mt-1.5 flex items-center justify-between px-2 text-[10px] text-muted-foreground">
+                <span>Press <strong>Enter</strong> to send</span>
+                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
+                  <ShieldCheck className="h-3 w-3" /> Encrypted Escrow DM
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
-        <Card className="bg-white/92">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base"><MessageSquare className="h-4 w-4 text-emerald-700" />Compose message</CardTitle>
-            <CardDescription>Buyers and sellers can message staff only. Staff can message any user.</CardDescription>
-          </CardHeader>
-          <CardContent>{composeForm}</CardContent>
-        </Card>
+
+        {/* Start New Chat Modal / Overlay */}
+        {isNewChatOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-3xl border border-border/80 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between pb-4 border-b border-border/60 dark:border-white/10">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                    <UserPlus className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-foreground">New Direct Message</h3>
+                    <p className="text-xs text-muted-foreground">Select an escrow officer, agent, or advocate</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsNewChatOpen(false)}
+                  className="rounded-full p-1.5 text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Recipient Picker */}
+              <div className="mt-4 space-y-4">
+                {bootstrap.user?.role === 'Admin' || bootstrap.user?.role === 'Agent' ? (
+                  <div className="space-y-3">
+                    <label className="text-xs font-bold text-foreground">Enter Recipient Email</label>
+                    <Input
+                      type="email"
+                      placeholder="user@example.com"
+                      value={newChatEmail}
+                      onChange={(e) => setNewChatEmail(e.target.value)}
+                      className="rounded-xl"
+                    />
+                  </div>
+                ) : null}
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-foreground">Available Contacts</label>
+                  <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+                    {page.allowed_recipients.map((recipient) => {
+                      const avatar = getAvatarInfo(recipient.email, recipient.role);
+                      return (
+                        <button
+                          key={recipient.email}
+                          onClick={() => {
+                            setSelectedPartnerEmail(recipient.email);
+                            setIsNewChatOpen(false);
+                          }}
+                          className="flex w-full items-center justify-between rounded-xl border border-border/70 p-3 text-left transition hover:border-emerald-500 hover:bg-emerald-50/50 dark:border-white/10 dark:hover:bg-slate-800"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl text-xs font-black', avatar.bg)}>
+                              {avatar.initial}
+                            </div>
+                            <div>
+                              <div className="text-xs font-black text-foreground">{recipient.name || recipient.email}</div>
+                              <div className="text-[10px] text-muted-foreground">{recipient.email}</div>
+                            </div>
+                          </div>
+                          <Badge
+                            tone={
+                              recipient.role === 'Admin'
+                                ? 'accent'
+                                : recipient.role === 'Agent'
+                                ? 'success'
+                                : 'default'
+                            }
+                            className="text-[9px] uppercase font-bold"
+                          >
+                            {recipient.role}
+                          </Badge>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {bootstrap.user?.role === 'Admin' && newChatEmail ? (
+                  <Button
+                    onClick={() => {
+                      setSelectedPartnerEmail(newChatEmail);
+                      setIsNewChatOpen(false);
+                    }}
+                    className="w-full rounded-full bg-emerald-600 text-white font-bold"
+                  >
+                    Start Chat with {newChatEmail}
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AppShell>
   );
