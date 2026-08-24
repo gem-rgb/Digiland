@@ -2315,7 +2315,7 @@ function MessagesPage() {
 
   const [threads, setThreads] = useState(initialThreads);
   const [selectedPartnerEmail, setSelectedPartnerEmail] = useState<string>(
-    initialThreads[0]?.partner?.email || page.allowed_recipients[0]?.email || ''
+    initialThreads[0]?.partner?.email || (page.allowed_recipients && page.allowed_recipients[0]?.email) || 'support@digiland.co.ke'
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'agent' | 'lawyer'>('all');
@@ -2329,16 +2329,20 @@ function MessagesPage() {
 
   // Active thread lookup
   const activeThread = useMemo(() => {
-    return threads.find((t) => t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase());
+    return threads.find((t) => t.partner?.email && t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase());
   }, [threads, selectedPartnerEmail]);
 
   // Selected recipient (if starting a chat with someone not yet in threads)
   const selectedRecipient = useMemo(() => {
-    if (activeThread) return activeThread.partner;
-    return page.allowed_recipients.find((r) => r.email.toLowerCase() === selectedPartnerEmail.toLowerCase()) || {
+    if (activeThread?.partner) return activeThread.partner;
+    const found = (page.allowed_recipients || []).find(
+      (r) => r.email && r.email.toLowerCase() === selectedPartnerEmail.toLowerCase()
+    );
+    if (found) return found;
+    return {
       id: '',
-      email: selectedPartnerEmail,
-      name: selectedPartnerEmail.split('@')[0],
+      email: selectedPartnerEmail || 'support@digiland.co.ke',
+      name: selectedPartnerEmail ? selectedPartnerEmail.split('@')[0] : 'Escrow Support',
       role: 'Support',
       is_staff: false,
       is_superuser: false,
@@ -2348,10 +2352,11 @@ function MessagesPage() {
   // Filtered threads
   const filteredThreads = useMemo(() => {
     return threads.filter((t) => {
+      if (!t.partner?.email) return false;
       const matchesSearch =
         t.partner.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (t.partner.name && t.partner.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (t.messages[0]?.content && t.messages[0].content.toLowerCase().includes(searchQuery.toLowerCase()));
+        (t.messages && t.messages[0]?.content && t.messages[0].content.toLowerCase().includes(searchQuery.toLowerCase()));
 
       if (!matchesSearch) return false;
 

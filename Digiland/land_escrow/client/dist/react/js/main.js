@@ -31619,7 +31619,7 @@ function MessagesPage() {
   }, [page]);
   const [threads, setThreads] = (0, import_react18.useState)(initialThreads);
   const [selectedPartnerEmail, setSelectedPartnerEmail] = (0, import_react18.useState)(
-    initialThreads[0]?.partner?.email || page.allowed_recipients[0]?.email || ""
+    initialThreads[0]?.partner?.email || page.allowed_recipients && page.allowed_recipients[0]?.email || "support@digiland.co.ke"
   );
   const [searchQuery, setSearchQuery] = (0, import_react18.useState)("");
   const [roleFilter, setRoleFilter] = (0, import_react18.useState)("all");
@@ -31631,14 +31631,18 @@ function MessagesPage() {
   const [newChatRole, setNewChatRole] = (0, import_react18.useState)("single");
   const chatBottomRef = (0, import_react18.useRef)(null);
   const activeThread = (0, import_react18.useMemo)(() => {
-    return threads.find((t) => t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase());
+    return threads.find((t) => t.partner?.email && t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase());
   }, [threads, selectedPartnerEmail]);
   const selectedRecipient = (0, import_react18.useMemo)(() => {
-    if (activeThread) return activeThread.partner;
-    return page.allowed_recipients.find((r2) => r2.email.toLowerCase() === selectedPartnerEmail.toLowerCase()) || {
+    if (activeThread?.partner) return activeThread.partner;
+    const found = (page.allowed_recipients || []).find(
+      (r2) => r2.email && r2.email.toLowerCase() === selectedPartnerEmail.toLowerCase()
+    );
+    if (found) return found;
+    return {
       id: "",
-      email: selectedPartnerEmail,
-      name: selectedPartnerEmail.split("@")[0],
+      email: selectedPartnerEmail || "support@digiland.co.ke",
+      name: selectedPartnerEmail ? selectedPartnerEmail.split("@")[0] : "Escrow Support",
       role: "Support",
       is_staff: false,
       is_superuser: false
@@ -31646,7 +31650,8 @@ function MessagesPage() {
   }, [activeThread, page.allowed_recipients, selectedPartnerEmail]);
   const filteredThreads = (0, import_react18.useMemo)(() => {
     return threads.filter((t) => {
-      const matchesSearch = t.partner.email.toLowerCase().includes(searchQuery.toLowerCase()) || t.partner.name && t.partner.name.toLowerCase().includes(searchQuery.toLowerCase()) || t.messages[0]?.content && t.messages[0].content.toLowerCase().includes(searchQuery.toLowerCase());
+      if (!t.partner?.email) return false;
+      const matchesSearch = t.partner.email.toLowerCase().includes(searchQuery.toLowerCase()) || t.partner.name && t.partner.name.toLowerCase().includes(searchQuery.toLowerCase()) || t.messages && t.messages[0]?.content && t.messages[0].content.toLowerCase().includes(searchQuery.toLowerCase());
       if (!matchesSearch) return false;
       if (roleFilter === "admin") return t.partner.role === "Admin" || t.partner.is_staff;
       if (roleFilter === "agent") return t.partner.role === "Agent";

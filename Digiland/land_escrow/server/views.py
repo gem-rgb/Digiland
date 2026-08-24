@@ -2447,60 +2447,70 @@ def messages_list(request):
     from django.db.models import Q
     from django.middleware.csrf import get_token
     from core.models import User as CoreUser
-    user = request.user
+    current_user = request.user
 
-    all_msgs = Message.objects.filter(Q(sender=user) | Q(receiver=user)).order_by('-timestamp')
+    try:
+        all_msgs = Message.objects.filter(
+            Q(sender=current_user) | Q(receiver=current_user)
+        ).select_related('sender', 'receiver').order_by('-timestamp')
+    except Exception:
+        all_msgs = []
 
     # Aggregate into threads keyed by counterparty
     threads = {}
     for msg in all_msgs:
-        partner = msg.sender if msg.receiver == user else msg.receiver
-        if partner not in threads:
-            threads[partner] = []
-        threads[partner].append(msg)
+        partner = msg.sender if msg.receiver == current_user else msg.receiver
+        if partner:
+            if partner not in threads:
+                threads[partner] = []
+            threads[partner].append(msg)
 
     # Determine who this user is ALLOWED to compose to
     # Rule: Buyers & Sellers can ONLY contact Admins/Agents
     # Rule: Admins/Agents can contact anyone
-    if user.role in ['Buyer', 'Seller']:
-        allowed_recipients = CoreUser.objects.filter(
-            role__in=['Admin', 'Agent', 'Lawyer']
-        ).exclude(id=user.id)
-    else:  # Admin / Agent
-        allowed_recipients = CoreUser.objects.exclude(id=user.id)
+    try:
+        if current_user.role in ['Buyer', 'Seller']:
+            allowed_recipients = CoreUser.objects.filter(
+                role__in=['Admin', 'Agent', 'Lawyer']
+            ).exclude(id=current_user.id)
+        else:  # Admin / Agent
+            allowed_recipients = CoreUser.objects.exclude(id=current_user.id)
+        serialized_recipients = [serialize_user(recipient) for recipient in allowed_recipients]
+    except Exception:
+        serialized_recipients = []
 
     context = {
-        'allowed_recipients': [serialize_user(user) for user in allowed_recipients],
+        'allowed_recipients': serialized_recipients,
         'msg_error': request.session.pop('msg_error', None),
     }
 
-    if user.role == 'Buyer':
+    if current_user.role == 'Buyer':
         context['header'] = 'My Inbox'
         context['threads'] = [
-            serialize_message_thread(partner, msgs, user)
+            serialize_message_thread(partner, msgs, current_user)
             for partner, msgs in threads.items()
-            if partner.role in ['Admin', 'Agent', 'Lawyer']
+            if partner and getattr(partner, 'role', '') in ['Admin', 'Agent', 'Lawyer']
         ]
         context['mode'] = 'single'
-    elif user.role == 'Seller':
+    elif current_user.role == 'Seller':
         context['header'] = 'My Inbox'
         context['threads'] = [
-            serialize_message_thread(partner, msgs, user)
+            serialize_message_thread(partner, msgs, current_user)
             for partner, msgs in threads.items()
-            if partner.role in ['Admin', 'Agent', 'Lawyer']
+            if partner and getattr(partner, 'role', '') in ['Admin', 'Agent', 'Lawyer']
         ]
         context['mode'] = 'single'
     else:  # Admin / Agent
         context['header'] = 'Platform Communications'
         context['buyer_threads'] = [
-            serialize_message_thread(partner, msgs, user)
+            serialize_message_thread(partner, msgs, current_user)
             for partner, msgs in threads.items()
-            if partner.role == 'Buyer'
+            if partner and getattr(partner, 'role', '') == 'Buyer'
         ]
         context['seller_threads'] = [
-            serialize_message_thread(partner, msgs, user)
+            serialize_message_thread(partner, msgs, current_user)
             for partner, msgs in threads.items()
-            if partner.role == 'Seller'
+            if partner and getattr(partner, 'role', '') == 'Seller'
         ]
         context['mode'] = 'dual'
 
