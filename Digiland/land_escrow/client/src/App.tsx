@@ -2466,529 +2466,450 @@ function MessagesPage() {
     return { initial, bg };
   };
 
-  const quickPrompts = [
-    'Inquire about land title deed verification status',
-    'When is the escrow deposit release scheduled?',
-    'Please review the survey map and deed plan',
-    'Request assistance with LSK advocate sign-off',
+  // Preset official protocol channels
+  const officialChannels = [
+    { id: 'general-escrow', name: 'general-escrow', topic: 'General escrow protocol questions, platform updates, and announcements' },
+    { id: 'verification-desk', name: 'verification-desk', topic: 'Title deed searches, survey checks, and Ministry of Lands registry validation' },
+    { id: 'legal-conveyancing', name: 'legal-conveyancing', topic: 'Advocate conveyancing milestones, LCB consent, and stamp duty clearance' },
   ];
 
+  const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
+
+  // If a channel is active vs a direct message partner
+  const isChannelMode = Boolean(activeChannelId);
+  const currentChannel = officialChannels.find((c) => c.id === activeChannelId);
+
   return (
-    <AppShell {...shellProps}>
-      <div className="space-y-4">
-        <PageHeader
-          kicker="Communications"
-          title="Direct Messages"
-          subtitle="Real-time encrypted messaging with Digiland escrow administration, verified agents, and legal advocates."
-        />
-
-        {/* Main 2-Pane Chat Container */}
-        <div className="flex h-[760px] min-h-[600px] flex-col overflow-hidden rounded-[2rem] border border-border/80 bg-white shadow-2xl backdrop-blur-xl md:flex-row dark:border-white/10 dark:bg-slate-900/90">
-          {/* Left Sidebar: Conversations & Contacts */}
-          <div className="flex w-full flex-col border-b border-border/60 bg-slate-50/70 md:w-80 md:border-r md:border-b-0 lg:w-96 dark:border-white/10 dark:bg-slate-950/60">
-            {/* Sidebar Header */}
-            <div className="p-4 space-y-3 border-b border-border/60 dark:border-white/10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                  <h3 className="font-extrabold text-foreground text-base">Conversations</h3>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={() => setIsNewChatOpen(true)}
-                  className="h-8 gap-1.5 rounded-full bg-emerald-600 px-3 text-xs font-bold text-white shadow-sm hover:bg-emerald-500"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  New Chat
-                </Button>
-              </div>
-
-              {/* Search Bar */}
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search contacts or chats..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-9 w-full rounded-full border border-border/80 bg-white pl-9 pr-4 text-xs shadow-sm outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:border-white/15 dark:bg-slate-900"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {/* Role Filter Chips */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] no-scrollbar">
-                {[
-                  { id: 'all', label: 'All' },
-                  { id: 'admin', label: 'Support & Admin' },
-                  { id: 'agent', label: 'Agents' },
-                  { id: 'lawyer', label: 'Lawyers' },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setRoleFilter(tab.id as any)}
-                    className={cn(
-                      'whitespace-nowrap rounded-full px-2.5 py-1 font-bold transition-all',
-                      roleFilter === tab.id
-                        ? 'bg-emerald-600 text-white shadow-sm'
-                        : 'bg-white/80 text-muted-foreground hover:bg-white hover:text-foreground dark:bg-slate-800/80 dark:hover:bg-slate-800'
-                    )}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+    <AppShell {...shellProps} activeNav="messages">
+      <div className="flex h-[calc(100vh-8rem)] min-h-[640px] flex-col overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#0c111e] shadow-2xl backdrop-blur-xl md:flex-row">
+        {/* Left Sub-Sidebar: CHANNELS & DIRECT MESSAGES */}
+        <div className="flex w-full flex-col border-b border-white/[0.08] bg-[#080b14] md:w-72 lg:w-80 md:border-r md:border-b-0 shrink-0">
+          {/* Sub-Sidebar Header */}
+          <div className="flex h-14 items-center justify-between border-b border-white/[0.08] px-4">
+            <div className="flex items-center gap-2">
+              <span className="font-black text-sm text-slate-100 tracking-wide">Messages & Protocol</span>
             </div>
+            <button
+              onClick={() => setIsNewChatOpen(true)}
+              title="New DM"
+              className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] text-slate-300 transition hover:bg-emerald-500/20 hover:text-emerald-300"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
 
-            {/* Conversation List */}
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
-              {filteredThreads.length === 0 ? (
-                <div className="p-8 text-center space-y-3">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
-                    <MessageSquare className="h-6 w-6" />
-                  </div>
-                  <p className="text-xs font-semibold text-muted-foreground">
-                    {searchQuery ? 'No matching conversations' : 'No active conversations yet'}
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setIsNewChatOpen(true)}
-                    className="h-8 rounded-full text-xs"
-                  >
-                    Start a conversation
-                  </Button>
-                </div>
-              ) : (
-                filteredThreads.map((thread) => {
-                  const isSelected = selectedPartnerEmail.toLowerCase() === thread.partner.email.toLowerCase();
-                  const avatar = getAvatarInfo(thread.partner.email, thread.partner.role);
-                  const latestMsg = thread.messages[0];
-                  const previewText = latestMsg?.content
-                    ? latestMsg.content.length > 45
-                      ? latestMsg.content.slice(0, 45) + '...'
-                      : latestMsg.content
-                    : 'Start conversation';
-
-                  return (
-                    <button
-                      key={thread.partner.email}
-                      onClick={() => {
-                        setSelectedPartnerEmail(thread.partner.email);
-                        setIsNewChatOpen(false);
-                      }}
-                      className={cn(
-                        'group flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-all duration-150',
-                        isSelected
-                          ? 'bg-white shadow-sm ring-1 ring-emerald-500/30 dark:bg-slate-800 dark:ring-emerald-400/40'
-                          : 'hover:bg-white/60 dark:hover:bg-slate-800/50'
-                      )}
-                    >
-                      {/* Avatar with status dot */}
-                      <div className="relative shrink-0">
-                        <div
-                          className={cn(
-                            'flex h-11 w-11 items-center justify-center rounded-2xl font-black text-sm shadow-sm',
-                            avatar.bg
-                          )}
-                        >
-                          {avatar.initial}
-                        </div>
-                        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 shadow-sm dark:border-slate-900" />
-                      </div>
-
-                      {/* Info & Last snippet */}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-1">
-                          <span
-                            className={cn(
-                              'truncate text-xs font-black tracking-tight',
-                              isSelected ? 'text-foreground' : 'text-slate-800 dark:text-slate-200'
-                            )}
-                          >
-                            {thread.partner.name || thread.partner.email.split('@')[0]}
-                          </span>
-                          <span className="shrink-0 text-[10px] font-semibold text-muted-foreground">
-                            {thread.latest_timestamp || ''}
-                          </span>
-                        </div>
-
-                        <div className="mt-0.5 flex items-center justify-between gap-2">
-                          <p className="truncate text-xs text-muted-foreground">
-                            {latestMsg?.is_self ? (
-                              <span className="font-bold text-emerald-600 dark:text-emerald-400">You: </span>
-                            ) : null}
-                            {previewText}
-                          </p>
-                          <span
-                            className={cn(
-                              'shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider',
-                              thread.partner.role === 'Admin'
-                                ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300'
-                                : thread.partner.role === 'Agent'
-                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
-                                : thread.partner.role === 'Lawyer'
-                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
-                                : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                            )}
-                          >
-                            {thread.partner.role}
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Quick Support Launcher at bottom of sidebar */}
-            <div className="border-t border-border/60 p-3 bg-white/50 dark:border-white/10 dark:bg-slate-900/50">
-              <button
-                onClick={() => {
-                  const adminUser = page.allowed_recipients.find((r) => r.role === 'Admin') || {
-                    id: '',
-                    email: 'support@digiland.co.ke',
-                    name: 'Digiland Escrow Support',
-                    role: 'Admin',
-                    is_staff: true,
-                    is_superuser: false,
-                  };
-                  setSelectedPartnerEmail(adminUser.email);
-                  setIsNewChatOpen(false);
-                }}
-                className="flex w-full items-center justify-between rounded-xl bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-emerald-500/10 p-2.5 text-xs font-bold text-foreground transition hover:brightness-105"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-600 text-white">
-                    <ShieldCheck className="h-4 w-4" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-extrabold text-[11px]">Escrow Support Desk</div>
-                    <div className="text-[10px] text-muted-foreground">24/7 Platform Assistance</div>
-                  </div>
-                </div>
-                <ArrowRight className="h-4 w-4 text-purple-600" />
-              </button>
+          {/* Search Box */}
+          <div className="p-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Search channels or DMs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-8 w-full rounded-xl border border-white/10 bg-[#0f1422] pl-8 pr-3 text-xs text-slate-200 placeholder:text-slate-500 outline-none transition focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30"
+              />
             </div>
           </div>
 
-          {/* Right Pane: Active Chat Conversation */}
-          <div className="flex flex-1 flex-col bg-gradient-to-b from-white/95 to-slate-50/90 dark:from-slate-900 dark:to-slate-950">
-            {/* Chat Header Bar */}
-            <div className="flex h-16 items-center justify-between border-b border-border/60 px-5 backdrop-blur-md dark:border-white/10">
-              <div className="flex items-center gap-3">
-                {/* Contact Avatar */}
-                <div className="relative">
-                  <div
-                    className={cn(
-                      'flex h-10 w-10 items-center justify-center rounded-2xl font-black text-sm shadow-sm',
-                      getAvatarInfo(selectedRecipient.email, selectedRecipient.role).bg
-                    )}
-                  >
-                    {getAvatarInfo(selectedRecipient.email, selectedRecipient.role).initial}
-                  </div>
-                  <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-slate-900" />
-                </div>
-
-                {/* Contact Details */}
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-black text-foreground">
-                      {selectedRecipient.name || selectedRecipient.email}
-                    </h4>
-                    <Badge
-                      tone={
-                        selectedRecipient.role === 'Admin'
-                          ? 'accent'
-                          : selectedRecipient.role === 'Agent'
-                          ? 'success'
-                          : selectedRecipient.role === 'Lawyer'
-                          ? 'outline'
-                          : 'default'
-                      }
-                      className="text-[9px] uppercase tracking-wider py-0 px-2 font-extrabold"
-                    >
-                      {selectedRecipient.role === 'Admin'
-                        ? 'Platform Admin'
-                        : selectedRecipient.role === 'Agent'
-                        ? 'Verified Agent'
-                        : selectedRecipient.role === 'Lawyer'
-                        ? 'Legal Advocate'
-                        : selectedRecipient.role}
-                    </Badge>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
-                    <Lock className="h-2.5 w-2.5 text-emerald-600" />
-                    <span>{selectedRecipient.email}</span>
-                    <span>•</span>
-                    <span className="text-emerald-600 font-bold dark:text-emerald-400">Direct Channel</span>
-                  </p>
-                </div>
+          {/* Channels & DMs Scrollable List */}
+          <div className="flex-1 overflow-y-auto px-2 pb-4 space-y-4">
+            {/* SECTION 1: CHANNELS */}
+            <div>
+              <div className="px-2 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center justify-between">
+                <span>Channels</span>
+                <span className="text-[9px] text-emerald-400 font-bold">Public</span>
               </div>
-
-              {/* Header Right Actions */}
-              <div className="flex items-center gap-2">
-                {bootstrap.user?.role === 'Admin' && activeThread && (
-                  <form
-                    method="post"
-                    action={`/messages/thread/${activeThread.partner.id || ''}/clear/`}
-                    onSubmit={(e) => {
-                      if (!window.confirm('Clear this entire conversation?')) e.preventDefault();
-                    }}
-                  >
-                    <input type="hidden" name="csrfmiddlewaretoken" value={page.csrf_token} />
-                    <Button type="submit" variant="danger" size="sm" className="h-8 rounded-full text-xs gap-1">
-                      <Trash2 className="h-3 w-3" />
-                      Clear
-                    </Button>
-                  </form>
-                )}
-                <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  <span>Escrow Verified</span>
-                </div>
+              <div className="mt-1 space-y-0.5">
+                {officialChannels.map((channel) => {
+                  const isActive = activeChannelId === channel.id;
+                  return (
+                    <button
+                      key={channel.id}
+                      onClick={() => {
+                        setActiveChannelId(channel.id);
+                      }}
+                      className={cn(
+                        'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold transition-all duration-150',
+                        isActive
+                          ? 'bg-emerald-500/15 text-emerald-300 shadow-[inset_0_0_8px_rgba(16,185,129,0.2)]'
+                          : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
+                      )}
+                    >
+                      <span className={cn('text-sm font-extrabold', isActive ? 'text-emerald-400' : 'text-slate-500')}>#</span>
+                      <span className="truncate">{channel.name}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Chat Message Stream */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-              {!activeThread || activeThread.messages.length === 0 ? (
-                <div className="mx-auto my-auto max-w-md p-6 text-center space-y-4 rounded-3xl border border-border/70 bg-white/80 p-8 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-3xl bg-emerald-500/10 text-emerald-600 shadow-inner dark:text-emerald-400">
-                    <MessageSquare className="h-7 w-7" />
+            {/* SECTION 2: DIRECT MESSAGES */}
+            <div>
+              <div className="px-2 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center justify-between">
+                <span>Direct Messages</span>
+                <span className="text-[9px] text-purple-400 font-bold">Encrypted</span>
+              </div>
+              <div className="mt-1 space-y-1">
+                {filteredThreads.length === 0 ? (
+                  <div className="px-3 py-4 text-center text-xs text-slate-500">
+                    No active DMs yet.
+                    <button
+                      onClick={() => setIsNewChatOpen(true)}
+                      className="block mx-auto mt-1 font-bold text-emerald-400 hover:underline"
+                    >
+                      Start a chat
+                    </button>
                   </div>
-                  <div>
-                    <h4 className="text-base font-extrabold text-foreground">
-                      Start direct message with {selectedRecipient.name || selectedRecipient.email}
-                    </h4>
-                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                      Send a message regarding property verification, title deed inspection, escrow funding, or legal conveyancing.
-                    </p>
-                  </div>
-
-                  {/* Quick Prompts */}
-                  <div className="space-y-2 pt-2">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                      Quick Suggestions
-                    </div>
-                    <div className="grid gap-2">
-                      {quickPrompts.map((prompt) => (
-                        <button
-                          key={prompt}
-                          onClick={() => handleSendMessage(prompt)}
-                          className="flex items-center justify-between rounded-xl border border-border/80 bg-white p-2.5 text-left text-xs font-semibold text-slate-700 transition hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-900 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                        >
-                          <span>{prompt}</span>
-                          <CornerDownLeft className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {/* Messages Feed in chronological order */}
-                  {[...activeThread.messages].reverse().map((msg, idx) => {
-                    const isSelf = msg.is_self;
+                ) : (
+                  filteredThreads.map((thread) => {
+                    const isSelected = !isChannelMode && selectedPartnerEmail.toLowerCase() === thread.partner.email.toLowerCase();
+                    const avatar = getAvatarInfo(thread.partner.email, thread.partner.role);
+                    const latestMsg = thread.messages[0];
 
                     return (
-                      <div
-                        key={msg.id || idx}
-                        className={cn('flex items-end gap-2', isSelf ? 'justify-end' : 'justify-start')}
-                      >
-                        {!isSelf && (
-                          <div
-                            className={cn(
-                              'mb-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-[10px] font-black',
-                              getAvatarInfo(selectedRecipient.email, selectedRecipient.role).bg
-                            )}
-                          >
-                            {getAvatarInfo(selectedRecipient.email, selectedRecipient.role).initial}
-                          </div>
+                      <button
+                        key={thread.partner.email}
+                        onClick={() => {
+                          setActiveChannelId(null);
+                          setSelectedPartnerEmail(thread.partner.email);
+                        }}
+                        className={cn(
+                          'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-all duration-150',
+                          isSelected
+                            ? 'bg-white/[0.08] text-white shadow-sm ring-1 ring-emerald-500/40'
+                            : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
                         )}
+                      >
+                        <div className="relative shrink-0">
+                          <div className={cn('flex h-7 w-7 items-center justify-center rounded-lg text-xs font-black', avatar.bg)}>
+                            {avatar.initial}
+                          </div>
+                          <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-[#080b14] bg-emerald-500" />
+                        </div>
 
-                        <div
-                          className={cn(
-                            'group relative max-w-[80%] sm:max-w-[70%] rounded-2xl px-4 py-3 text-sm shadow-sm transition-all',
-                            isSelf
-                              ? 'rounded-br-xs bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-emerald-500/15'
-                              : 'rounded-bl-xs border border-border/70 bg-white text-foreground dark:border-white/10 dark:bg-slate-800'
-                          )}
-                        >
-                          {!isSelf && (
-                            <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                              {selectedRecipient.name || selectedRecipient.email}
-                            </div>
-                          )}
-
-                          <div className="whitespace-pre-wrap leading-relaxed text-xs sm:text-sm">{msg.content}</div>
-
-                          <div
-                            className={cn(
-                              'mt-1.5 flex items-center justify-end gap-1 text-[9px] font-semibold',
-                              isSelf ? 'text-emerald-100/80' : 'text-muted-foreground'
-                            )}
-                          >
-                            <span>{msg.timestamp}</span>
-                            {isSelf && <CheckCheck className="h-3 w-3 text-emerald-200" />}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className={cn('truncate text-xs font-bold', isSelected ? 'text-white' : 'text-slate-300')}>
+                              {thread.partner.name || thread.partner.email.split('@')[0]}
+                            </span>
+                            <span className="text-[9px] text-slate-500 shrink-0">{thread.latest_timestamp || ''}</span>
+                          </div>
+                          <div className="truncate text-[10px] text-slate-500">
+                            {latestMsg?.content || 'Direct conversation'}
                           </div>
                         </div>
-                      </div>
+                      </button>
                     );
-                  })}
-                  <div ref={chatBottomRef} />
-                </>
-              )}
-            </div>
-
-            {/* Error Banner */}
-            {sendError && (
-              <div className="mx-4 mb-2 flex items-center justify-between rounded-xl bg-rose-500/10 border border-rose-500/20 px-3 py-2 text-xs font-semibold text-rose-600">
-                <span>{sendError}</span>
-                <button onClick={() => setSendError(null)} className="hover:opacity-75">
-                  <X className="h-3.5 w-3.5" />
-                </button>
+                  })
+                )}
               </div>
-            )}
+            </div>
+          </div>
 
-            {/* Chat Input Area */}
-            <div className="border-t border-border/60 bg-white/90 p-3 sm:p-4 backdrop-blur-md dark:border-white/10 dark:bg-slate-900/90">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSendMessage();
-                }}
-                className="relative flex items-center gap-2"
-              >
-                <input
-                  type="text"
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  placeholder={`Message ${selectedRecipient.name || selectedRecipient.email}... (Enter to send)`}
-                  disabled={isSending}
-                  className="h-12 w-full rounded-2xl border border-border/80 bg-slate-50/80 px-4 pr-12 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-white/15 dark:bg-slate-800/80 dark:focus:bg-slate-800"
-                />
-
-                <Button
-                  type="submit"
-                  disabled={!inputMessage.trim() || isSending}
-                  className="absolute right-1.5 top-1.5 h-9 w-9 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 p-0 text-white shadow-md shadow-emerald-500/20 transition-all hover:scale-105 hover:brightness-110 disabled:opacity-40 disabled:hover:scale-100"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
-              <div className="mt-1.5 flex items-center justify-between px-2 text-[10px] text-muted-foreground">
-                <span>Press <strong>Enter</strong> to send</span>
-                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
-                  <ShieldCheck className="h-3 w-3" /> Encrypted Escrow DM
-                </span>
+          {/* User Dock Footer */}
+          <div className="border-t border-white/[0.08] p-3 bg-[#06080e] flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-xs font-black text-white shrink-0">
+                {bootstrap.user?.email ? bootstrap.user.email.charAt(0).toUpperCase() : 'U'}
+              </div>
+              <div className="min-w-0">
+                <div className="truncate text-xs font-bold text-slate-200">{bootstrap.user?.email || 'User'}</div>
+                <div className="text-[10px] text-emerald-400 font-medium capitalize">{bootstrap.user?.role || 'Guest'}</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Start New Chat Modal / Overlay */}
-        {isNewChatOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-lg rounded-3xl border border-border/80 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex items-center justify-between pb-4 border-b border-border/60 dark:border-white/10">
+        {/* Right Main Chat Canvas (Discord / AfterQuery Style) */}
+        <div className="flex flex-1 flex-col bg-[#0e1322]">
+          {/* Main Chat Header Bar */}
+          <div className="flex h-14 items-center justify-between border-b border-white/[0.08] px-6 bg-[#0c101d]">
+            <div className="flex items-center gap-3">
+              <span className="text-xl font-extrabold text-emerald-400">
+                {isChannelMode ? '#' : '@'}
+              </span>
+              <div>
                 <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                    <UserPlus className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black text-foreground">New Direct Message</h3>
-                    <p className="text-xs text-muted-foreground">Select an escrow officer, agent, or advocate</p>
-                  </div>
+                  <h3 className="text-sm font-black text-white">
+                    {isChannelMode ? currentChannel?.name : (selectedRecipient.name || selectedRecipient.email)}
+                  </h3>
+                  <Badge tone="outline" className="bg-white/[0.04] text-[9px] uppercase font-bold py-0 text-slate-300">
+                    {isChannelMode ? 'Platform Channel' : selectedRecipient.role}
+                  </Badge>
                 </div>
-                <button
-                  onClick={() => setIsNewChatOpen(false)}
-                  className="rounded-full p-1.5 text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                <div className="text-[10px] text-slate-400 truncate max-w-xl">
+                  {isChannelMode ? currentChannel?.topic : `Direct encrypted session • ${selectedRecipient.email}`}
+                </div>
               </div>
+            </div>
 
-              {/* Recipient Picker */}
-              <div className="mt-4 space-y-4">
-                {bootstrap.user?.role === 'Admin' || bootstrap.user?.role === 'Agent' ? (
-                  <div className="space-y-3">
-                    <label className="text-xs font-bold text-foreground">Enter Recipient Email</label>
-                    <Input
-                      type="email"
-                      placeholder="user@example.com"
-                      value={newChatEmail}
-                      onChange={(e) => setNewChatEmail(e.target.value)}
-                      className="rounded-xl"
-                    />
-                  </div>
-                ) : null}
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-foreground">Available Contacts</label>
-                  <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
-                    {page.allowed_recipients.map((recipient) => {
-                      const avatar = getAvatarInfo(recipient.email, recipient.role);
-                      return (
-                        <button
-                          key={recipient.email}
-                          onClick={() => {
-                            setSelectedPartnerEmail(recipient.email);
-                            setIsNewChatOpen(false);
-                          }}
-                          className="flex w-full items-center justify-between rounded-xl border border-border/70 p-3 text-left transition hover:border-emerald-500 hover:bg-emerald-50/50 dark:border-white/10 dark:hover:bg-slate-800"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl text-xs font-black', avatar.bg)}>
-                              {avatar.initial}
-                            </div>
-                            <div>
-                              <div className="text-xs font-black text-foreground">{recipient.name || recipient.email}</div>
-                              <div className="text-[10px] text-muted-foreground">{recipient.email}</div>
-                            </div>
-                          </div>
-                          <Badge
-                            tone={
-                              recipient.role === 'Admin'
-                                ? 'accent'
-                                : recipient.role === 'Agent'
-                                ? 'success'
-                                : 'default'
-                            }
-                            className="text-[9px] uppercase font-bold"
-                          >
-                            {recipient.role}
-                          </Badge>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {bootstrap.user?.role === 'Admin' && newChatEmail ? (
-                  <Button
-                    onClick={() => {
-                      setSelectedPartnerEmail(newChatEmail);
-                      setIsNewChatOpen(false);
-                    }}
-                    className="w-full rounded-full bg-emerald-600 text-white font-bold"
-                  >
-                    Start Chat with {newChatEmail}
-                  </Button>
-                ) : null}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-300">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                <span>Verified Protocol</span>
               </div>
             </div>
           </div>
-        )}
+
+          {/* Chat Stream Body */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* Date divider */}
+            <div className="relative flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/[0.08]" />
+              </div>
+              <span className="relative rounded-full bg-[#13192a] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border border-white/[0.06]">
+                Official Escrow Session
+              </span>
+            </div>
+
+            {/* If Channel Mode */}
+            {isChannelMode ? (
+              <div className="space-y-6">
+                <div className="flex items-start gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-slate-950 font-black text-base shadow-lg shadow-emerald-500/20">
+                    D
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-xs text-white">Digiland Escrow Protocol</span>
+                      <span className="rounded bg-emerald-500/20 px-1.5 py-0.2 text-[9px] font-black uppercase text-emerald-300">TEAM</span>
+                      <span className="text-[10px] text-slate-500">Today at 10:00 AM</span>
+                    </div>
+                    <div className="text-xs text-slate-300 leading-relaxed">
+                      Welcome to <strong className="text-white">#{currentChannel?.name}</strong>. This official channel hosts protocol announcements, land title deed registry updates, and escrow settlement notifications across Kenya.
+                    </div>
+                    {/* Emoji Reactions */}
+                    <div className="flex items-center gap-1.5 pt-1">
+                      <button className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]">
+                        <span>👍</span> <span>12</span>
+                      </button>
+                      <button className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]">
+                        <span>🛡️</span> <span>8</span>
+                      </button>
+                      <button className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]">
+                        <span>🇰🇪</span> <span>15</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-purple-600 text-white font-black text-base shadow-lg shadow-purple-500/20">
+                    A
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-xs text-white">Chief Escrow Officer</span>
+                      <span className="rounded bg-purple-500/20 px-1.5 py-0.2 text-[9px] font-black uppercase text-purple-300">ADMIN</span>
+                      <span className="text-[10px] text-slate-500">Today at 10:45 AM</span>
+                    </div>
+                    <div className="text-xs text-slate-300 leading-relaxed">
+                      Sellers with pending parcel submissions: Please make sure your Survey Deed Plans and Land Registry Search Certificates (Form RL 26) are uploaded. Verification SLAs are currently under 24 hours.
+                    </div>
+                    <div className="flex items-center gap-1.5 pt-1">
+                      <button className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]">
+                        <span>✅</span> <span>6</span>
+                      </button>
+                      <button className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]">
+                        <span>🔥</span> <span>4</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : !activeThread || activeThread.messages.length === 0 ? (
+              /* Empty DM State */
+              <div className="mx-auto my-auto max-w-md p-8 text-center space-y-4 rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-xl">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400">
+                  <MessageSquare className="h-7 w-7" />
+                </div>
+                <div>
+                  <h4 className="text-base font-extrabold text-white">
+                    Direct channel with {selectedRecipient.name || selectedRecipient.email}
+                  </h4>
+                  <p className="mt-1 text-xs text-slate-400 leading-relaxed">
+                    Messages sent here are private and protected by Digiland escrow dual-signature mediation.
+                  </p>
+                </div>
+
+                <div className="space-y-2 pt-2">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    Quick Suggestions
+                  </div>
+                  <div className="grid gap-2">
+                    {quickPrompts.map((prompt) => (
+                      <button
+                        key={prompt}
+                        onClick={() => handleSendMessage(prompt)}
+                        className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-left text-xs font-semibold text-slate-300 transition hover:border-emerald-500/60 hover:bg-emerald-500/10 hover:text-white"
+                      >
+                        <span>{prompt}</span>
+                        <CornerDownLeft className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Active DM Messages Feed (Discord / Slack style) */
+              <div className="space-y-4">
+                {[...activeThread.messages].reverse().map((msg, idx) => {
+                  const isSelf = msg.is_self;
+                  const avatar = getAvatarInfo(
+                    isSelf ? bootstrap.user?.email || 'You' : selectedRecipient.email,
+                    isSelf ? bootstrap.user?.role : selectedRecipient.role
+                  );
+
+                  return (
+                    <div
+                      key={msg.id || idx}
+                      className={cn(
+                        'group flex items-start gap-3 rounded-2xl p-3 transition-colors hover:bg-white/[0.03]',
+                        isSelf ? 'border-l-2 border-emerald-500/60 bg-emerald-500/[0.03]' : ''
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl font-black text-xs shadow-md',
+                          avatar.bg
+                        )}
+                      >
+                        {avatar.initial}
+                      </div>
+
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className={cn('text-xs font-extrabold', isSelf ? 'text-emerald-300' : 'text-white')}>
+                            {isSelf ? 'You' : (selectedRecipient.name || selectedRecipient.email)}
+                          </span>
+                          <span
+                            className={cn(
+                              'rounded px-1.5 py-0.2 text-[9px] font-black uppercase tracking-wider',
+                              (isSelf ? bootstrap.user?.role : selectedRecipient.role) === 'Admin'
+                                ? 'bg-purple-500/20 text-purple-300'
+                                : (isSelf ? bootstrap.user?.role : selectedRecipient.role) === 'Agent'
+                                ? 'bg-emerald-500/20 text-emerald-300'
+                                : 'bg-slate-700 text-slate-300'
+                            )}
+                          >
+                            {isSelf ? bootstrap.user?.role : selectedRecipient.role}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-medium">{msg.timestamp}</span>
+                        </div>
+
+                        <div className="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
+                          {msg.content}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={chatBottomRef} />
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Docked Input Box & Notice Banner */}
+          <div className="border-t border-white/[0.08] bg-[#0a0e1a] p-4 space-y-2">
+            {/* Disclaimer Banner */}
+            <div className="flex items-center gap-2 text-[11px] text-slate-400">
+              <ShieldCheck className="h-4 w-4 text-emerald-400 shrink-0" />
+              <span>
+                This channel is escrow-secured — all communications are archived for transaction mediation.
+              </span>
+            </div>
+
+            {/* Input Form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (isChannelMode) {
+                  // If in channel mode, send to Admin desk
+                  handleSendMessage();
+                } else {
+                  handleSendMessage();
+                }
+              }}
+              className="relative flex items-center rounded-2xl border border-white/15 bg-[#121727] p-1.5 transition-all focus-within:border-emerald-500/60 focus-within:ring-2 focus-within:ring-emerald-500/20"
+            >
+              <input
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                placeholder={
+                  isChannelMode
+                    ? `Message #${currentChannel?.name}...`
+                    : `Message @${selectedRecipient.name || selectedRecipient.email}...`
+                }
+                disabled={isSending}
+                className="h-10 w-full bg-transparent px-3 text-xs sm:text-sm text-slate-100 placeholder:text-slate-500 outline-none"
+              />
+
+              <div className="flex items-center gap-1 pr-1">
+                <Button
+                  type="submit"
+                  disabled={!inputMessage.trim() || isSending}
+                  className="h-8 w-8 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 p-0 text-slate-950 shadow-md shadow-emerald-500/20 transition-all hover:scale-105 hover:brightness-110 disabled:opacity-30"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
+
+      {/* Start New Chat Modal */}
+      {isNewChatOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0f1523] p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-emerald-400" />
+                <h3 className="font-bold text-white text-base">New Direct Message</h3>
+              </div>
+              <button
+                onClick={() => setIsNewChatOpen(false)}
+                className="rounded-full p-1.5 text-slate-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-2 max-h-72 overflow-y-auto pr-1">
+              {page.allowed_recipients.map((recipient) => {
+                const avatar = getAvatarInfo(recipient.email, recipient.role);
+                return (
+                  <button
+                    key={recipient.email}
+                    onClick={() => {
+                      setActiveChannelId(null);
+                      setSelectedPartnerEmail(recipient.email);
+                      setIsNewChatOpen(false);
+                    }}
+                    className="flex w-full items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-left transition hover:border-emerald-500/40 hover:bg-emerald-500/10"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={cn('flex h-8 w-8 items-center justify-center rounded-lg text-xs font-black', avatar.bg)}>
+                        {avatar.initial}
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-200">{recipient.name || recipient.email}</div>
+                        <div className="text-[10px] text-slate-500">{recipient.email}</div>
+                      </div>
+                    </div>
+                    <Badge tone="outline" className="text-[9px] uppercase font-bold text-slate-300">
+                      {recipient.role}
+                    </Badge>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

@@ -1085,7 +1085,7 @@ var require_react_development = __commonJS({
           }
           return dispatcher.useContext(Context);
         }
-        function useState12(initialState) {
+        function useState13(initialState) {
           var dispatcher = resolveDispatcher();
           return dispatcher.useState(initialState);
         }
@@ -1888,7 +1888,7 @@ var require_react_development = __commonJS({
         exports.useMemo = useMemo3;
         exports.useReducer = useReducer;
         exports.useRef = useRef9;
-        exports.useState = useState12;
+        exports.useState = useState13;
         exports.useSyncExternalStore = useSyncExternalStore;
         exports.useTransition = useTransition;
         exports.version = ReactVersion;
@@ -23647,12 +23647,6 @@ var ChartColumn = createLucideIcon("ChartColumn", [
   ["path", { d: "M8 17v-3", key: "17ska0" }]
 ]);
 
-// node_modules/lucide-react/dist/esm/icons/check-check.js
-var CheckCheck = createLucideIcon("CheckCheck", [
-  ["path", { d: "M18 6 7 17l-5-5", key: "116fxf" }],
-  ["path", { d: "m22 10-7.5 7.5L13 16", key: "ke71qq" }]
-]);
-
 // node_modules/lucide-react/dist/esm/icons/check.js
 var Check = createLucideIcon("Check", [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]]);
 
@@ -23845,21 +23839,6 @@ var Grid2x2 = createLucideIcon("Grid2x2", [
   ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }],
   ["path", { d: "M3 12h18", key: "1i2n21" }],
   ["path", { d: "M12 3v18", key: "108xh3" }]
-]);
-
-// node_modules/lucide-react/dist/esm/icons/hand-coins.js
-var HandCoins = createLucideIcon("HandCoins", [
-  ["path", { d: "M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17", key: "geh8rc" }],
-  [
-    "path",
-    {
-      d: "m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9",
-      key: "1fto5m"
-    }
-  ],
-  ["path", { d: "m2 16 6 6", key: "1pfhp9" }],
-  ["circle", { cx: "16", cy: "9", r: "2.9", key: "1n0dlu" }],
-  ["circle", { cx: "6", cy: "5", r: "3", key: "151irh" }]
 ]);
 
 // node_modules/lucide-react/dist/esm/icons/heart.js
@@ -24186,15 +24165,6 @@ var Ticket = createLucideIcon("Ticket", [
   ["path", { d: "M13 11v2", key: "1wjjxi" }]
 ]);
 
-// node_modules/lucide-react/dist/esm/icons/trash-2.js
-var Trash2 = createLucideIcon("Trash2", [
-  ["path", { d: "M3 6h18", key: "d0wm0j" }],
-  ["path", { d: "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6", key: "4alrt4" }],
-  ["path", { d: "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2", key: "v07s0e" }],
-  ["line", { x1: "10", x2: "10", y1: "11", y2: "17", key: "1uufr5" }],
-  ["line", { x1: "14", x2: "14", y1: "11", y2: "17", key: "xtxkd" }]
-]);
-
 // node_modules/lucide-react/dist/esm/icons/trending-up.js
 var TrendingUp = createLucideIcon("TrendingUp", [
   ["polyline", { points: "22 7 13.5 15.5 8.5 10.5 2 17", key: "126l90" }],
@@ -24233,7 +24203,7 @@ var Upload = createLucideIcon("Upload", [
 ]);
 
 // node_modules/lucide-react/dist/esm/icons/user-plus.js
-var UserPlus2 = createLucideIcon("UserPlus", [
+var UserPlus = createLucideIcon("UserPlus", [
   ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
   ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }],
   ["line", { x1: "19", x2: "19", y1: "8", y2: "14", key: "1bvyxn" }],
@@ -24313,7 +24283,10 @@ function readBootstrap() {
 // src/components/layout/app-shell.tsx
 var import_react4 = __toESM(require_react(), 1);
 
-// src/components/ui/badge.tsx
+// src/components/ui/location-permission-modal.tsx
+var import_react3 = __toESM(require_react(), 1);
+
+// src/components/ui/button.tsx
 var React = __toESM(require_react(), 1);
 
 // node_modules/clsx/dist/clsx.mjs
@@ -24330,6 +24303,48 @@ function clsx() {
   for (var e, t, f = 0, n = "", o = arguments.length; f < o; f++) (e = arguments[f]) && (t = r(e)) && (n && (n += " "), n += t);
   return n;
 }
+
+// node_modules/class-variance-authority/dist/index.mjs
+var falsyToString = (value) => typeof value === "boolean" ? `${value}` : value === 0 ? "0" : value;
+var cx = clsx;
+var cva = (base, config) => (props) => {
+  var _config_compoundVariants;
+  if ((config === null || config === void 0 ? void 0 : config.variants) == null) return cx(base, props === null || props === void 0 ? void 0 : props.class, props === null || props === void 0 ? void 0 : props.className);
+  const { variants, defaultVariants } = config;
+  const getVariantClassNames = Object.keys(variants).map((variant) => {
+    const variantProp = props === null || props === void 0 ? void 0 : props[variant];
+    const defaultVariantProp = defaultVariants === null || defaultVariants === void 0 ? void 0 : defaultVariants[variant];
+    if (variantProp === null) return null;
+    const variantKey = falsyToString(variantProp) || falsyToString(defaultVariantProp);
+    return variants[variant][variantKey];
+  });
+  const propsWithoutUndefined = props && Object.entries(props).reduce((acc, param) => {
+    let [key, value] = param;
+    if (value === void 0) {
+      return acc;
+    }
+    acc[key] = value;
+    return acc;
+  }, {});
+  const getCompoundVariantClassNames = config === null || config === void 0 ? void 0 : (_config_compoundVariants = config.compoundVariants) === null || _config_compoundVariants === void 0 ? void 0 : _config_compoundVariants.reduce((acc, param) => {
+    let { class: cvClass, className: cvClassName, ...compoundVariantOptions } = param;
+    return Object.entries(compoundVariantOptions).every((param2) => {
+      let [key, value] = param2;
+      return Array.isArray(value) ? value.includes({
+        ...defaultVariants,
+        ...propsWithoutUndefined
+      }[key]) : {
+        ...defaultVariants,
+        ...propsWithoutUndefined
+      }[key] === value;
+    }) ? [
+      ...acc,
+      cvClass,
+      cvClassName
+    ] : acc;
+  }, []);
+  return cx(base, getVariantClassNames, getCompoundVariantClassNames, props === null || props === void 0 ? void 0 : props.class, props === null || props === void 0 ? void 0 : props.className);
+};
 
 // node_modules/tailwind-merge/dist/bundle-mjs.mjs
 var CLASS_PART_SEPARATOR = "-";
@@ -26796,78 +26811,6 @@ function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-// src/components/ui/badge.tsx
-var toneClasses = {
-  default: "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30",
-  success: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40",
-  warning: "bg-amber-500/20 text-amber-300 border border-amber-500/40",
-  danger: "bg-rose-500/20 text-rose-300 border border-rose-500/40",
-  muted: "bg-slate-800 text-slate-300 border border-slate-700",
-  outline: "border border-emerald-400/30 bg-emerald-500/10 text-emerald-300"
-};
-function Badge({
-  className,
-  tone = "default",
-  ...props
-}) {
-  return /* @__PURE__ */ React.createElement(
-    "span",
-    {
-      className: cn(
-        "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.18em]",
-        toneClasses[tone],
-        className
-      ),
-      ...props
-    }
-  );
-}
-
-// src/components/ui/button.tsx
-var React2 = __toESM(require_react(), 1);
-
-// node_modules/class-variance-authority/dist/index.mjs
-var falsyToString = (value) => typeof value === "boolean" ? `${value}` : value === 0 ? "0" : value;
-var cx = clsx;
-var cva = (base, config) => (props) => {
-  var _config_compoundVariants;
-  if ((config === null || config === void 0 ? void 0 : config.variants) == null) return cx(base, props === null || props === void 0 ? void 0 : props.class, props === null || props === void 0 ? void 0 : props.className);
-  const { variants, defaultVariants } = config;
-  const getVariantClassNames = Object.keys(variants).map((variant) => {
-    const variantProp = props === null || props === void 0 ? void 0 : props[variant];
-    const defaultVariantProp = defaultVariants === null || defaultVariants === void 0 ? void 0 : defaultVariants[variant];
-    if (variantProp === null) return null;
-    const variantKey = falsyToString(variantProp) || falsyToString(defaultVariantProp);
-    return variants[variant][variantKey];
-  });
-  const propsWithoutUndefined = props && Object.entries(props).reduce((acc, param) => {
-    let [key, value] = param;
-    if (value === void 0) {
-      return acc;
-    }
-    acc[key] = value;
-    return acc;
-  }, {});
-  const getCompoundVariantClassNames = config === null || config === void 0 ? void 0 : (_config_compoundVariants = config.compoundVariants) === null || _config_compoundVariants === void 0 ? void 0 : _config_compoundVariants.reduce((acc, param) => {
-    let { class: cvClass, className: cvClassName, ...compoundVariantOptions } = param;
-    return Object.entries(compoundVariantOptions).every((param2) => {
-      let [key, value] = param2;
-      return Array.isArray(value) ? value.includes({
-        ...defaultVariants,
-        ...propsWithoutUndefined
-      }[key]) : {
-        ...defaultVariants,
-        ...propsWithoutUndefined
-      }[key] === value;
-    }) ? [
-      ...acc,
-      cvClass,
-      cvClassName
-    ] : acc;
-  }, []);
-  return cx(base, getVariantClassNames, getCompoundVariantClassNames, props === null || props === void 0 ? void 0 : props.class, props === null || props === void 0 ? void 0 : props.className);
-};
-
 // src/components/ui/button.tsx
 var buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
@@ -26894,33 +26837,32 @@ var buttonVariants = cva(
     }
   }
 );
-var Button = React2.forwardRef(
+var Button = React.forwardRef(
   ({ className, variant, size, ...props }, ref) => {
-    return /* @__PURE__ */ React2.createElement("button", { ref, className: cn(buttonVariants({ variant, size, className })), ...props });
+    return /* @__PURE__ */ React.createElement("button", { ref, className: cn(buttonVariants({ variant, size, className })), ...props });
   }
 );
 Button.displayName = "Button";
 
 // src/components/ui/card.tsx
-var React3 = __toESM(require_react(), 1);
+var React2 = __toESM(require_react(), 1);
 function Card({ className, ...props }) {
-  return /* @__PURE__ */ React3.createElement("div", { className: cn("rounded-3xl border border-border/70 bg-card text-card-foreground shadow-soft", className), ...props });
+  return /* @__PURE__ */ React2.createElement("div", { className: cn("rounded-3xl border border-border/70 bg-card text-card-foreground shadow-soft", className), ...props });
 }
 function CardHeader({ className, ...props }) {
-  return /* @__PURE__ */ React3.createElement("div", { className: cn("flex flex-col gap-1.5 p-6 pb-4", className), ...props });
+  return /* @__PURE__ */ React2.createElement("div", { className: cn("flex flex-col gap-1.5 p-6 pb-4", className), ...props });
 }
 function CardTitle({ className, ...props }) {
-  return /* @__PURE__ */ React3.createElement("h3", { className: cn("text-lg font-bold tracking-tight text-foreground", className), ...props });
+  return /* @__PURE__ */ React2.createElement("h3", { className: cn("text-lg font-bold tracking-tight text-foreground", className), ...props });
 }
 function CardDescription({ className, ...props }) {
-  return /* @__PURE__ */ React3.createElement("p", { className: cn("text-sm text-muted-foreground", className), ...props });
+  return /* @__PURE__ */ React2.createElement("p", { className: cn("text-sm text-muted-foreground", className), ...props });
 }
 function CardContent({ className, ...props }) {
-  return /* @__PURE__ */ React3.createElement("div", { className: cn("px-6 pb-6", className), ...props });
+  return /* @__PURE__ */ React2.createElement("div", { className: cn("px-6 pb-6", className), ...props });
 }
 
 // src/components/ui/location-permission-modal.tsx
-var import_react3 = __toESM(require_react(), 1);
 var KENYAN_COUNTIES = [
   "Nairobi",
   "Mombasa",
@@ -27117,58 +27059,177 @@ function ShieldCheckIcon(props) {
 }
 
 // src/components/layout/app-shell.tsx
-var iconMap = {
-  dashboard: LayoutDashboard,
-  parcels: Grid2x2,
-  transactions: ReceiptText,
-  legal: Gavel,
-  joint: Users,
-  checkout: WalletCards,
-  groups: HandCoins,
-  payments: Banknote,
-  documents: FileText,
-  security: ShieldCheck
-};
-function actionClass(tone) {
-  return cn(
-    "inline-flex h-11 items-center justify-center rounded-full px-5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-    tone === "secondary" ? "bg-secondary text-secondary-foreground hover:bg-secondary/85" : tone === "outline" ? "border border-border bg-white/80 text-foreground hover:bg-muted" : tone === "ghost" ? "bg-transparent text-foreground hover:bg-muted" : tone === "accent" ? "bg-accent text-accent-foreground hover:bg-accent/80" : "bg-primary text-primary-foreground hover:bg-primary/90"
-  );
-}
-function AppShell({ title, subtitle, user, nav, children, actions, logoutUrl, csrfToken }) {
+function AppShell({
+  title,
+  subtitle,
+  user,
+  nav,
+  children,
+  actions,
+  logoutUrl,
+  csrfToken,
+  activeNav
+}) {
+  const [mobileMenuOpen, setMobileMenuOpen] = (0, import_react4.useState)(false);
   const currentRole = user?.role || "Guest";
-  const displayName = user?.full_name || user?.email || "Visitor";
-  return /* @__PURE__ */ import_react4.default.createElement("div", { className: "min-h-screen bg-slate-50/50" }, /* @__PURE__ */ import_react4.default.createElement("header", { className: "sticky top-0 z-30 border-b border-border/70 bg-white/90 backdrop-blur-xl" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "mx-auto flex w-full max-w-[1536px] items-center gap-4 px-4 py-3.5 sm:px-6 lg:px-8" }, /* @__PURE__ */ import_react4.default.createElement("a", { href: "/", className: "flex items-center gap-3 rounded-full px-1 py-1 transition hover:opacity-90" }, /* @__PURE__ */ import_react4.default.createElement("span", { className: "flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-700 text-white shadow-soft" }, /* @__PURE__ */ import_react4.default.createElement(ShieldCheck, { className: "h-5 w-5" })), /* @__PURE__ */ import_react4.default.createElement("div", { className: "leading-tight" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "text-base font-extrabold tracking-tight text-foreground" }, "Digiland"), /* @__PURE__ */ import_react4.default.createElement("div", { className: "text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700" }, "Land Escrow"))), /* @__PURE__ */ import_react4.default.createElement("div", { className: "hidden min-w-0 flex-1 lg:flex" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "ml-6 max-w-3xl" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "text-xs font-bold uppercase tracking-[0.22em] text-emerald-700" }, title), subtitle ? /* @__PURE__ */ import_react4.default.createElement("div", { className: "truncate text-sm font-medium text-slate-500" }, subtitle) : null)), /* @__PURE__ */ import_react4.default.createElement("div", { className: "ml-auto flex items-center gap-3" }, actions?.map((action) => /* @__PURE__ */ import_react4.default.createElement(
+  const displayName = user?.full_name || (user?.email ? user.email.split("@")[0] : "User");
+  const userInitial = displayName.charAt(0).toUpperCase();
+  const railItems = [
+    { label: "Home", href: "/", icon: House, active: activeNav === "home" || title.toLowerCase().includes("home") },
+    {
+      label: "Dashboard",
+      href: user?.role === "Seller" ? "/seller/dashboard/" : user?.role === "Buyer" ? "/buyer/dashboard/" : "/parcels/",
+      icon: LayoutDashboard,
+      active: title.toLowerCase().includes("dashboard") || title.toLowerCase().includes("workspace")
+    },
+    {
+      label: "Chat",
+      href: "/messages/",
+      icon: MessageSquare,
+      active: activeNav === "messages" || title.toLowerCase().includes("message"),
+      badge: "DM"
+    },
+    {
+      label: "Parcels",
+      href: "/parcels/",
+      icon: Grid2x2,
+      active: title.toLowerCase().includes("parcel") || title.toLowerCase().includes("marketplace")
+    },
+    {
+      label: "Escrow",
+      href: "/transactions/",
+      icon: ReceiptText,
+      active: title.toLowerCase().includes("transaction") || title.toLowerCase().includes("escrow")
+    },
+    {
+      label: "Legal",
+      href: user?.role === "Seller" ? "/seller/laws/" : "/escrow-acts/",
+      icon: Scale,
+      active: title.toLowerCase().includes("legal") || title.toLowerCase().includes("act")
+    }
+  ];
+  return /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex min-h-screen bg-[#0d121f] text-slate-100 antialiased selection:bg-emerald-500 selection:text-slate-950 font-sans" }, /* @__PURE__ */ import_react4.default.createElement("aside", { className: "hidden w-[72px] shrink-0 flex-col items-center justify-between border-r border-white/[0.08] bg-[#080b13] py-4 md:flex z-40" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex flex-col items-center gap-6" }, /* @__PURE__ */ import_react4.default.createElement(
+    "a",
+    {
+      href: "/",
+      title: "Digiland Protocol",
+      className: "group relative flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.35)] transition-all duration-200 hover:scale-105 hover:shadow-[0_0_25px_rgba(16,185,129,0.5)]"
+    },
+    /* @__PURE__ */ import_react4.default.createElement(ShieldCheck, { className: "h-6 w-6 text-slate-950" }),
+    /* @__PURE__ */ import_react4.default.createElement("span", { className: "absolute left-full ml-3 hidden whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold text-white shadow-xl group-hover:block z-50" }, "Digiland Protocol")
+  ), /* @__PURE__ */ import_react4.default.createElement("div", { className: "h-[1px] w-8 bg-white/10" }), /* @__PURE__ */ import_react4.default.createElement("nav", { className: "flex flex-col items-center gap-2" }, railItems.map((item) => {
+    const Icon2 = item.icon;
+    return /* @__PURE__ */ import_react4.default.createElement(
+      "a",
+      {
+        key: item.label,
+        href: item.href,
+        title: item.label,
+        className: cn(
+          "group relative flex h-11 w-11 flex-col items-center justify-center rounded-2xl text-[10px] font-bold transition-all duration-150",
+          item.active ? "bg-emerald-500/20 text-emerald-300 shadow-[inset_0_0_12px_rgba(16,185,129,0.3)] ring-1 ring-emerald-500/50" : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-100"
+        )
+      },
+      item.active && /* @__PURE__ */ import_react4.default.createElement("span", { className: "absolute -left-3 h-5 w-1 rounded-r-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" }),
+      /* @__PURE__ */ import_react4.default.createElement(Icon2, { className: "h-5 w-5 transition-transform group-hover:scale-110" }),
+      /* @__PURE__ */ import_react4.default.createElement("span", { className: "text-[9px] font-medium tracking-tight mt-0.5 opacity-80" }, item.label),
+      /* @__PURE__ */ import_react4.default.createElement("span", { className: "absolute left-full ml-3 hidden whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold text-white shadow-xl group-hover:block z-50" }, item.label)
+    );
+  }))), /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex flex-col items-center gap-3" }, logoutUrl ? /* @__PURE__ */ import_react4.default.createElement("form", { method: "post", action: logoutUrl }, /* @__PURE__ */ import_react4.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: csrfToken || "" }), /* @__PURE__ */ import_react4.default.createElement(
+    "button",
+    {
+      type: "submit",
+      title: "Sign out",
+      className: "group relative flex h-10 w-10 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-rose-500/15 hover:text-rose-400"
+    },
+    /* @__PURE__ */ import_react4.default.createElement(LogOut, { className: "h-4 w-4" }),
+    /* @__PURE__ */ import_react4.default.createElement("span", { className: "absolute left-full ml-3 hidden whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold text-rose-400 shadow-xl group-hover:block z-50" }, "Sign out")
+  )) : null, /* @__PURE__ */ import_react4.default.createElement(
+    "div",
+    {
+      title: `${displayName} (${currentRole})`,
+      className: "relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 font-black text-sm text-white shadow-md shadow-purple-500/20 transition hover:scale-105"
+    },
+    userInitial,
+    /* @__PURE__ */ import_react4.default.createElement("span", { className: "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#080b13] bg-emerald-500 shadow-sm" })
+  ))), /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex min-w-0 flex-1 flex-col" }, /* @__PURE__ */ import_react4.default.createElement("header", { className: "sticky top-0 z-30 flex h-14 items-center justify-between border-b border-white/[0.08] bg-[#0c111e]/90 px-4 backdrop-blur-xl sm:px-6" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react4.default.createElement(
+    "button",
+    {
+      onClick: () => setMobileMenuOpen(!mobileMenuOpen),
+      className: "flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.06] text-slate-300 md:hidden"
+    },
+    /* @__PURE__ */ import_react4.default.createElement(Menu, { className: "h-5 w-5" })
+  ), /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react4.default.createElement("span", { className: "text-xs font-black uppercase tracking-[0.2em] text-emerald-400" }, title.split(" - ")[0]), subtitle && /* @__PURE__ */ import_react4.default.createElement(import_react4.default.Fragment, null, /* @__PURE__ */ import_react4.default.createElement("span", { className: "hidden text-slate-600 sm:inline" }, "\u2022"), /* @__PURE__ */ import_react4.default.createElement("span", { className: "hidden truncate text-xs font-medium text-slate-400 sm:inline max-w-md" }, subtitle)))), /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex items-center gap-3" }, actions?.map((action) => /* @__PURE__ */ import_react4.default.createElement(
     "a",
     {
       key: `${action.label}-${action.href}`,
       href: action.href,
-      target: action.external ? "_blank" : void 0,
-      rel: action.external ? "noreferrer" : void 0,
-      className: actionClass(action.tone)
+      className: "hidden sm:inline-flex h-8 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 text-xs font-bold text-emerald-300 transition hover:bg-emerald-500/20"
     },
     action.label
-  )), /* @__PURE__ */ import_react4.default.createElement(Badge, { tone: "outline", className: "hidden sm:inline-flex bg-slate-100/80 font-bold" }, currentRole), /* @__PURE__ */ import_react4.default.createElement("div", { className: "hidden items-center gap-3 rounded-full border border-border bg-white px-4 py-2 shadow-sm md:flex" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 font-bold text-sm" }, (displayName || "U").slice(0, 1).toUpperCase()), /* @__PURE__ */ import_react4.default.createElement("div", { className: "leading-tight" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "text-sm font-bold text-slate-900" }, displayName), /* @__PURE__ */ import_react4.default.createElement("div", { className: "text-[11px] font-medium text-slate-500" }, user?.buyer_account_type ? `${user.buyer_account_type} buyer` : "Authenticated session"))), logoutUrl ? /* @__PURE__ */ import_react4.default.createElement("form", { method: "post", action: logoutUrl }, /* @__PURE__ */ import_react4.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: csrfToken || "" }), /* @__PURE__ */ import_react4.default.createElement(Button, { variant: "outline", size: "sm", className: "rounded-full h-10 px-4 text-xs font-bold border-red-200/80 text-red-700 hover:bg-red-50 hover:border-red-300", type: "submit" }, /* @__PURE__ */ import_react4.default.createElement(LogOut, { className: "h-3.5 w-3.5 mr-1.5" }), "Sign out")) : null))), /* @__PURE__ */ import_react4.default.createElement("div", { className: "mx-auto flex w-full max-w-[1536px] gap-8 px-4 py-8 sm:px-6 lg:px-8" }, /* @__PURE__ */ import_react4.default.createElement("aside", { className: "hidden w-64 shrink-0 lg:block" }, /* @__PURE__ */ import_react4.default.createElement(Card, { className: "sticky top-24 overflow-hidden bg-white shadow-sm border-slate-200/80 rounded-3xl" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "border-b border-slate-100 px-6 py-5" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex items-start justify-between gap-3" }, /* @__PURE__ */ import_react4.default.createElement("div", null, /* @__PURE__ */ import_react4.default.createElement("div", { className: "text-[10px] font-black uppercase tracking-[0.24em] text-slate-400" }, "Navigation"), /* @__PURE__ */ import_react4.default.createElement("div", { className: "mt-1 text-base font-extrabold tracking-tight text-slate-900" }, title)), logoutUrl ? /* @__PURE__ */ import_react4.default.createElement("form", { method: "post", action: logoutUrl }, /* @__PURE__ */ import_react4.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: csrfToken || "" }), /* @__PURE__ */ import_react4.default.createElement(Button, { variant: "outline", size: "sm", className: "rounded-2xl h-8 px-2.5 text-xs", type: "submit" }, /* @__PURE__ */ import_react4.default.createElement(LogOut, { className: "h-3.5 w-3.5 mr-1" }), "Exit")) : null)), /* @__PURE__ */ import_react4.default.createElement("nav", { className: "space-y-1.5 p-3" }, nav.map((item) => {
-    const Icon2 = item.icon ? iconMap[item.icon] || Grid2x2 : Grid2x2;
-    return /* @__PURE__ */ import_react4.default.createElement(
-      "a",
-      {
-        key: item.href,
-        href: item.href,
-        className: cn(
-          "flex items-center gap-3 rounded-2xl px-4 py-3 text-xs font-bold transition-all duration-200",
-          item.active ? "bg-emerald-700 text-white shadow-md" : "text-slate-700 hover:bg-slate-100/70 hover:text-slate-900"
-        )
-      },
-      /* @__PURE__ */ import_react4.default.createElement(Icon2, { className: "h-4 w-4 shrink-0" }),
-      /* @__PURE__ */ import_react4.default.createElement("span", { className: "truncate" }, item.label)
-    );
-  })), /* @__PURE__ */ import_react4.default.createElement("div", { className: "border-t border-slate-100 p-4" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "rounded-2xl bg-slate-50 p-3 text-xs" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "text-[10px] font-black uppercase tracking-[0.22em] text-slate-400" }, "Active Session"), /* @__PURE__ */ import_react4.default.createElement("div", { className: "mt-1 font-bold text-slate-900 truncate" }, displayName), /* @__PURE__ */ import_react4.default.createElement("div", { className: "text-[11px] text-slate-500 truncate" }, user?.email || "Guest"))))), /* @__PURE__ */ import_react4.default.createElement("main", { className: "min-w-0 flex-1" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "mb-5 flex items-center gap-3 lg:hidden" }, /* @__PURE__ */ import_react4.default.createElement(Button, { variant: "outline", size: "icon", className: "rounded-full" }, /* @__PURE__ */ import_react4.default.createElement(Menu, { className: "h-4 w-4" })), /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex-1" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "text-xs font-bold uppercase tracking-[0.22em] text-emerald-700" }, title), subtitle ? /* @__PURE__ */ import_react4.default.createElement("div", { className: "text-xs text-muted-foreground" }, subtitle) : null), logoutUrl ? /* @__PURE__ */ import_react4.default.createElement("form", { method: "post", action: logoutUrl }, /* @__PURE__ */ import_react4.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: csrfToken || "" }), /* @__PURE__ */ import_react4.default.createElement(Button, { variant: "outline", size: "sm", className: "rounded-full h-9 px-3 text-xs font-bold border-red-200/80 text-red-700 hover:bg-red-50", type: "submit" }, /* @__PURE__ */ import_react4.default.createElement(LogOut, { className: "h-3.5 w-3.5 mr-1" }), "Sign out")) : null), children)), /* @__PURE__ */ import_react4.default.createElement(LocationPermissionModal, null));
+  )), /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs" }, /* @__PURE__ */ import_react4.default.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" }), /* @__PURE__ */ import_react4.default.createElement("span", { className: "font-bold text-slate-200" }, displayName), /* @__PURE__ */ import_react4.default.createElement("span", { className: "rounded bg-emerald-500/20 px-1.5 py-0.2 text-[10px] font-black uppercase tracking-wider text-emerald-300" }, currentRole)), logoutUrl && /* @__PURE__ */ import_react4.default.createElement("form", { method: "post", action: logoutUrl, className: "md:hidden" }, /* @__PURE__ */ import_react4.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: csrfToken || "" }), /* @__PURE__ */ import_react4.default.createElement(
+    "button",
+    {
+      type: "submit",
+      className: "flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400"
+    },
+    /* @__PURE__ */ import_react4.default.createElement(LogOut, { className: "h-4 w-4" })
+  )))), mobileMenuOpen && /* @__PURE__ */ import_react4.default.createElement("div", { className: "fixed inset-0 z-50 flex flex-col bg-slate-950/95 p-6 backdrop-blur-xl md:hidden" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex items-center justify-between pb-4 border-b border-white/10" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react4.default.createElement(ShieldCheck, { className: "h-6 w-6 text-emerald-400" }), /* @__PURE__ */ import_react4.default.createElement("span", { className: "font-black text-white text-base" }, "Digiland Protocol")), /* @__PURE__ */ import_react4.default.createElement(
+    "button",
+    {
+      onClick: () => setMobileMenuOpen(false),
+      className: "rounded-full p-2 text-slate-400 hover:text-white"
+    },
+    /* @__PURE__ */ import_react4.default.createElement(X, { className: "h-5 w-5" })
+  )), /* @__PURE__ */ import_react4.default.createElement("nav", { className: "mt-6 flex flex-col gap-2" }, railItems.map((item) => /* @__PURE__ */ import_react4.default.createElement(
+    "a",
+    {
+      key: item.label,
+      href: item.href,
+      onClick: () => setMobileMenuOpen(false),
+      className: cn(
+        "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold",
+        item.active ? "bg-emerald-600 text-white" : "text-slate-300 hover:bg-white/10"
+      )
+    },
+    /* @__PURE__ */ import_react4.default.createElement(item.icon, { className: "h-5 w-5" }),
+    /* @__PURE__ */ import_react4.default.createElement("span", null, item.label)
+  )))), /* @__PURE__ */ import_react4.default.createElement("main", { className: "flex-1 p-4 sm:p-6 lg:p-8 max-w-[1700px] w-full mx-auto" }, children)), /* @__PURE__ */ import_react4.default.createElement(LocationPermissionModal, null));
 }
 
 // src/components/layout/public-shell.tsx
 var import_react5 = __toESM(require_react(), 1);
-function actionClass2(tone) {
+
+// src/components/ui/badge.tsx
+var React5 = __toESM(require_react(), 1);
+var toneClasses = {
+  default: "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30",
+  success: "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40",
+  warning: "bg-amber-500/20 text-amber-300 border border-amber-500/40",
+  danger: "bg-rose-500/20 text-rose-300 border border-rose-500/40",
+  muted: "bg-slate-800 text-slate-300 border border-slate-700",
+  outline: "border border-emerald-400/30 bg-emerald-500/10 text-emerald-300"
+};
+function Badge({
+  className,
+  tone = "default",
+  ...props
+}) {
+  return /* @__PURE__ */ React5.createElement(
+    "span",
+    {
+      className: cn(
+        "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.18em]",
+        toneClasses[tone],
+        className
+      ),
+      ...props
+    }
+  );
+}
+
+// src/components/layout/public-shell.tsx
+function actionClass(tone) {
   return cn(
     "inline-flex h-11 items-center justify-center rounded-full px-5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
     tone === "secondary" ? "bg-secondary text-secondary-foreground hover:bg-secondary/85" : tone === "outline" ? "border border-border bg-white/80 text-foreground hover:bg-muted" : tone === "ghost" ? "bg-transparent text-foreground hover:bg-muted" : tone === "accent" ? "bg-accent text-accent-foreground hover:bg-accent/80" : "bg-primary text-primary-foreground hover:bg-primary/90"
@@ -27206,7 +27267,7 @@ function PublicShell({
       href: action.href,
       target: action.external ? "_blank" : void 0,
       rel: action.external ? "noreferrer" : void 0,
-      className: actionClass2(action.tone)
+      className: actionClass(action.tone)
     },
     action.label
   )) : null, /* @__PURE__ */ import_react5.default.createElement(
@@ -27223,7 +27284,7 @@ function PublicShell({
       href: "/accounts/signup/",
       className: "inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-emerald-400/40 bg-gradient-to-r from-emerald-500 to-teal-500 px-3.5 sm:px-5 py-2 text-xs sm:text-sm font-black text-slate-950 shadow-[0_0_18px_rgba(16,185,129,0.4)] transition-all duration-200 hover:shadow-[0_0_24px_rgba(16,185,129,0.7)] hover:brightness-110"
     },
-    /* @__PURE__ */ import_react5.default.createElement(UserPlus2, { className: "h-4 w-4" }),
+    /* @__PURE__ */ import_react5.default.createElement(UserPlus, { className: "h-4 w-4" }),
     /* @__PURE__ */ import_react5.default.createElement("span", null, "Sign Up")
   ))))), /* @__PURE__ */ import_react5.default.createElement("main", { className: "flex-1 mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8" }, children), !hideFooter && /* @__PURE__ */ import_react5.default.createElement("footer", { className: "border-t border-border/60 bg-white/80 backdrop-blur-xl py-6 mt-auto" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" }, footer ? footer : /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex flex-col sm:flex-row items-center justify-between gap-4" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react5.default.createElement(ShieldCheck, { className: "h-4 w-4 text-emerald-700" }), /* @__PURE__ */ import_react5.default.createElement("span", { className: "text-xs font-semibold text-foreground" }, "Digiland"), /* @__PURE__ */ import_react5.default.createElement("span", { className: "text-xs text-muted-foreground" }, "\xA9 2026 Secure land escrow platform.")), /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex items-center gap-6 text-xs text-muted-foreground" }, /* @__PURE__ */ import_react5.default.createElement("a", { href: "/escrow-acts/", className: "hover:text-emerald-700 transition-colors font-semibold" }, "Legal"), /* @__PURE__ */ import_react5.default.createElement("a", { href: "/parcels/", className: "hover:text-emerald-700 transition-colors font-semibold" }, "Marketplace"), /* @__PURE__ */ import_react5.default.createElement("a", { href: "/accounts/login/", className: "hover:text-emerald-700 transition-colors font-semibold" }, "Sign in"))))), /* @__PURE__ */ import_react5.default.createElement(LocationPermissionModal, null));
 }
@@ -30286,7 +30347,7 @@ function HeroShowcase({ notice, csrfToken, isAuthenticated = false }) {
       href: "/accounts/signup/",
       className: "inline-flex h-14 sm:h-16 min-w-[240px] sm:min-w-[280px] items-center justify-center gap-3 rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-400 px-8 sm:px-10 text-base sm:text-lg font-black text-slate-950 shadow-[0_6px_30px_rgba(16,185,129,0.45)] ring-2 ring-emerald-400/50 ring-offset-2 ring-offset-slate-950 transition-all duration-200 hover:scale-[1.03] hover:shadow-[0_10px_40px_rgba(16,185,129,0.65)] hover:brightness-110 active:scale-[0.98]"
     },
-    /* @__PURE__ */ import_react16.default.createElement(UserPlus2, { className: "h-5 w-5" }),
+    /* @__PURE__ */ import_react16.default.createElement(UserPlus, { className: "h-5 w-5" }),
     "Get Started \u2014 Free",
     /* @__PURE__ */ import_react16.default.createElement(ArrowRight, { className: "h-5 w-5" })
   ) : /* @__PURE__ */ import_react16.default.createElement(
@@ -31680,221 +31741,138 @@ function MessagesPage() {
     else if (role === "Buyer") bg = "bg-gradient-to-tr from-teal-600 to-emerald-600 text-white shadow-teal-500/20";
     return { initial, bg };
   };
-  const quickPrompts = [
-    "Inquire about land title deed verification status",
-    "When is the escrow deposit release scheduled?",
-    "Please review the survey map and deed plan",
-    "Request assistance with LSK advocate sign-off"
+  const officialChannels = [
+    { id: "general-escrow", name: "general-escrow", topic: "General escrow protocol questions, platform updates, and announcements" },
+    { id: "verification-desk", name: "verification-desk", topic: "Title deed searches, survey checks, and Ministry of Lands registry validation" },
+    { id: "legal-conveyancing", name: "legal-conveyancing", topic: "Advocate conveyancing milestones, LCB consent, and stamp duty clearance" }
   ];
-  return /* @__PURE__ */ import_react18.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ import_react18.default.createElement(
-    PageHeader,
+  const [activeChannelId, setActiveChannelId] = (0, import_react18.useState)(null);
+  const isChannelMode = Boolean(activeChannelId);
+  const currentChannel = officialChannels.find((c) => c.id === activeChannelId);
+  return /* @__PURE__ */ import_react18.default.createElement(AppShell, { ...shellProps, activeNav: "messages" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-[calc(100vh-8rem)] min-h-[640px] flex-col overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#0c111e] shadow-2xl backdrop-blur-xl md:flex-row" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex w-full flex-col border-b border-white/[0.08] bg-[#080b14] md:w-72 lg:w-80 md:border-r md:border-b-0 shrink-0" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-14 items-center justify-between border-b border-white/[0.08] px-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-black text-sm text-slate-100 tracking-wide" }, "Messages & Protocol")), /* @__PURE__ */ import_react18.default.createElement(
+    "button",
     {
-      kicker: "Communications",
-      title: "Direct Messages",
-      subtitle: "Real-time encrypted messaging with Digiland escrow administration, verified agents, and legal advocates."
-    }
-  ), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-[760px] min-h-[600px] flex-col overflow-hidden rounded-[2rem] border border-border/80 bg-white shadow-2xl backdrop-blur-xl md:flex-row dark:border-white/10 dark:bg-slate-900/90" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex w-full flex-col border-b border-border/60 bg-slate-50/70 md:w-80 md:border-r md:border-b-0 lg:w-96 dark:border-white/10 dark:bg-slate-950/60" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "p-4 space-y-3 border-b border-border/60 dark:border-white/10" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(MessageSquare, { className: "h-5 w-5 text-emerald-600 dark:text-emerald-400" }), /* @__PURE__ */ import_react18.default.createElement("h3", { className: "font-extrabold text-foreground text-base" }, "Conversations")), /* @__PURE__ */ import_react18.default.createElement(
-    Button,
-    {
-      size: "sm",
       onClick: () => setIsNewChatOpen(true),
-      className: "h-8 gap-1.5 rounded-full bg-emerald-600 px-3 text-xs font-bold text-white shadow-sm hover:bg-emerald-500"
+      title: "New DM",
+      className: "flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] text-slate-300 transition hover:bg-emerald-500/20 hover:text-emerald-300"
     },
-    /* @__PURE__ */ import_react18.default.createElement(Plus, { className: "h-3.5 w-3.5" }),
-    "New Chat"
-  )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react18.default.createElement(Search, { className: "absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" }), /* @__PURE__ */ import_react18.default.createElement(
+    /* @__PURE__ */ import_react18.default.createElement(Plus, { className: "h-4 w-4" })
+  )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "p-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react18.default.createElement(Search, { className: "absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-500" }), /* @__PURE__ */ import_react18.default.createElement(
     "input",
     {
       type: "text",
-      placeholder: "Search contacts or chats...",
+      placeholder: "Search channels or DMs...",
       value: searchQuery,
       onChange: (e) => setSearchQuery(e.target.value),
-      className: "h-9 w-full rounded-full border border-border/80 bg-white pl-9 pr-4 text-xs shadow-sm outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:border-white/15 dark:bg-slate-900"
+      className: "h-8 w-full rounded-xl border border-white/10 bg-[#0f1422] pl-8 pr-3 text-xs text-slate-200 placeholder:text-slate-500 outline-none transition focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30"
     }
-  ), searchQuery && /* @__PURE__ */ import_react18.default.createElement(
+  ))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex-1 overflow-y-auto px-2 pb-4 space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "px-2 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "Channels"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[9px] text-emerald-400 font-bold" }, "Public")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 space-y-0.5" }, officialChannels.map((channel) => {
+    const isActive = activeChannelId === channel.id;
+    return /* @__PURE__ */ import_react18.default.createElement(
+      "button",
+      {
+        key: channel.id,
+        onClick: () => {
+          setActiveChannelId(channel.id);
+        },
+        className: cn(
+          "flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold transition-all duration-150",
+          isActive ? "bg-emerald-500/15 text-emerald-300 shadow-[inset_0_0_8px_rgba(16,185,129,0.2)]" : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
+        )
+      },
+      /* @__PURE__ */ import_react18.default.createElement("span", { className: cn("text-sm font-extrabold", isActive ? "text-emerald-400" : "text-slate-500") }, "#"),
+      /* @__PURE__ */ import_react18.default.createElement("span", { className: "truncate" }, channel.name)
+    );
+  }))), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "px-2 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "Direct Messages"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[9px] text-purple-400 font-bold" }, "Encrypted")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 space-y-1" }, filteredThreads.length === 0 ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "px-3 py-4 text-center text-xs text-slate-500" }, "No active DMs yet.", /* @__PURE__ */ import_react18.default.createElement(
     "button",
     {
-      onClick: () => setSearchQuery(""),
-      className: "absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
-    },
-    /* @__PURE__ */ import_react18.default.createElement(X, { className: "h-3.5 w-3.5" })
-  )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] no-scrollbar" }, [
-    { id: "all", label: "All" },
-    { id: "admin", label: "Support & Admin" },
-    { id: "agent", label: "Agents" },
-    { id: "lawyer", label: "Lawyers" }
-  ].map((tab) => /* @__PURE__ */ import_react18.default.createElement(
-    "button",
-    {
-      key: tab.id,
-      onClick: () => setRoleFilter(tab.id),
-      className: cn(
-        "whitespace-nowrap rounded-full px-2.5 py-1 font-bold transition-all",
-        roleFilter === tab.id ? "bg-emerald-600 text-white shadow-sm" : "bg-white/80 text-muted-foreground hover:bg-white hover:text-foreground dark:bg-slate-800/80 dark:hover:bg-slate-800"
-      )
-    },
-    tab.label
-  )))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex-1 overflow-y-auto p-2 space-y-1" }, filteredThreads.length === 0 ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "p-8 text-center space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400" }, /* @__PURE__ */ import_react18.default.createElement(MessageSquare, { className: "h-6 w-6" })), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs font-semibold text-muted-foreground" }, searchQuery ? "No matching conversations" : "No active conversations yet"), /* @__PURE__ */ import_react18.default.createElement(
-    Button,
-    {
-      size: "sm",
-      variant: "outline",
       onClick: () => setIsNewChatOpen(true),
-      className: "h-8 rounded-full text-xs"
+      className: "block mx-auto mt-1 font-bold text-emerald-400 hover:underline"
     },
-    "Start a conversation"
+    "Start a chat"
   )) : filteredThreads.map((thread) => {
-    const isSelected = selectedPartnerEmail.toLowerCase() === thread.partner.email.toLowerCase();
+    const isSelected = !isChannelMode && selectedPartnerEmail.toLowerCase() === thread.partner.email.toLowerCase();
     const avatar = getAvatarInfo(thread.partner.email, thread.partner.role);
     const latestMsg = thread.messages[0];
-    const previewText = latestMsg?.content ? latestMsg.content.length > 45 ? latestMsg.content.slice(0, 45) + "..." : latestMsg.content : "Start conversation";
     return /* @__PURE__ */ import_react18.default.createElement(
       "button",
       {
         key: thread.partner.email,
         onClick: () => {
+          setActiveChannelId(null);
           setSelectedPartnerEmail(thread.partner.email);
-          setIsNewChatOpen(false);
         },
         className: cn(
-          "group flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-all duration-150",
-          isSelected ? "bg-white shadow-sm ring-1 ring-emerald-500/30 dark:bg-slate-800 dark:ring-emerald-400/40" : "hover:bg-white/60 dark:hover:bg-slate-800/50"
+          "flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-all duration-150",
+          isSelected ? "bg-white/[0.08] text-white shadow-sm ring-1 ring-emerald-500/40" : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
         )
       },
-      /* @__PURE__ */ import_react18.default.createElement("div", { className: "relative shrink-0" }, /* @__PURE__ */ import_react18.default.createElement(
-        "div",
-        {
-          className: cn(
-            "flex h-11 w-11 items-center justify-center rounded-2xl font-black text-sm shadow-sm",
-            avatar.bg
-          )
-        },
-        avatar.initial
-      ), /* @__PURE__ */ import_react18.default.createElement("span", { className: "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 shadow-sm dark:border-slate-900" })),
-      /* @__PURE__ */ import_react18.default.createElement("div", { className: "min-w-0 flex-1" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between gap-1" }, /* @__PURE__ */ import_react18.default.createElement(
-        "span",
-        {
-          className: cn(
-            "truncate text-xs font-black tracking-tight",
-            isSelected ? "text-foreground" : "text-slate-800 dark:text-slate-200"
-          )
-        },
-        thread.partner.name || thread.partner.email.split("@")[0]
-      ), /* @__PURE__ */ import_react18.default.createElement("span", { className: "shrink-0 text-[10px] font-semibold text-muted-foreground" }, thread.latest_timestamp || "")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-0.5 flex items-center justify-between gap-2" }, /* @__PURE__ */ import_react18.default.createElement("p", { className: "truncate text-xs text-muted-foreground" }, latestMsg?.is_self ? /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-emerald-600 dark:text-emerald-400" }, "You: ") : null, previewText), /* @__PURE__ */ import_react18.default.createElement(
-        "span",
-        {
-          className: cn(
-            "shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider",
-            thread.partner.role === "Admin" ? "bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300" : thread.partner.role === "Agent" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300" : thread.partner.role === "Lawyer" ? "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-          )
-        },
-        thread.partner.role
-      )))
+      /* @__PURE__ */ import_react18.default.createElement("div", { className: "relative shrink-0" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: cn("flex h-7 w-7 items-center justify-center rounded-lg text-xs font-black", avatar.bg) }, avatar.initial), /* @__PURE__ */ import_react18.default.createElement("span", { className: "absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-[#080b14] bg-emerald-500" })),
+      /* @__PURE__ */ import_react18.default.createElement("div", { className: "min-w-0 flex-1" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between gap-1" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: cn("truncate text-xs font-bold", isSelected ? "text-white" : "text-slate-300") }, thread.partner.name || thread.partner.email.split("@")[0]), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[9px] text-slate-500 shrink-0" }, thread.latest_timestamp || "")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "truncate text-[10px] text-slate-500" }, latestMsg?.content || "Direct conversation"))
     );
-  })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "border-t border-border/60 p-3 bg-white/50 dark:border-white/10 dark:bg-slate-900/50" }, /* @__PURE__ */ import_react18.default.createElement(
-    "button",
-    {
-      onClick: () => {
-        const adminUser = page.allowed_recipients.find((r2) => r2.role === "Admin") || {
-          id: "",
-          email: "support@digiland.co.ke",
-          name: "Digiland Escrow Support",
-          role: "Admin",
-          is_staff: true,
-          is_superuser: false
-        };
-        setSelectedPartnerEmail(adminUser.email);
-        setIsNewChatOpen(false);
-      },
-      className: "flex w-full items-center justify-between rounded-xl bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-emerald-500/10 p-2.5 text-xs font-bold text-foreground transition hover:brightness-105"
-    },
-    /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-7 w-7 items-center justify-center rounded-lg bg-purple-600 text-white" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-4 w-4" })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-extrabold text-[11px]" }, "Escrow Support Desk"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-muted-foreground" }, "24/7 Platform Assistance"))),
-    /* @__PURE__ */ import_react18.default.createElement(ArrowRight, { className: "h-4 w-4 text-purple-600" })
-  ))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-1 flex-col bg-gradient-to-b from-white/95 to-slate-50/90 dark:from-slate-900 dark:to-slate-950" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-16 items-center justify-between border-b border-border/60 px-5 backdrop-blur-md dark:border-white/10" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react18.default.createElement(
-    "div",
-    {
-      className: cn(
-        "flex h-10 w-10 items-center justify-center rounded-2xl font-black text-sm shadow-sm",
-        getAvatarInfo(selectedRecipient.email, selectedRecipient.role).bg
-      )
-    },
-    getAvatarInfo(selectedRecipient.email, selectedRecipient.role).initial
-  ), /* @__PURE__ */ import_react18.default.createElement("span", { className: "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500 dark:border-slate-900" })), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-foreground" }, selectedRecipient.name || selectedRecipient.email), /* @__PURE__ */ import_react18.default.createElement(
-    Badge,
-    {
-      tone: selectedRecipient.role === "Admin" ? "accent" : selectedRecipient.role === "Agent" ? "success" : selectedRecipient.role === "Lawyer" ? "outline" : "default",
-      className: "text-[9px] uppercase tracking-wider py-0 px-2 font-extrabold"
-    },
-    selectedRecipient.role === "Admin" ? "Platform Admin" : selectedRecipient.role === "Agent" ? "Verified Agent" : selectedRecipient.role === "Lawyer" ? "Legal Advocate" : selectedRecipient.role
-  )), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-[10px] text-muted-foreground flex items-center gap-1.5" }, /* @__PURE__ */ import_react18.default.createElement(Lock, { className: "h-2.5 w-2.5 text-emerald-600" }), /* @__PURE__ */ import_react18.default.createElement("span", null, selectedRecipient.email), /* @__PURE__ */ import_react18.default.createElement("span", null, "\u2022"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-emerald-600 font-bold dark:text-emerald-400" }, "Direct Channel")))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, bootstrap.user?.role === "Admin" && activeThread && /* @__PURE__ */ import_react18.default.createElement(
-    "form",
-    {
-      method: "post",
-      action: `/messages/thread/${activeThread.partner.id || ""}/clear/`,
-      onSubmit: (e) => {
-        if (!window.confirm("Clear this entire conversation?")) e.preventDefault();
-      }
-    },
-    /* @__PURE__ */ import_react18.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: page.csrf_token }),
-    /* @__PURE__ */ import_react18.default.createElement(Button, { type: "submit", variant: "danger", size: "sm", className: "h-8 rounded-full text-xs gap-1" }, /* @__PURE__ */ import_react18.default.createElement(Trash2, { className: "h-3 w-3" }), "Clear")
-  ), /* @__PURE__ */ import_react18.default.createElement("div", { className: "hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-3.5 w-3.5" }), /* @__PURE__ */ import_react18.default.createElement("span", null, "Escrow Verified")))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" }, !activeThread || activeThread.messages.length === 0 ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "mx-auto my-auto max-w-md p-6 text-center space-y-4 rounded-3xl border border-border/70 bg-white/80 p-8 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "mx-auto flex h-14 w-14 items-center justify-center rounded-3xl bg-emerald-500/10 text-emerald-600 shadow-inner dark:text-emerald-400" }, /* @__PURE__ */ import_react18.default.createElement(MessageSquare, { className: "h-7 w-7" })), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-base font-extrabold text-foreground" }, "Start direct message with ", selectedRecipient.name || selectedRecipient.email), /* @__PURE__ */ import_react18.default.createElement("p", { className: "mt-1 text-xs text-muted-foreground leading-relaxed" }, "Send a message regarding property verification, title deed inspection, escrow funding, or legal conveyancing.")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2 pt-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase tracking-widest text-muted-foreground" }, "Quick Suggestions"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid gap-2" }, quickPrompts.map((prompt) => /* @__PURE__ */ import_react18.default.createElement(
-    "button",
-    {
-      key: prompt,
-      onClick: () => handleSendMessage(prompt),
-      className: "flex items-center justify-between rounded-xl border border-border/80 bg-white p-2.5 text-left text-xs font-semibold text-slate-700 transition hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-900 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-    },
-    /* @__PURE__ */ import_react18.default.createElement("span", null, prompt),
-    /* @__PURE__ */ import_react18.default.createElement(CornerDownLeft, { className: "h-3.5 w-3.5 text-emerald-600 shrink-0" })
-  ))))) : /* @__PURE__ */ import_react18.default.createElement(import_react18.default.Fragment, null, [...activeThread.messages].reverse().map((msg, idx) => {
-    const isSelf = msg.is_self;
-    return /* @__PURE__ */ import_react18.default.createElement(
-      "div",
+  })))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "border-t border-white/[0.08] p-3 bg-[#06080e] flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2 min-w-0" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-xs font-black text-white shrink-0" }, bootstrap.user?.email ? bootstrap.user.email.charAt(0).toUpperCase() : "U"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "min-w-0" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "truncate text-xs font-bold text-slate-200" }, bootstrap.user?.email || "User"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-emerald-400 font-medium capitalize" }, bootstrap.user?.role || "Guest"))))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-1 flex-col bg-[#0e1322]" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-14 items-center justify-between border-b border-white/[0.08] px-6 bg-[#0c101d]" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-xl font-extrabold text-emerald-400" }, isChannelMode ? "#" : "@"), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-sm font-black text-white" }, isChannelMode ? currentChannel?.name : selectedRecipient.name || selectedRecipient.email), /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "outline", className: "bg-white/[0.04] text-[9px] uppercase font-bold py-0 text-slate-300" }, isChannelMode ? "Platform Channel" : selectedRecipient.role)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-400 truncate max-w-xl" }, isChannelMode ? currentChannel?.topic : `Direct encrypted session \u2022 ${selectedRecipient.email}`))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-300" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-3.5 w-3.5" }), /* @__PURE__ */ import_react18.default.createElement("span", null, "Verified Protocol")))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex-1 overflow-y-auto p-6 space-y-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "relative flex items-center justify-center" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "absolute inset-0 flex items-center" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "w-full border-t border-white/[0.08]" })), /* @__PURE__ */ import_react18.default.createElement("span", { className: "relative rounded-full bg-[#13192a] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border border-white/[0.06]" }, "Official Escrow Session")), isChannelMode ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-start gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-slate-950 font-black text-base shadow-lg shadow-emerald-500/20" }, "D"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "min-w-0 flex-1 space-y-1.5" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-extrabold text-xs text-white" }, "Digiland Escrow Protocol"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "rounded bg-emerald-500/20 px-1.5 py-0.2 text-[9px] font-black uppercase text-emerald-300" }, "TEAM"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[10px] text-slate-500" }, "Today at 10:00 AM")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs text-slate-300 leading-relaxed" }, "Welcome to ", /* @__PURE__ */ import_react18.default.createElement("strong", { className: "text-white" }, "#", currentChannel?.name), ". This official channel hosts protocol announcements, land title deed registry updates, and escrow settlement notifications across Kenya."), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-1.5 pt-1" }, /* @__PURE__ */ import_react18.default.createElement("button", { className: "flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "\u{1F44D}"), " ", /* @__PURE__ */ import_react18.default.createElement("span", null, "12")), /* @__PURE__ */ import_react18.default.createElement("button", { className: "flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "\u{1F6E1}\uFE0F"), " ", /* @__PURE__ */ import_react18.default.createElement("span", null, "8")), /* @__PURE__ */ import_react18.default.createElement("button", { className: "flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "\u{1F1F0}\u{1F1EA}"), " ", /* @__PURE__ */ import_react18.default.createElement("span", null, "15"))))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-start gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-purple-600 text-white font-black text-base shadow-lg shadow-purple-500/20" }, "A"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "min-w-0 flex-1 space-y-1.5" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-extrabold text-xs text-white" }, "Chief Escrow Officer"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "rounded bg-purple-500/20 px-1.5 py-0.2 text-[9px] font-black uppercase text-purple-300" }, "ADMIN"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[10px] text-slate-500" }, "Today at 10:45 AM")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs text-slate-300 leading-relaxed" }, "Sellers with pending parcel submissions: Please make sure your Survey Deed Plans and Land Registry Search Certificates (Form RL 26) are uploaded. Verification SLAs are currently under 24 hours."), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-1.5 pt-1" }, /* @__PURE__ */ import_react18.default.createElement("button", { className: "flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "\u2705"), " ", /* @__PURE__ */ import_react18.default.createElement("span", null, "6")), /* @__PURE__ */ import_react18.default.createElement("button", { className: "flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "\u{1F525}"), " ", /* @__PURE__ */ import_react18.default.createElement("span", null, "4")))))) : !activeThread || activeThread.messages.length === 0 ? (
+    /* Empty DM State */
+    /* @__PURE__ */ import_react18.default.createElement("div", { className: "mx-auto my-auto max-w-md p-8 text-center space-y-4 rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-xl" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400" }, /* @__PURE__ */ import_react18.default.createElement(MessageSquare, { className: "h-7 w-7" })), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-base font-extrabold text-white" }, "Direct channel with ", selectedRecipient.name || selectedRecipient.email), /* @__PURE__ */ import_react18.default.createElement("p", { className: "mt-1 text-xs text-slate-400 leading-relaxed" }, "Messages sent here are private and protected by Digiland escrow dual-signature mediation.")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2 pt-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase tracking-widest text-slate-500" }, "Quick Suggestions"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid gap-2" }, quickPrompts.map((prompt) => /* @__PURE__ */ import_react18.default.createElement(
+      "button",
       {
-        key: msg.id || idx,
-        className: cn("flex items-end gap-2", isSelf ? "justify-end" : "justify-start")
+        key: prompt,
+        onClick: () => handleSendMessage(prompt),
+        className: "flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-left text-xs font-semibold text-slate-300 transition hover:border-emerald-500/60 hover:bg-emerald-500/10 hover:text-white"
       },
-      !isSelf && /* @__PURE__ */ import_react18.default.createElement(
+      /* @__PURE__ */ import_react18.default.createElement("span", null, prompt),
+      /* @__PURE__ */ import_react18.default.createElement(CornerDownLeft, { className: "h-3.5 w-3.5 text-emerald-400 shrink-0" })
+    )))))
+  ) : (
+    /* Active DM Messages Feed (Discord / Slack style) */
+    /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4" }, [...activeThread.messages].reverse().map((msg, idx) => {
+      const isSelf = msg.is_self;
+      const avatar = getAvatarInfo(
+        isSelf ? bootstrap.user?.email || "You" : selectedRecipient.email,
+        isSelf ? bootstrap.user?.role : selectedRecipient.role
+      );
+      return /* @__PURE__ */ import_react18.default.createElement(
         "div",
         {
+          key: msg.id || idx,
           className: cn(
-            "mb-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-[10px] font-black",
-            getAvatarInfo(selectedRecipient.email, selectedRecipient.role).bg
+            "group flex items-start gap-3 rounded-2xl p-3 transition-colors hover:bg-white/[0.03]",
+            isSelf ? "border-l-2 border-emerald-500/60 bg-emerald-500/[0.03]" : ""
           )
         },
-        getAvatarInfo(selectedRecipient.email, selectedRecipient.role).initial
-      ),
-      /* @__PURE__ */ import_react18.default.createElement(
-        "div",
-        {
-          className: cn(
-            "group relative max-w-[80%] sm:max-w-[70%] rounded-2xl px-4 py-3 text-sm shadow-sm transition-all",
-            isSelf ? "rounded-br-xs bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-emerald-500/15" : "rounded-bl-xs border border-border/70 bg-white text-foreground dark:border-white/10 dark:bg-slate-800"
-          )
-        },
-        !isSelf && /* @__PURE__ */ import_react18.default.createElement("div", { className: "mb-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400" }, selectedRecipient.name || selectedRecipient.email),
-        /* @__PURE__ */ import_react18.default.createElement("div", { className: "whitespace-pre-wrap leading-relaxed text-xs sm:text-sm" }, msg.content),
         /* @__PURE__ */ import_react18.default.createElement(
           "div",
           {
             className: cn(
-              "mt-1.5 flex items-center justify-end gap-1 text-[9px] font-semibold",
-              isSelf ? "text-emerald-100/80" : "text-muted-foreground"
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl font-black text-xs shadow-md",
+              avatar.bg
             )
           },
-          /* @__PURE__ */ import_react18.default.createElement("span", null, msg.timestamp),
-          isSelf && /* @__PURE__ */ import_react18.default.createElement(CheckCheck, { className: "h-3 w-3 text-emerald-200" })
-        )
-      )
-    );
-  }), /* @__PURE__ */ import_react18.default.createElement("div", { ref: chatBottomRef }))), sendError && /* @__PURE__ */ import_react18.default.createElement("div", { className: "mx-4 mb-2 flex items-center justify-between rounded-xl bg-rose-500/10 border border-rose-500/20 px-3 py-2 text-xs font-semibold text-rose-600" }, /* @__PURE__ */ import_react18.default.createElement("span", null, sendError), /* @__PURE__ */ import_react18.default.createElement("button", { onClick: () => setSendError(null), className: "hover:opacity-75" }, /* @__PURE__ */ import_react18.default.createElement(X, { className: "h-3.5 w-3.5" }))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "border-t border-border/60 bg-white/90 p-3 sm:p-4 backdrop-blur-md dark:border-white/10 dark:bg-slate-900/90" }, /* @__PURE__ */ import_react18.default.createElement(
+          avatar.initial
+        ),
+        /* @__PURE__ */ import_react18.default.createElement("div", { className: "min-w-0 flex-1 space-y-1" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: cn("text-xs font-extrabold", isSelf ? "text-emerald-300" : "text-white") }, isSelf ? "You" : selectedRecipient.name || selectedRecipient.email), /* @__PURE__ */ import_react18.default.createElement(
+          "span",
+          {
+            className: cn(
+              "rounded px-1.5 py-0.2 text-[9px] font-black uppercase tracking-wider",
+              (isSelf ? bootstrap.user?.role : selectedRecipient.role) === "Admin" ? "bg-purple-500/20 text-purple-300" : (isSelf ? bootstrap.user?.role : selectedRecipient.role) === "Agent" ? "bg-emerald-500/20 text-emerald-300" : "bg-slate-700 text-slate-300"
+            )
+          },
+          isSelf ? bootstrap.user?.role : selectedRecipient.role
+        ), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[10px] text-slate-500 font-medium" }, msg.timestamp)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-wrap" }, msg.content))
+      );
+    }), /* @__PURE__ */ import_react18.default.createElement("div", { ref: chatBottomRef }))
+  )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "border-t border-white/[0.08] bg-[#0a0e1a] p-4 space-y-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2 text-[11px] text-slate-400" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-4 w-4 text-emerald-400 shrink-0" }), /* @__PURE__ */ import_react18.default.createElement("span", null, "This channel is escrow-secured \u2014 all communications are archived for transaction mediation.")), /* @__PURE__ */ import_react18.default.createElement(
     "form",
     {
       onSubmit: (e) => {
         e.preventDefault();
-        handleSendMessage();
+        if (isChannelMode) {
+          handleSendMessage();
+        } else {
+          handleSendMessage();
+        }
       },
-      className: "relative flex items-center gap-2"
+      className: "relative flex items-center rounded-2xl border border-white/15 bg-[#121727] p-1.5 transition-all focus-within:border-emerald-500/60 focus-within:ring-2 focus-within:ring-emerald-500/20"
     },
     /* @__PURE__ */ import_react18.default.createElement(
       "input",
@@ -31902,70 +31880,44 @@ function MessagesPage() {
         type: "text",
         value: inputMessage,
         onChange: (e) => setInputMessage(e.target.value),
-        placeholder: `Message ${selectedRecipient.name || selectedRecipient.email}... (Enter to send)`,
+        placeholder: isChannelMode ? `Message #${currentChannel?.name}...` : `Message @${selectedRecipient.name || selectedRecipient.email}...`,
         disabled: isSending,
-        className: "h-12 w-full rounded-2xl border border-border/80 bg-slate-50/80 px-4 pr-12 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 dark:border-white/15 dark:bg-slate-800/80 dark:focus:bg-slate-800"
+        className: "h-10 w-full bg-transparent px-3 text-xs sm:text-sm text-slate-100 placeholder:text-slate-500 outline-none"
       }
     ),
-    /* @__PURE__ */ import_react18.default.createElement(
+    /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-1 pr-1" }, /* @__PURE__ */ import_react18.default.createElement(
       Button,
       {
         type: "submit",
         disabled: !inputMessage.trim() || isSending,
-        className: "absolute right-1.5 top-1.5 h-9 w-9 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 p-0 text-white shadow-md shadow-emerald-500/20 transition-all hover:scale-105 hover:brightness-110 disabled:opacity-40 disabled:hover:scale-100"
+        className: "h-8 w-8 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 p-0 text-slate-950 shadow-md shadow-emerald-500/20 transition-all hover:scale-105 hover:brightness-110 disabled:opacity-30"
       },
       /* @__PURE__ */ import_react18.default.createElement(Send, { className: "h-4 w-4" })
-    )
-  ), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1.5 flex items-center justify-between px-2 text-[10px] text-muted-foreground" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "Press ", /* @__PURE__ */ import_react18.default.createElement("strong", null, "Enter"), " to send"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-3 w-3" }), " Encrypted Escrow DM"))))), isNewChatOpen && /* @__PURE__ */ import_react18.default.createElement("div", { className: "fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "w-full max-w-lg rounded-3xl border border-border/80 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900 animate-in fade-in zoom-in-95 duration-200" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between pb-4 border-b border-border/60 dark:border-white/10" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" }, /* @__PURE__ */ import_react18.default.createElement(UserPlus, { className: "h-4 w-4" })), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-base font-black text-foreground" }, "New Direct Message"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-muted-foreground" }, "Select an escrow officer, agent, or advocate"))), /* @__PURE__ */ import_react18.default.createElement(
+    ))
+  )))), isNewChatOpen && /* @__PURE__ */ import_react18.default.createElement("div", { className: "fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "w-full max-w-md rounded-3xl border border-white/10 bg-[#0f1523] p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between pb-3 border-b border-white/10" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(MessageSquare, { className: "h-5 w-5 text-emerald-400" }), /* @__PURE__ */ import_react18.default.createElement("h3", { className: "font-bold text-white text-base" }, "New Direct Message")), /* @__PURE__ */ import_react18.default.createElement(
     "button",
     {
       onClick: () => setIsNewChatOpen(false),
-      className: "rounded-full p-1.5 text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+      className: "rounded-full p-1.5 text-slate-400 hover:text-white"
     },
     /* @__PURE__ */ import_react18.default.createElement(X, { className: "h-4 w-4" })
-  )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-4 space-y-4" }, bootstrap.user?.role === "Admin" || bootstrap.user?.role === "Agent" ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-xs font-bold text-foreground" }, "Enter Recipient Email"), /* @__PURE__ */ import_react18.default.createElement(
-    Input,
-    {
-      type: "email",
-      placeholder: "user@example.com",
-      value: newChatEmail,
-      onChange: (e) => setNewChatEmail(e.target.value),
-      className: "rounded-xl"
-    }
-  )) : null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-xs font-bold text-foreground" }, "Available Contacts"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "max-h-60 overflow-y-auto space-y-1.5 pr-1" }, page.allowed_recipients.map((recipient) => {
+  )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-4 space-y-2 max-h-72 overflow-y-auto pr-1" }, page.allowed_recipients.map((recipient) => {
     const avatar = getAvatarInfo(recipient.email, recipient.role);
     return /* @__PURE__ */ import_react18.default.createElement(
       "button",
       {
         key: recipient.email,
         onClick: () => {
+          setActiveChannelId(null);
           setSelectedPartnerEmail(recipient.email);
           setIsNewChatOpen(false);
         },
-        className: "flex w-full items-center justify-between rounded-xl border border-border/70 p-3 text-left transition hover:border-emerald-500 hover:bg-emerald-50/50 dark:border-white/10 dark:hover:bg-slate-800"
+        className: "flex w-full items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-left transition hover:border-emerald-500/40 hover:bg-emerald-500/10"
       },
-      /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: cn("flex h-9 w-9 items-center justify-center rounded-xl text-xs font-black", avatar.bg) }, avatar.initial), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-black text-foreground" }, recipient.name || recipient.email), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-muted-foreground" }, recipient.email))),
-      /* @__PURE__ */ import_react18.default.createElement(
-        Badge,
-        {
-          tone: recipient.role === "Admin" ? "accent" : recipient.role === "Agent" ? "success" : "default",
-          className: "text-[9px] uppercase font-bold"
-        },
-        recipient.role
-      )
+      /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2.5" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: cn("flex h-8 w-8 items-center justify-center rounded-lg text-xs font-black", avatar.bg) }, avatar.initial), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-bold text-slate-200" }, recipient.name || recipient.email), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, recipient.email))),
+      /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "outline", className: "text-[9px] uppercase font-bold text-slate-300" }, recipient.role)
     );
-  }))), bootstrap.user?.role === "Admin" && newChatEmail ? /* @__PURE__ */ import_react18.default.createElement(
-    Button,
-    {
-      onClick: () => {
-        setSelectedPartnerEmail(newChatEmail);
-        setIsNewChatOpen(false);
-      },
-      className: "w-full rounded-full bg-emerald-600 text-white font-bold"
-    },
-    "Start Chat with ",
-    newChatEmail
-  ) : null)))));
+  })))));
 }
 function SupportPage() {
   const page = bootstrap.support_page;
@@ -33617,14 +33569,6 @@ lucide-react/dist/esm/icons/chart-column.js:
    * See the LICENSE file in the root directory of this source tree.
    *)
 
-lucide-react/dist/esm/icons/check-check.js:
-  (**
-   * @license lucide-react v0.453.0 - ISC
-   *
-   * This source code is licensed under the ISC license.
-   * See the LICENSE file in the root directory of this source tree.
-   *)
-
 lucide-react/dist/esm/icons/check.js:
   (**
    * @license lucide-react v0.453.0 - ISC
@@ -33802,14 +33746,6 @@ lucide-react/dist/esm/icons/globe.js:
    *)
 
 lucide-react/dist/esm/icons/grid-2x2.js:
-  (**
-   * @license lucide-react v0.453.0 - ISC
-   *
-   * This source code is licensed under the ISC license.
-   * See the LICENSE file in the root directory of this source tree.
-   *)
-
-lucide-react/dist/esm/icons/hand-coins.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *
@@ -34074,14 +34010,6 @@ lucide-react/dist/esm/icons/target.js:
    *)
 
 lucide-react/dist/esm/icons/ticket.js:
-  (**
-   * @license lucide-react v0.453.0 - ISC
-   *
-   * This source code is licensed under the ISC license.
-   * See the LICENSE file in the root directory of this source tree.
-   *)
-
-lucide-react/dist/esm/icons/trash-2.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *

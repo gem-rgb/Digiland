@@ -1,15 +1,42 @@
-import React from 'react';
-import { Banknote, FileText, Gavel, Grid2X2, HandCoins, LayoutDashboard, LogOut, type LucideIcon, Menu, ReceiptText, ShieldCheck, Users, WalletCards } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  Banknote,
+  FileText,
+  Gavel,
+  Grid2X2,
+  HandCoins,
+  LayoutDashboard,
+  LogOut,
+  type LucideIcon,
+  Menu,
+  ReceiptText,
+  ShieldCheck,
+  Users,
+  WalletCards,
+  MessageSquare,
+  Sparkles,
+  Search,
+  Bell,
+  ChevronDown,
+  X,
+  Compass,
+  Briefcase,
+  Home,
+  Layers,
+  Scale,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Badge } from '../ui/badge.js';
 import { Button } from '../ui/button.js';
-import { Card } from '../ui/card.js';
 import { LocationPermissionModal } from '../ui/location-permission-modal.js';
 import type { ActionLink, NavItem, UserSummary } from '../../types.js';
 import { cn } from '../../lib/utils.js';
 
 const iconMap: Record<string, LucideIcon> = {
   dashboard: LayoutDashboard,
+  home: Home,
+  chat: MessageSquare,
+  messages: MessageSquare,
   parcels: Grid2X2,
   transactions: ReceiptText,
   legal: Gavel,
@@ -19,22 +46,9 @@ const iconMap: Record<string, LucideIcon> = {
   payments: Banknote,
   documents: FileText,
   security: ShieldCheck,
+  features: Sparkles,
+  promotions: Layers,
 };
-
-function actionClass(tone?: ActionLink['tone']) {
-  return cn(
-    'inline-flex h-11 items-center justify-center rounded-full px-5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-    tone === 'secondary'
-      ? 'bg-secondary text-secondary-foreground hover:bg-secondary/85'
-      : tone === 'outline'
-        ? 'border border-border bg-white/80 text-foreground hover:bg-muted'
-        : tone === 'ghost'
-          ? 'bg-transparent text-foreground hover:bg-muted'
-          : tone === 'accent'
-            ? 'bg-accent text-accent-foreground hover:bg-accent/80'
-            : 'bg-primary text-primary-foreground hover:bg-primary/90'
-  );
-}
 
 interface AppShellProps {
   title: string;
@@ -45,143 +59,245 @@ interface AppShellProps {
   actions?: ActionLink[];
   logoutUrl?: string;
   csrfToken?: string;
+  activeNav?: string;
 }
 
-export function AppShell({ title, subtitle, user, nav, children, actions, logoutUrl, csrfToken }: AppShellProps) {
+export function AppShell({
+  title,
+  subtitle,
+  user,
+  nav,
+  children,
+  actions,
+  logoutUrl,
+  csrfToken,
+  activeNav,
+}: AppShellProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const currentRole = user?.role || 'Guest';
-  const displayName = user?.full_name || user?.email || 'Visitor';
+  const displayName = user?.full_name || (user?.email ? user.email.split('@')[0] : 'User');
+  const userInitial = displayName.charAt(0).toUpperCase();
+
+  // Core App Rail navigation icons
+  const railItems = [
+    { label: 'Home', href: '/', icon: Home, active: activeNav === 'home' || title.toLowerCase().includes('home') },
+    {
+      label: 'Dashboard',
+      href: user?.role === 'Seller' ? '/seller/dashboard/' : user?.role === 'Buyer' ? '/buyer/dashboard/' : '/parcels/',
+      icon: LayoutDashboard,
+      active: title.toLowerCase().includes('dashboard') || title.toLowerCase().includes('workspace'),
+    },
+    {
+      label: 'Chat',
+      href: '/messages/',
+      icon: MessageSquare,
+      active: activeNav === 'messages' || title.toLowerCase().includes('message'),
+      badge: 'DM',
+    },
+    {
+      label: 'Parcels',
+      href: '/parcels/',
+      icon: Grid2X2,
+      active: title.toLowerCase().includes('parcel') || title.toLowerCase().includes('marketplace'),
+    },
+    {
+      label: 'Escrow',
+      href: '/transactions/',
+      icon: ReceiptText,
+      active: title.toLowerCase().includes('transaction') || title.toLowerCase().includes('escrow'),
+    },
+    {
+      label: 'Legal',
+      href: user?.role === 'Seller' ? '/seller/laws/' : '/escrow-acts/',
+      icon: Scale,
+      active: title.toLowerCase().includes('legal') || title.toLowerCase().includes('act'),
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-slate-50/50">
-      <header className="sticky top-0 z-30 border-b border-border/70 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-[1536px] items-center gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
-          <a href="/" className="flex items-center gap-3 rounded-full px-1 py-1 transition hover:opacity-90">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-700 text-white shadow-soft">
-              <ShieldCheck className="h-5 w-5" />
+    <div className="flex min-h-screen bg-[#0d121f] text-slate-100 antialiased selection:bg-emerald-500 selection:text-slate-950 font-sans">
+      {/* 1. Leftmost Ultra-Sleek App Rail (Desktop) */}
+      <aside className="hidden w-[72px] shrink-0 flex-col items-center justify-between border-r border-white/[0.08] bg-[#080b13] py-4 md:flex z-40">
+        {/* Top: Digiland Emblem */}
+        <div className="flex flex-col items-center gap-6">
+          <a
+            href="/"
+            title="Digiland Protocol"
+            className="group relative flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.35)] transition-all duration-200 hover:scale-105 hover:shadow-[0_0_25px_rgba(16,185,129,0.5)]"
+          >
+            <ShieldCheck className="h-6 w-6 text-slate-950" />
+            <span className="absolute left-full ml-3 hidden whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold text-white shadow-xl group-hover:block z-50">
+              Digiland Protocol
             </span>
-            <div className="leading-tight">
-              <div className="text-base font-extrabold tracking-tight text-foreground">Digiland</div>
-              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Land Escrow</div>
-            </div>
           </a>
 
-          <div className="hidden min-w-0 flex-1 lg:flex">
-            <div className="ml-6 max-w-3xl">
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">{title}</div>
-              {subtitle ? <div className="truncate text-sm font-medium text-slate-500">{subtitle}</div> : null}
+          <div className="h-[1px] w-8 bg-white/10" />
+
+          {/* Navigation Icon Stack */}
+          <nav className="flex flex-col items-center gap-2">
+            {railItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  title={item.label}
+                  className={cn(
+                    'group relative flex h-11 w-11 flex-col items-center justify-center rounded-2xl text-[10px] font-bold transition-all duration-150',
+                    item.active
+                      ? 'bg-emerald-500/20 text-emerald-300 shadow-[inset_0_0_12px_rgba(16,185,129,0.3)] ring-1 ring-emerald-500/50'
+                      : 'text-slate-400 hover:bg-white/[0.06] hover:text-slate-100'
+                  )}
+                >
+                  {item.active && (
+                    <span className="absolute -left-3 h-5 w-1 rounded-r-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                  )}
+                  <Icon className="h-5 w-5 transition-transform group-hover:scale-110" />
+                  <span className="text-[9px] font-medium tracking-tight mt-0.5 opacity-80">{item.label}</span>
+
+                  {/* Tooltip */}
+                  <span className="absolute left-full ml-3 hidden whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold text-white shadow-xl group-hover:block z-50">
+                    {item.label}
+                  </span>
+                </a>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Bottom Rail: User Avatar & Logout */}
+        <div className="flex flex-col items-center gap-3">
+          {logoutUrl ? (
+            <form method="post" action={logoutUrl}>
+              <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken || ''} />
+              <button
+                type="submit"
+                title="Sign out"
+                className="group relative flex h-10 w-10 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-rose-500/15 hover:text-rose-400"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="absolute left-full ml-3 hidden whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold text-rose-400 shadow-xl group-hover:block z-50">
+                  Sign out
+                </span>
+              </button>
+            </form>
+          ) : null}
+
+          {/* User Avatar Circle */}
+          <div
+            title={`${displayName} (${currentRole})`}
+            className="relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 font-black text-sm text-white shadow-md shadow-purple-500/20 transition hover:scale-105"
+          >
+            {userInitial}
+            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#080b13] bg-emerald-500 shadow-sm" />
+          </div>
+        </div>
+      </aside>
+
+      {/* 2. Main Workspace Layout */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Top Navbar Header */}
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-white/[0.08] bg-[#0c111e]/90 px-4 backdrop-blur-xl sm:px-6">
+          {/* Mobile Menu Trigger & Title */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.06] text-slate-300 md:hidden"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">
+                {title.split(' - ')[0]}
+              </span>
+              {subtitle && (
+                <>
+                  <span className="hidden text-slate-600 sm:inline">•</span>
+                  <span className="hidden truncate text-xs font-medium text-slate-400 sm:inline max-w-md">
+                    {subtitle}
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
-          <div className="ml-auto flex items-center gap-3">
+          {/* Right Header Controls */}
+          <div className="flex items-center gap-3">
             {actions?.map((action) => (
               <a
                 key={`${action.label}-${action.href}`}
                 href={action.href}
-                target={action.external ? '_blank' : undefined}
-                rel={action.external ? 'noreferrer' : undefined}
-                className={actionClass(action.tone)}
+                className="hidden sm:inline-flex h-8 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 text-xs font-bold text-emerald-300 transition hover:bg-emerald-500/20"
               >
                 {action.label}
               </a>
             ))}
-            <Badge tone="outline" className="hidden sm:inline-flex bg-slate-100/80 font-bold">
-              {currentRole}
-            </Badge>
-            <div className="hidden items-center gap-3 rounded-full border border-border bg-white px-4 py-2 shadow-sm md:flex">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-800 font-bold text-sm">
-                {(displayName || 'U').slice(0, 1).toUpperCase()}
-              </div>
-              <div className="leading-tight">
-                <div className="text-sm font-bold text-slate-900">{displayName}</div>
-                <div className="text-[11px] font-medium text-slate-500">{user?.buyer_account_type ? `${user.buyer_account_type} buyer` : 'Authenticated session'}</div>
-              </div>
-            </div>
-            {logoutUrl ? (
-              <form method="post" action={logoutUrl}>
-                <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken || ''} />
-                <Button variant="outline" size="sm" className="rounded-full h-10 px-4 text-xs font-bold border-red-200/80 text-red-700 hover:bg-red-50 hover:border-red-300" type="submit">
-                  <LogOut className="h-3.5 w-3.5 mr-1.5" />
-                  Sign out
-                </Button>
-              </form>
-            ) : null}
-          </div>
-        </div>
-      </header>
 
-      <div className="mx-auto flex w-full max-w-[1536px] gap-8 px-4 py-8 sm:px-6 lg:px-8">
-        <aside className="hidden w-64 shrink-0 lg:block">
-          <Card className="sticky top-24 overflow-hidden bg-white shadow-sm border-slate-200/80 rounded-3xl">
-            <div className="border-b border-slate-100 px-6 py-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Navigation</div>
-                  <div className="mt-1 text-base font-extrabold tracking-tight text-slate-900">{title}</div>
-                </div>
-                {logoutUrl ? (
-                  <form method="post" action={logoutUrl}>
-                    <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken || ''} />
-                    <Button variant="outline" size="sm" className="rounded-2xl h-8 px-2.5 text-xs" type="submit">
-                      <LogOut className="h-3.5 w-3.5 mr-1" />
-                      Exit
-                    </Button>
-                  </form>
-                ) : null}
-              </div>
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+              <span className="font-bold text-slate-200">{displayName}</span>
+              <span className="rounded bg-emerald-500/20 px-1.5 py-0.2 text-[10px] font-black uppercase tracking-wider text-emerald-300">
+                {currentRole}
+              </span>
             </div>
-            <nav className="space-y-1.5 p-3">
-              {nav.map((item) => {
-                const Icon = item.icon ? iconMap[item.icon] || Grid2X2 : Grid2X2;
-                return (
-                  <a
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      'flex items-center gap-3 rounded-2xl px-4 py-3 text-xs font-bold transition-all duration-200',
-                      item.active ? 'bg-emerald-700 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100/70 hover:text-slate-900'
-                    )}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{item.label}</span>
-                  </a>
-                );
-              })}
+
+            {logoutUrl && (
+              <form method="post" action={logoutUrl} className="md:hidden">
+                <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken || ''} />
+                <button
+                  type="submit"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </form>
+            )}
+          </div>
+        </header>
+
+        {/* Mobile Flyout Drawer */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-50 flex flex-col bg-slate-950/95 p-6 backdrop-blur-xl md:hidden">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-6 w-6 text-emerald-400" />
+                <span className="font-black text-white text-base">Digiland Protocol</span>
+              </div>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-full p-2 text-slate-400 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <nav className="mt-6 flex flex-col gap-2">
+              {railItems.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold',
+                    item.active ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:bg-white/10'
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <span>{item.label}</span>
+                </a>
+              ))}
             </nav>
-            <div className="border-t border-slate-100 p-4">
-              <div className="rounded-2xl bg-slate-50 p-3 text-xs">
-                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Active Session</div>
-                <div className="mt-1 font-bold text-slate-900 truncate">{displayName}</div>
-                <div className="text-[11px] text-slate-500 truncate">{user?.email || 'Guest'}</div>
-              </div>
-            </div>
-          </Card>
-        </aside>
-
-        <main className="min-w-0 flex-1">
-          <div className="mb-5 flex items-center gap-3 lg:hidden">
-            <Button variant="outline" size="icon" className="rounded-full">
-              <Menu className="h-4 w-4" />
-            </Button>
-            <div className="flex-1">
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">{title}</div>
-              {subtitle ? <div className="text-xs text-muted-foreground">{subtitle}</div> : null}
-            </div>
-            {logoutUrl ? (
-              <form method="post" action={logoutUrl}>
-                <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken || ''} />
-                <Button variant="outline" size="sm" className="rounded-full h-9 px-3 text-xs font-bold border-red-200/80 text-red-700 hover:bg-red-50" type="submit">
-                  <LogOut className="h-3.5 w-3.5 mr-1" />
-                  Sign out
-                </Button>
-              </form>
-            ) : null}
           </div>
-          {children}
-        </main>
+        )}
+
+        {/* Workspace Canvas (Full Width & Clean) */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1700px] w-full mx-auto">{children}</main>
       </div>
 
       <LocationPermissionModal />
     </div>
   );
 }
+
 
