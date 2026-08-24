@@ -63,15 +63,13 @@ function PageErrorFallback({ error, resetError }: { error: Error; resetError: ()
             </p>
             <p className="font-mono text-xs font-semibold text-foreground">{referenceId}</p>
           </div>
-          {error?.message && (
-            <details className="mt-2 text-xs">
-              <summary className="cursor-pointer font-semibold text-rose-600">Technical Details</summary>
-              <pre className="mt-2 max-h-40 overflow-auto rounded-xl bg-slate-900 p-3 font-mono text-[11px] text-rose-300">
-                {error.message}
-                {error.stack ? `\n\n${error.stack}` : ''}
-              </pre>
-            </details>
-          )}
+          <details open className="mt-2 text-xs">
+            <summary className="cursor-pointer font-semibold text-rose-600">Technical Details</summary>
+            <pre className="mt-2 max-h-60 overflow-auto rounded-xl bg-slate-900 p-3 font-mono text-[11px] text-rose-300 whitespace-pre-wrap">
+              {error?.toString() || 'Unknown runtime error'}
+              {error?.stack ? `\n\nStack:\n${error.stack}` : ''}
+            </pre>
+          </details>
         </div>
 
         <nav aria-label="Error recovery options" className="flex flex-col gap-3">
