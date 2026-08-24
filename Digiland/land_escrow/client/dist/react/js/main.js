@@ -27088,7 +27088,7 @@ function AppShell({
   const displayName = user?.full_name || (user?.email ? user.email.split("@")[0] : "User");
   const userInitial = displayName.charAt(0).toUpperCase();
   const safeTitle = (title || "Digiland").toLowerCase();
-  const railItems = [
+  const allRailItems = [
     {
       label: "Dashboard",
       href: user?.role === "Seller" ? "/seller/dashboard/" : user?.role === "Buyer" ? "/buyer/dashboard/" : "/parcels/",
@@ -27096,19 +27096,21 @@ function AppShell({
       active: safeTitle.includes("dashboard") || safeTitle.includes("workspace")
     },
     {
-      label: "My Parcels",
+      label: user?.role === "Seller" ? "My Parcels" : "Parcels",
       href: "/parcels/",
       icon: Grid2x2,
       active: safeTitle.includes("parcel") || safeTitle.includes("marketplace")
     },
+    ...user?.role === "Seller" ? [
+      {
+        label: "Promotions",
+        href: "/seller/promotions/",
+        icon: Layers,
+        active: safeTitle.includes("promotion") || safeTitle.includes("ad") || safeTitle.includes("tier")
+      }
+    ] : [],
     {
-      label: "Promotions",
-      href: user?.role === "Seller" ? "/seller/promotions/" : "/features/",
-      icon: Layers,
-      active: safeTitle.includes("promotion") || safeTitle.includes("ad") || safeTitle.includes("tier")
-    },
-    {
-      label: "Transactions",
+      label: "Escrow",
       href: "/transactions/",
       icon: ReceiptText,
       active: safeTitle.includes("transaction") || safeTitle.includes("escrow")
@@ -27127,6 +27129,7 @@ function AppShell({
       active: safeTitle.includes("legal") || safeTitle.includes("law") || safeTitle.includes("act")
     }
   ];
+  const railItems = allRailItems;
   return /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex min-h-screen bg-[#0d121f] text-slate-100 antialiased selection:bg-emerald-500 selection:text-slate-950 font-sans" }, /* @__PURE__ */ import_react4.default.createElement("aside", { className: "hidden w-[72px] shrink-0 flex-col items-center justify-between border-r border-white/[0.08] bg-[#080b13] py-4 md:flex z-40" }, /* @__PURE__ */ import_react4.default.createElement("div", { className: "flex flex-col items-center gap-6" }, /* @__PURE__ */ import_react4.default.createElement(
     "a",
     {
@@ -31042,28 +31045,26 @@ function DashboardPage() {
   const channelsByRole = {
     Buyer: [
       { id: "overview", name: "overview", icon: LayoutDashboard },
-      { id: "commissions", name: "my-commissions", icon: ShieldCheck, badge: `${(bootstrap.active_commissions || []).length}` },
-      { id: "promotions", name: "promotions-deals", icon: Sparkles },
-      { id: "transactions", name: "escrow-deposits", icon: ReceiptText },
       { id: "parcels", name: "marketplace", icon: Grid2x2 },
+      { id: "transactions", name: "escrow-deposits", icon: ReceiptText },
       { id: "legal", name: "legal-clearance", icon: Scale }
     ],
     Seller: [
       { id: "overview", name: "overview", icon: LayoutDashboard },
-      { id: "parcels", name: "my-parcels", icon: Grid2x2, badge: `${(bootstrap.parcels || []).length}` },
+      { id: "parcels", name: "my-parcels", icon: Grid2x2, badge: `${(bootstrap.parcels || []).length || ""}` },
       { id: "promotions", name: "promotions-ads", icon: Sparkles },
       { id: "transactions", name: "escrow-payouts", icon: ReceiptText },
       { id: "legal", name: "seller-laws", icon: Scale }
     ],
     Lawyer: [
       { id: "overview", name: "overview", icon: LayoutDashboard },
-      { id: "commissions", name: "conveyancing-tasks", icon: Gavel, badge: `${(bootstrap.active_commissions || []).length}` },
+      { id: "commissions", name: "conveyancing-tasks", icon: Gavel, badge: `${(bootstrap.active_commissions || []).length || ""}` },
       { id: "transactions", name: "escrow-settlements", icon: ReceiptText },
       { id: "legal", name: "legal-acts-lcb", icon: Scale }
     ],
     Agent: [
       { id: "overview", name: "overview", icon: LayoutDashboard },
-      { id: "commissions", name: "site-inspections", icon: Briefcase, badge: `${(bootstrap.active_commissions || []).length}` },
+      { id: "commissions", name: "site-inspections", icon: Briefcase, badge: `${(bootstrap.active_commissions || []).length || ""}` },
       { id: "parcels", name: "parcel-listings", icon: Grid2x2 },
       { id: "transactions", name: "earned-commissions", icon: ReceiptText }
     ],
@@ -31078,11 +31079,19 @@ function DashboardPage() {
   const channels = channelsByRole[role] || channelsByRole.Buyer;
   const [activeTab, setActiveTab] = (0, import_react18.useState)("overview");
   const activeCommissions = bootstrap.active_commissions || bootstrap.commissions || [];
-  const activeSpotlightCommission = activeCommissions[0];
+  const activeSpotlightCommission = isAgent || isLawyer || isAdmin ? activeCommissions[0] : null;
   const sellerParcels = bootstrap.parcels || [];
   const transactions = bootstrap.transactions || [];
   const recentTransactions = transactions.slice(0, 6);
-  const stats = bootstrap.stats || [];
+  const rawStats = bootstrap.stats || [];
+  const stats = (0, import_react18.useMemo)(() => {
+    return rawStats.filter((stat) => {
+      if (role === "Buyer" && stat.label.toLowerCase().includes("commission")) {
+        return false;
+      }
+      return true;
+    });
+  }, [rawStats, role]);
   return /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-[calc(100vh-8rem)] min-h-[680px] flex-col overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#0c111e] shadow-2xl backdrop-blur-xl md:flex-row" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex w-full flex-col border-b border-white/[0.08] bg-[#080b14] md:w-64 lg:w-72 md:border-r md:border-b-0 shrink-0" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-14 items-center justify-between border-b border-white/[0.08] px-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-black text-sm text-slate-100 tracking-wide" }, role, " Workspace")), /* @__PURE__ */ import_react18.default.createElement("span", { className: "rounded-full bg-emerald-500/20 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-300 border border-emerald-500/30" }, "Live")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex-1 overflow-y-auto px-2 py-3 space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "px-2 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "Modules"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[9px] text-emerald-400 font-bold" }, role)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 space-y-0.5" }, channels.map((channel) => {
     const isActive = activeTab === channel.id;
     const Icon2 = channel.icon;

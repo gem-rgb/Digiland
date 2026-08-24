@@ -79,8 +79,8 @@ export function AppShell({
   const userInitial = displayName.charAt(0).toUpperCase();
   const safeTitle = (title || 'Digiland').toLowerCase();
 
-  // Core App Rail navigation icons with all features
-  const railItems = [
+  // Core App Rail navigation icons tailored by role
+  const allRailItems = [
     {
       label: 'Dashboard',
       href: user?.role === 'Seller' ? '/seller/dashboard/' : user?.role === 'Buyer' ? '/buyer/dashboard/' : '/parcels/',
@@ -88,19 +88,23 @@ export function AppShell({
       active: safeTitle.includes('dashboard') || safeTitle.includes('workspace'),
     },
     {
-      label: 'My Parcels',
+      label: user?.role === 'Seller' ? 'My Parcels' : 'Parcels',
       href: '/parcels/',
       icon: Grid2X2,
       active: safeTitle.includes('parcel') || safeTitle.includes('marketplace'),
     },
+    ...(user?.role === 'Seller'
+      ? [
+          {
+            label: 'Promotions',
+            href: '/seller/promotions/',
+            icon: Layers,
+            active: safeTitle.includes('promotion') || safeTitle.includes('ad') || safeTitle.includes('tier'),
+          },
+        ]
+      : []),
     {
-      label: 'Promotions',
-      href: user?.role === 'Seller' ? '/seller/promotions/' : '/features/',
-      icon: Layers,
-      active: safeTitle.includes('promotion') || safeTitle.includes('ad') || safeTitle.includes('tier'),
-    },
-    {
-      label: 'Transactions',
+      label: 'Escrow',
       href: '/transactions/',
       icon: ReceiptText,
       active: safeTitle.includes('transaction') || safeTitle.includes('escrow'),
@@ -119,6 +123,8 @@ export function AppShell({
       active: safeTitle.includes('legal') || safeTitle.includes('law') || safeTitle.includes('act'),
     },
   ];
+
+  const railItems = allRailItems;
 
   return (
     <div className="flex min-h-screen bg-[#0d121f] text-slate-100 antialiased selection:bg-emerald-500 selection:text-slate-950 font-sans">

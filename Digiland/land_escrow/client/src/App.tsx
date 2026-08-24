@@ -717,28 +717,26 @@ function DashboardPage() {
   const channelsByRole: Record<string, { id: string; name: string; icon: any; badge?: string }[]> = {
     Buyer: [
       { id: 'overview', name: 'overview', icon: LayoutDashboard },
-      { id: 'commissions', name: 'my-commissions', icon: ShieldCheck, badge: `${(bootstrap.active_commissions || []).length}` },
-      { id: 'promotions', name: 'promotions-deals', icon: Sparkles },
-      { id: 'transactions', name: 'escrow-deposits', icon: ReceiptText },
       { id: 'parcels', name: 'marketplace', icon: Grid2X2 },
+      { id: 'transactions', name: 'escrow-deposits', icon: ReceiptText },
       { id: 'legal', name: 'legal-clearance', icon: Scale },
     ],
     Seller: [
       { id: 'overview', name: 'overview', icon: LayoutDashboard },
-      { id: 'parcels', name: 'my-parcels', icon: Grid2X2, badge: `${(bootstrap.parcels || []).length}` },
+      { id: 'parcels', name: 'my-parcels', icon: Grid2X2, badge: `${(bootstrap.parcels || []).length || ''}` },
       { id: 'promotions', name: 'promotions-ads', icon: Sparkles },
       { id: 'transactions', name: 'escrow-payouts', icon: ReceiptText },
       { id: 'legal', name: 'seller-laws', icon: Scale },
     ],
     Lawyer: [
       { id: 'overview', name: 'overview', icon: LayoutDashboard },
-      { id: 'commissions', name: 'conveyancing-tasks', icon: Gavel, badge: `${(bootstrap.active_commissions || []).length}` },
+      { id: 'commissions', name: 'conveyancing-tasks', icon: Gavel, badge: `${(bootstrap.active_commissions || []).length || ''}` },
       { id: 'transactions', name: 'escrow-settlements', icon: ReceiptText },
       { id: 'legal', name: 'legal-acts-lcb', icon: Scale },
     ],
     Agent: [
       { id: 'overview', name: 'overview', icon: LayoutDashboard },
-      { id: 'commissions', name: 'site-inspections', icon: Briefcase, badge: `${(bootstrap.active_commissions || []).length}` },
+      { id: 'commissions', name: 'site-inspections', icon: Briefcase, badge: `${(bootstrap.active_commissions || []).length || ''}` },
       { id: 'parcels', name: 'parcel-listings', icon: Grid2X2 },
       { id: 'transactions', name: 'earned-commissions', icon: ReceiptText },
     ],
@@ -755,11 +753,21 @@ function DashboardPage() {
   const [activeTab, setActiveTab] = useState<string>('overview');
 
   const activeCommissions = bootstrap.active_commissions || bootstrap.commissions || [];
-  const activeSpotlightCommission = activeCommissions[0];
+  const activeSpotlightCommission = (isAgent || isLawyer || isAdmin) ? activeCommissions[0] : null;
   const sellerParcels = bootstrap.parcels || [];
   const transactions = bootstrap.transactions || [];
   const recentTransactions = transactions.slice(0, 6);
-  const stats = bootstrap.stats || [];
+  const rawStats = bootstrap.stats || [];
+
+  // Filter stats so Buyer only sees buyer-relevant metrics (no "active commissions")
+  const stats = useMemo(() => {
+    return rawStats.filter((stat) => {
+      if (role === 'Buyer' && stat.label.toLowerCase().includes('commission')) {
+        return false;
+      }
+      return true;
+    });
+  }, [rawStats, role]);
 
   return (
     <div className="flex h-[calc(100vh-8rem)] min-h-[680px] flex-col overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#0c111e] shadow-2xl backdrop-blur-xl md:flex-row">
