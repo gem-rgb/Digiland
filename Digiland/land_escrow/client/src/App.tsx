@@ -707,161 +707,468 @@ function LegalCards(laws: NonNullable<typeof bootstrap.laws>) {
 
 function DashboardPage() {
   const role = bootstrap.user?.role || 'Buyer';
-  const displayName = bootstrap.user?.full_name || bootstrap.user?.email || 'User';
+  const displayName = bootstrap.user?.full_name || (bootstrap.user?.email ? bootstrap.user.email.split('@')[0] : 'User');
   const isAdmin = role === 'Admin';
   const isAgent = role === 'Agent';
   const isLawyer = role === 'Lawyer';
   const isSeller = role === 'Seller';
 
-  const subtitle = isAdmin || isAgent || isLawyer
-    ? 'High-level command overview. Access dedicated modules for tasks, approvals, and escrow ledger.'
-    : isSeller
-      ? 'High-level seller overview. Manage parcels and promotions in their dedicated workspaces.'
-      : 'High-level buyer overview. Track active purchase commissions and escrow settlements.';
+  // Role-customized sub-channels
+  const channelsByRole: Record<string, { id: string; name: string; icon: any; badge?: string }[]> = {
+    Buyer: [
+      { id: 'overview', name: 'overview', icon: LayoutDashboard },
+      { id: 'commissions', name: 'my-commissions', icon: ShieldCheck, badge: `${(bootstrap.active_commissions || []).length}` },
+      { id: 'transactions', name: 'escrow-deposits', icon: ReceiptText },
+      { id: 'parcels', name: 'marketplace', icon: Grid2X2 },
+      { id: 'legal', name: 'legal-clearance', icon: Scale },
+    ],
+    Seller: [
+      { id: 'overview', name: 'overview', icon: LayoutDashboard },
+      { id: 'parcels', name: 'my-parcels', icon: Grid2X2, badge: `${(bootstrap.parcels || []).length}` },
+      { id: 'promotions', name: 'promotions-ads', icon: Sparkles },
+      { id: 'transactions', name: 'escrow-payouts', icon: ReceiptText },
+      { id: 'legal', name: 'seller-laws', icon: Scale },
+    ],
+    Lawyer: [
+      { id: 'overview', name: 'overview', icon: LayoutDashboard },
+      { id: 'commissions', name: 'conveyancing-tasks', icon: Gavel, badge: `${(bootstrap.active_commissions || []).length}` },
+      { id: 'transactions', name: 'escrow-settlements', icon: ReceiptText },
+      { id: 'legal', name: 'legal-acts-lcb', icon: Scale },
+    ],
+    Agent: [
+      { id: 'overview', name: 'overview', icon: LayoutDashboard },
+      { id: 'commissions', name: 'site-inspections', icon: Briefcase, badge: `${(bootstrap.active_commissions || []).length}` },
+      { id: 'parcels', name: 'parcel-listings', icon: Grid2X2 },
+      { id: 'transactions', name: 'earned-commissions', icon: ReceiptText },
+    ],
+    Admin: [
+      { id: 'overview', name: 'overview', icon: LayoutDashboard },
+      { id: 'transactions', name: 'escrow-reserves', icon: ReceiptText },
+      { id: 'commissions', name: 'kyc-approvals', icon: ShieldAlert },
+      { id: 'parcels', name: 'all-parcels', icon: Grid2X2 },
+      { id: 'legal', name: 'statutory-compliance', icon: Scale },
+    ],
+  };
+
+  const channels = channelsByRole[role] || channelsByRole.Buyer;
+  const [activeTab, setActiveTab] = useState<string>('overview');
 
   const activeCommissions = bootstrap.active_commissions || bootstrap.commissions || [];
   const activeSpotlightCommission = activeCommissions[0];
   const sellerParcels = bootstrap.parcels || [];
-  const activeSpotlightParcel = sellerParcels[0];
   const transactions = bootstrap.transactions || [];
-  const recentTransactions = transactions.slice(0, 5);
+  const recentTransactions = transactions.slice(0, 6);
+  const stats = bootstrap.stats || [];
 
   return (
-    <div className="space-y-8 max-w-full">
-      {/* Sleek Hero Welcome & Quick Action Pill Bar */}
-      <div className="rounded-[2.25rem] border border-emerald-100 bg-gradient-to-r from-emerald-900 via-slate-900 to-slate-950 p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 h-64 w-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 text-left">
-            <div className="flex items-center gap-3">
-              <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold uppercase tracking-wider">
-                {role} Workspace
-              </span>
-              <span className="text-xs text-slate-300 font-medium flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                Active Session
-              </span>
+    <div className="flex h-[calc(100vh-8rem)] min-h-[680px] flex-col overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#0c111e] shadow-2xl backdrop-blur-xl md:flex-row">
+      {/* Left Sub-Sidebar: Role Workspace Channels */}
+      <div className="flex w-full flex-col border-b border-white/[0.08] bg-[#080b14] md:w-64 lg:w-72 md:border-r md:border-b-0 shrink-0">
+        {/* Workspace Title Header */}
+        <div className="flex h-14 items-center justify-between border-b border-white/[0.08] px-4">
+          <div className="flex items-center gap-2">
+            <span className="font-black text-sm text-slate-100 tracking-wide">{role} Workspace</span>
+          </div>
+          <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-300 border border-emerald-500/30">
+            Live
+          </span>
+        </div>
+
+        {/* Channels List */}
+        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
+          <div>
+            <div className="px-2 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center justify-between">
+              <span>Modules</span>
+              <span className="text-[9px] text-emerald-400 font-bold">{role}</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              Welcome back, {displayName}
-            </h1>
-            <p className="text-sm text-slate-300 max-w-2xl font-light">
-              {subtitle}
-            </p>
+            <div className="mt-1 space-y-0.5">
+              {channels.map((channel) => {
+                const isActive = activeTab === channel.id;
+                const Icon = channel.icon;
+                return (
+                  <button
+                    key={channel.id}
+                    onClick={() => setActiveTab(channel.id)}
+                    className={cn(
+                      'flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-bold transition-all duration-150',
+                      isActive
+                        ? 'bg-emerald-500/15 text-emerald-300 shadow-[inset_0_0_8px_rgba(16,185,129,0.2)]'
+                        : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
+                    )}
+                  >
+                    <div className="flex items-center gap-2.5 truncate">
+                      <span className={cn('text-sm font-extrabold', isActive ? 'text-emerald-400' : 'text-slate-500')}>#</span>
+                      <span className="truncate">{channel.name}</span>
+                    </div>
+                    {channel.badge && channel.badge !== '0' && (
+                      <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.2 text-[9px] font-black text-emerald-300">
+                        {channel.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Role-Specific Quick Action Shortcuts */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            {!isSeller && !isAdmin && !isAgent && !isLawyer && (
-              <>
-                <a href="/parcels/" className="inline-flex h-11 items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-5 text-xs font-bold transition shadow-md gap-2">
-                  <Grid2X2 className="h-4 w-4" /> Browse Marketplace
+          {/* Quick Shortcuts Section */}
+          <div>
+            <div className="px-2 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+              Shortcuts
+            </div>
+            <div className="mt-1 space-y-1">
+              <a
+                href="/messages/"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 transition"
+              >
+                <MessageSquare className="h-4 w-4 text-purple-400" />
+                <span>Open Chat & DMs</span>
+              </a>
+              <a
+                href="/transactions/"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 transition"
+              >
+                <ReceiptText className="h-4 w-4 text-emerald-400" />
+                <span>Escrow Ledger</span>
+              </a>
+              {isSeller && (
+                <a
+                  href="/seller/promotions/"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 transition"
+                >
+                  <Sparkles className="h-4 w-4 text-amber-400" />
+                  <span>Promote Listing</span>
                 </a>
-                <a href="/buyer/dashboard/" className="inline-flex h-11 items-center justify-center rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-white px-5 text-xs font-bold transition gap-2">
-                  <ShieldCheck className="h-4 w-4" /> My Commissions ({activeCommissions.length})
-                </a>
-              </>
-            )}
+              )}
+            </div>
+          </div>
+        </div>
 
-            {isSeller && (
-              <>
-                <a href="/parcels/upload/" className="inline-flex h-11 items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-5 text-xs font-bold transition shadow-md gap-2">
-                  <Grid2X2 className="h-4 w-4" /> List New Parcel
-                </a>
-                <a href="/seller/promotions/" className="inline-flex h-11 items-center justify-center rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-white px-5 text-xs font-bold transition gap-2">
-                  <Sparkles className="h-4 w-4" /> Promote Listing
-                </a>
-              </>
-            )}
-
-            {(isAdmin || isAgent || isLawyer) && (
-              <>
-                <a href="/agent/approvals/" className="inline-flex h-11 items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-5 text-xs font-bold transition shadow-md gap-2">
-                  <Gavel className="h-4 w-4" /> Approvals Hub
-                </a>
-                <a href="/transactions/" className="inline-flex h-11 items-center justify-center rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-white px-5 text-xs font-bold transition gap-2">
-                  <ReceiptText className="h-4 w-4" /> Escrow Ledger
-                </a>
-              </>
-            )}
+        {/* User Status Bar Footer */}
+        <div className="border-t border-white/[0.08] p-3 bg-[#06080e] flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-xs font-black text-slate-950 shrink-0">
+              {displayName.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-xs font-bold text-slate-200">{displayName}</div>
+              <div className="text-[10px] text-emerald-400 font-medium capitalize">{role} Verified</div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* KPI Metric Stat Grid */}
-      <StatGrid />
-
-      {/* Active Focus Spotlight Card (Highlights 1 urgent item instead of massive list) */}
-      {activeSpotlightCommission && (
-        <Card className="bg-gradient-to-r from-emerald-50/70 to-slate-50 border border-emerald-200/80 shadow-md rounded-[2rem] overflow-hidden">
-          <CardContent className="p-6 text-left">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Badge tone="accent" className="text-xs">Active Spotlight Workflow</Badge>
-                  <span className="text-xs text-slate-500 font-medium">Parcel {activeSpotlightCommission.parcel_number}</span>
-                </div>
-                <h3 className="text-lg font-black text-slate-900">
-                  {activeSpotlightCommission.status_display || activeSpotlightCommission.status}
+      {/* Right Main Dashboard Workspace Canvas */}
+      <div className="flex flex-1 flex-col bg-[#0e1322] overflow-hidden">
+        {/* Workspace Canvas Header */}
+        <div className="flex h-14 items-center justify-between border-b border-white/[0.08] px-6 bg-[#0c101d] shrink-0">
+          <div className="flex items-center gap-3">
+            <span className="text-xl font-extrabold text-emerald-400">#</span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-black text-white capitalize">
+                  {channels.find((c) => c.id === activeTab)?.name || activeTab}
                 </h3>
-                <p className="text-xs text-slate-600">
-                  Assigned Agent: <strong>{activeSpotlightCommission.accepted_by?.full_name || 'Awaiting Agent'}</strong> · Region: {activeSpotlightCommission.county || 'Kenyan Land'}
-                </p>
+                <Badge tone="outline" className="bg-white/[0.04] text-[9px] uppercase font-bold py-0 text-slate-300">
+                  {role} Hub
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          {/* Header Action Buttons */}
+          <div className="flex items-center gap-2">
+            {!isSeller && !isAdmin && !isAgent && !isLawyer && (
+              <a href="/parcels/" className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-4 text-xs font-bold transition shadow-md gap-1.5">
+                <Grid2X2 className="h-3.5 w-3.5" /> Browse Parcels
+              </a>
+            )}
+            {isSeller && (
+              <a href="/parcels/upload/" className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-4 text-xs font-bold transition shadow-md gap-1.5">
+                <Plus className="h-3.5 w-3.5" /> List Parcel
+              </a>
+            )}
+            {(isAdmin || isAgent || isLawyer) && (
+              <a href="/agent/approvals/" className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-4 text-xs font-bold transition shadow-md gap-1.5">
+                <Gavel className="h-3.5 w-3.5" /> Approvals Hub
+              </a>
+            )}
+            <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-300">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              <span>Dual Escrow</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Body Content Scrollable Area */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* TAB 1: OVERVIEW */}
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              {/* Hero Banner Card */}
+              <div className="rounded-3xl border border-white/10 bg-gradient-to-r from-emerald-950/80 via-[#0d1424] to-[#080c16] p-6 text-white shadow-xl relative overflow-hidden">
+                <div className="absolute right-0 top-0 h-48 w-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-1 text-left">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider">
+                        {role} Verified
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        Live Escrow Session
+                      </span>
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                      Welcome back, {displayName}
+                    </h2>
+                    <p className="text-xs text-slate-300 max-w-xl font-light">
+                      Real-time overview of your land escrow pipeline, legal clearances, and verified settlements across Kenya.
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              <a 
-                href={activeSpotlightCommission.detail_url || '/buyer/dashboard/'} 
-                className="inline-flex h-11 items-center justify-center rounded-full bg-emerald-700 hover:bg-emerald-800 text-white px-6 text-xs font-bold transition shadow-md whitespace-nowrap gap-2"
-              >
-                <span>Manage Full Pipeline Workspace</span>
-                <ArrowRight className="h-4 w-4" />
-              </a>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              {/* KPI Stats Row (Dark Aesthetic) */}
+              {stats.length > 0 && (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {stats.map((stat) => (
+                    <div
+                      key={stat.label}
+                      className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 text-left backdrop-blur-md transition hover:border-emerald-500/40 hover:bg-white/[0.04]"
+                    >
+                      <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        {stat.label}
+                      </div>
+                      <div className="mt-2 text-2xl font-black tracking-tight text-white">
+                        {stat.value}
+                      </div>
+                      <div className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-emerald-400">
+                        <ShieldCheck className="h-3 w-3" />
+                        <span>Escrow Protected</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-      {/* Recent Escrow Activity Stream (Clean 5-item summary with link to dedicated register) */}
-      <Card className="bg-white/95 shadow-md border-slate-200/80 rounded-[2rem]">
-        <CardHeader>
-          <PanelTitle 
-            title="Recent Escrow Activity" 
-            subtitle="Latest 5 transaction events. Access the dedicated register for full ledger." 
-            action={<a href="/transactions/" className="text-xs font-extrabold text-emerald-700 hover:text-emerald-800 flex items-center gap-1">Open Escrow Ledger <ArrowRight className="h-3.5 w-3.5" /></a>} 
-          />
-        </CardHeader>
-        <CardContent className="p-0">
-          {recentTransactions.length === 0 ? (
-            <div className="p-8 text-center text-sm text-slate-400">No recent transaction activity recorded.</div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {recentTransactions.map((tx: any) => (
-                <div key={tx.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 gap-3 hover:bg-slate-50/80 transition-colors">
-                  <div className="flex items-center gap-3.5">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 font-bold border border-emerald-100">
-                      <ReceiptText className="h-5 w-5" />
+              {/* Spotlight Active Pipeline Card */}
+              {activeSpotlightCommission && (
+                <div className="rounded-3xl border border-emerald-500/30 bg-emerald-950/20 p-5 text-left backdrop-blur-xl shadow-lg relative overflow-hidden">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-300">
+                          Spotlight Workflow
+                        </span>
+                        <span className="text-xs text-slate-400 font-bold">Parcel {activeSpotlightCommission.parcel_number}</span>
+                      </div>
+                      <h4 className="text-base font-black text-white">
+                        {activeSpotlightCommission.status_display || activeSpotlightCommission.status}
+                      </h4>
+                      <p className="text-xs text-slate-400">
+                        Assigned Agent: <strong className="text-slate-200">{activeSpotlightCommission.accepted_by?.full_name || 'Awaiting Agent'}</strong> · County: {activeSpotlightCommission.county || 'Kenya'}
+                      </p>
                     </div>
-                    <div className="text-left">
-                      <div className="font-bold text-slate-900 text-sm">Parcel {tx.parcel_number}</div>
-                      <div className="text-xs text-slate-500">ID: {tx.id.substring(0, 8)}... · Buyer: {tx.buyer_email}</div>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-4 justify-between sm:justify-end">
-                    <div className="text-right">
-                      <div className="font-black text-emerald-700 text-sm">KES {money(tx.amount)}</div>
-                      <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{tx.status}</div>
-                    </div>
-                    <a href="/transactions/" className="inline-flex h-8 items-center justify-center rounded-full border border-slate-200 bg-white px-3.5 text-xs font-bold text-slate-700 hover:bg-slate-50">
-                      Details
+                    <a
+                      href={activeSpotlightCommission.detail_url || '/buyer/dashboard/'}
+                      className="inline-flex h-10 items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-5 text-xs font-extrabold transition shadow-md whitespace-nowrap gap-1.5"
+                    >
+                      <span>Manage Pipeline</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
                     </a>
                   </div>
                 </div>
-              ))}
+              )}
+
+              {/* Recent Activity Stream */}
+              <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-5 text-left space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+                  <div className="flex items-center gap-2">
+                    <ReceiptText className="h-4 w-4 text-emerald-400" />
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-200">
+                      Recent Escrow Activity
+                    </h4>
+                  </div>
+                  <a href="/transactions/" className="text-[11px] font-bold text-emerald-400 hover:underline">
+                    View full ledger →
+                  </a>
+                </div>
+
+                {recentTransactions.length === 0 ? (
+                  <div className="py-6 text-center text-xs text-slate-500">
+                    No recent transaction events recorded yet.
+                  </div>
+                ) : (
+                  <div className="divide-y divide-white/[0.04]">
+                    {recentTransactions.map((tx: any) => (
+                      <div key={tx.id} className="flex items-center justify-between py-3 gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] text-emerald-400 font-bold border border-white/10">
+                            <ReceiptText className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <div className="font-bold text-xs text-slate-200">Parcel {tx.parcel_number}</div>
+                            <div className="text-[10px] text-slate-500 truncate max-w-xs sm:max-w-md">
+                              Buyer: {tx.buyer_email}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="font-black text-emerald-400 text-xs">KES {money(tx.amount)}</div>
+                            <div className="text-[9px] text-slate-500 font-semibold uppercase">{tx.status}</div>
+                          </div>
+                          <a
+                            href="/transactions/"
+                            className="hidden sm:inline-flex h-7 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[10px] font-bold text-slate-300 hover:bg-white/[0.08]"
+                          >
+                            Details
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+
+          {/* TAB 2: COMMISSIONS & CONVEYANCING */}
+          {activeTab === 'commissions' && (
+            <div className="space-y-4 text-left">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-black text-white">Active Commissions & Conveyancing</h4>
+                <span className="text-xs text-slate-400">{activeCommissions.length} active records</span>
+              </div>
+              {activeCommissions.length === 0 ? (
+                <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-12 text-center text-slate-400 space-y-3">
+                  <ShieldCheck className="mx-auto h-8 w-8 text-slate-600" />
+                  <div className="text-sm font-bold text-slate-300">No active commissions currently in progress.</div>
+                  <a href="/parcels/" className="inline-block font-bold text-xs text-emerald-400 hover:underline">
+                    Explore available land parcels →
+                  </a>
+                </div>
+              ) : (
+                <div className="grid gap-3 lg:grid-cols-2">
+                  {activeCommissions.map((comm: any) => (
+                    <div key={comm.id} className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-emerald-400">Parcel {comm.parcel?.parcel_number || comm.parcel_number}</span>
+                        <Badge tone="accent" className="text-[9px]">{comm.status_label || comm.status}</Badge>
+                      </div>
+                      <div className="text-xs text-slate-300">
+                        County: <strong>{comm.parcel?.county || comm.county || 'Kenya'}</strong> · Price: KES {money(comm.parcel?.displayed_price || comm.parcel?.asking_price || '0')}
+                      </div>
+                      <div className="pt-1 flex items-center justify-between">
+                        <span className="text-[10px] text-slate-500">Dual-escrow verified</span>
+                        <a href={comm.detail_url || '/buyer/dashboard/'} className="text-xs font-bold text-emerald-400 hover:underline">
+                          View details →
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: TRANSACTIONS & PAYOUTS */}
+          {activeTab === 'transactions' && (
+            <div className="space-y-4 text-left">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-black text-white">Escrow Ledger & Settlement Register</h4>
+                <a href="/transactions/" className="text-xs font-bold text-emerald-400 hover:underline">
+                  Full Transaction Register →
+                </a>
+              </div>
+              <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-4 divide-y divide-white/[0.04]">
+                {transactions.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-slate-500">No escrow transactions found.</div>
+                ) : (
+                  transactions.map((tx: any) => (
+                    <div key={tx.id} className="flex items-center justify-between py-3 gap-3">
+                      <div>
+                        <div className="font-bold text-xs text-slate-200">Parcel {tx.parcel_number}</div>
+                        <div className="text-[10px] text-slate-500">Ref: {tx.id.substring(0, 8)}...</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-black text-emerald-400 text-xs">KES {money(tx.amount)}</div>
+                        <div className="text-[9px] text-slate-400 uppercase">{tx.status}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: PARCELS & MARKETPLACE */}
+          {activeTab === 'parcels' && (
+            <div className="space-y-4 text-left">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-black text-white">Parcels & Listings</h4>
+                <a href="/parcels/" className="text-xs font-bold text-emerald-400 hover:underline">
+                  Open Marketplace →
+                </a>
+              </div>
+              <ParcelGrid />
+            </div>
+          )}
+
+          {/* TAB 5: LEGAL & CLEARANCES */}
+          {activeTab === 'legal' && (
+            <div className="space-y-4 text-left">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-black text-white">Legal Statutes & Statutory Clearances</h4>
+                <a href={isSeller ? '/seller/laws/' : '/escrow-acts/'} className="text-xs font-bold text-emerald-400 hover:underline">
+                  Print A4 Brief →
+                </a>
+              </div>
+              <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-5 space-y-4">
+                <div className="text-xs text-slate-300 leading-relaxed">
+                  Every land transaction in Digiland is governed under Kenyan land laws including the Land Registration Act No. 3 of 2012, Section 54 dual signatures, and LCB Consent under Land Control Act Cap 302.
+                </div>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <a
+                    href={isSeller ? '/seller/laws/' : '/escrow-acts/'}
+                    className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-4 text-xs font-bold transition hover:bg-emerald-500/30"
+                  >
+                    View Official Legal Checklist
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: PROMOTIONS */}
+          {activeTab === 'promotions' && (
+            <div className="space-y-4 text-left">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-black text-white">Promotions & Boost Campaigns</h4>
+                <a href="/seller/promotions/" className="text-xs font-bold text-emerald-400 hover:underline">
+                  Promotions Hub →
+                </a>
+              </div>
+              <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-6 text-center space-y-3">
+                <Sparkles className="mx-auto h-8 w-8 text-amber-400" />
+                <div className="text-sm font-bold text-white">Boost your parcels to the top of Kenyan land buyer searches.</div>
+                <p className="text-xs text-slate-400 max-w-md mx-auto">
+                  Sponsored cards, featured homepage badges, and high-priority WhatsApp/SMS notifications.
+                </p>
+                <a
+                  href="/seller/promotions/"
+                  className="inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold px-5 text-xs shadow-lg"
+                >
+                  Manage Boost Campaigns
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
