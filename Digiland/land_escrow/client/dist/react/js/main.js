@@ -31770,6 +31770,12 @@ function MessagesPage() {
     { id: "verification-desk", name: "verification-desk", topic: "Title deed searches, survey checks, and Ministry of Lands registry validation" },
     { id: "legal-conveyancing", name: "legal-conveyancing", topic: "Advocate conveyancing milestones, LCB consent, and stamp duty clearance" }
   ];
+  const quickPrompts = [
+    "Hello, could you provide an update on the parcel verification status?",
+    "I have uploaded the title search deed and survey maps.",
+    "Could we review the latest escrow milestone agreement?",
+    "What is the next step for advocate conveyancing approval?"
+  ];
   const [activeChannelId, setActiveChannelId] = (0, import_react18.useState)(null);
   const isChannelMode = Boolean(activeChannelId);
   const currentChannel = officialChannels.find((c) => c.id === activeChannelId);

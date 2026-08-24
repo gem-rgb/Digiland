@@ -2478,6 +2478,13 @@ function MessagesPage() {
     { id: 'legal-conveyancing', name: 'legal-conveyancing', topic: 'Advocate conveyancing milestones, LCB consent, and stamp duty clearance' },
   ];
 
+  const quickPrompts = [
+    'Hello, could you provide an update on the parcel verification status?',
+    'I have uploaded the title search deed and survey maps.',
+    'Could we review the latest escrow milestone agreement?',
+    'What is the next step for advocate conveyancing approval?',
+  ];
+
   const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
 
   // If a channel is active vs a direct message partner
