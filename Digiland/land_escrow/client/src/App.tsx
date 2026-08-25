@@ -3216,7 +3216,15 @@ function MessagesPage() {
           </div>
 
           {/* Bottom Docked Input Box & Notice Banner */}
-          <div className="border-t border-white/[0.08] bg-[#0a0e1a] p-4 space-y-2">
+          <div className="border-t border-white/[0.08] bg-[#0a0e1a] p-4 space-y-2 shrink-0 z-20">
+            {/* Send Error Alert (if any) */}
+            {sendError && (
+              <div className="flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span>{sendError}</span>
+              </div>
+            )}
+
             {/* Disclaimer Banner */}
             <div className="flex items-center gap-2 text-[11px] text-slate-400">
               <ShieldCheck className="h-4 w-4 text-emerald-400 shrink-0" />
@@ -3231,28 +3239,29 @@ function MessagesPage() {
                 e.preventDefault();
                 handleSendMessage();
               }}
-              className="relative flex items-center rounded-2xl border border-white/15 bg-[#121727] p-1.5 transition-all focus-within:border-emerald-500/60 focus-within:ring-2 focus-within:ring-emerald-500/20"
+              className="relative flex items-center rounded-2xl border border-white/20 bg-[#121727] p-1.5 transition-all focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20"
             >
               <input
+                id="message-chat-input"
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 placeholder={
                   isChannelMode
-                    ? `Message #${currentChannel?.name || 'general'}...`
+                    ? `Message in #${currentChannel?.name || 'protocol'}...`
                     : `Message @${safeRecipientName}...`
                 }
-                disabled={isSending}
-                className="h-10 w-full bg-transparent px-3 text-xs sm:text-sm text-slate-100 placeholder:text-slate-500 outline-none"
+                autoComplete="off"
+                className="h-10 w-full bg-transparent px-3 text-xs sm:text-sm text-white placeholder:text-slate-400 outline-none cursor-text pointer-events-auto"
               />
 
               <div className="flex items-center gap-1 pr-1">
                 <Button
                   type="submit"
                   disabled={!inputMessage.trim() || isSending}
-                  className="h-8 w-8 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 p-0 text-slate-950 shadow-md shadow-emerald-500/20 transition-all hover:scale-105 hover:brightness-110 disabled:opacity-30"
+                  className="h-8 w-8 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 p-0 text-slate-950 shadow-md shadow-emerald-500/20 transition-all hover:scale-105 hover:brightness-110 disabled:opacity-30 flex items-center justify-center shrink-0 cursor-pointer"
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="h-4 w-4 text-slate-950" />
                 </Button>
               </div>
             </form>
