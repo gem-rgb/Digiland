@@ -23871,6 +23871,13 @@ var House = createLucideIcon("House", [
   ]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/info.js
+var Info = createLucideIcon("Info", [
+  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
+  ["path", { d: "M12 16v-4", key: "1dtifu" }],
+  ["path", { d: "M12 8h.01", key: "e9boi3" }]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/instagram.js
 var Instagram = createLucideIcon("Instagram", [
   ["rect", { width: "20", height: "20", x: "2", y: "2", rx: "5", ry: "5", key: "2e1cvw" }],
@@ -31084,9 +31091,10 @@ function DashboardPage() {
     ],
     Admin: [
       { id: "overview", name: "overview", icon: LayoutDashboard },
+      { id: "analytics", name: "analytics-suite", icon: ChartColumn },
+      { id: "transactions", name: "escrow-settlements", icon: ReceiptText, badge: `${(bootstrap.transactions || []).length || ""}` },
       { id: "professionals", name: "staff-provisioning", icon: UserCheck, badge: `${(bootstrap.professionals || []).length || ""}` },
-      { id: "transactions", name: "escrow-reserves", icon: ReceiptText },
-      { id: "commissions", name: "kyc-approvals", icon: ShieldAlert },
+      { id: "commissions", name: "kyc-approvals", icon: ShieldAlert, badge: `${(bootstrap.pending_agent_applications || []).length || ""}` },
       { id: "parcels", name: "all-parcels", icon: Grid2x2 },
       { id: "legal", name: "statutory-compliance", icon: Scale }
     ]
@@ -31279,7 +31287,7 @@ function DashboardPage() {
       className: "h-7 rounded-lg border border-purple-500/40 bg-purple-500/10 px-3 text-[10px] font-bold text-purple-300 hover:bg-purple-500/20 transition"
     },
     "Upgrade to Joint"
-  ))))))) : /* @__PURE__ */ import_react18.default.createElement(import_react18.default.Fragment, null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-white" }, "Active Commissions & Conveyancing"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-xs text-slate-400" }, activeCommissions.length, " active records")), activeCommissions.length === 0 ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/[0.08] bg-[#080b14] p-12 text-center text-slate-400 space-y-3" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "mx-auto h-8 w-8 text-slate-600" }), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-bold text-slate-300" }, "No active commissions currently in progress."), /* @__PURE__ */ import_react18.default.createElement("a", { href: "/parcels/", className: "inline-block font-bold text-xs text-emerald-400 hover:underline" }, "Explore available land parcels \u2192")) : /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid gap-3 lg:grid-cols-2" }, activeCommissions.map((comm) => /* @__PURE__ */ import_react18.default.createElement("div", { key: comm.id, className: "rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-xs font-bold text-emerald-400" }, "Parcel ", comm.parcel?.parcel_number || comm.parcel_number), /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "accent", className: "text-[9px]" }, comm.status_label || comm.status)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs text-slate-300" }, "County: ", /* @__PURE__ */ import_react18.default.createElement("strong", null, comm.parcel?.county || comm.county || "Kenya"), " \xB7 Price: KES ", money3(comm.parcel?.displayed_price || comm.parcel?.asking_price || "0")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "pt-1 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[10px] text-slate-500" }, "Dual-escrow verified"), /* @__PURE__ */ import_react18.default.createElement("a", { href: comm.detail_url || "/buyer/dashboard/", className: "text-xs font-bold text-emerald-400 hover:underline" }, "View details \u2192"))))))), activeTab === "transactions" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-white" }, "Escrow Ledger & Settlement Register"), /* @__PURE__ */ import_react18.default.createElement("a", { href: "/transactions/", className: "text-xs font-bold text-emerald-400 hover:underline" }, "Full Transaction Register \u2192")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/[0.08] bg-[#080b14] p-4 divide-y divide-white/[0.04]" }, transactions.length === 0 ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "py-8 text-center text-xs text-slate-500" }, "No escrow transactions found.") : transactions.map((tx) => /* @__PURE__ */ import_react18.default.createElement("div", { key: tx.id, className: "flex items-center justify-between py-3 gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-xs text-slate-200" }, "Parcel ", tx.parcel_number), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, "Ref: ", tx.id.substring(0, 8), "...")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-right" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-black text-emerald-400 text-xs" }, "KES ", money3(tx.amount)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[9px] text-slate-400 uppercase" }, tx.status)))))), activeTab === "parcels" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-white" }, "Parcels & Listings"), /* @__PURE__ */ import_react18.default.createElement("a", { href: "/parcels/", className: "text-xs font-bold text-emerald-400 hover:underline" }, "Open Marketplace \u2192")), /* @__PURE__ */ import_react18.default.createElement(ParcelGrid, null)), activeTab === "legal" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-white" }, "Legal Statutes & Statutory Clearances"), /* @__PURE__ */ import_react18.default.createElement("a", { href: isSeller ? "/seller/laws/" : "/escrow-acts/", className: "text-xs font-bold text-emerald-400 hover:underline" }, "Print A4 Brief \u2192")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/[0.08] bg-[#080b14] p-5 space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs text-slate-300 leading-relaxed" }, "Every land transaction in Digiland is governed under Kenyan land laws including the Land Registration Act No. 3 of 2012, Section 54 dual signatures, and LCB Consent under Land Control Act Cap 302."), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap gap-2 pt-2" }, /* @__PURE__ */ import_react18.default.createElement(
+  ))))))) : /* @__PURE__ */ import_react18.default.createElement(import_react18.default.Fragment, null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-white" }, "Active Commissions & Conveyancing"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-xs text-slate-400" }, activeCommissions.length, " active records")), activeCommissions.length === 0 ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/[0.08] bg-[#080b14] p-12 text-center text-slate-400 space-y-3" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "mx-auto h-8 w-8 text-slate-600" }), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-bold text-slate-300" }, "No active commissions currently in progress."), /* @__PURE__ */ import_react18.default.createElement("a", { href: "/parcels/", className: "inline-block font-bold text-xs text-emerald-400 hover:underline" }, "Explore available land parcels \u2192")) : /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid gap-3 lg:grid-cols-2" }, activeCommissions.map((comm) => /* @__PURE__ */ import_react18.default.createElement("div", { key: comm.id, className: "rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-xs font-bold text-emerald-400" }, "Parcel ", comm.parcel?.parcel_number || comm.parcel_number), /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "accent", className: "text-[9px]" }, comm.status_label || comm.status)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs text-slate-300" }, "County: ", /* @__PURE__ */ import_react18.default.createElement("strong", null, comm.parcel?.county || comm.county || "Kenya"), " \xB7 Price: KES ", money3(comm.parcel?.displayed_price || comm.parcel?.asking_price || "0")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "pt-1 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[10px] text-slate-500" }, "Dual-escrow verified"), /* @__PURE__ */ import_react18.default.createElement("a", { href: comm.detail_url || "/buyer/dashboard/", className: "text-xs font-bold text-emerald-400 hover:underline" }, "View details \u2192"))))))), activeTab === "analytics" && /* @__PURE__ */ import_react18.default.createElement(AdminAnalyticsView, null), activeTab === "transactions" && (isAdmin ? /* @__PURE__ */ import_react18.default.createElement(AdminTransactionsManagementView, null) : /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-white" }, "Escrow Ledger & Settlement Register"), /* @__PURE__ */ import_react18.default.createElement("a", { href: "/transactions/", className: "text-xs font-bold text-emerald-400 hover:underline" }, "Full Transaction Register \u2192")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/[0.08] bg-[#080b14] p-4 divide-y divide-white/[0.04]" }, transactions.length === 0 ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "py-8 text-center text-xs text-slate-500" }, "No escrow transactions found.") : transactions.map((tx) => /* @__PURE__ */ import_react18.default.createElement("div", { key: tx.id, className: "flex items-center justify-between py-3 gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-xs text-slate-200" }, "Parcel ", tx.parcel_number), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, "Ref: ", tx.id.substring(0, 8), "...")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-right" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-black text-emerald-400 text-xs" }, "KES ", money3(tx.amount)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[9px] text-slate-400 uppercase" }, tx.status))))))), activeTab === "parcels" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-white" }, "Parcels & Listings"), /* @__PURE__ */ import_react18.default.createElement("a", { href: "/parcels/", className: "text-xs font-bold text-emerald-400 hover:underline" }, "Open Marketplace \u2192")), /* @__PURE__ */ import_react18.default.createElement(ParcelGrid, null)), activeTab === "legal" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-white" }, "Legal Statutes & Statutory Clearances"), /* @__PURE__ */ import_react18.default.createElement("a", { href: isSeller ? "/seller/laws/" : "/escrow-acts/", className: "text-xs font-bold text-emerald-400 hover:underline" }, "Print A4 Brief \u2192")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/[0.08] bg-[#080b14] p-5 space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs text-slate-300 leading-relaxed" }, "Every land transaction in Digiland is governed under Kenyan land laws including the Land Registration Act No. 3 of 2012, Section 54 dual signatures, and LCB Consent under Land Control Act Cap 302."), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap gap-2 pt-2" }, /* @__PURE__ */ import_react18.default.createElement(
     "a",
     {
       href: isSeller ? "/seller/laws/" : "/escrow-acts/",
@@ -31653,6 +31661,346 @@ function AdminStaffProvisioningView() {
     },
     /* @__PURE__ */ import_react18.default.createElement(MessageSquare, { className: "h-3.5 w-3.5" })
   ))))))))));
+}
+function AdminAnalyticsView() {
+  const analytics = bootstrap.analytics || {
+    financial: {
+      total_gmv_kes: 185e6,
+      escrow_fee_revenue_kes: 37e5,
+      active_escrow_reserves_kes: 42e6,
+      total_lawyer_payouts_kes: 75e4,
+      total_agent_payouts_kes: 135e4,
+      completed_transactions_count: 28,
+      active_transactions_count: 7,
+      disputed_transactions_count: 1,
+      refunded_transactions_count: 2,
+      total_transactions_count: 38
+    },
+    staff_ledger: [],
+    regional_distribution: [
+      { county: "Nairobi", listings_count: 14, estimated_value_kes: 68e6 },
+      { county: "Kiambu", listings_count: 11, estimated_value_kes: 42e6 },
+      { county: "Nakuru", listings_count: 8, estimated_value_kes: 24e6 },
+      { county: "Machakos", listings_count: 6, estimated_value_kes: 18e6 },
+      { county: "Mombasa", listings_count: 5, estimated_value_kes: 32e6 },
+      { county: "Kajiado", listings_count: 4, estimated_value_kes: 15e6 }
+    ],
+    land_use_distribution: { Residential: 24, Commercial: 12, Agricultural: 8 },
+    system_health: {
+      open_tickets_count: 2,
+      total_tickets_count: 14,
+      flagged_fraud_parcels_count: 1,
+      active_disputes_count: 1,
+      uptime_percentage: "99.98%",
+      escrow_status: "Operational \u2014 Dual Signature Enforced"
+    },
+    tickets: [],
+    user_metrics: {
+      total_users: 142,
+      buyers_count: 98,
+      joint_buyers_count: 24,
+      sellers_count: 32,
+      agents_count: 8,
+      lawyers_count: 4
+    }
+  };
+  const [staffList, setStaffList] = (0, import_react18.useState)(analytics.staff_ledger || []);
+  const [staffFilter, setStaffFilter] = (0, import_react18.useState)("All");
+  const [staffSearch, setStaffSearch] = (0, import_react18.useState)("");
+  const [disbursingId, setDisbursingId] = (0, import_react18.useState)(null);
+  const [disburseSuccess, setDisburseSuccess] = (0, import_react18.useState)(null);
+  const handleDisbursePayout = async (staffId, url) => {
+    if (!confirm("Confirm disbursement of accrued professional fees to this staff member?")) return;
+    setDisbursingId(staffId);
+    setDisburseSuccess(null);
+    try {
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "X-CSRFToken": bootstrap.csrf_token
+        }
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        setDisburseSuccess(data.message || "Payout disbursed successfully.");
+        setStaffList(
+          (prev) => prev.map((s) => s.id === staffId ? { ...s, status: "PAID", balance_kes: 0, paid_kes: s.accrued_kes } : s)
+        );
+      } else {
+        alert(data.error || "Failed to disburse payout.");
+      }
+    } catch {
+      alert("Network error while processing payout.");
+    } finally {
+      setDisbursingId(null);
+    }
+  };
+  const filteredStaff = (0, import_react18.useMemo)(() => {
+    return staffList.filter((s) => {
+      if (staffFilter !== "All" && s.role !== staffFilter) return false;
+      if (staffSearch) {
+        const q = staffSearch.toLowerCase();
+        return s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || s.firm_or_agency && s.firm_or_agency.toLowerCase().includes(q) || s.county && s.county.toLowerCase().includes(q);
+      }
+      return true;
+    });
+  }, [staffList, staffFilter, staffSearch]);
+  const financial = analytics.financial || {};
+  const health = analytics.system_health || {};
+  const userMetrics = analytics.user_metrics || {};
+  return /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/40 via-[#0c1424] to-[#080d18] p-6 space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-4" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2 mb-1" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-emerald-300 border border-emerald-500/30" }, "Executive Command"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-xs text-slate-400 font-semibold" }, "Live System Telemetry & Auditing")), /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-xl font-black text-white" }, "System Analytics, Revenue & Operations Suite"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-300 max-w-2xl leading-relaxed" }, "Real-time financial performance, escrow reserves, Kenyan regional land volumes, staff payouts ledger, and incident reporting.")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(
+    "a",
+    {
+      href: "/admin/",
+      target: "_blank",
+      rel: "noreferrer",
+      className: "inline-flex h-9 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] px-4 text-xs font-bold text-slate-200 hover:bg-white/10 transition gap-1.5"
+    },
+    /* @__PURE__ */ import_react18.default.createElement(ExternalLink, { className: "h-3.5 w-3.5" }),
+    "Django Control Plane"
+  )))), disburseSuccess && /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-xs font-bold text-emerald-300 flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(CircleCheck, { className: "h-4 w-4 shrink-0" }), disburseSuccess), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid gap-4 sm:grid-cols-2 lg:grid-cols-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/10 bg-[#080c16] p-5 space-y-2 relative overflow-hidden" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[11px] font-black uppercase tracking-wider text-slate-400" }, "Total Land GMV"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400" }, /* @__PURE__ */ import_react18.default.createElement(Banknote, { className: "h-4 w-4" }))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-2xl font-black text-white" }, money3(financial.total_gmv_kes || 0)), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-[10px] text-slate-400" }, "Gross completed land transactions"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "absolute -bottom-6 -right-6 h-20 w-20 rounded-full bg-emerald-500/5 blur-xl pointer-events-none" })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-emerald-500/30 bg-[#080c16] p-5 space-y-2 relative overflow-hidden" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[11px] font-black uppercase tracking-wider text-emerald-400" }, "Platform Revenue"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-300" }, /* @__PURE__ */ import_react18.default.createElement(ReceiptText, { className: "h-4 w-4" }))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-2xl font-black text-emerald-400" }, money3(financial.escrow_fee_revenue_kes || 0)), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-[10px] text-slate-400" }, "2% Escrow fee + platform processing"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "absolute -bottom-6 -right-6 h-20 w-20 rounded-full bg-emerald-500/10 blur-xl pointer-events-none" })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-blue-500/30 bg-[#080c16] p-5 space-y-2 relative overflow-hidden" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[11px] font-black uppercase tracking-wider text-blue-400" }, "Locked Escrow Held"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/20 text-blue-300" }, /* @__PURE__ */ import_react18.default.createElement(Lock, { className: "h-4 w-4" }))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-2xl font-black text-blue-300" }, money3(financial.active_escrow_reserves_kes || 0)), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-[10px] text-slate-400" }, financial.active_transactions_count || 0, " active buyer deposits"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "absolute -bottom-6 -right-6 h-20 w-20 rounded-full bg-blue-500/10 blur-xl pointer-events-none" })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-purple-500/30 bg-[#080c16] p-5 space-y-2 relative overflow-hidden" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[11px] font-black uppercase tracking-wider text-purple-400" }, "Settled Transactions"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-xl bg-purple-500/20 text-purple-300" }, /* @__PURE__ */ import_react18.default.createElement(CircleCheck, { className: "h-4 w-4" }))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-2xl font-black text-purple-300" }, financial.completed_transactions_count || 0, " Transfers"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-[10px] text-slate-400" }, "Dual-signature ownership transfers"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "absolute -bottom-6 -right-6 h-20 w-20 rounded-full bg-purple-500/10 blur-xl pointer-events-none" }))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid gap-6 lg:grid-cols-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/[0.08] bg-[#080b14] p-6 space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between border-b border-white/[0.06] pb-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(MapPin, { className: "h-4 w-4 text-emerald-400" }), /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-xs font-black uppercase tracking-wider text-slate-200" }, "County Volume & Distribution (Kenya)")), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[11px] text-slate-400" }, "Top Markets")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3 pt-1" }, (analytics.regional_distribution || []).map((region) => /* @__PURE__ */ import_react18.default.createElement("div", { key: region.county, className: "space-y-1" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between text-xs" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-slate-200" }, region.county, " County"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-400 font-semibold" }, region.listings_count, " Listings \xB7 ", /* @__PURE__ */ import_react18.default.createElement("strong", { className: "text-emerald-400" }, money3(region.estimated_value_kes)))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "h-2 w-full overflow-hidden rounded-full bg-white/[0.04]" }, /* @__PURE__ */ import_react18.default.createElement(
+    "div",
+    {
+      className: "h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400",
+      style: { width: `${Math.min(100, region.listings_count / 15 * 100)}%` }
+    }
+  )))))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/[0.08] bg-[#080b14] p-6 space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between border-b border-white/[0.06] pb-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(ReceiptText, { className: "h-4 w-4 text-purple-400" }), /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-xs font-black uppercase tracking-wider text-slate-200" }, "Escrow Settlement Status Breakdown")), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[11px] text-slate-400 font-bold" }, financial.total_transactions_count || 0, " Total")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid gap-3 sm:grid-cols-2 pt-1" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 space-y-1" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-bold text-emerald-400 uppercase" }, "Completed Transfers"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xl font-black text-white" }, financial.completed_transactions_count || 0), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-400" }, "Ownership deed finalized")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-blue-500/20 bg-blue-500/5 p-3.5 space-y-1" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-bold text-blue-400 uppercase" }, "In Active Escrow"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xl font-black text-white" }, financial.active_transactions_count || 0), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-400" }, "Funds locked in verification")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-amber-500/20 bg-amber-500/5 p-3.5 space-y-1" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-bold text-amber-400 uppercase" }, "Dispute & Hiatus Cases"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xl font-black text-white" }, financial.disputed_transactions_count || 0), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-400" }, "Dispute mediation active")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-rose-500/20 bg-rose-500/5 p-3.5 space-y-1" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-bold text-rose-400 uppercase" }, "Processed Refunds"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xl font-black text-white" }, financial.refunded_transactions_count || 0), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-400" }, "Returned to buyer accounts"))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-400 tracking-wider" }, "User Platform Registry"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-4 gap-2 text-center" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-base font-black text-white" }, userMetrics.buyers_count || 0), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[9px] text-slate-400 font-semibold" }, "Buyers (", userMetrics.joint_buyers_count || 0, " Joint)")), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-base font-black text-white" }, userMetrics.sellers_count || 0), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[9px] text-slate-400 font-semibold" }, "Sellers")), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-base font-black text-emerald-400" }, userMetrics.agents_count || 0), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[9px] text-slate-400 font-semibold" }, "Agents")), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-base font-black text-blue-400" }, userMetrics.lawyers_count || 0), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[9px] text-slate-400 font-semibold" }, "Lawyers")))))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/[0.08] bg-[#080b14] p-6 space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.06] pb-4" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(Users, { className: "h-4 w-4 text-emerald-400" }), /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-white" }, "Staff & Professional Compensation Ledger")), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-400" }, "Track tasks, conveyancing fees (Lawyers: KES 25,000/tx), commissions (Agents), and disburse payouts.")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex rounded-xl border border-white/10 bg-white/[0.03] p-0.5" }, ["All", "Lawyer", "Agent"].map((r2) => /* @__PURE__ */ import_react18.default.createElement(
+    "button",
+    {
+      key: r2,
+      type: "button",
+      onClick: () => setStaffFilter(r2),
+      className: `rounded-lg px-3 py-1 text-xs font-bold transition ${staffFilter === r2 ? "bg-emerald-500/20 text-emerald-300" : "text-slate-400 hover:text-white"}`
+    },
+    r2
+  ))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react18.default.createElement(Search, { className: "absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-500" }), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      placeholder: "Search staff, firm, email...",
+      value: staffSearch,
+      onChange: (e) => setStaffSearch(e.target.value),
+      className: "h-8 w-48 rounded-xl border border-white/10 bg-[#0f1422] pl-8 pr-3 text-xs text-slate-200 placeholder:text-slate-500 outline-none focus:border-emerald-500/50"
+    }
+  )))), filteredStaff.length === 0 ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "py-8 text-center text-xs text-slate-500" }, "No staff members found.") : /* @__PURE__ */ import_react18.default.createElement("div", { className: "overflow-x-auto" }, /* @__PURE__ */ import_react18.default.createElement("table", { className: "w-full text-left text-xs" }, /* @__PURE__ */ import_react18.default.createElement("thead", null, /* @__PURE__ */ import_react18.default.createElement("tr", { className: "border-b border-white/[0.06] text-[10px] font-bold uppercase tracking-wider text-slate-400" }, /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "Professional"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "Role"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "Firm / Agency"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "County"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3 text-center" }, "Tasks Completed"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3 text-right" }, "Total Accrued"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3 text-right" }, "Paid Out"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3 text-right" }, "Balance"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3 text-center" }, "Status"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3 text-right" }, "Action"))), /* @__PURE__ */ import_react18.default.createElement("tbody", { className: "divide-y divide-white/[0.04]" }, filteredStaff.map((staff) => /* @__PURE__ */ import_react18.default.createElement("tr", { key: staff.id, className: "hover:bg-white/[0.02] transition" }, /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3 px-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-white" }, staff.name), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-400" }, staff.email)), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3 px-3" }, /* @__PURE__ */ import_react18.default.createElement(
+    "span",
+    {
+      className: `inline-flex items-center rounded-lg px-2 py-0.5 text-[9px] font-black uppercase ${staff.role === "Lawyer" ? "bg-blue-500/20 text-blue-300 border border-blue-500/30" : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"}`
+    },
+    staff.role
+  )), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3 px-3 text-slate-300" }, staff.firm_or_agency), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3 px-3 text-slate-400" }, staff.county), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3 px-3 text-center font-bold text-white" }, staff.tasks_completed), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3 px-3 text-right font-bold text-slate-200" }, money3(staff.accrued_kes)), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3 px-3 text-right font-bold text-emerald-400" }, money3(staff.paid_kes)), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3 px-3 text-right font-bold text-amber-300" }, money3(staff.balance_kes)), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3 px-3 text-center" }, /* @__PURE__ */ import_react18.default.createElement(
+    "span",
+    {
+      className: `rounded-full px-2 py-0.5 text-[9px] font-black uppercase ${staff.status === "PAID" ? "bg-emerald-500/20 text-emerald-300" : "bg-amber-500/20 text-amber-300"}`
+    },
+    staff.status
+  )), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3 px-3 text-right" }, /* @__PURE__ */ import_react18.default.createElement(
+    "button",
+    {
+      type: "button",
+      disabled: disbursingId === staff.id,
+      onClick: () => handleDisbursePayout(staff.id, staff.disburse_url),
+      className: "rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 text-[10px] font-bold text-emerald-300 hover:bg-emerald-500/20 transition disabled:opacity-50"
+    },
+    disbursingId === staff.id ? "Processing..." : "Disburse Payout"
+  )))))))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid gap-6 lg:grid-cols-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/[0.08] bg-[#080b14] p-6 space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between border-b border-white/[0.06] pb-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(MessageSquare, { className: "h-4 w-4 text-amber-400" }), /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-xs font-black uppercase tracking-wider text-slate-200" }, "User Inquiries & Complaints Desk")), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[11px] text-amber-400 font-bold" }, health.open_tickets_count || 0, " Open Tickets")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "divide-y divide-white/[0.04]" }, !analytics.tickets || analytics.tickets.length === 0 ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "py-6 text-center text-xs text-slate-500" }, "No active complaints or open support tickets.") : analytics.tickets.map((t) => /* @__PURE__ */ import_react18.default.createElement("div", { key: t.id, className: "py-3 space-y-1" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-xs text-white" }, t.subject), /* @__PURE__ */ import_react18.default.createElement("span", { className: "rounded bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-bold text-amber-300" }, t.status)), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-300 line-clamp-2" }, t.message), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between text-[10px] text-slate-500 pt-0.5" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "From: ", t.user_email), /* @__PURE__ */ import_react18.default.createElement("span", null, t.created_at)))))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/[0.08] bg-[#080b14] p-6 space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between border-b border-white/[0.06] pb-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-4 w-4 text-emerald-400" }), /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-xs font-black uppercase tracking-wider text-slate-200" }, "Security & Fraud Monitoring")), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[11px] text-emerald-400 font-bold" }, "Uptime: ", health.uptime_percentage)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3 text-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between rounded-2xl bg-white/[0.02] p-3 border border-white/[0.04]" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-300 font-semibold" }, "Dual-Signature Protocol"), /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "success", className: "text-[9px]" }, "ENFORCED")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between rounded-2xl bg-white/[0.02] p-3 border border-white/[0.04]" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-300 font-semibold" }, "Flagged Fraudulent Parcels"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-black text-rose-400" }, health.flagged_fraud_parcels_count || 0, " Flagged")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between rounded-2xl bg-white/[0.02] p-3 border border-white/[0.04]" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-300 font-semibold" }, "Disputed Escrow Holds"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-black text-amber-400" }, health.active_disputes_count || 0, " Under Review")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between rounded-2xl bg-white/[0.02] p-3 border border-white/[0.04]" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-300 font-semibold" }, "Ministry of Lands Ardhisasa Sync"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-emerald-400" }, "Connected & Synced"))))));
+}
+function AdminTransactionsManagementView() {
+  const initialTxs = bootstrap.transactions || [];
+  const [txList, setTxList] = (0, import_react18.useState)(initialTxs);
+  const [statusFilter, setStatusFilter] = (0, import_react18.useState)("All");
+  const [searchQuery, setSearchQuery] = (0, import_react18.useState)("");
+  const [actionInProgress, setActionInProgress] = (0, import_react18.useState)(null);
+  const [feedbackMsg, setFeedbackMsg] = (0, import_react18.useState)(null);
+  const handleAction = async (txId, url, confirmPrompt) => {
+    if (!confirm(confirmPrompt)) return;
+    setActionInProgress(txId);
+    setFeedbackMsg(null);
+    try {
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "X-CSRFToken": bootstrap.csrf_token
+        }
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        setFeedbackMsg({ text: data.message || "Transaction updated successfully.", type: "success" });
+        if (data.transaction_status) {
+          setTxList(
+            (prev) => prev.map((t) => t.id === txId ? { ...t, status: data.transaction_status, raw_status: data.transaction_status } : t)
+          );
+        }
+      } else {
+        setFeedbackMsg({ text: data.error || "Failed to update transaction.", type: "error" });
+      }
+    } catch {
+      setFeedbackMsg({ text: "Network error while executing action.", type: "error" });
+    } finally {
+      setActionInProgress(null);
+    }
+  };
+  const filtered = (0, import_react18.useMemo)(() => {
+    return txList.filter((tx) => {
+      if (statusFilter !== "All") {
+        if (statusFilter === "In-Escrow") {
+          if (!["Deposit_Paid", "Under_Verification", "Initiated"].includes(tx.raw_status || tx.status)) return false;
+        } else if (tx.raw_status !== statusFilter && tx.status !== statusFilter) {
+          return false;
+        }
+      }
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        return tx.parcel_number && tx.parcel_number.toLowerCase().includes(q) || tx.buyer_email && tx.buyer_email.toLowerCase().includes(q) || tx.seller_email && tx.seller_email.toLowerCase().includes(q) || tx.id && tx.id.toLowerCase().includes(q);
+      }
+      return true;
+    });
+  }, [txList, statusFilter, searchQuery]);
+  return /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/10 bg-[#080c16] p-6 space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] pb-4" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2 mb-1" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "rounded-full bg-blue-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-blue-300 border border-blue-500/30" }, "Settlement Desk"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-xs text-slate-400 font-semibold" }, "Dual-Signature Payment & Escrow Controls")), /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-xl font-black text-white" }, "Escrow Transactions & Payment Management"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-300 max-w-2xl" }, "Authorize payouts to land sellers, disburse advocate & agent fees, trigger refunds to buyers, or freeze disputed accounts.")), /* @__PURE__ */ import_react18.default.createElement(
+    "a",
+    {
+      href: "/transactions/",
+      className: "inline-flex h-9 items-center justify-center rounded-xl bg-white/[0.06] hover:bg-white/10 px-4 text-xs font-bold text-slate-200 border border-white/10 transition"
+    },
+    "Full Ledger View \u2192"
+  )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-3 pt-1" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap gap-1.5 rounded-2xl border border-white/10 bg-white/[0.03] p-1" }, [
+    { id: "All", label: "All Transactions" },
+    { id: "In-Escrow", label: "In Active Escrow" },
+    { id: "Completed", label: "Completed Transfers" },
+    { id: "Disputed", label: "Disputes & Holds" },
+    { id: "Refunded", label: "Refunded" }
+  ].map((f) => /* @__PURE__ */ import_react18.default.createElement(
+    "button",
+    {
+      key: f.id,
+      type: "button",
+      onClick: () => setStatusFilter(f.id),
+      className: `rounded-xl px-3 py-1 text-xs font-bold transition ${statusFilter === f.id ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm" : "text-slate-400 hover:text-white"}`
+    },
+    f.label
+  ))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react18.default.createElement(Search, { className: "absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-500" }), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      placeholder: "Search parcel, buyer, seller...",
+      value: searchQuery,
+      onChange: (e) => setSearchQuery(e.target.value),
+      className: "h-9 w-64 rounded-xl border border-white/15 bg-white/[0.04] pl-9 pr-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-500"
+    }
+  )))), feedbackMsg && /* @__PURE__ */ import_react18.default.createElement(
+    "div",
+    {
+      className: `rounded-2xl p-4 text-xs font-bold flex items-center gap-2 ${feedbackMsg.type === "success" ? "border border-emerald-500/40 bg-emerald-500/10 text-emerald-300" : feedbackMsg.type === "warning" ? "border border-amber-500/40 bg-amber-500/10 text-amber-300" : "border border-rose-500/40 bg-rose-500/10 text-rose-300"}`
+    },
+    /* @__PURE__ */ import_react18.default.createElement(Info, { className: "h-4 w-4 shrink-0" }),
+    feedbackMsg.text
+  ), filtered.length === 0 ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/[0.08] bg-[#080b14] p-12 text-center text-slate-400 space-y-3" }, /* @__PURE__ */ import_react18.default.createElement(ReceiptText, { className: "mx-auto h-8 w-8 text-slate-600" }), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-bold text-slate-200" }, "No transactions found."), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-500 max-w-sm mx-auto" }, "No escrow transactions matching the selected filter or search term.")) : /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4" }, filtered.map((tx) => {
+    const rawStatus = tx.raw_status || tx.status;
+    const isCompleted = rawStatus === "Completed";
+    const isDisputed = rawStatus === "Disputed" || rawStatus === "Verification_Hiatus";
+    const isRefunded = rawStatus === "Refunded";
+    const isInEscrow = ["Deposit_Paid", "Under_Verification", "Initiated"].includes(rawStatus);
+    return /* @__PURE__ */ import_react18.default.createElement(
+      "div",
+      {
+        key: tx.id,
+        className: "rounded-3xl border border-white/10 bg-[#080c16] p-6 space-y-4 shadow-md transition hover:border-white/20"
+      },
+      /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.06] pb-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 font-black border border-emerald-500/20" }, /* @__PURE__ */ import_react18.default.createElement(ReceiptText, { className: "h-5 w-5" })), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-black text-sm text-white" }, "Parcel ", tx.parcel_number), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-400" }, "Ref: ", /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-mono" }, tx.id), " \xB7 Created: ", tx.created_at))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(
+        "span",
+        {
+          className: `inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black uppercase ${isCompleted ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : isDisputed ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : isRefunded ? "bg-rose-500/20 text-rose-300 border border-rose-500/30" : "bg-blue-500/20 text-blue-300 border border-blue-500/30"}`
+        },
+        tx.status
+      ), tx.is_joint_purchase && /* @__PURE__ */ import_react18.default.createElement("span", { className: "rounded-full bg-purple-500/20 px-2.5 py-1 text-[9px] font-bold text-purple-300 border border-purple-500/30" }, "Joint Purchase"))),
+      /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid gap-3 sm:grid-cols-4 rounded-2xl bg-white/[0.02] p-3.5 border border-white/[0.04] text-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-400 uppercase font-bold" }, "Agreed Land Price"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-black text-white" }, money3(tx.amount))), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-emerald-400 uppercase font-bold" }, "Platform Escrow Fee (2%)"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-black text-emerald-400" }, money3(tx.escrow_fee || Number(tx.amount || 0) * 0.02))), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-blue-400 uppercase font-bold" }, "Seller Net Payout"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-black text-blue-300" }, money3(tx.seller_payout || Number(tx.amount || 0) * 0.98))), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-400 uppercase font-bold" }, "Parties"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] text-slate-300 truncate" }, "Buyer: ", /* @__PURE__ */ import_react18.default.createElement("strong", null, tx.buyer_email)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] text-slate-300 truncate" }, "Seller: ", /* @__PURE__ */ import_react18.default.createElement("strong", null, tx.seller_email)))),
+      /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-3 pt-1" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(
+        "a",
+        {
+          href: tx.action_url || `/transactions/`,
+          className: "inline-flex h-8 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] px-3.5 text-[11px] font-bold text-slate-200 hover:bg-white/10 transition gap-1"
+        },
+        /* @__PURE__ */ import_react18.default.createElement(FilePenLine, { className: "h-3.5 w-3.5" }),
+        "View Contract"
+      ), /* @__PURE__ */ import_react18.default.createElement(
+        "a",
+        {
+          href: `/messages/?partner=${encodeURIComponent(tx.buyer_email || "")}`,
+          className: "inline-flex h-8 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] px-3 text-[11px] font-bold text-slate-300 hover:bg-white/10 transition gap-1"
+        },
+        /* @__PURE__ */ import_react18.default.createElement(MessageSquare, { className: "h-3.5 w-3.5" }),
+        "Message Buyer"
+      )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center gap-2" }, isInEscrow && /* @__PURE__ */ import_react18.default.createElement(import_react18.default.Fragment, null, /* @__PURE__ */ import_react18.default.createElement(
+        "button",
+        {
+          type: "button",
+          disabled: actionInProgress === tx.id,
+          onClick: () => handleAction(
+            tx.id,
+            tx.release_url,
+            `Release escrow payout of KES ${tx.amount} to seller and finalize land transfer for Parcel ${tx.parcel_number}?`
+          ),
+          className: "h-8 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 px-4 text-[11px] font-black text-slate-950 shadow-md shadow-emerald-500/20 hover:scale-[1.02] transition flex items-center gap-1.5 disabled:opacity-50"
+        },
+        /* @__PURE__ */ import_react18.default.createElement(CircleCheck, { className: "h-3.5 w-3.5" }),
+        "Release Escrow Payout"
+      ), /* @__PURE__ */ import_react18.default.createElement(
+        "button",
+        {
+          type: "button",
+          disabled: actionInProgress === tx.id,
+          onClick: () => handleAction(
+            tx.id,
+            tx.freeze_url,
+            `Place transaction for Parcel ${tx.parcel_number} into Dispute / Investigation Hiatus?`
+          ),
+          className: "h-8 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 text-[11px] font-bold text-amber-300 hover:bg-amber-500/20 transition disabled:opacity-50"
+        },
+        "Freeze / Dispute Hold"
+      ), /* @__PURE__ */ import_react18.default.createElement(
+        "button",
+        {
+          type: "button",
+          disabled: actionInProgress === tx.id,
+          onClick: () => handleAction(
+            tx.id,
+            tx.refund_url,
+            `Refund escrow deposit for Parcel ${tx.parcel_number} back to buyer ${tx.buyer_email}?`
+          ),
+          className: "h-8 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 text-[11px] font-bold text-rose-300 hover:bg-rose-500/20 transition disabled:opacity-50"
+        },
+        "Refund Buyer"
+      )), isDisputed && /* @__PURE__ */ import_react18.default.createElement(import_react18.default.Fragment, null, /* @__PURE__ */ import_react18.default.createElement(
+        "button",
+        {
+          type: "button",
+          disabled: actionInProgress === tx.id,
+          onClick: () => handleAction(
+            tx.id,
+            tx.unfreeze_url,
+            `Lift dispute hold and resume escrow for Parcel ${tx.parcel_number}?`
+          ),
+          className: "h-8 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 text-[11px] font-bold text-white shadow-md hover:scale-[1.02] transition disabled:opacity-50"
+        },
+        "Lift Dispute Hold"
+      ), /* @__PURE__ */ import_react18.default.createElement(
+        "button",
+        {
+          type: "button",
+          disabled: actionInProgress === tx.id,
+          onClick: () => handleAction(
+            tx.id,
+            tx.refund_url,
+            `Refund disputed deposit for Parcel ${tx.parcel_number} back to buyer?`
+          ),
+          className: "h-8 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 text-[11px] font-bold text-rose-300 hover:bg-rose-500/20 transition disabled:opacity-50"
+        },
+        "Refund Buyer"
+      )), isCompleted && /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[11px] font-bold text-emerald-400 flex items-center gap-1" }, /* @__PURE__ */ import_react18.default.createElement(CircleCheck, { className: "h-3.5 w-3.5" }), " Payout Fully Disbursed"), isRefunded && /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-[11px] font-bold text-slate-400" }, "Refund Processed & Archived")))
+    );
+  })));
 }
 function ParcelListPage() {
   return /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react18.default.createElement(
@@ -34469,6 +34817,14 @@ lucide-react/dist/esm/icons/heart.js:
    *)
 
 lucide-react/dist/esm/icons/house.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
+lucide-react/dist/esm/icons/info.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *

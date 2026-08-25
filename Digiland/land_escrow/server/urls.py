@@ -44,6 +44,11 @@ urlpatterns = [
     path('admin/staff/provision/', views.admin_provision_professional, name='admin_provision_professional'),
     path('admin/staff/<uuid:user_id>/verify/', views.admin_verify_professional, name='admin_verify_professional'),
     path('admin/staff/<uuid:user_id>/toggle-status/', views.admin_toggle_professional_status, name='admin_toggle_professional_status'),
+    path('admin/staff/<uuid:user_id>/disburse-payout/', views.admin_disburse_staff_payout, name='admin_disburse_staff_payout'),
+    path('admin/transaction/<uuid:transaction_id>/release/', views.admin_release_escrow, name='admin_release_escrow'),
+    path('admin/transaction/<uuid:transaction_id>/refund/', views.admin_refund_escrow, name='admin_refund_escrow'),
+    path('admin/transaction/<uuid:transaction_id>/freeze/', views.admin_freeze_transaction, name='admin_freeze_transaction'),
+    path('admin/transaction/<uuid:transaction_id>/unfreeze/', views.admin_unfreeze_transaction, name='admin_unfreeze_transaction'),
     path('agent/transaction/<uuid:transaction_id>/finalize/', views.agent_finalize_transaction, name='agent_finalize_transaction'),
 
     path('agent/escrow-release/', views.escrow_release, name='escrow_release'),

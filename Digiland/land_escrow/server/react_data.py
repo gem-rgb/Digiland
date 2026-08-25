@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django import forms as django_forms
 from django.contrib.messages import get_messages
 from django.urls import reverse
@@ -185,16 +186,32 @@ def serialize_transaction(tx, user=None):
         signing_token = signer.sign(str(tx.id))
         action_url = reverse('frontend:contract_sign_fullpage', args=[signing_token])
 
+    buyer_email = tx.buyer.email if getattr(tx, 'buyer', None) else 'N/A'
+    seller_email = tx.seller.email if getattr(tx, 'seller', None) else 'N/A'
+    escrow_fee = float(tx.escrow_fee or (tx.agreed_price * Decimal('0.02') if tx.agreed_price else 0))
+    total_payable = float(tx.total_payable or tx.agreed_price or 0)
+    seller_payout = float((tx.agreed_price or 0) - Decimal(escrow_fee))
+
     return {
         'id': str(tx.id),
-        'parcel_number': tx.land_parcel.parcel_number,
+        'parcel_number': tx.land_parcel.parcel_number if tx.land_parcel else 'N/A',
         'role_label': role_label,
         'amount': str(tx.agreed_price),
+        'escrow_fee': escrow_fee,
+        'total_payable': total_payable,
+        'seller_payout': seller_payout,
+        'buyer_email': buyer_email,
+        'seller_email': seller_email,
         'status': tx.get_status_display() if hasattr(tx, 'get_status_display') else tx.status,
+        'raw_status': tx.status,
         'status_tone': status_tone,
-        'created_at': tx.created_at.strftime('%b %d, %Y'),
+        'created_at': tx.created_at.strftime('%b %d, %Y') if getattr(tx, 'created_at', None) else 'N/A',
         'action_label': action_label,
         'action_url': action_url,
+        'release_url': reverse('frontend:admin_release_escrow', args=[tx.id]),
+        'refund_url': reverse('frontend:admin_refund_escrow', args=[tx.id]),
+        'freeze_url': reverse('frontend:admin_freeze_transaction', args=[tx.id]),
+        'unfreeze_url': reverse('frontend:admin_unfreeze_transaction', args=[tx.id]),
         'is_joint_purchase': bool(getattr(tx, 'is_joint_purchase', False)),
         'joint_label': 'Joint' if getattr(tx, 'is_joint_purchase', False) else '',
     }
