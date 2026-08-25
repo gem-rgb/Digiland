@@ -101,13 +101,12 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
                 return reverse('frontend:buyer_dashboard')
             if user.role == 'Seller':
                 return reverse('frontend:seller_dashboard')
+            if user.role == 'Lawyer':
+                return reverse('frontend:agent_dashboard')
             if user.role == 'Agent':
-                # Agents should never reach here via public login (blocked in
-                # pre_login). If they somehow do (e.g. direct API call),
-                # send them to the signup-complete gate.
-                return reverse('frontend:agent_signup_complete')
-            if user.role == 'Admin':
-                return '/admin/'
+                return reverse('frontend:agent_dashboard')
+            if user.role == 'Admin' or getattr(user, 'is_superuser', False) or getattr(user, 'is_staff', False):
+                return reverse('frontend:agent_dashboard')
             return reverse('frontend:parcel_list')
         return super().get_login_redirect_url(request)
 
@@ -170,35 +169,8 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
 
     def pre_login(self, request, user, **kwargs):
         """
-        Routing rules for /accounts/login/ (the public login page):
-          - Admin:              ALWAYS blocked -> must use dedicated Control Plane
-          - Agent (any state):  ALWAYS blocked -> must use /staff/login/
-          - Buyer / Seller:     ALWAYS allowed
+        Pre-login checks for email verification.
         """
-        role = getattr(user, 'role', None)
-        is_admin = role == 'Admin' or getattr(user, 'is_superuser', False)
-
-        if is_admin and '/accounts/login' in request.path:
-            from allauth.exceptions import ImmediateHttpResponse
-            from django.contrib import messages
-            messages.error(
-                request,
-                "Administrative accounts are strictly prohibited from logging in on public portals. Please use the dedicated Administrative Control Plane."
-            )
-            request.session['admin_blocked'] = True
-            raise ImmediateHttpResponse(
-                redirect(reverse('account_login'))
-            )
-
-        block = role == 'Agent'
-
-        if block and '/accounts/login' in request.path:
-            from allauth.exceptions import ImmediateHttpResponse
-            request.session['staff_blocked'] = True
-            raise ImmediateHttpResponse(
-                redirect(reverse('frontend:staff_login'))
-            )
-
         if '/accounts/login' in request.path and getattr(user, "is_authenticated", False):
             if not getattr(user, "is_email_verified", False):
                 self._maybe_start_pending_session(request, user, flow="allauth-login")

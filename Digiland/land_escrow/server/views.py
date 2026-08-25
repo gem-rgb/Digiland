@@ -528,45 +528,49 @@ def logout_to_staff_login(request):
     return redirect(reverse('frontend:agent_onboarding'))
 
 def staff_login(request):
-    """Hidden staff-only login portal for Admin and Agent roles."""
+    """Staff & Administrative login portal for Admin, Lawyer, and Agent roles."""
     from django.contrib.auth import authenticate, login as auth_login
 
-    # Consume the "blocked from public login" session flag set by the adapter
+    # Consume session message
     error = None
     if request.session.pop('staff_blocked', False):
-        error = 'Staff accounts must authenticate through this portal only.'
+        error = 'Staff accounts can authenticate through this portal.'
 
     if request.user.is_authenticated:
         if request.user.role in STAFF_ROLES:
-            return redirect('frontend:home')
+            return redirect('frontend:agent_dashboard')
         return redirect('frontend:parcel_list')
 
     if request.method == 'POST':
-        email = request.POST.get('email', '').strip()
+        email = request.POST.get('email', '').strip().lower()
         password = request.POST.get('password', '').strip()
         user = authenticate(request, email=email, password=password)
 
         if user is None:
-            error = 'Invalid credentials. Please try again.'
-        elif getattr(user, 'role', None) == 'Admin' or getattr(user, 'is_superuser', False):
-            from core.auth_services import AuditService
-            AuditService.log_event("ADMIN_LOGIN_BLOCKED_ON_STAFF_PORTAL", user=user, ip_address=request.META.get('REMOTE_ADDR', ''))
-            error = 'Administrative accounts cannot log in via the Staff Portal. Please access the dedicated Administrative Control Plane.'
-        elif getattr(user, 'role', None) != 'Agent':
-            error = 'This portal is restricted to licensed Agent accounts only.'
+            error = 'Invalid credentials. Please verify your email and password.'
         elif not user.is_active:
             error = 'Your account has been deactivated. Contact the system administrator.'
         else:
+            role = getattr(user, 'role', None)
+            is_admin = role == 'Admin' or getattr(user, 'is_superuser', False) or getattr(user, 'is_staff', False)
+
             auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            if not user.is_identity_verified:
-                # Check if KYC docs have already been submitted
-                try:
-                    if user.kyc_application.kyc_submitted:
-                        return redirect('frontend:agent_onboarding')
-                except Exception:
-                    pass
-                return redirect('frontend:ai_kyc')
-            return redirect('frontend:agent_dashboard')
+
+            if is_admin:
+                return redirect('frontend:agent_dashboard')
+            elif role == 'Lawyer':
+                return redirect('frontend:agent_dashboard')
+            elif role == 'Agent':
+                if not user.is_identity_verified:
+                    try:
+                        if user.kyc_application.kyc_submitted:
+                            return redirect('frontend:agent_onboarding')
+                    except Exception:
+                        pass
+                    return redirect('frontend:ai_kyc')
+                return redirect('frontend:agent_dashboard')
+            else:
+                return redirect('frontend:agent_dashboard')
 
     # Consume the "just signed up" session flag set by agent_signup_complete
     signup_success = request.session.pop('agent_signup_success', False)
