@@ -2653,6 +2653,24 @@ function MessagesPage() {
     return page.threads || [];
   }, [page]);
 
+  // Preset official protocol channels
+  const officialChannels = [
+    { id: 'general-escrow', name: 'general-escrow', topic: 'General escrow protocol questions, platform updates, and announcements' },
+    { id: 'verification-desk', name: 'verification-desk', topic: 'Title deed searches, survey checks, and Ministry of Lands registry validation' },
+    { id: 'legal-conveyancing', name: 'legal-conveyancing', topic: 'Advocate conveyancing milestones, LCB consent, and stamp duty clearance' },
+  ];
+
+  const quickPrompts = [
+    'Hello, could you provide an update on the parcel verification status?',
+    'I have uploaded the title search deed and survey maps.',
+    'Could we review the latest escrow milestone agreement?',
+    'What is the next step for advocate conveyancing approval?',
+  ];
+
+  const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
+  const isChannelMode = Boolean(activeChannelId);
+  const currentChannel = officialChannels.find((c) => c.id === activeChannelId);
+
   const [threads, setThreads] = useState(initialThreads);
   const [selectedPartnerEmail, setSelectedPartnerEmail] = useState<string>(
     initialThreads[0]?.partner?.email || (page.allowed_recipients && page.allowed_recipients[0]?.email) || 'support@digiland.co.ke'
@@ -2665,6 +2683,8 @@ function MessagesPage() {
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
   const [newChatEmail, setNewChatEmail] = useState('');
   const [newChatRole, setNewChatRole] = useState('single');
+  const [modalSearch, setModalSearch] = useState('');
+  const [modalRoleFilter, setModalRoleFilter] = useState<'All' | 'Lawyer' | 'Agent' | 'Seller' | 'Buyer' | 'Admin'>('All');
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
   // Active thread lookup
@@ -2706,9 +2726,6 @@ function MessagesPage() {
       return true;
     });
   }, [threads, searchQuery, roleFilter]);
-
-  const [modalSearch, setModalSearch] = useState('');
-  const [modalRoleFilter, setModalRoleFilter] = useState<'All' | 'Lawyer' | 'Agent' | 'Seller' | 'Buyer' | 'Admin'>('All');
 
   // Background polling for real-time back-and-forth messaging updates
   useEffect(() => {
@@ -2859,26 +2876,6 @@ function MessagesPage() {
     else if (role === 'Buyer') bg = 'bg-gradient-to-tr from-teal-600 to-emerald-600 text-white shadow-teal-500/20';
     return { initial, bg };
   };
-
-  // Preset official protocol channels
-  const officialChannels = [
-    { id: 'general-escrow', name: 'general-escrow', topic: 'General escrow protocol questions, platform updates, and announcements' },
-    { id: 'verification-desk', name: 'verification-desk', topic: 'Title deed searches, survey checks, and Ministry of Lands registry validation' },
-    { id: 'legal-conveyancing', name: 'legal-conveyancing', topic: 'Advocate conveyancing milestones, LCB consent, and stamp duty clearance' },
-  ];
-
-  const quickPrompts = [
-    'Hello, could you provide an update on the parcel verification status?',
-    'I have uploaded the title search deed and survey maps.',
-    'Could we review the latest escrow milestone agreement?',
-    'What is the next step for advocate conveyancing approval?',
-  ];
-
-  const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
-
-  // If a channel is active vs a direct message partner
-  const isChannelMode = Boolean(activeChannelId);
-  const currentChannel = officialChannels.find((c) => c.id === activeChannelId);
 
   const safeRecipientName = selectedRecipient?.name || (selectedRecipient?.email ? selectedRecipient.email.split('@')[0] : 'Escrow Desk');
   const safeRecipientEmail = selectedRecipient?.email || 'support@digiland.co.ke';
