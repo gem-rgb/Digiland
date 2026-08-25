@@ -41,6 +41,9 @@ urlpatterns = [
     path('agent/parcel/<path:parcel_number>/verify/', views.agent_verify_parcel, name='agent_verify_parcel'),
     path('agent/parcel/<path:parcel_number>/checkin/', views.agent_submit_checkin, name='agent_submit_checkin'),
     path('admin/parcel/<path:parcel_number>/extend-job/', views.admin_extend_job_posting, name='admin_extend_job_posting'),
+    path('admin/staff/provision/', views.admin_provision_professional, name='admin_provision_professional'),
+    path('admin/staff/<uuid:user_id>/verify/', views.admin_verify_professional, name='admin_verify_professional'),
+    path('admin/staff/<uuid:user_id>/toggle-status/', views.admin_toggle_professional_status, name='admin_toggle_professional_status'),
     path('agent/transaction/<uuid:transaction_id>/finalize/', views.agent_finalize_transaction, name='agent_finalize_transaction'),
 
     path('agent/escrow-release/', views.escrow_release, name='escrow_release'),

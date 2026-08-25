@@ -24215,6 +24215,13 @@ var Upload = createLucideIcon("Upload", [
   ["line", { x1: "12", x2: "12", y1: "3", y2: "15", key: "widbto" }]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/user-check.js
+var UserCheck = createLucideIcon("UserCheck", [
+  ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
+  ["circle", { cx: "9", cy: "7", r: "4", key: "nufk8" }],
+  ["polyline", { points: "16 11 18 13 22 9", key: "1pwet4" }]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/user-plus.js
 var UserPlus = createLucideIcon("UserPlus", [
   ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", key: "1yyitq" }],
@@ -31070,6 +31077,7 @@ function DashboardPage() {
     ],
     Admin: [
       { id: "overview", name: "overview", icon: LayoutDashboard },
+      { id: "professionals", name: "staff-provisioning", icon: UserCheck, badge: `${(bootstrap.professionals || []).length || ""}` },
       { id: "transactions", name: "escrow-reserves", icon: ReceiptText },
       { id: "commissions", name: "kyc-approvals", icon: ShieldAlert },
       { id: "parcels", name: "all-parcels", icon: Grid2x2 },
@@ -31177,7 +31185,359 @@ function DashboardPage() {
       className: "inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold px-5 text-xs shadow-lg"
     },
     "Manage Boost Campaigns"
-  )) : /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/40 to-[#080c16] p-6 text-left space-y-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-emerald-300 border border-emerald-500/30" }, "Buyer Exclusive"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-xs text-slate-400" }, "Zero-Fraud Escrow Guarantee")), /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-base font-black text-white" }, "Verified Title Deed Listings with Subsidized Legal Clearance"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-300 max-w-2xl leading-relaxed" }, "All promoted parcels feature pre-verified Ministry of Lands search certificates, beacon survey validation, and discounted advocate conveyancing fees.")), /* @__PURE__ */ import_react18.default.createElement(ParcelGrid, null))))));
+  )) : /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/40 to-[#080c16] p-6 text-left space-y-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-emerald-300 border border-emerald-500/30" }, "Buyer Exclusive"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-xs text-slate-400" }, "Zero-Fraud Escrow Guarantee")), /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-base font-black text-white" }, "Verified Title Deed Listings with Subsidized Legal Clearance"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-300 max-w-2xl leading-relaxed" }, "All promoted parcels feature pre-verified Ministry of Lands search certificates, beacon survey validation, and discounted advocate conveyancing fees.")), /* @__PURE__ */ import_react18.default.createElement(ParcelGrid, null))), activeTab === "professionals" && /* @__PURE__ */ import_react18.default.createElement(AdminStaffProvisioningView, null))));
+}
+function AdminStaffProvisioningView() {
+  const [roleToCreate, setRoleToCreate] = (0, import_react18.useState)("Lawyer");
+  const [fullName, setFullName] = (0, import_react18.useState)("");
+  const [email, setEmail] = (0, import_react18.useState)("");
+  const [phone, setPhone] = (0, import_react18.useState)("");
+  const [password, setPassword] = (0, import_react18.useState)("Digiland@2026");
+  const [nationalId, setNationalId] = (0, import_react18.useState)("");
+  const [kraPin, setKraPin] = (0, import_react18.useState)("");
+  const [county, setCounty] = (0, import_react18.useState)("Nairobi");
+  const [lawFirmName, setLawFirmName] = (0, import_react18.useState)("");
+  const [lskNumber, setLskNumber] = (0, import_react18.useState)("");
+  const [practicingCert, setPracticingCert] = (0, import_react18.useState)("");
+  const [yearOfAdmission, setYearOfAdmission] = (0, import_react18.useState)("2020");
+  const [agencyName, setAgencyName] = (0, import_react18.useState)("");
+  const [earbNumber, setEarbNumber] = (0, import_react18.useState)("");
+  const [goodConductNumber, setGoodConductNumber] = (0, import_react18.useState)("");
+  const [isSubmitting, setIsSubmitting] = (0, import_react18.useState)(false);
+  const [formError, setFormError] = (0, import_react18.useState)(null);
+  const [formSuccess, setFormSuccess] = (0, import_react18.useState)(null);
+  const [professionalsList, setProfessionalsList] = (0, import_react18.useState)(bootstrap.professionals || []);
+  const [searchQuery, setSearchQuery] = (0, import_react18.useState)("");
+  const [roleFilter, setRoleFilter] = (0, import_react18.useState)("All");
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setFormError(null);
+    setFormSuccess(null);
+    const payload = {
+      role: roleToCreate,
+      full_name: fullName,
+      email,
+      phone_number: phone,
+      password,
+      national_id: nationalId,
+      kra_pin: kraPin,
+      county,
+      law_firm_name: lawFirmName,
+      lsk_number: lskNumber,
+      practicing_cert_number: practicingCert,
+      year_of_admission: yearOfAdmission,
+      agency_name: agencyName,
+      earb_number: earbNumber,
+      good_conduct_number: goodConductNumber
+    };
+    try {
+      const resp = await fetch(bootstrap.provision_action || "/admin/staff/provision/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-CSRFToken": bootstrap.csrf_token || ""
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data.error || "Failed to provision staff account");
+      }
+      setFormSuccess(data.message || `Successfully created and verified ${roleToCreate} account for ${fullName}!`);
+      if (data.user) {
+        setProfessionalsList((prev) => [data.user, ...prev]);
+      }
+      setFullName("");
+      setEmail("");
+      setPhone("");
+      setNationalId("");
+      setKraPin("");
+      setLawFirmName("");
+      setLskNumber("");
+      setPracticingCert("");
+      setAgencyName("");
+      setEarbNumber("");
+      setGoodConductNumber("");
+    } catch (err) {
+      setFormError(err.message || "An error occurred while provisioning professional.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  const handleVerify = async (profId, verifyUrl) => {
+    try {
+      const resp = await fetch(verifyUrl || `/admin/staff/${profId}/verify/`, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "X-CSRFToken": bootstrap.csrf_token || ""
+        }
+      });
+      if (resp.ok) {
+        setProfessionalsList(
+          (prev) => prev.map((p) => p.id === profId ? { ...p, is_verified: true, is_active: true } : p)
+        );
+      }
+    } catch {
+    }
+  };
+  const handleToggleStatus = async (profId, toggleUrl) => {
+    try {
+      const resp = await fetch(toggleUrl || `/admin/staff/${profId}/toggle-status/`, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "X-CSRFToken": bootstrap.csrf_token || ""
+        }
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        setProfessionalsList(
+          (prev) => prev.map((p) => p.id === profId ? { ...p, is_active: data.is_active } : p)
+        );
+      }
+    } catch {
+    }
+  };
+  const filtered = professionalsList.filter((p) => {
+    if (roleFilter !== "All" && p.role !== roleFilter) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const match = p.name && p.name.toLowerCase().includes(q) || p.email && p.email.toLowerCase().includes(q) || p.county && p.county.toLowerCase().includes(q) || p.firm_or_agency && p.firm_or_agency.toLowerCase().includes(q) || p.lsk_number && p.lsk_number.toLowerCase().includes(q) || p.earb_number && p.earb_number.toLowerCase().includes(q);
+      if (!match) return false;
+    }
+    return true;
+  });
+  return /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/10 bg-gradient-to-r from-[#0c1427] via-[#0d1b2a] to-[#080d18] p-6 space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-400" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-4 w-4" }), "Admin Command Control Panel \u2022 Staff Authority"), /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-xl font-black text-white" }, "Staff & Professional Onboarding & Verification"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-400 max-w-2xl" }, "Directly provision, verify, and authorize Advocates / Conveyancing Lawyers and Licensed Real Estate Agents. Admin-verified staff accounts are pre-cleared for escrow conveyancing and site inspections without 2FA friction.")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-center" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] font-bold text-slate-400" }, "Total Staff & Pros"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-lg font-black text-white" }, professionalsList.length)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-2.5 text-center" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] font-bold text-emerald-400" }, "Verified & Active"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-lg font-black text-emerald-400" }, professionalsList.filter((p) => p.is_verified && p.is_active).length))))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/10 bg-[#080c16] p-6 space-y-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.08] pb-4" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-base font-black text-white" }, "Provision New Professional Account"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-400" }, "Select the professional role and enter all statutory Kenyan credentials.")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center rounded-2xl border border-white/15 bg-white/[0.03] p-1" }, /* @__PURE__ */ import_react18.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => {
+        setRoleToCreate("Lawyer");
+        setFormError(null);
+        setFormSuccess(null);
+      },
+      className: `flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black transition-all ${roleToCreate === "Lawyer" ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20" : "text-slate-400 hover:text-white"}`
+    },
+    /* @__PURE__ */ import_react18.default.createElement(Gavel, { className: "h-4 w-4" }),
+    "Conveyancing Lawyer / Advocate"
+  ), /* @__PURE__ */ import_react18.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => {
+        setRoleToCreate("Agent");
+        setFormError(null);
+        setFormSuccess(null);
+      },
+      className: `flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black transition-all ${roleToCreate === "Agent" ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-lg shadow-emerald-500/20" : "text-slate-400 hover:text-white"}`
+    },
+    /* @__PURE__ */ import_react18.default.createElement(Briefcase, { className: "h-4 w-4" }),
+    "Licensed Real Estate Agent"
+  ))), formSuccess && /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-3 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-xs text-emerald-300" }, /* @__PURE__ */ import_react18.default.createElement(CircleCheck, { className: "h-5 w-5 shrink-0 text-emerald-400" }), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold" }, "Account Successfully Provisioned: "), formSuccess)), formError && /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-3 rounded-2xl border border-rose-500/40 bg-rose-500/10 p-4 text-xs text-rose-300" }, /* @__PURE__ */ import_react18.default.createElement(TriangleAlert, { className: "h-5 w-5 shrink-0 text-rose-400" }), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold" }, "Provisioning Error: "), formError)), /* @__PURE__ */ import_react18.default.createElement("form", { onSubmit: handleCreate, className: "space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "block text-[11px] font-bold text-slate-400 mb-1" }, roleToCreate === "Lawyer" ? "Advocate Full Legal Name *" : "Agent Full Legal Name *"), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      required: true,
+      value: fullName,
+      onChange: (e) => setFullName(e.target.value),
+      placeholder: roleToCreate === "Lawyer" ? "e.g. Adv. Mwangi Kamau" : "e.g. Grace Wanjiru Mutua",
+      className: "h-10 w-full rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+    }
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "block text-[11px] font-bold text-slate-400 mb-1" }, "Official Email Address *"), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "email",
+      required: true,
+      value: email,
+      onChange: (e) => setEmail(e.target.value),
+      placeholder: "e.g. partner@lawfirm.co.ke",
+      className: "h-10 w-full rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+    }
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "block text-[11px] font-bold text-slate-400 mb-1" }, "Mobile Phone Number (+254...) *"), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      required: true,
+      value: phone,
+      onChange: (e) => setPhone(e.target.value),
+      placeholder: "+254712345678",
+      className: "h-10 w-full rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+    }
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "block text-[11px] font-bold text-slate-400 mb-1" }, "Initial Temporary Password *"), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      required: true,
+      value: password,
+      onChange: (e) => setPassword(e.target.value),
+      placeholder: "Digiland@2026",
+      className: "h-10 w-full rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+    }
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "block text-[11px] font-bold text-slate-400 mb-1" }, "National ID / Passport No. *"), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      required: true,
+      value: nationalId,
+      onChange: (e) => setNationalId(e.target.value),
+      placeholder: "e.g. 28471920",
+      className: "h-10 w-full rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+    }
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "block text-[11px] font-bold text-slate-400 mb-1" }, "KRA PIN Number *"), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      required: true,
+      value: kraPin,
+      onChange: (e) => setKraPin(e.target.value.toUpperCase()),
+      placeholder: "e.g. A009182374Z",
+      className: "h-10 w-full rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white placeholder:text-slate-500 outline-none uppercase focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+    }
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "block text-[11px] font-bold text-slate-400 mb-1" }, roleToCreate === "Lawyer" ? "Primary Practice County *" : "Assigned Operating County *"), /* @__PURE__ */ import_react18.default.createElement(
+    "select",
+    {
+      value: county,
+      onChange: (e) => setCounty(e.target.value),
+      className: "h-10 w-full rounded-xl border border-white/15 bg-[#0e1424] px-3 text-xs text-white outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+    },
+    ["Nairobi", "Kiambu", "Mombasa", "Nakuru", "Machakos", "Kajiado", "Uasin Gishu", "Kisumu", "Kilifi", "Laikipia", "Nyeri", "Murang'a", "National"].map((c) => /* @__PURE__ */ import_react18.default.createElement("option", { key: c, value: c, className: "bg-[#0e1424] text-white" }, c))
+  )), roleToCreate === "Lawyer" && /* @__PURE__ */ import_react18.default.createElement(import_react18.default.Fragment, null, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "block text-[11px] font-bold text-blue-300 mb-1" }, "Law Firm / Chambers Name *"), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      required: true,
+      value: lawFirmName,
+      onChange: (e) => setLawFirmName(e.target.value),
+      placeholder: "e.g. Bowmans / Kaplan & Stratton Advocates",
+      className: "h-10 w-full rounded-xl border border-blue-500/30 bg-blue-950/20 px-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+    }
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "block text-[11px] font-bold text-blue-300 mb-1" }, "LSK Roll / Admission No. (P105/...) *"), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      required: true,
+      value: lskNumber,
+      onChange: (e) => setLskNumber(e.target.value),
+      placeholder: "e.g. P105/18492/21",
+      className: "h-10 w-full rounded-xl border border-blue-500/30 bg-blue-950/20 px-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+    }
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "block text-[11px] font-bold text-blue-300 mb-1" }, "High Court Practicing Cert No. *"), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      required: true,
+      value: practicingCert,
+      onChange: (e) => setPracticingCert(e.target.value),
+      placeholder: "e.g. HC/PC/2026/0491",
+      className: "h-10 w-full rounded-xl border border-blue-500/30 bg-blue-950/20 px-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+    }
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "block text-[11px] font-bold text-blue-300 mb-1" }, "Year of Admission to the Bar"), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      value: yearOfAdmission,
+      onChange: (e) => setYearOfAdmission(e.target.value),
+      placeholder: "e.g. 2018",
+      className: "h-10 w-full rounded-xl border border-blue-500/30 bg-blue-950/20 px-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+    }
+  ))), roleToCreate === "Agent" && /* @__PURE__ */ import_react18.default.createElement(import_react18.default.Fragment, null, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "block text-[11px] font-bold text-emerald-300 mb-1" }, "Agency / Brokerage Firm Name *"), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      required: true,
+      value: agencyName,
+      onChange: (e) => setAgencyName(e.target.value),
+      placeholder: "e.g. HassConsult / Pam Golding Properties",
+      className: "h-10 w-full rounded-xl border border-emerald-500/30 bg-emerald-950/20 px-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+    }
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "block text-[11px] font-bold text-emerald-300 mb-1" }, "EARB Registration Number *"), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      required: true,
+      value: earbNumber,
+      onChange: (e) => setEarbNumber(e.target.value),
+      placeholder: "e.g. EARB/A-4921",
+      className: "h-10 w-full rounded-xl border border-emerald-500/30 bg-emerald-950/20 px-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+    }
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "block text-[11px] font-bold text-emerald-300 mb-1" }, "DCI Certificate of Good Conduct No. *"), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      required: true,
+      value: goodConductNumber,
+      onChange: (e) => setGoodConductNumber(e.target.value),
+      placeholder: "e.g. DCI/GCC/2026/9102",
+      className: "h-10 w-full rounded-xl border border-emerald-500/30 bg-emerald-950/20 px-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+    }
+  )))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2.5 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs text-slate-300" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-4 w-4 text-emerald-400 shrink-0" }), /* @__PURE__ */ import_react18.default.createElement("span", null, /* @__PURE__ */ import_react18.default.createElement("strong", { className: "text-emerald-300" }, "Direct Admin Authority: "), "This account will be created with pre-verified KYC status and active identity credentials. 2FA is skipped since verification is confirmed directly by the Admin.")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-end pt-2" }, /* @__PURE__ */ import_react18.default.createElement(
+    Button,
+    {
+      type: "submit",
+      disabled: isSubmitting,
+      className: `h-11 rounded-2xl px-6 text-xs font-black transition-all shadow-lg ${roleToCreate === "Lawyer" ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-blue-600/30 hover:scale-[1.02]" : "bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 shadow-emerald-500/30 hover:scale-[1.02]"}`
+    },
+    isSubmitting ? "Provisioning & Authorizing..." : /* @__PURE__ */ import_react18.default.createElement(import_react18.default.Fragment, null, /* @__PURE__ */ import_react18.default.createElement(UserCheck, { className: "mr-2 h-4 w-4" }), "Provision & Authorize ", roleToCreate === "Lawyer" ? "Advocate" : "Agent", " Account")
+  )))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/10 bg-[#080c16] p-6 space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.08] pb-4" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-base font-black text-white" }, "Active Staff & Professional Registry"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-400" }, "All verified Advocates, Conveyancing Lawyers, and Licensed Estate Agents.")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center rounded-xl border border-white/15 bg-white/[0.03] p-0.5 text-xs" }, ["All", "Lawyer", "Agent"].map((r2) => /* @__PURE__ */ import_react18.default.createElement(
+    "button",
+    {
+      key: r2,
+      type: "button",
+      onClick: () => setRoleFilter(r2),
+      className: `rounded-lg px-3 py-1.5 font-bold transition-all ${roleFilter === r2 ? "bg-emerald-500 text-slate-950" : "text-slate-400 hover:text-white"}`
+    },
+    r2 === "All" ? "All Staff" : `${r2}s`
+  ))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react18.default.createElement(Search, { className: "absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-500" }), /* @__PURE__ */ import_react18.default.createElement(
+    "input",
+    {
+      type: "text",
+      value: searchQuery,
+      onChange: (e) => setSearchQuery(e.target.value),
+      placeholder: "Search name, firm, LSK, EARB...",
+      className: "h-9 w-60 rounded-xl border border-white/15 bg-white/[0.04] pl-8 pr-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-500"
+    }
+  )))), filtered.length === 0 ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "py-12 text-center text-xs text-slate-500" }, "No professionals found matching the search criteria.") : /* @__PURE__ */ import_react18.default.createElement("div", { className: "overflow-x-auto" }, /* @__PURE__ */ import_react18.default.createElement("table", { className: "w-full text-left text-xs" }, /* @__PURE__ */ import_react18.default.createElement("thead", null, /* @__PURE__ */ import_react18.default.createElement("tr", { className: "border-b border-white/[0.06] text-[11px] font-bold uppercase tracking-wider text-slate-400" }, /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "Professional"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "Role"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "Firm / Agency"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "License / Roll No"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "County"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "Status"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3 text-right" }, "Actions"))), /* @__PURE__ */ import_react18.default.createElement("tbody", { className: "divide-y divide-white/[0.04]" }, filtered.map((prof) => /* @__PURE__ */ import_react18.default.createElement("tr", { key: prof.id, className: "hover:bg-white/[0.02] transition" }, /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-white" }, prof.name), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] text-slate-400" }, prof.email), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, prof.phone)), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3" }, /* @__PURE__ */ import_react18.default.createElement(
+    "span",
+    {
+      className: `inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[10px] font-black uppercase ${prof.role === "Lawyer" ? "bg-blue-500/20 text-blue-300 border border-blue-500/30" : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"}`
+    },
+    prof.role === "Lawyer" ? /* @__PURE__ */ import_react18.default.createElement(Gavel, { className: "h-3 w-3" }) : /* @__PURE__ */ import_react18.default.createElement(Briefcase, { className: "h-3 w-3" }),
+    prof.role
+  )), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-medium text-slate-200" }, prof.firm_or_agency || "Independent"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, "KRA: ", prof.kra_pin || "N/A")), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3" }, prof.role === "Lawyer" ? /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-mono text-[11px] text-blue-300" }, prof.lsk_number || "LSK Verified"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, prof.practicing_cert || "")) : /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-mono text-[11px] text-emerald-300" }, prof.earb_number || "EARB Verified"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, prof.good_conduct_number || ""))), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3 text-slate-300" }, prof.county || "National"), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-col gap-1" }, /* @__PURE__ */ import_react18.default.createElement(
+    "span",
+    {
+      className: `inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${prof.is_verified ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" : "bg-amber-500/15 text-amber-400 border border-amber-500/30"}`
+    },
+    /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-3 w-3" }),
+    prof.is_verified ? "Verified" : "Pending"
+  ), /* @__PURE__ */ import_react18.default.createElement("span", { className: `text-[10px] ${prof.is_active ? "text-slate-400" : "text-rose-400"}` }, prof.is_active ? "Active" : "Suspended"))), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3 text-right" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-end gap-2" }, !prof.is_verified && /* @__PURE__ */ import_react18.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => handleVerify(prof.id, prof.verify_url),
+      className: "rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-300 hover:bg-emerald-500/20"
+    },
+    "Verify"
+  ), /* @__PURE__ */ import_react18.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => handleToggleStatus(prof.id, prof.toggle_status_url),
+      className: `rounded-lg border px-2.5 py-1 text-[11px] font-bold transition ${prof.is_active ? "border-rose-500/40 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20" : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"}`
+    },
+    prof.is_active ? "Suspend" : "Activate"
+  ), /* @__PURE__ */ import_react18.default.createElement(
+    "a",
+    {
+      href: `/messages/?partner=${encodeURIComponent(prof.email)}`,
+      className: "rounded-lg border border-white/10 bg-white/[0.04] p-1.5 text-slate-300 hover:text-white hover:bg-white/10",
+      title: "Direct Message"
+    },
+    /* @__PURE__ */ import_react18.default.createElement(MessageSquare, { className: "h-3.5 w-3.5" })
+  ))))))))));
 }
 function ParcelListPage() {
   return /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react18.default.createElement(
@@ -34274,6 +34634,14 @@ lucide-react/dist/esm/icons/twitter.js:
    *)
 
 lucide-react/dist/esm/icons/upload.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
+lucide-react/dist/esm/icons/user-check.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *

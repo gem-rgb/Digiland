@@ -780,8 +780,8 @@ def render_lawyer_dashboard(request, context):
     )
 
 def render_admin_dashboard(request, context):
-    """Render full admin command centre."""
-    from core.models import User as CoreUser
+    """Render full admin command centre with staff provisioning and professional verification."""
+    from core.models import User as CoreUser, KYCProfile, AgentKYCApplication
     from django.db.models import Q
 
     # Admin can see all pending parcels and transactions
@@ -795,17 +795,38 @@ def render_admin_dashboard(request, context):
     ).order_by('created_at')
     pending_agents = CoreUser.objects.filter(role='Agent', is_identity_verified=False, is_active=True).order_by('date_joined')
     verified_agents = CoreUser.objects.filter(role='Agent', is_identity_verified=True, is_active=True).order_by('email')
+    all_lawyers = CoreUser.objects.filter(role='Lawyer').order_by('-date_joined')
+    all_agents = CoreUser.objects.filter(role='Agent').order_by('-date_joined')
     individual_buyers = CoreUser.objects.filter(role='Buyer', buyer_account_type='Individual', is_active=True).order_by('email')[:50]
 
-    context.update({
-        'pending_parcels': pending_parcels,
-        'completed_parcels': completed_parcels,
-        'pending_transactions': pending_transactions,
-        'pending_agents': pending_agents,
-        'verified_agents': verified_agents,
-        'individual_buyers': individual_buyers,
-        'pending_users': None,  # Admins don't need user approval section
-    })
+    # Serialize all professionals (Lawyers & Agents) for the Admin Provisioning & Verification center
+    professionals_data = []
+    for prof in list(all_lawyers) + list(all_agents):
+        kyc = getattr(prof, 'kyc_profile', None)
+        agent_kyc = getattr(prof, 'kyc_application', None)
+        audit_meta = kyc.audit_log if (kyc and isinstance(kyc.audit_log, dict)) else {}
+        professionals_data.append({
+            'id': str(prof.id),
+            'email': prof.email,
+            'name': prof.get_full_name() or prof.email.split('@')[0],
+            'phone': prof.phone_number or 'N/A',
+            'role': prof.role,
+            'id_number': prof.id_number or (kyc.id_number if kyc else None) or (agent_kyc.id_number if agent_kyc else None) or 'N/A',
+            'kra_pin': prof.kra_pin or (agent_kyc.kra_pin if agent_kyc else None) or 'N/A',
+            'county': prof.agent_county or audit_meta.get('county') or 'National',
+            'firm_or_agency': audit_meta.get('firm_or_agency') or audit_meta.get('law_firm_name') or audit_meta.get('agency_name') or 'Independent',
+            'lsk_number': audit_meta.get('lsk_number') or 'N/A',
+            'practicing_cert': audit_meta.get('practicing_cert') or 'N/A',
+            'earb_number': audit_meta.get('earb_number') or 'N/A',
+            'good_conduct_number': audit_meta.get('good_conduct_number') or 'N/A',
+            'year_of_admission': audit_meta.get('year_of_admission') or 'N/A',
+            'is_verified': prof.is_identity_verified,
+            'is_active': prof.is_active,
+            'date_joined': prof.date_joined.strftime('%b %d, %Y') if prof.date_joined else 'N/A',
+            'verify_url': reverse('frontend:admin_verify_professional', args=[prof.id]),
+            'toggle_status_url': reverse('frontend:admin_toggle_professional_status', args=[prof.id]),
+        })
+
     recent_transactions = [serialize_transaction(tx, request.user) for tx in pending_transactions[:10]]
 
     # Serialize pending agents with KYC details for the admin approval section
@@ -835,22 +856,222 @@ def render_admin_dashboard(request, context):
         request,
         'admin-dashboard',
         'Command Centre',
-        'Full system access for approvals, assignments, transactions, and messaging.',
+        'Full system access for staff provisioning, approvals, assignments, transactions, and messaging.',
         transactions=recent_transactions,
         pending_agent_applications=pending_agent_data,
         individual_buyers=individual_buyer_data,
+        professionals=professionals_data,
+        provision_action=reverse('frontend:admin_provision_professional'),
         stats=[
-            {'label': 'Pending parcels', 'value': str(pending_parcels.count()), 'tone': 'warning'},
-            {'label': 'Pending transactions', 'value': str(pending_transactions.count()), 'tone': 'accent'},
-            {'label': 'Pending agents', 'value': str(pending_agents.count()), 'tone': 'danger'},
-            {'label': 'Verified agents', 'value': str(verified_agents.count()), 'tone': 'success'},
+            {'label': 'Verified Lawyers', 'value': str(all_lawyers.filter(is_identity_verified=True).count()), 'tone': 'accent'},
+            {'label': 'Licensed Agents', 'value': str(all_agents.filter(is_identity_verified=True).count()), 'tone': 'success'},
+            {'label': 'Pending Parcels', 'value': str(pending_parcels.count()), 'tone': 'warning'},
+            {'label': 'Pending Escrow Tx', 'value': str(pending_transactions.count()), 'tone': 'secondary'},
         ],
         actions=[
-            {'label': 'Task management', 'href': reverse('frontend:task_management'), 'tone': 'outline'},
             {'label': 'Agent approvals', 'href': reverse('frontend:agent_approvals'), 'tone': 'outline'},
+            {'label': 'Task management', 'href': reverse('frontend:task_management'), 'tone': 'outline'},
             {'label': 'System admin', 'href': '/admin/', 'tone': 'secondary', 'external': True},
         ],
     )
+
+
+@login_required
+@user_passes_test(lambda u: u.is_authenticated and getattr(u, 'role', None) == 'Admin', login_url='/')
+def admin_provision_professional(request):
+    """Admin endpoint to create and instantly verify Lawyers and Agents without 2FA."""
+    import json
+    from django.http import JsonResponse
+    from core.models import User as CoreUser, KYCProfile, AgentKYCApplication, AuditLog
+    from core.auth_services import AuditService
+
+    is_ajax = request.headers.get('accept') == 'application/json' or request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json'
+
+    if request.method != 'POST':
+        return redirect('frontend:agent_dashboard')
+
+    if request.content_type == 'application/json':
+        try:
+            data = json.loads(request.body)
+        except Exception:
+            data = {}
+    else:
+        data = request.POST
+
+    role = data.get('role', 'Lawyer').strip()
+    if role not in ['Lawyer', 'Agent']:
+        role = 'Lawyer'
+
+    email = data.get('email', '').strip().lower()
+    full_name = data.get('full_name', '').strip()
+    phone_number = data.get('phone_number', '').strip()
+    password = data.get('password', '').strip()
+    national_id = data.get('national_id', '').strip()
+    kra_pin = data.get('kra_pin', '').strip().upper()
+    county = data.get('county', 'Nairobi').strip()
+
+    # Role specific metadata
+    law_firm_name = data.get('law_firm_name', '').strip()
+    lsk_number = data.get('lsk_number', '').strip()
+    practicing_cert_number = data.get('practicing_cert_number', '').strip()
+    year_of_admission = data.get('year_of_admission', '').strip()
+
+    agency_name = data.get('agency_name', '').strip()
+    earb_number = data.get('earb_number', '').strip()
+    good_conduct_number = data.get('good_conduct_number', '').strip()
+
+    if not email or not full_name or not password:
+        err_msg = 'Email, Full Name, and Password are required.'
+        if is_ajax:
+            return JsonResponse({'error': err_msg}, status=400)
+        django_messages.error(request, err_msg)
+        return redirect('frontend:agent_dashboard')
+
+    if CoreUser.objects.filter(email=email).exists():
+        err_msg = f'A user account with email {email} already exists.'
+        if is_ajax:
+            return JsonResponse({'error': err_msg}, status=400)
+        django_messages.error(request, err_msg)
+        return redirect('frontend:agent_dashboard')
+
+    # Split name into first and last name
+    name_parts = full_name.split(' ', 1)
+    first_name = name_parts[0]
+    last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+    try:
+        user = CoreUser.objects.create(
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            phone_number=phone_number or None,
+            id_number=national_id or None,
+            kra_pin=kra_pin or None,
+            role=role,
+            agent_county=county,
+            is_staff=True,
+            is_active=True,
+            is_identity_verified=True,
+            is_email_verified=True,
+            is_onboarded=True,
+        )
+        user.set_password(password)
+        user.save()
+
+        # Audit metadata
+        audit_meta = {
+            'provisioned_by_admin': request.user.email,
+            'role': role,
+            'county': county,
+            'firm_or_agency': law_firm_name if role == 'Lawyer' else agency_name,
+            'lsk_number': lsk_number if role == 'Lawyer' else None,
+            'practicing_cert': practicing_cert_number if role == 'Lawyer' else None,
+            'year_of_admission': year_of_admission if role == 'Lawyer' else None,
+            'earb_number': earb_number if role == 'Agent' else None,
+            'good_conduct_number': good_conduct_number if role == 'Agent' else None,
+            'timestamp': timezone.now().isoformat(),
+        }
+
+        # Setup KYC Profile as pre-approved
+        KYCProfile.objects.update_or_create(
+            user=user,
+            defaults={
+                'status': 'APPROVED',
+                'id_number': national_id,
+                'full_name': full_name,
+                'audit_log': audit_meta,
+            }
+        )
+
+        # If Agent, also approve AgentKYCApplication
+        if role == 'Agent':
+            AgentKYCApplication.objects.update_or_create(
+                agent=user,
+                defaults={
+                    'kra_pin': kra_pin or 'A000000000Z',
+                    'id_number': national_id or '00000000',
+                    'kyc_submitted': True,
+                    'status': 'Approved',
+                    'reviewed_at': timezone.now(),
+                }
+            )
+
+        AuditService.log_event(
+            f"ADMIN_PROVISIONED_{role.upper()}",
+            user=request.user,
+            details=f"Provisioned verified {role} {email} ({full_name})",
+            ip_address=request.META.get('REMOTE_ADDR', ''),
+        )
+
+        success_msg = f'Successfully provisioned verified {role}: {full_name} ({email}). Credentials active immediately.'
+        if is_ajax:
+            return JsonResponse({
+                'status': 'ok',
+                'message': success_msg,
+                'user': {
+                    'id': str(user.id),
+                    'email': user.email,
+                    'name': full_name,
+                    'role': role,
+                    'county': county,
+                    'firm_or_agency': law_firm_name if role == 'Lawyer' else agency_name,
+                    'is_verified': True,
+                    'is_active': True,
+                    'date_joined': 'Just now',
+                }
+            })
+        django_messages.success(request, success_msg)
+        return redirect('frontend:agent_dashboard')
+
+    except Exception as e:
+        err_msg = f'Failed to provision professional: {str(e)}'
+        if is_ajax:
+            return JsonResponse({'error': err_msg}, status=500)
+        django_messages.error(request, err_msg)
+        return redirect('frontend:agent_dashboard')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_authenticated and getattr(u, 'role', None) == 'Admin', login_url='/')
+def admin_verify_professional(request, user_id):
+    """Admin endpoint to verify an existing professional."""
+    from core.models import User as CoreUser, KYCProfile, AgentKYCApplication
+    is_ajax = request.headers.get('accept') == 'application/json' or request.headers.get('x-requested-with') == 'XMLHttpRequest'
+    prof = get_object_or_404(CoreUser, id=user_id, role__in=['Lawyer', 'Agent'])
+
+    prof.is_identity_verified = True
+    prof.is_active = True
+    prof.is_onboarded = True
+    prof.save()
+
+    KYCProfile.objects.filter(user=prof).update(status='APPROVED')
+    if prof.role == 'Agent':
+        AgentKYCApplication.objects.filter(agent=prof).update(status='Approved', kyc_submitted=True, reviewed_at=timezone.now())
+
+    msg = f'{prof.role} {prof.get_full_name() or prof.email} credentials verified and approved.'
+    if is_ajax:
+        return JsonResponse({'status': 'ok', 'message': msg, 'is_verified': True})
+    django_messages.success(request, msg)
+    return redirect('frontend:agent_dashboard')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_authenticated and getattr(u, 'role', None) == 'Admin', login_url='/')
+def admin_toggle_professional_status(request, user_id):
+    """Admin endpoint to suspend or reactivate a professional."""
+    from core.models import User as CoreUser
+    is_ajax = request.headers.get('accept') == 'application/json' or request.headers.get('x-requested-with') == 'XMLHttpRequest'
+    prof = get_object_or_404(CoreUser, id=user_id, role__in=['Lawyer', 'Agent'])
+
+    prof.is_active = not prof.is_active
+    prof.save(update_fields=['is_active'])
+
+    status_str = 'activated' if prof.is_active else 'suspended'
+    msg = f'{prof.role} {prof.email} has been {status_str}.'
+    if is_ajax:
+        return JsonResponse({'status': 'ok', 'message': msg, 'is_active': prof.is_active})
+    django_messages.success(request, msg)
+    return redirect('frontend:agent_dashboard')
 
 
 @login_required
