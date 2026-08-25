@@ -898,11 +898,36 @@ function DashboardPage() {
                 <Plus className="h-3.5 w-3.5" /> List Parcel
               </a>
             )}
-            {(isAdmin || isAgent || isLawyer) && (
+            {isAdmin ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('professionals')}
+                  className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-3.5 text-xs font-black transition shadow-md gap-1.5"
+                >
+                  <UserCheck className="h-3.5 w-3.5" /> Provision Staff
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('commissions')}
+                  className="hidden sm:inline-flex h-9 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] text-white px-3.5 text-xs font-bold transition gap-1.5"
+                >
+                  <ShieldAlert className="h-3.5 w-3.5 text-amber-400" /> KYC Approvals
+                </button>
+                <a
+                  href="/admin/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hidden md:inline-flex h-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-slate-300 px-3 text-xs font-bold transition gap-1"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" /> Django Admin
+                </a>
+              </>
+            ) : (isAgent || isLawyer) ? (
               <a href="/agent/approvals/" className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-4 text-xs font-bold transition shadow-md gap-1.5">
                 <Gavel className="h-3.5 w-3.5" /> Approvals Hub
               </a>
-            )}
+            ) : null}
             <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-300">
               <ShieldCheck className="h-3.5 w-3.5" />
               <span>Dual Escrow</span>
@@ -959,6 +984,61 @@ function DashboardPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Admin Specific Action & Operational Cards */}
+              {isAdmin && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {/* Staff Provisioning Card */}
+                  <div className="rounded-3xl border border-blue-500/30 bg-gradient-to-br from-blue-950/40 via-[#0c1424] to-[#080d18] p-5 text-left space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-blue-300 border border-blue-500/30">
+                        <Gavel className="h-3 w-3" /> Staff Authority
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-bold">Zero-2FA Direct Verification</span>
+                    </div>
+                    <h4 className="text-base font-black text-white">Lawyer & Agent Provisioning</h4>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Issue verified credentials for Advocates (LSK Roll & High Court Practicing Certificate) and Licensed Real Estate Agents (EARB & DCI Good Conduct).
+                    </p>
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('professionals')}
+                        className="inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 text-xs font-bold text-white shadow-lg shadow-blue-500/20 hover:scale-[1.02] transition gap-1.5"
+                      >
+                        <UserCheck className="h-3.5 w-3.5" />
+                        Open Staff Provisioning Hub →
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* KYC Approvals & Identity Verification Card */}
+                  <div className="rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-950/40 via-[#0c1424] to-[#080d18] p-5 text-left space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-amber-300 border border-amber-500/30">
+                        <ShieldAlert className="h-3 w-3" /> Identity Desk
+                      </span>
+                      <span className="text-[10px] text-amber-400 font-bold">
+                        {(bootstrap.pending_agent_applications || []).length} Pending Applications
+                      </span>
+                    </div>
+                    <h4 className="text-base font-black text-white">Agent KYC & Identity Approvals</h4>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Review applicant identification documents, DCI Good Conduct certificates, and KRA PIN compliance before approving field agents.
+                    </p>
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('commissions')}
+                        className="inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 text-xs font-black text-slate-950 shadow-lg shadow-amber-500/20 hover:scale-[1.02] transition gap-1.5"
+                      >
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Review Pending KYC Desk →
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -1046,41 +1126,203 @@ function DashboardPage() {
             </div>
           )}
 
-          {/* TAB 2: COMMISSIONS & CONVEYANCING */}
+          {/* TAB 2: COMMISSIONS & CONVEYANCING / KYC APPROVALS DESK */}
           {activeTab === 'commissions' && (
-            <div className="space-y-4 text-left">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-black text-white">Active Commissions & Conveyancing</h4>
-                <span className="text-xs text-slate-400">{activeCommissions.length} active records</span>
-              </div>
-              {activeCommissions.length === 0 ? (
-                <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-12 text-center text-slate-400 space-y-3">
-                  <ShieldCheck className="mx-auto h-8 w-8 text-slate-600" />
-                  <div className="text-sm font-bold text-slate-300">No active commissions currently in progress.</div>
-                  <a href="/parcels/" className="inline-block font-bold text-xs text-emerald-400 hover:underline">
-                    Explore available land parcels →
-                  </a>
-                </div>
-              ) : (
-                <div className="grid gap-3 lg:grid-cols-2">
-                  {activeCommissions.map((comm: any) => (
-                    <div key={comm.id} className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-emerald-400">Parcel {comm.parcel?.parcel_number || comm.parcel_number}</span>
-                        <Badge tone="accent" className="text-[9px]">{comm.status_label || comm.status}</Badge>
+            <div className="space-y-6 text-left">
+              {isAdmin ? (
+                <>
+                  {/* Admin KYC Header */}
+                  <div className="rounded-3xl border border-amber-500/20 bg-gradient-to-r from-amber-950/30 via-[#0c1424] to-[#080d18] p-5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <ShieldAlert className="h-5 w-5 text-amber-400" />
+                        <h4 className="text-sm font-black text-white">Agent KYC & Identity Verification Queue</h4>
                       </div>
-                      <div className="text-xs text-slate-300">
-                        County: <strong>{comm.parcel?.county || comm.county || 'Kenya'}</strong> · Price: KES {money(comm.parcel?.displayed_price || comm.parcel?.asking_price || '0')}
+                      <span className="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-500/30">
+                        {(bootstrap.pending_agent_applications || []).length} Pending Review
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 max-w-2xl">
+                      Review statutory compliance documents submitted by field agent applicants before granting escrow inspection clearance.
+                    </p>
+                  </div>
+
+                  {/* Applications Grid */}
+                  {(!bootstrap.pending_agent_applications || bootstrap.pending_agent_applications.length === 0) ? (
+                    <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-12 text-center text-slate-400 space-y-3">
+                      <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-500" />
+                      <div className="text-sm font-bold text-slate-200">All agent applications are reviewed!</div>
+                      <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                        No pending applicant KYC records currently awaiting administrative verification.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {bootstrap.pending_agent_applications.map((app: any) => (
+                        <div key={app.id} className="rounded-2xl border border-white/10 bg-[#0a0f1d] p-5 space-y-4 shadow-md">
+                          <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400 font-black border border-amber-500/20">
+                                {app.name?.charAt(0) || 'A'}
+                              </div>
+                              <div>
+                                <div className="font-bold text-xs text-white">{app.name || app.email}</div>
+                                <div className="text-[10px] text-slate-400">{app.email}</div>
+                                <div className="text-[10px] text-slate-500">{app.phone || 'No phone'}</div>
+                              </div>
+                            </div>
+                            <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[9px] font-black uppercase text-amber-300 border border-amber-500/30">
+                              {app.kyc?.status || 'Pending'}
+                            </span>
+                          </div>
+
+                          {/* Documents Row */}
+                          <div className="space-y-1.5 text-xs">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Attached Documents</div>
+                            <div className="flex flex-wrap gap-2">
+                              {app.kyc?.id_photo_url && (
+                                <a
+                                  href={app.kyc.id_photo_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold text-slate-300 hover:bg-white/10"
+                                >
+                                  <FileText className="h-3 w-3 text-blue-400" /> National ID Photo
+                                </a>
+                              )}
+                              {app.kyc?.resume_url && (
+                                <a
+                                  href={app.kyc.resume_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold text-slate-300 hover:bg-white/10"
+                                >
+                                  <FileText className="h-3 w-3 text-purple-400" /> Resume / CV
+                                </a>
+                              )}
+                              {app.kyc?.certificate_url && (
+                                <a
+                                  href={app.kyc.certificate_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold text-slate-300 hover:bg-white/10"
+                                >
+                                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> DCI Good Conduct
+                                </a>
+                              )}
+                              {app.kyc?.practicing_cert_url && (
+                                <a
+                                  href={app.kyc.practicing_cert_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold text-slate-300 hover:bg-white/10"
+                                >
+                                  <Scale className="h-3 w-3 text-amber-400" /> Practicing Certificate
+                                </a>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Action Form Buttons */}
+                          <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/[0.06]">
+                            <form method="POST" action={app.reject_url}>
+                              <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token} />
+                              <button
+                                type="submit"
+                                className="h-8 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 text-[11px] font-bold text-rose-300 hover:bg-rose-500/20 transition"
+                              >
+                                Reject
+                              </button>
+                            </form>
+                            <form method="POST" action={app.approve_url}>
+                              <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token} />
+                              <button
+                                type="submit"
+                                className="h-8 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 px-4 text-[11px] font-black text-slate-950 shadow-md shadow-emerald-500/20 hover:scale-105 transition flex items-center gap-1.5"
+                              >
+                                <CheckCircle2 className="h-3.5 w-3.5" /> Approve & License
+                              </button>
+                            </form>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Individual Buyers Promotion Desk */}
+                  {bootstrap.individual_buyers && bootstrap.individual_buyers.length > 0 && (
+                    <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-5 space-y-4">
+                      <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-emerald-400" />
+                          <h4 className="text-xs font-black uppercase tracking-wider text-slate-200">
+                            Buyer Account Upgrades (Individual → Joint)
+                          </h4>
+                        </div>
+                        <span className="text-[11px] text-slate-400">
+                          {bootstrap.individual_buyers.length} Individual Buyers
+                        </span>
                       </div>
-                      <div className="pt-1 flex items-center justify-between">
-                        <span className="text-[10px] text-slate-500">Dual-escrow verified</span>
-                        <a href={comm.detail_url || '/buyer/dashboard/'} className="text-xs font-bold text-emerald-400 hover:underline">
-                          View details →
-                        </a>
+
+                      <div className="divide-y divide-white/[0.04]">
+                        {bootstrap.individual_buyers.slice(0, 10).map((buyer: any) => (
+                          <div key={buyer.id} className="flex items-center justify-between py-2.5 gap-3">
+                            <div>
+                              <div className="font-bold text-xs text-slate-200">{buyer.name || buyer.email}</div>
+                              <div className="text-[10px] text-slate-500">{buyer.email}</div>
+                            </div>
+
+                            <form method="POST" action={buyer.promote_to_joint_url}>
+                              <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token} />
+                              <button
+                                type="submit"
+                                className="h-7 rounded-lg border border-purple-500/40 bg-purple-500/10 px-3 text-[10px] font-bold text-purple-300 hover:bg-purple-500/20 transition"
+                              >
+                                Upgrade to Joint
+                              </button>
+                            </form>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-black text-white">Active Commissions & Conveyancing</h4>
+                    <span className="text-xs text-slate-400">{activeCommissions.length} active records</span>
+                  </div>
+                  {activeCommissions.length === 0 ? (
+                    <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-12 text-center text-slate-400 space-y-3">
+                      <ShieldCheck className="mx-auto h-8 w-8 text-slate-600" />
+                      <div className="text-sm font-bold text-slate-300">No active commissions currently in progress.</div>
+                      <a href="/parcels/" className="inline-block font-bold text-xs text-emerald-400 hover:underline">
+                        Explore available land parcels →
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="grid gap-3 lg:grid-cols-2">
+                      {activeCommissions.map((comm: any) => (
+                        <div key={comm.id} className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-emerald-400">Parcel {comm.parcel?.parcel_number || comm.parcel_number}</span>
+                            <Badge tone="accent" className="text-[9px]">{comm.status_label || comm.status}</Badge>
+                          </div>
+                          <div className="text-xs text-slate-300">
+                            County: <strong>{comm.parcel?.county || comm.county || 'Kenya'}</strong> · Price: KES {money(comm.parcel?.displayed_price || comm.parcel?.asking_price || '0')}
+                          </div>
+                          <div className="pt-1 flex items-center justify-between">
+                            <span className="text-[10px] text-slate-500">Dual-escrow verified</span>
+                            <a href={comm.detail_url || '/buyer/dashboard/'} className="text-xs font-bold text-emerald-400 hover:underline">
+                              View details →
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
