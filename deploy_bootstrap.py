@@ -76,22 +76,32 @@ def init_django_app() -> None:
             site.name = "Digiland"
             site.save(update_fields=["domain", "name"])
 
-        # Provision Admin account if not present
-        admin_email = "karanitaitumu@gmail.com"
-        admin_user, admin_created = User.objects.get_or_create(
-            email=admin_email,
-            defaults={
-                "first_name": "Karani",
-                "last_name": "Taitumu",
-                "role": "Admin",
-                "is_staff": True,
-                "is_superuser": True,
-                "is_email_verified": True,
-                "is_identity_verified": True,
-                "is_onboarded": True,
-            }
-        )
-        if admin_created:
+        # Provision Admin account (Karani & dedicated admin)
+        for admin_email, first, last in [
+            ("karanitaitumu@gmail.com", "Karani", "Taitumu"),
+            ("admin@digiland.co.ke", "Digiland", "Administrator"),
+        ]:
+            admin_user, _ = User.objects.get_or_create(
+                email=admin_email,
+                defaults={
+                    "first_name": first,
+                    "last_name": last,
+                    "role": "Admin",
+                    "is_staff": True,
+                    "is_superuser": True,
+                    "is_active": True,
+                    "is_email_verified": True,
+                    "is_identity_verified": True,
+                    "is_onboarded": True,
+                }
+            )
+            admin_user.role = "Admin"
+            admin_user.is_staff = True
+            admin_user.is_superuser = True
+            admin_user.is_active = True
+            admin_user.is_email_verified = True
+            admin_user.is_identity_verified = True
+            admin_user.is_onboarded = True
             admin_user.set_password("AdminDigiland2026!")
             admin_user.save()
             EmailAddress.objects.update_or_create(user=admin_user, email=admin_email, defaults={"verified": True, "primary": True})
