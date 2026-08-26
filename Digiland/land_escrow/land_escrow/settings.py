@@ -212,7 +212,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
-    'core.middleware.domain_routing.MultiDomainRoutingMiddleware',
+    'core.middleware.MultiDomainRoutingMiddleware',
 
     # Admin Control Plane middleware (network isolation, session security, audit)
     'admin_control_plane.middleware.AdminNetworkIsolationMiddleware',
