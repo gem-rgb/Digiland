@@ -98,31 +98,34 @@ class ServiceFeeService:
             include_verification=include_verification,
             include_due_diligence=include_due_diligence
         )
-        escrow_fee = fees_data.get('escrow_fee')
-        if escrow_fee is None:
-            escrow_fee = fees_data.get('escrow_holding_fee', Decimal('0'))
+        platform_fee = fees_data.get('platform_service_fee') or fees_data.get('platform_fee', Decimal('0'))
+        escrow_fee = fees_data.get('escrow_fee') or fees_data.get('escrow_holding_fee', Decimal('0'))
+        processing_fee = fees_data.get('payment_processing_fee') or fees_data.get('processing_fee', Decimal('0'))
+        verification_fee = fees_data.get('verification_fee') or fees_data.get('legal_verification_fee', Decimal('0'))
+        due_diligence_fee = fees_data.get('due_diligence_fee', Decimal('0'))
+        total_fees = fees_data.get('total_fees', Decimal('0'))
 
         service_fee, created = ServiceFee.objects.get_or_create(
             transaction=transaction,
             defaults={
-                'platform_fee': fees_data['platform_service_fee'],
+                'platform_fee': platform_fee,
                 'escrow_fee': escrow_fee,
-                'processing_fee': fees_data['payment_processing_fee'],
-                'verification_fee': fees_data['verification_fee'],
-                'due_diligence_fee': fees_data['due_diligence_fee'],
-                'total_fees': fees_data['total_fees'],
+                'processing_fee': processing_fee,
+                'verification_fee': verification_fee,
+                'due_diligence_fee': due_diligence_fee,
+                'total_fees': total_fees,
                 'breakdown': fees_data,
             }
         )
 
         if not created:
             # Update existing fees
-            service_fee.platform_fee = fees_data['platform_service_fee']
+            service_fee.platform_fee = platform_fee
             service_fee.escrow_fee = escrow_fee
-            service_fee.processing_fee = fees_data['payment_processing_fee']
-            service_fee.verification_fee = fees_data['verification_fee']
-            service_fee.due_diligence_fee = fees_data['due_diligence_fee']
-            service_fee.total_fees = fees_data['total_fees']
+            service_fee.processing_fee = processing_fee
+            service_fee.verification_fee = verification_fee
+            service_fee.due_diligence_fee = due_diligence_fee
+            service_fee.total_fees = total_fees
             service_fee.breakdown = fees_data
             service_fee.save()
 

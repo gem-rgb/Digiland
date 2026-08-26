@@ -1085,10 +1085,12 @@ def calculate_checkout_fees(agreed_price, include_verification=False, include_du
     return {
         'land_price': fees['land_price'],
         'platform_service_fee': fees['platform_service_fee'],
+        'platform_fee': fees['platform_service_fee'],
         'escrow_fee': fees['escrow_fee'],
         'escrow_holding_fee': fees['escrow_holding_fee'],
         'processing_fee': fees['payment_processing_fee'],
         'payment_processing_fee': fees['payment_processing_fee'],
+        'verification_fee': fees['verification_fee'],
         'legal_verification_fee': fees['verification_fee'],
         'due_diligence_fee': fees['due_diligence_fee'],
         'total_fees': fees['total_fees'],
