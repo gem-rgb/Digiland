@@ -83,7 +83,11 @@ export function AppShell({
   const allRailItems = [
     {
       label: 'Dashboard',
-      href: user?.role === 'Seller' ? '/seller/dashboard/' : user?.role === 'Buyer' ? '/buyer/dashboard/' : '/parcels/',
+      href: (user?.role === 'Admin' || user?.role === 'Agent' || user?.role === 'Lawyer' || user?.role === 'Staff' || user?.is_superuser)
+        ? '/agent/dashboard/'
+        : user?.role === 'Seller'
+        ? '/seller/dashboard/'
+        : '/buyer/dashboard/',
       icon: LayoutDashboard,
       active: safeTitle.includes('dashboard') || safeTitle.includes('workspace'),
     },
