@@ -31675,7 +31675,28 @@ function DashboardPage() {
     ]
   };
   const channels = channelsByRole[role] || channelsByRole.Buyer;
-  const [activeTab, setActiveTab] = (0, import_react19.useState)("overview");
+  const [activeTab, setActiveTab] = (0, import_react19.useState)(() => {
+    if (typeof window !== "undefined") {
+      const searchTab = new URLSearchParams(window.location.search).get("tab");
+      const hashTab = window.location.hash.replace("#", "");
+      return searchTab || hashTab || "overview";
+    }
+    return "overview";
+  });
+  (0, import_react19.useEffect)(() => {
+    const syncTab = () => {
+      const searchTab = new URLSearchParams(window.location.search).get("tab");
+      const hashTab = window.location.hash.replace("#", "");
+      const target = searchTab || hashTab || "overview";
+      setActiveTab(target);
+    };
+    window.addEventListener("hashchange", syncTab);
+    window.addEventListener("popstate", syncTab);
+    return () => {
+      window.removeEventListener("hashchange", syncTab);
+      window.removeEventListener("popstate", syncTab);
+    };
+  }, []);
   const activeCommissions = bootstrap2.active_commissions || bootstrap2.commissions || [];
   const activeSpotlightCommission = isAgent || isLawyer || isAdmin ? activeCommissions[0] : null;
   const sellerParcels = bootstrap2.parcels || [];
