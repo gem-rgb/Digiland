@@ -958,6 +958,7 @@ ADMIN_ALLOWED_HOST = config("ADMIN_ALLOWED_HOST", default="").strip()
 # ── Multi-Frontend Domain Architecture ──────────────────────────────────────
 MAIN_DOMAIN = config('MAIN_DOMAIN', default='https://digiland.co.ke').rstrip('/')
 APP_DOMAIN = config('APP_DOMAIN', default='https://app.digiland.co.ke').rstrip('/')
+STAFF_DOMAIN = config('STAFF_DOMAIN', default='https://staff.digiland.co.ke').rstrip('/')
 ADMIN_DOMAIN = config('ADMIN_DOMAIN', default='https://admin.digiland.co.ke').rstrip('/')
 
 # Cross-Subdomain CSRF and Session Cookie Settings
@@ -965,6 +966,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://digiland.co.ke',
     'https://www.digiland.co.ke',
     'https://app.digiland.co.ke',
+    'https://staff.digiland.co.ke',
     'https://admin.digiland.co.ke',
     'https://*.digiland.co.ke',
     'https://*.vercel.app',

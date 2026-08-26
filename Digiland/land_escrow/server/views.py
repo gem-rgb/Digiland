@@ -558,12 +558,22 @@ def staff_login(request):
         return redirect('frontend:parcel_list')
 
     if request.method == 'POST':
-        email = request.POST.get('email', '').strip().lower()
+        identifier = request.POST.get('email', '').strip()
         password = request.POST.get('password', '').strip()
+        from core.models import User as CoreUser
+
+        # Support sign in by either email or phone number
+        email = identifier.lower()
+        if not '@' in identifier:
+            phone_clean = identifier.replace(' ', '').replace('-', '')
+            user_by_phone = CoreUser.objects.filter(phone_number__icontains=phone_clean).first()
+            if user_by_phone:
+                email = user_by_phone.email
+
         user = authenticate(request, email=email, password=password)
 
         if user is None:
-            error = 'Invalid credentials. Please verify your email and password.'
+            error = 'Invalid credentials. Please verify your email/phone and password.'
         elif not user.is_active:
             error = 'Your account has been deactivated. Contact the system administrator.'
         else:
