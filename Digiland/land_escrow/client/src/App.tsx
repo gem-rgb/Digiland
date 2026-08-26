@@ -24,6 +24,7 @@ import { HeroShowcase } from './components/landing/hero-showcase.js';
 import { AnimatedWalkthrough } from './components/landing/animated-walkthrough.js';
 import { PremiumFooter } from './components/landing/premium-footer.js';
 import { PriceEstimatorSection } from './components/landing/price-estimator-section.js';
+import { AdminPeopleHubView, AdminKycDeskView, AdminAIEvaluationLabView, AdminTransactionsManagementView } from './components/admin/admin-views.js';
 
 const bootstrap = readBootstrap();
 const kshFormatter = new Intl.NumberFormat('en-KE', {
@@ -742,10 +743,11 @@ function DashboardPage() {
     ],
     Admin: [
       { id: 'overview', name: 'overview', icon: LayoutDashboard },
-      { id: 'analytics', name: 'analytics-suite', icon: BarChart3 },
+      { id: 'people', name: 'people-staff', icon: UserCheck, badge: `${(bootstrap.all_users || bootstrap.professionals || []).length || ''}` },
+      { id: 'kyc', name: 'kyc-desk', icon: ShieldAlert, badge: `${(bootstrap.pending_agent_applications || []).length || ''}` },
+      { id: 'ailab', name: 'ai-eval-lab', icon: Sparkles, badge: `${bootstrap.ai_evaluation?.accuracy_pct ? `${bootstrap.ai_evaluation.accuracy_pct}%` : ''}` },
       { id: 'transactions', name: 'escrow-settlements', icon: ReceiptText, badge: `${(bootstrap.transactions || []).length || ''}` },
-      { id: 'professionals', name: 'staff-provisioning', icon: UserCheck, badge: `${(bootstrap.professionals || []).length || ''}` },
-      { id: 'commissions', name: 'kyc-approvals', icon: ShieldAlert, badge: `${(bootstrap.pending_agent_applications || []).length || ''}` },
+      { id: 'analytics', name: 'analytics-suite', icon: BarChart3 },
       { id: 'parcels', name: 'all-parcels', icon: Grid2X2 },
       { id: 'legal', name: 'statutory-compliance', icon: Scale },
     ],
@@ -903,23 +905,30 @@ function DashboardPage() {
               <>
                 <button
                   type="button"
-                  onClick={() => setActiveTab('professionals')}
+                  onClick={() => setActiveTab('people')}
                   className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-3.5 text-xs font-black transition shadow-md gap-1.5"
                 >
-                  <UserCheck className="h-3.5 w-3.5" /> Provision Staff
+                  <UserCheck className="h-3.5 w-3.5" /> People & Staff
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveTab('commissions')}
+                  onClick={() => setActiveTab('kyc')}
                   className="hidden sm:inline-flex h-9 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] text-white px-3.5 text-xs font-bold transition gap-1.5"
                 >
-                  <ShieldAlert className="h-3.5 w-3.5 text-amber-400" /> KYC Approvals
+                  <ShieldAlert className="h-3.5 w-3.5 text-amber-400" /> KYC Desk
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('ailab')}
+                  className="hidden md:inline-flex h-9 items-center justify-center rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 px-3 text-xs font-bold transition gap-1.5"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-purple-400" /> AI Eval Lab
                 </button>
                 <a
                   href="/admin/"
                   target="_blank"
                   rel="noreferrer"
-                  className="hidden md:inline-flex h-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-slate-300 px-3 text-xs font-bold transition gap-1"
+                  className="hidden lg:inline-flex h-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-slate-300 px-3 text-xs font-bold transition gap-1"
                 >
                   <ExternalLink className="h-3.5 w-3.5" /> Django Admin
                 </a>
@@ -990,27 +999,27 @@ function DashboardPage() {
 
               {/* Admin Specific Action & Operational Cards */}
               {isAdmin && (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {/* Staff Provisioning Card */}
+                <div className="grid gap-4 md:grid-cols-3">
+                  {/* People & Staff Provisioning Card */}
                   <div className="rounded-3xl border border-blue-500/30 bg-gradient-to-br from-blue-950/40 via-[#0c1424] to-[#080d18] p-5 text-left space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-blue-300 border border-blue-500/30">
-                        <Gavel className="h-3 w-3" /> Staff Authority
+                        <Gavel className="h-3 w-3" /> People Hub
                       </span>
-                      <span className="text-[10px] text-slate-400 font-bold">Zero-2FA Direct Verification</span>
+                      <span className="text-[10px] text-slate-400 font-bold">Direct & Invite Modes</span>
                     </div>
-                    <h4 className="text-base font-black text-white">Lawyer & Agent Provisioning</h4>
+                    <h4 className="text-base font-black text-white">People & Staff Hub</h4>
                     <p className="text-xs text-slate-300 leading-relaxed">
-                      Issue verified credentials for Advocates (LSK Roll & High Court Practicing Certificate) and Licensed Real Estate Agents (EARB & DCI Good Conduct).
+                      Manage all platform users, reassign roles, and provision verified Advocates (LSK Roll) and Licensed Agents (EARB).
                     </p>
                     <div className="pt-1">
                       <button
                         type="button"
-                        onClick={() => setActiveTab('professionals')}
+                        onClick={() => setActiveTab('people')}
                         className="inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 text-xs font-bold text-white shadow-lg shadow-blue-500/20 hover:scale-[1.02] transition gap-1.5"
                       >
                         <UserCheck className="h-3.5 w-3.5" />
-                        Open Staff Provisioning Hub →
+                        Open People Hub →
                       </button>
                     </div>
                   </div>
@@ -1022,21 +1031,47 @@ function DashboardPage() {
                         <ShieldAlert className="h-3 w-3" /> Identity Desk
                       </span>
                       <span className="text-[10px] text-amber-400 font-bold">
-                        {(bootstrap.pending_agent_applications || []).length} Pending Applications
+                        {(bootstrap.pending_agent_applications || []).length} Pending
                       </span>
                     </div>
-                    <h4 className="text-base font-black text-white">Agent KYC & Identity Approvals</h4>
+                    <h4 className="text-base font-black text-white">KYC Verification Desk</h4>
                     <p className="text-xs text-slate-300 leading-relaxed">
-                      Review applicant identification documents, DCI Good Conduct certificates, and KRA PIN compliance before approving field agents.
+                      Side-by-side inspection of National IDs, DCI Good Conduct certificates, and KRA PINs with AI telemetry.
                     </p>
                     <div className="pt-1">
                       <button
                         type="button"
-                        onClick={() => setActiveTab('commissions')}
+                        onClick={() => setActiveTab('kyc')}
                         className="inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 text-xs font-black text-slate-950 shadow-lg shadow-amber-500/20 hover:scale-[1.02] transition gap-1.5"
                       >
                         <ShieldCheck className="h-3.5 w-3.5" />
-                        Review Pending KYC Desk →
+                        Review Pending KYC →
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* AI Evaluation Benchmark Lab Card */}
+                  <div className="rounded-3xl border border-purple-500/30 bg-gradient-to-br from-purple-950/40 via-[#0c1424] to-[#080d18] p-5 text-left space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-purple-300 border border-purple-500/30">
+                        <Sparkles className="h-3 w-3" /> AI Lab
+                      </span>
+                      <span className="text-[10px] text-purple-300 font-bold">
+                        {bootstrap.ai_evaluation?.accuracy_pct || 100}% Accuracy
+                      </span>
+                    </div>
+                    <h4 className="text-base font-black text-white">AI Evaluation Suite</h4>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Benchmark Laplacian blur, Tesseract OCR, and Canny edge analysis against ground-truth Kenyan documents.
+                    </p>
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('ailab')}
+                        className="inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 text-xs font-bold text-white shadow-lg shadow-purple-500/20 hover:scale-[1.02] transition gap-1.5"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Open AI Evaluation Lab →
                       </button>
                     </div>
                   </div>
@@ -1454,9 +1489,19 @@ function DashboardPage() {
             </div>
           )}
 
-          {/* TAB 7: PROFESSIONALS & STAFF PROVISIONING (ADMIN ONLY) */}
-          {activeTab === 'professionals' && (
-            <AdminStaffProvisioningView />
+          {/* TAB: PEOPLE & PRIVILEGED STAFF (ADMIN ONLY) */}
+          {(activeTab === 'people' || activeTab === 'professionals') && (
+            <AdminPeopleHubView />
+          )}
+
+          {/* TAB: KYC & DOCUMENT VERIFICATION DESK (ADMIN ONLY) */}
+          {(activeTab === 'kyc' || (activeTab === 'commissions' && isAdmin)) && (
+            <AdminKycDeskView />
+          )}
+
+          {/* TAB: AI DOCUMENT VERIFICATION BENCHMARK LAB (ADMIN ONLY) */}
+          {activeTab === 'ailab' && (
+            <AdminAIEvaluationLabView />
           )}
         </div>
       </div>
