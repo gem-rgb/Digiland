@@ -107,7 +107,17 @@ def _active_document_grant(parcel, accessor):
 
 
 def render_react_shell(request, page, title, subtitle='', status=200, **extra):
+    from django.conf import settings
     popup_context = extra.pop('popup_context', None)
+    domain_mode = getattr(request, 'domain_mode', None)
+    if not domain_mode:
+        if request.path.startswith('/admin') or request.path.startswith('/staff'):
+            domain_mode = 'admin'
+        elif request.user.is_authenticated and request.path in {'/dashboard/', '/agent/dashboard/', '/buyer/dashboard/', '/seller/dashboard/'}:
+            domain_mode = 'app'
+        else:
+            domain_mode = 'public' if not request.user.is_authenticated else 'app'
+
     bootstrap = {
         'page': page,
         'title': title,
@@ -115,6 +125,12 @@ def render_react_shell(request, page, title, subtitle='', status=200, **extra):
         'user': serialize_user(request.user),
         'nav': build_nav(request.user, active=page),
         'messages': serialize_messages(request),
+        'domain_context': {
+            'current_mode': domain_mode,
+            'main_domain': getattr(settings, 'MAIN_DOMAIN', 'https://digiland.co.ke'),
+            'app_domain': getattr(settings, 'APP_DOMAIN', 'https://app.digiland.co.ke'),
+            'admin_domain': getattr(settings, 'ADMIN_DOMAIN', 'https://admin.digiland.co.ke'),
+        },
     }
     bootstrap['csrf_token'] = get_token(request)
     if request.user.is_authenticated:

@@ -212,6 +212,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'core.middleware.domain_routing.MultiDomainRoutingMiddleware',
 
     # Admin Control Plane middleware (network isolation, session security, audit)
     'admin_control_plane.middleware.AdminNetworkIsolationMiddleware',
@@ -953,5 +954,29 @@ ADMIN_PATH_PREFIXES = [
 # Dedicated Admin Domain Isolation (optional)
 # Example: ADMIN_ALLOWED_HOST="admin.digiland.app" or "admin-digiland.vercel.app"
 ADMIN_ALLOWED_HOST = config("ADMIN_ALLOWED_HOST", default="").strip()
+
+# ── Multi-Frontend Domain Architecture ──────────────────────────────────────
+MAIN_DOMAIN = config('MAIN_DOMAIN', default='https://digiland.co.ke').rstrip('/')
+APP_DOMAIN = config('APP_DOMAIN', default='https://app.digiland.co.ke').rstrip('/')
+ADMIN_DOMAIN = config('ADMIN_DOMAIN', default='https://admin.digiland.co.ke').rstrip('/')
+
+# Cross-Subdomain CSRF and Session Cookie Settings
+CSRF_TRUSTED_ORIGINS = [
+    'https://digiland.co.ke',
+    'https://www.digiland.co.ke',
+    'https://app.digiland.co.ke',
+    'https://admin.digiland.co.ke',
+    'https://*.digiland.co.ke',
+    'https://*.vercel.app',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'http://localhost:5173',
+]
+
+# In production, share session across digiland.co.ke and all subdomains (.digiland.co.ke)
+if not DEBUG and not os.environ.get('VERCEL'):
+    SESSION_COOKIE_DOMAIN = '.digiland.co.ke'
+    CSRF_COOKIE_DOMAIN = '.digiland.co.ke'
+
 
 
