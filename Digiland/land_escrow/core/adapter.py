@@ -44,8 +44,6 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
         try:
             start_pending_verification_session(request, user, flow=flow)
         except Exception:
-            # Pending verification is a UX enhancement; do not break auth
-            # if the session store has a transient issue.
             pass
 
     def _maybe_send_login_verification_email(self, request, user, *, flow: str) -> None:
@@ -84,30 +82,46 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
 
     def get_login_redirect_url(self, request):
         """
-        Dynamically route users based on their selected role and onboarding status after login.
+        Dynamically route users to their dedicated partition subdomains based on role.
         """
         user = request.user
-        if user.is_authenticated:
+        host = request.get_host().split(':')[0].lower() if request else ""
+        is_local = host in {'localhost', '127.0.0.1'}
+
+        if user and user.is_authenticated:
             if not getattr(user, "is_email_verified", False):
                 self._maybe_start_pending_session(request, user, flow="allauth-login")
                 self._maybe_send_login_verification_email(request, user, flow="allauth-login")
                 return reverse("account_verification_pending")
             
-            # Un-onboarded users (no role or is_onboarded=False) go to onboarding select-role
+            # Un-onboarded users
             if not user.role or not getattr(user, "is_onboarded", False):
-                return reverse("frontend:onboarding_select_role")
+                app_base = "" if is_local else "https://app.digiland.co.ke"
+                return f"{app_base}{reverse('frontend:onboarding_select_role')}"
 
-            if user.role == 'Buyer':
-                return reverse('frontend:buyer_dashboard')
-            if user.role == 'Seller':
-                return reverse('frontend:seller_dashboard')
-            if user.role == 'Lawyer':
-                return reverse('frontend:agent_dashboard')
-            if user.role == 'Agent':
-                return reverse('frontend:agent_dashboard')
+            # Admin & Superusers -> admin.digiland.co.ke
             if user.role == 'Admin' or getattr(user, 'is_superuser', False) or getattr(user, 'is_staff', False):
-                return reverse('frontend:agent_dashboard')
-            return reverse('frontend:parcel_list')
+                admin_base = "" if is_local else "https://admin.digiland.co.ke"
+                return f"{admin_base}{reverse('frontend:agent_dashboard')}"
+
+            # Agents & Lawyers -> staff.digiland.co.ke
+            if user.role in {'Lawyer', 'Agent', 'Land_Official'}:
+                staff_base = "" if is_local else "https://staff.digiland.co.ke"
+                return f"{staff_base}{reverse('frontend:agent_dashboard')}"
+
+            # Buyers -> app.digiland.co.ke
+            if user.role == 'Buyer':
+                app_base = "" if is_local else "https://app.digiland.co.ke"
+                return f"{app_base}{reverse('frontend:parcel_list')}"
+
+            # Sellers -> app.digiland.co.ke
+            if user.role == 'Seller':
+                app_base = "" if is_local else "https://app.digiland.co.ke"
+                return f"{app_base}{reverse('frontend:parcel_list')}"
+
+            app_base = "" if is_local else "https://app.digiland.co.ke"
+            return f"{app_base}{reverse('frontend:parcel_list')}"
+
         return super().get_login_redirect_url(request)
 
     def get_signup_redirect_url(self, request):
@@ -115,21 +129,23 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
         After signup, dynamically route un-onboarded users to onboarding select-role.
         """
         user = request.user
-        if user.is_authenticated and not getattr(user, "is_email_verified", False):
+        host = request.get_host().split(':')[0].lower() if request else ""
+        is_local = host in {'localhost', '127.0.0.1'}
+
+        if user and user.is_authenticated and not getattr(user, "is_email_verified", False):
             self._maybe_start_pending_session(request, user, flow="allauth-signup")
             return reverse("account_verification_pending")
 
-        # Un-onboarded users (no role or is_onboarded=False) go to onboarding select-role
-        if user.is_authenticated and (not user.role or not getattr(user, "is_onboarded", False)):
-            return reverse("frontend:onboarding_select_role")
+        if user and user.is_authenticated and (not user.role or not getattr(user, "is_onboarded", False)):
+            app_base = "" if is_local else "https://app.digiland.co.ke"
+            return f"{app_base}{reverse('frontend:onboarding_select_role')}"
 
-        if user.is_authenticated and getattr(user, 'role', None) == 'Agent':
-            return reverse('frontend:agent_signup_complete')
-        if user.is_authenticated and getattr(user, 'role', None) == 'Buyer':
-            return reverse('frontend:buyer_dashboard')
-        if user.is_authenticated and getattr(user, 'role', None) == 'Seller':
-            return reverse('frontend:seller_dashboard')
-        return super().get_signup_redirect_url(request)
+        if user and user.is_authenticated and getattr(user, 'role', None) == 'Agent':
+            staff_base = "" if is_local else "https://staff.digiland.co.ke"
+            return f"{staff_base}{reverse('frontend:agent_signup_complete')}"
+
+        app_base = "" if is_local else "https://app.digiland.co.ke"
+        return f"{app_base}{reverse('frontend:parcel_list')}"
 
     def get_email_confirmation_url(self, request, emailconfirmation):
         """
@@ -169,7 +185,7 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
 
     def pre_login(self, request, user, **kwargs):
         """
-        Pre-login checks for email verification.
+        Pre-login checks for role and email verification.
         """
         if '/accounts/login' in request.path and getattr(user, "is_authenticated", False):
             if not getattr(user, "is_email_verified", False):
@@ -232,4 +248,3 @@ class RoleBasedSocialAccountAdapter(DefaultSocialAccountAdapter):
         user.is_email_verified = True
         user.save(update_fields=['is_email_verified'])
         return user
-

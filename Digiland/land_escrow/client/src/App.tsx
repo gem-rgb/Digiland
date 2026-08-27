@@ -8167,6 +8167,27 @@ function ReactAppInner() {
   const user = bootstrap.user;
   const userRole = user?.role;
 
+  // Strict Browser Subdomain Guard
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hostname = window.location.hostname.toLowerCase();
+    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+    if (isLocal) return;
+
+    const role = (user?.role || '').toLowerCase();
+    const isAdmin = role === 'admin';
+    const isStaff = role === 'agent' || role === 'lawyer' || role === 'official';
+    const isBuyerSeller = role === 'buyer' || role === 'seller';
+
+    if (isAdmin && !hostname.startsWith('admin.')) {
+      window.location.href = `https://admin.digiland.co.ke${window.location.pathname}${window.location.search}`;
+    } else if (isStaff && !hostname.startsWith('staff.')) {
+      window.location.href = `https://staff.digiland.co.ke${window.location.pathname}${window.location.search}`;
+    } else if (isBuyerSeller && (hostname.startsWith('admin.') || hostname.startsWith('staff.'))) {
+      window.location.href = `https://app.digiland.co.ke${window.location.pathname}${window.location.search}`;
+    }
+  }, [userRole]);
+
   // Enforce Partition Access Guard if user is logged in with incompatible role
   if (user && userRole && !isRoleAllowed(userRole)) {
     return (

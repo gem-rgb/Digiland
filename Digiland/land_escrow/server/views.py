@@ -743,26 +743,35 @@ def agent_onboarding(request):
     )
 
 @login_required
-@user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
 def agent_dashboard(request):
-    """Agent Command Centre with role-based restrictions."""
+    """Command Centre with strict subdomain partition redirection and role-based restrictions."""
     from core.models import User as CoreUser
     from django.db.models import Q
+    from django.http import HttpResponseRedirect
 
-    # Base context for all staff roles
-    context = {
-        'unread_count': Message.objects.filter(receiver=request.user, is_read=False).count(),
-    }
+    host = request.get_host().split(':')[0].lower()
+    is_local = host in {'localhost', '127.0.0.1'}
 
-    if request.user.role == 'Admin':
-        # Admin gets full command centre access
+    # If Admin is on app.digiland.co.ke or staff.digiland.co.ke or marketing, redirect to admin.digiland.co.ke
+    if request.user.role == 'Admin' or request.user.is_superuser or request.user.is_staff:
+        if not is_local and not host.startswith('admin.'):
+            return HttpResponseRedirect(f"https://admin.digiland.co.ke{request.get_full_path()}")
+        context = {'unread_count': Message.objects.filter(receiver=request.user, is_read=False).count()}
         return render_admin_dashboard(request, context)
-    elif request.user.role == 'Lawyer':
-        # Lawyer gets legal reviews dashboard
-        return render_lawyer_dashboard(request, context)
-    else:
-        # Agent gets restricted dashboard
+
+    # If Lawyer or Agent is not on staff subdomain, redirect to staff.digiland.co.ke
+    if request.user.role in {'Lawyer', 'Agent', 'Land_Official'}:
+        if not is_local and not host.startswith('staff.'):
+            return HttpResponseRedirect(f"https://staff.digiland.co.ke{request.get_full_path()}")
+        context = {'unread_count': Message.objects.filter(receiver=request.user, is_read=False).count()}
+        if request.user.role == 'Lawyer':
+            return render_lawyer_dashboard(request, context)
         return render_agent_dashboard(request, context)
+
+    # If Buyer or Seller reaches staff dashboard, redirect to app.digiland.co.ke
+    if not is_local:
+        return HttpResponseRedirect(f"https://app.digiland.co.ke/parcels/")
+    return redirect('frontend:parcel_list')
 
 def render_lawyer_dashboard(request, context):
     """Render lawyer-specific command centre."""
