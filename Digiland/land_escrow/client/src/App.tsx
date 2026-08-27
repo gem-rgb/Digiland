@@ -3644,7 +3644,7 @@ function FeaturesPage() {
         <div className="space-y-8 max-w-6xl mx-auto py-6">
           <div className="text-left space-y-2">
             <div className="text-xs font-black uppercase tracking-[0.24em] text-emerald-700">Platform Capabilities</div>
-            <h1 className="text-3xl font-black text-slate-900 sm:text-4xl">Digiland System Architecture & Features</h1>
+            <h1 className="text-3xl font-black text-slate-900 sm:text-4xl">Digiland Buyer Protection & Escrow Features</h1>
             <p className="text-sm text-slate-600 max-w-2xl font-medium">
               From acquisition to legal conveyancing, Digiland connects identity, escrow vaulting, and government registry validation into a seamless protocol.
             </p>
