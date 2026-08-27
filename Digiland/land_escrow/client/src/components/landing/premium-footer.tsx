@@ -332,14 +332,14 @@ export function PremiumFooter() {
           {/* Action Buttons */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
-              href={getPortalUrl('app')}
+              href="/accounts/register/"
               className="inline-flex h-12 items-center justify-center rounded-xl bg-emerald-600 px-8 text-sm font-extrabold text-white shadow-xl shadow-emerald-600/30 transition-all hover:bg-emerald-500 hover:scale-[1.02]"
             >
               <span>Get Started Free</span>
               <ArrowRight className="ml-2 h-4 w-4" />
             </a>
             <a
-              href={getPortalUrl('app')}
+              href="/parcels/"
               className="inline-flex h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-8 text-sm font-bold text-slate-800 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-400"
             >
               <span>Browse Marketplace</span>

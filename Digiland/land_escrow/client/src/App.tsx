@@ -8198,7 +8198,7 @@ function ReactAppInner() {
 
   let pageContent: ReactNode = null;
 
-  if (activePartition === 'marketing' || page === 'landing') pageContent = <LandingPage onNavigatePartition={setActivePartition} />;
+  if (page === 'landing' || page === 'index' || page === 'home' || (!page && activePartition === 'marketing')) pageContent = <LandingPage onNavigatePartition={setActivePartition} />;
   else if (page === '404') pageContent = <NotFoundPage />;
   else if (page === 'features') pageContent = <FeaturesPage />;
 
