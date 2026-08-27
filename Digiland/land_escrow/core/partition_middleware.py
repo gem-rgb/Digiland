@@ -44,8 +44,17 @@ APP_ONLY_PREFIXES = (
 
 STAFF_ONLY_PREFIXES = (
     '/staff-login/',
-    '/agent/',
+    '/staff/login/',
+    '/agent/job-board/',
+    '/agent/tasks/',
+    '/agent/approvals/',
+    '/agent/commission/',
     '/lawyer/',
+)
+
+ADMIN_ONLY_PREFIXES = (
+    '/admin/',
+    '/api/v1/admin/',
 )
 
 def resolve_request_partition(request) -> str:
@@ -69,7 +78,7 @@ def resolve_request_partition(request) -> str:
     return 'marketing'
 
 class PartitionIsolationMiddleware:
-    """Middleware enforcing role-based subdomain partition safety and domain redirection."""
+    """Middleware enforcing strict role-based subdomain partition safety and domain redirection."""
 
     EXEMPT_PATH_PREFIXES = (
         '/static/',
@@ -92,18 +101,26 @@ class PartitionIsolationMiddleware:
         portal = resolve_request_partition(request)
         request.digiland_portal = portal
         host = request.get_host().split(':')[0].lower()
+        is_local = host in {'localhost', '127.0.0.1'}
 
-        # In production (when not on localhost), redirect app/staff paths hit on marketing domain to dedicated subdomains
-        if not (host in {'localhost', '127.0.0.1'} or host.endswith('.vercel.app')):
+        # In production, redirect routes hitting the wrong portal domain
+        if not is_local:
+            query_string = request.META.get('QUERY_STRING', '')
+            qs_suffix = f"?{query_string}" if query_string else ""
+
             if portal == 'marketing':
                 if any(path.startswith(prefix) for prefix in APP_ONLY_PREFIXES):
-                    query_string = request.META.get('QUERY_STRING', '')
-                    target = f"{PORTAL_URLS['app']}{path}{('?' + query_string) if query_string else ''}"
-                    return HttpResponseRedirect(target)
+                    return HttpResponseRedirect(f"{PORTAL_URLS['app']}{path}{qs_suffix}")
                 elif any(path.startswith(prefix) for prefix in STAFF_ONLY_PREFIXES):
-                    query_string = request.META.get('QUERY_STRING', '')
-                    target = f"{PORTAL_URLS['staff']}{path}{('?' + query_string) if query_string else ''}"
-                    return HttpResponseRedirect(target)
+                    return HttpResponseRedirect(f"{PORTAL_URLS['staff']}{path}{qs_suffix}")
+                elif any(path.startswith(prefix) for prefix in ADMIN_ONLY_PREFIXES):
+                    return HttpResponseRedirect(f"{PORTAL_URLS['admin']}{path}{qs_suffix}")
+
+            elif portal == 'app':
+                if any(path.startswith(prefix) for prefix in STAFF_ONLY_PREFIXES):
+                    return HttpResponseRedirect(f"{PORTAL_URLS['staff']}{path}{qs_suffix}")
+                elif any(path.startswith(prefix) for prefix in ADMIN_ONLY_PREFIXES):
+                    return HttpResponseRedirect(f"{PORTAL_URLS['admin']}{path}{qs_suffix}")
 
         # If user is authenticated, check role compatibility with requested portal
         user = getattr(request, 'user', None)
@@ -119,11 +136,11 @@ class PartitionIsolationMiddleware:
                 is_allowed = True
 
             if not is_allowed:
-                correct_portal = 'staff' if user_role in {'Agent', 'Lawyer', 'Land_Official'} else ('admin' if (user_role == 'Admin' or user.is_staff) else 'app')
-                target_url = PORTAL_URLS.get(correct_portal, PORTAL_URLS['app'])
+                correct_portal = 'staff' if user_role in {'Agent', 'Lawyer', 'Land_Official'} else ('admin' if (user_role == 'Admin' or user.is_staff or user.is_superuser) else 'app')
+                target_base = PORTAL_URLS.get(correct_portal, PORTAL_URLS['app'])
                 
                 logger.warning(
-                    f"[Partition Block] User {user.email} (role: {user_role}) attempted to access {portal} portal. Required portal: {correct_portal}"
+                    f"[Partition Redirect] User {user.email} (role: {user_role}) on {portal} portal redirected to {correct_portal}"
                 )
 
                 if request.path.startswith('/api/'):
@@ -134,9 +151,14 @@ class PartitionIsolationMiddleware:
                             'user_role': user_role,
                             'current_portal': portal,
                             'required_portal': correct_portal,
-                            'target_url': target_url,
+                            'target_url': f"{target_base}{path}",
                         },
                         status=403,
                     )
+                
+                if not is_local:
+                    query_string = request.META.get('QUERY_STRING', '')
+                    qs_suffix = f"?{query_string}" if query_string else ""
+                    return HttpResponseRedirect(f"{target_base}{path}{qs_suffix}")
 
         return self.get_response(request)

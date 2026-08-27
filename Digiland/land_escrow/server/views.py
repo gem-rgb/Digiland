@@ -1485,6 +1485,46 @@ def admin_toggle_user_status(request, user_id):
 
 
 @login_required
+@user_passes_test(lambda u: u.is_authenticated and (getattr(u, 'role', None) == 'Admin' or u.is_superuser or u.is_staff), login_url='/')
+def admin_delete_user(request, user_id):
+    """Admin endpoint to permanently delete a user account and associated records."""
+    from django.http import JsonResponse
+    from core.models import User as CoreUser
+    from core.auth_services import AuditService
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+
+    target_user = get_object_or_404(CoreUser, id=user_id)
+    if target_user.id == request.user.id:
+        return JsonResponse({'error': 'Cannot delete your own admin account'}, status=400)
+
+    if target_user.is_superuser and not request.user.is_superuser:
+        return JsonResponse({'error': 'Only superusers can delete superuser accounts'}, status=403)
+
+    user_email = target_user.email
+    user_role = target_user.role
+
+    try:
+        AuditService.log_event(
+            "ADMIN_USER_DELETED",
+            user=request.user,
+            details=f"Permanently deleted user account {user_email} (Role: {user_role})",
+            ip_address=request.META.get('REMOTE_ADDR', ''),
+        )
+    except Exception:
+        pass
+
+    target_user.delete()
+
+    return JsonResponse({
+        'status': 'ok',
+        'message': f'User {user_email} has been permanently deleted.',
+        'deleted_user_id': str(user_id),
+    })
+
+
+@login_required
 @user_passes_test(lambda u: u.is_authenticated and getattr(u, 'role', None) == 'Admin', login_url='/')
 def admin_kyc_decision(request, application_id):
     """Admin endpoint to submit a human verification decision on a KYC application."""

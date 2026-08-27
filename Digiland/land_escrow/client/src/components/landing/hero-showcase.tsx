@@ -149,7 +149,7 @@ export function HeroShowcase({
               </a>
 
               <a
-                href="#features"
+                href="/escrow-acts/"
                 className="inline-flex items-center gap-2 px-6 py-4 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-sm shadow-sm transition"
               >
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />

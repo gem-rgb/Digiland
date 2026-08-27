@@ -24215,6 +24215,15 @@ var Ticket = createLucideIcon("Ticket", [
   ["path", { d: "M13 11v2", key: "1wjjxi" }]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/trash-2.js
+var Trash2 = createLucideIcon("Trash2", [
+  ["path", { d: "M3 6h18", key: "d0wm0j" }],
+  ["path", { d: "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6", key: "4alrt4" }],
+  ["path", { d: "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2", key: "v07s0e" }],
+  ["line", { x1: "10", x2: "10", y1: "11", y2: "17", key: "1uufr5" }],
+  ["line", { x1: "14", x2: "14", y1: "11", y2: "17", key: "xtxkd" }]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/trending-up.js
 var TrendingUp = createLucideIcon("TrendingUp", [
   ["polyline", { points: "22 7 13.5 15.5 8.5 10.5 2 17", key: "126l90" }],
@@ -28253,7 +28262,7 @@ function HeroShowcase({
   ), /* @__PURE__ */ import_react15.default.createElement(
     "a",
     {
-      href: "#features",
+      href: "/escrow-acts/",
       className: "inline-flex items-center gap-2 px-6 py-4 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-sm shadow-sm transition"
     },
     /* @__PURE__ */ import_react15.default.createElement(ShieldCheck, { className: "w-4 h-4 text-emerald-600" }),
@@ -30540,6 +30549,35 @@ function AdminPeopleHubView() {
       setActionLoadingId(null);
     }
   };
+  const handleDeleteUser = async (user) => {
+    const confirmText = `Are you sure you want to PERMANENTLY DELETE user '${user.name || user.email}' (${user.email})?
+
+This will remove their login, profile, and credentials.
+This action CANNOT be undone.`;
+    if (!confirm(confirmText)) return;
+    setActionLoadingId(user.id);
+    setActionMessage(null);
+    try {
+      const resp = await fetch(`/admin/api/users/${user.id}/delete/`, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "X-CSRFToken": bootstrap.csrf_token || ""
+        }
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        setUsersList((prev) => prev.filter((u) => u.id !== user.id));
+        setActionMessage(`User account for ${user.email} was permanently deleted.`);
+      } else {
+        alert(data.error || "Failed to delete user account");
+      }
+    } catch {
+      alert("Network error deleting user");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
   const handleReassignRole = async (user, newRole) => {
     if (!confirm(`Are you sure you want to reassign ${user.email} to role '${newRole}'?`)) return;
     setActionLoadingId(user.id);
@@ -30630,12 +30668,12 @@ function AdminPeopleHubView() {
       setIsSubmitting(false);
     }
   };
-  return /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] pb-4" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-lg font-black text-white" }, "People & Privileged Accounts Hub"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-400" }, "Manage public buyers/sellers and internally provisioned real estate professionals (Agents, Lawyers, Staff).")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(
+  return /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-lg font-black text-slate-900" }, "People & Privileged Accounts Hub"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-500 font-medium" }, "Manage public buyers/sellers and internally provisioned real estate professionals (Agents, Lawyers, Staff, Admins).")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement(
     "button",
     {
       type: "button",
       onClick: () => setActiveSubTab("users"),
-      className: `inline-flex h-9 items-center gap-1.5 rounded-xl px-4 text-xs font-bold transition ${activeSubTab === "users" ? "bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/20" : "border border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]"}`
+      className: `inline-flex h-9 items-center gap-1.5 rounded-xl px-4 text-xs font-bold transition ${activeSubTab === "users" ? "bg-emerald-600 text-white font-black shadow-md shadow-emerald-600/20" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`
     },
     /* @__PURE__ */ import_react18.default.createElement(Users, { className: "h-3.5 w-3.5" }),
     " All Users (",
@@ -30646,56 +30684,56 @@ function AdminPeopleHubView() {
     {
       type: "button",
       onClick: () => setActiveSubTab("provision"),
-      className: `inline-flex h-9 items-center gap-1.5 rounded-xl px-4 text-xs font-bold transition ${activeSubTab === "provision" ? "bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/20" : "border border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]"}`
+      className: `inline-flex h-9 items-center gap-1.5 rounded-xl px-4 text-xs font-bold transition ${activeSubTab === "provision" ? "bg-emerald-600 text-white font-black shadow-md shadow-emerald-600/20" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`
     },
     /* @__PURE__ */ import_react18.default.createElement(UserCheck, { className: "h-3.5 w-3.5" }),
     " Provision New User"
-  ))), actionMessage && /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300" }, /* @__PURE__ */ import_react18.default.createElement(CircleCheck, { className: "h-4 w-4 shrink-0" }), /* @__PURE__ */ import_react18.default.createElement("span", null, actionMessage)), activeSubTab === "users" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/10 bg-[#080c16] p-6 space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.08] pb-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center gap-1.5" }, ["All", "Buyer", "Seller", "Agent", "Lawyer", "Staff", "Admin"].map((r2) => /* @__PURE__ */ import_react18.default.createElement(
+  ))), actionMessage && /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-50 p-3 text-xs text-emerald-800 font-medium" }, /* @__PURE__ */ import_react18.default.createElement(CircleCheck, { className: "h-4 w-4 shrink-0 text-emerald-600" }), /* @__PURE__ */ import_react18.default.createElement("span", null, actionMessage)), activeSubTab === "users" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center gap-1.5" }, ["All", "Buyer", "Seller", "Agent", "Lawyer", "Staff", "Admin"].map((r2) => /* @__PURE__ */ import_react18.default.createElement(
     "button",
     {
       key: r2,
       type: "button",
       onClick: () => setRoleFilter(r2),
-      className: `rounded-xl px-3 py-1.5 text-xs font-bold transition ${roleFilter === r2 ? "bg-emerald-500 text-slate-950 font-black" : "bg-white/[0.04] text-slate-400 hover:bg-white/[0.08] hover:text-white"}`
+      className: `rounded-xl px-3 py-1.5 text-xs font-bold transition ${roleFilter === r2 ? "bg-emerald-600 text-white font-black shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"}`
     },
     r2 === "All" ? "All Roles" : `${r2}s`
-  ))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react18.default.createElement(Search, { className: "absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-500" }), /* @__PURE__ */ import_react18.default.createElement(
+  ))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react18.default.createElement(Search, { className: "absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" }), /* @__PURE__ */ import_react18.default.createElement(
     "input",
     {
       type: "text",
       value: searchQuery,
       onChange: (e) => setSearchQuery(e.target.value),
       placeholder: "Search name, email, phone, county...",
-      className: "h-9 w-64 rounded-xl border border-white/15 bg-white/[0.04] pl-8 pr-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-500"
+      className: "h-9 w-64 rounded-xl border border-slate-300 bg-slate-50 pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:bg-white transition"
     }
-  ))), filteredUsers.length === 0 ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "py-12 text-center text-xs text-slate-500" }, "No user accounts found matching your filters.") : /* @__PURE__ */ import_react18.default.createElement("div", { className: "overflow-x-auto" }, /* @__PURE__ */ import_react18.default.createElement("table", { className: "w-full text-left text-xs" }, /* @__PURE__ */ import_react18.default.createElement("thead", null, /* @__PURE__ */ import_react18.default.createElement("tr", { className: "border-b border-white/[0.06] text-[11px] font-bold uppercase tracking-wider text-slate-400" }, /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "User & Contact"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "Role"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "County / Region"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "Verification"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "Account Status"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3 text-right" }, "Actions"))), /* @__PURE__ */ import_react18.default.createElement("tbody", { className: "divide-y divide-white/[0.04]" }, filteredUsers.map((u) => /* @__PURE__ */ import_react18.default.createElement("tr", { key: u.id, className: "hover:bg-white/[0.02] transition" }, /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-white" }, u.name), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] text-slate-400" }, u.email), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, u.phone)), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3" }, /* @__PURE__ */ import_react18.default.createElement(
+  ))), filteredUsers.length === 0 ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "py-12 text-center text-xs text-slate-500" }, "No user accounts found matching your filters.") : /* @__PURE__ */ import_react18.default.createElement("div", { className: "overflow-x-auto" }, /* @__PURE__ */ import_react18.default.createElement("table", { className: "w-full text-left text-xs" }, /* @__PURE__ */ import_react18.default.createElement("thead", null, /* @__PURE__ */ import_react18.default.createElement("tr", { className: "border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-slate-50/50" }, /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "User & Contact"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "Role"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "County / Region"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "Verification"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3" }, "Account Status"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-3 px-3 text-right" }, "Actions"))), /* @__PURE__ */ import_react18.default.createElement("tbody", { className: "divide-y divide-slate-100" }, filteredUsers.map((u) => /* @__PURE__ */ import_react18.default.createElement("tr", { key: u.id, className: "hover:bg-slate-50/80 transition" }, /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-slate-900" }, u.name), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] text-slate-500 font-medium" }, u.email), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-400" }, u.phone || "No phone")), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3" }, /* @__PURE__ */ import_react18.default.createElement(
     "span",
     {
-      className: `inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[10px] font-black uppercase ${u.role === "Admin" ? "bg-purple-500/20 text-purple-300 border border-purple-500/30" : u.role === "Lawyer" ? "bg-blue-500/20 text-blue-300 border border-blue-500/30" : u.role === "Agent" ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "bg-slate-500/20 text-slate-300 border border-slate-500/30"}`
+      className: `inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[10px] font-black uppercase ${u.role === "Admin" ? "bg-purple-100 text-purple-800 border border-purple-200" : u.role === "Lawyer" ? "bg-blue-100 text-blue-800 border border-blue-200" : u.role === "Agent" ? "bg-emerald-100 text-emerald-800 border border-emerald-200" : "bg-slate-100 text-slate-700 border border-slate-200"}`
     },
     u.role === "Lawyer" ? /* @__PURE__ */ import_react18.default.createElement(Gavel, { className: "h-3 w-3" }) : u.role === "Agent" ? /* @__PURE__ */ import_react18.default.createElement(Briefcase, { className: "h-3 w-3" }) : /* @__PURE__ */ import_react18.default.createElement(User, { className: "h-3 w-3" }),
     u.role
-  )), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3 text-slate-300" }, u.county || "Nairobi"), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3" }, /* @__PURE__ */ import_react18.default.createElement(
+  )), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3 text-slate-600 font-medium" }, u.county || "Nairobi"), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3" }, /* @__PURE__ */ import_react18.default.createElement(
     "span",
     {
-      className: `inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${u.is_verified ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" : "bg-amber-500/15 text-amber-400 border border-amber-500/30"}`
+      className: `inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${u.is_verified ? "bg-emerald-100 text-emerald-800 border border-emerald-200" : "bg-amber-100 text-amber-800 border border-amber-200"}`
     },
     /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-3 w-3" }),
     u.is_verified ? "Verified" : "Unverified"
   )), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3" }, /* @__PURE__ */ import_react18.default.createElement(
     "span",
     {
-      className: `inline-flex items-center gap-1 text-[11px] font-bold ${u.is_active ? "text-emerald-400" : "text-rose-400"}`
+      className: `inline-flex items-center gap-1 text-[11px] font-bold ${u.is_active ? "text-emerald-700" : "text-rose-700"}`
     },
-    /* @__PURE__ */ import_react18.default.createElement("span", { className: `h-1.5 w-1.5 rounded-full ${u.is_active ? "bg-emerald-400" : "bg-rose-400"}` }),
+    /* @__PURE__ */ import_react18.default.createElement("span", { className: `h-1.5 w-1.5 rounded-full ${u.is_active ? "bg-emerald-600" : "bg-rose-600"}` }),
     u.is_active ? "Active" : "Suspended"
-  )), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3 text-right" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-end gap-2" }, /* @__PURE__ */ import_react18.default.createElement(
+  )), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3.5 px-3 text-right" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-end gap-1.5" }, /* @__PURE__ */ import_react18.default.createElement(
     "select",
     {
       value: u.role,
       onChange: (e) => handleReassignRole(u, e.target.value),
       disabled: actionLoadingId === u.id,
-      className: "rounded-lg border border-white/15 bg-[#0a0f1d] px-2 py-1 text-[11px] text-slate-300 outline-none hover:border-white/30"
+      className: "rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 outline-none hover:border-slate-400 transition"
     },
     /* @__PURE__ */ import_react18.default.createElement("option", { value: "Buyer" }, "Role: Buyer"),
     /* @__PURE__ */ import_react18.default.createElement("option", { value: "Seller" }, "Role: Seller"),
@@ -30709,18 +30747,30 @@ function AdminPeopleHubView() {
       type: "button",
       onClick: () => handleToggleStatus(u),
       disabled: actionLoadingId === u.id,
-      className: `rounded-lg border px-2.5 py-1 text-[11px] font-bold transition ${u.is_active ? "border-rose-500/40 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20" : "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"}`
+      className: `rounded-lg border px-2.5 py-1 text-[11px] font-bold transition ${u.is_active ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100" : "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"}`,
+      title: u.is_active ? "Suspend account" : "Reactivate account"
     },
     u.is_active ? "Suspend" : "Activate"
+  ), /* @__PURE__ */ import_react18.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => handleDeleteUser(u),
+      disabled: actionLoadingId === u.id,
+      className: "rounded-lg border border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:border-rose-400 px-2 py-1 text-[11px] font-bold transition inline-flex items-center gap-1",
+      title: "Permanently Delete User Account"
+    },
+    /* @__PURE__ */ import_react18.default.createElement(Trash2, { className: "h-3 w-3" }),
+    /* @__PURE__ */ import_react18.default.createElement("span", null, "Delete")
   ), /* @__PURE__ */ import_react18.default.createElement(
     "a",
     {
       href: `/messages/?partner=${encodeURIComponent(u.email)}`,
-      className: "rounded-lg border border-white/10 bg-white/[0.04] p-1.5 text-slate-300 hover:text-white hover:bg-white/10",
+      className: "rounded-lg border border-slate-300 bg-slate-50 p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition",
       title: "Direct Message"
     },
     /* @__PURE__ */ import_react18.default.createElement(MessageSquare, { className: "h-3.5 w-3.5" })
-  ))))))))), activeSubTab === "provision" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/10 bg-[#080c16] p-6 space-y-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "border-b border-white/[0.08] pb-4" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-base font-black text-white" }, "Internal Privileged User Provisioning"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-400" }, "Provision certified Advocates, Licensed Field Agents, Compliance Officers, and Admin Staff with role-based access.")), formError && /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2 rounded-2xl border border-rose-500/40 bg-rose-500/10 p-3 text-xs text-rose-300" }, /* @__PURE__ */ import_react18.default.createElement(TriangleAlert, { className: "h-4 w-4 shrink-0" }), /* @__PURE__ */ import_react18.default.createElement("span", null, formError)), formSuccess && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-xs text-emerald-300" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2 font-bold" }, /* @__PURE__ */ import_react18.default.createElement(CircleCheck, { className: "h-4 w-4 shrink-0" }), /* @__PURE__ */ import_react18.default.createElement("span", null, formSuccess)), generatedInviteUrl && /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-2 rounded-xl border border-white/15 bg-slate-950 p-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] font-bold text-slate-400 mb-1" }, "Single-Use Secure Invitation Link:"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-mono text-xs text-emerald-400 break-all select-all" }, generatedInviteUrl), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-1" }, "Send this link to the user to securely set their password and access their workspace."))), /* @__PURE__ */ import_react18.default.createElement("form", { onSubmit: handleCreateUser, className: "space-y-6" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2" }, "1. Select Privileged Role"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-4 gap-3" }, [
+  ))))))))), activeSubTab === "provision" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "border-b border-slate-200 pb-4" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-base font-black text-slate-900" }, "Internal Privileged User Provisioning"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-500 font-medium" }, "Provision certified Advocates, Licensed Field Agents, Compliance Officers, and Admin Staff with role-based access.")), formError && /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2 rounded-2xl border border-rose-300 bg-rose-50 p-3 text-xs text-rose-800 font-medium" }, /* @__PURE__ */ import_react18.default.createElement(TriangleAlert, { className: "h-4 w-4 shrink-0 text-rose-600" }), /* @__PURE__ */ import_react18.default.createElement("span", null, formError)), formSuccess && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2 rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-xs text-emerald-800" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2 font-bold" }, /* @__PURE__ */ import_react18.default.createElement(CircleCheck, { className: "h-4 w-4 shrink-0 text-emerald-600" }), /* @__PURE__ */ import_react18.default.createElement("span", null, formSuccess)), generatedInviteUrl && /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-2 rounded-xl border border-slate-200 bg-slate-900 p-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] font-bold text-slate-300 mb-1" }, "Single-Use Secure Invitation Link:"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-mono text-xs text-emerald-400 break-all select-all" }, generatedInviteUrl), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-400 mt-1" }, "Send this link to the user to securely set their password and access their workspace."))), /* @__PURE__ */ import_react18.default.createElement("form", { onSubmit: handleCreateUser, className: "space-y-6" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2" }, "1. Select Privileged Role"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-4 gap-3" }, [
     { r: "Lawyer", title: "Advocate / Lawyer", desc: "Conveyancing & LSK verified" },
     { r: "Agent", title: "Real Estate Agent", desc: "Site inspections & EARB license" },
     { r: "Staff", title: "Compliance Staff", desc: "Internal operations desk" },
@@ -30731,29 +30781,29 @@ function AdminPeopleHubView() {
       key: r2,
       type: "button",
       onClick: () => setRoleToCreate(r2),
-      className: `rounded-2xl border p-3.5 text-left transition ${roleToCreate === r2 ? "border-emerald-500 bg-emerald-500/10 text-white" : "border-white/10 bg-white/[0.02] text-slate-400 hover:border-white/20"}`
+      className: `rounded-2xl border p-3.5 text-left transition ${roleToCreate === r2 ? "border-emerald-600 bg-emerald-50 text-emerald-950 font-bold shadow-xs ring-1 ring-emerald-600" : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300"}`
     },
-    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-black text-white" }, title),
-    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-400 mt-0.5" }, desc)
-  )))), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2" }, "2. Provisioning Method"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-3" }, /* @__PURE__ */ import_react18.default.createElement(
+    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-black text-slate-900" }, title),
+    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, desc)
+  )))), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2" }, "2. Provisioning Method"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-3" }, /* @__PURE__ */ import_react18.default.createElement(
     "button",
     {
       type: "button",
       onClick: () => setProvisionMode("DIRECT_ACTIVE"),
-      className: `rounded-2xl border p-3.5 text-left transition ${provisionMode === "DIRECT_ACTIVE" ? "border-emerald-500 bg-emerald-500/10 text-white" : "border-white/10 bg-white/[0.02] text-slate-400 hover:border-white/20"}`
+      className: `rounded-2xl border p-3.5 text-left transition ${provisionMode === "DIRECT_ACTIVE" ? "border-emerald-600 bg-emerald-50 text-emerald-950 font-bold shadow-xs ring-1 ring-emerald-600" : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300"}`
     },
-    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-black text-white" }, "Direct Active Creation"),
-    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-400 mt-0.5" }, "Admin sets initial password; account is pre-verified and active immediately.")
+    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-black text-slate-900" }, "Direct Active Creation"),
+    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "Admin sets initial password; account is pre-verified and active immediately.")
   ), /* @__PURE__ */ import_react18.default.createElement(
     "button",
     {
       type: "button",
       onClick: () => setProvisionMode("INVITATION"),
-      className: `rounded-2xl border p-3.5 text-left transition ${provisionMode === "INVITATION" ? "border-emerald-500 bg-emerald-500/10 text-white" : "border-white/10 bg-white/[0.02] text-slate-400 hover:border-white/20"}`
+      className: `rounded-2xl border p-3.5 text-left transition ${provisionMode === "INVITATION" ? "border-emerald-600 bg-emerald-50 text-emerald-950 font-bold shadow-xs ring-1 ring-emerald-600" : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300"}`
     },
-    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-black text-white" }, "Secure Invitation Link (Recommended)"),
-    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-400 mt-0.5" }, "Generates single-use token; user sets their own password securely.")
-  ))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-xs font-bold text-slate-300 uppercase tracking-wider block" }, "3. Identity & Contact Details"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-400 block mb-1 font-bold" }, "Full Name *"), /* @__PURE__ */ import_react18.default.createElement(
+    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-black text-slate-900" }, "Secure Invitation Link (Recommended)"),
+    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "Generates single-use token; user sets their own password securely.")
+  ))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-xs font-bold text-slate-700 uppercase tracking-wider block" }, "3. Identity & Contact Details"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-600 block mb-1 font-bold" }, "Full Name *"), /* @__PURE__ */ import_react18.default.createElement(
     "input",
     {
       type: "text",
@@ -30761,9 +30811,9 @@ function AdminPeopleHubView() {
       value: fullName,
       onChange: (e) => setFullName(e.target.value),
       placeholder: "e.g. Adv. James Mwangi",
-      className: "w-full h-10 rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white outline-none focus:border-emerald-500"
+      className: "w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
     }
-  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-400 block mb-1 font-bold" }, "Email Address *"), /* @__PURE__ */ import_react18.default.createElement(
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-600 block mb-1 font-bold" }, "Email Address *"), /* @__PURE__ */ import_react18.default.createElement(
     "input",
     {
       type: "email",
@@ -30771,120 +30821,120 @@ function AdminPeopleHubView() {
       value: email,
       onChange: (e) => setEmail(e.target.value),
       placeholder: "official@lawfirm.co.ke",
-      className: "w-full h-10 rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white outline-none focus:border-emerald-500"
+      className: "w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
     }
-  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-400 block mb-1 font-bold" }, "Phone Number (M-Pesa Payouts)"), /* @__PURE__ */ import_react18.default.createElement(
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-600 block mb-1 font-bold" }, "Phone Number (M-Pesa Payouts)"), /* @__PURE__ */ import_react18.default.createElement(
     "input",
     {
       type: "text",
       value: phone,
       onChange: (e) => setPhone(e.target.value),
       placeholder: "+254712345678",
-      className: "w-full h-10 rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white outline-none focus:border-emerald-500"
+      className: "w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
     }
-  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-400 block mb-1 font-bold" }, "National ID / Passport No"), /* @__PURE__ */ import_react18.default.createElement(
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-600 block mb-1 font-bold" }, "National ID / Passport No"), /* @__PURE__ */ import_react18.default.createElement(
     "input",
     {
       type: "text",
       value: nationalId,
       onChange: (e) => setNationalId(e.target.value),
       placeholder: "e.g. 29481920",
-      className: "w-full h-10 rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white outline-none focus:border-emerald-500"
+      className: "w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
     }
-  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-400 block mb-1 font-bold" }, "KRA PIN"), /* @__PURE__ */ import_react18.default.createElement(
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-600 block mb-1 font-bold" }, "KRA PIN"), /* @__PURE__ */ import_react18.default.createElement(
     "input",
     {
       type: "text",
       value: kraPin,
       onChange: (e) => setKraPin(e.target.value),
       placeholder: "A012345678Z",
-      className: "w-full h-10 rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white outline-none focus:border-emerald-500"
+      className: "w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
     }
-  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-400 block mb-1 font-bold" }, "Primary Operating County"), /* @__PURE__ */ import_react18.default.createElement(
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-600 block mb-1 font-bold" }, "Primary Operating County"), /* @__PURE__ */ import_react18.default.createElement(
     "select",
     {
       value: county,
       onChange: (e) => setCounty(e.target.value),
-      className: "w-full h-10 rounded-xl border border-white/15 bg-[#080c16] px-3 text-xs text-white outline-none focus:border-emerald-500"
+      className: "w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-emerald-500"
     },
     ["Nairobi", "Kiambu", "Machakos", "Kajiado", "Nakuru", "Mombasa", "Uasin Gishu", "Kisumu"].map((c) => /* @__PURE__ */ import_react18.default.createElement("option", { key: c, value: c }, c, " County"))
-  )), provisionMode === "DIRECT_ACTIVE" && /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-400 block mb-1 font-bold" }, "Initial Password"), /* @__PURE__ */ import_react18.default.createElement(
+  )), provisionMode === "DIRECT_ACTIVE" && /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-600 block mb-1 font-bold" }, "Initial Password"), /* @__PURE__ */ import_react18.default.createElement(
     "input",
     {
       type: "text",
       value: password,
       onChange: (e) => setPassword(e.target.value),
-      className: "w-full h-10 rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white outline-none focus:border-emerald-500"
+      className: "w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-emerald-500"
     }
-  )))), roleToCreate === "Lawyer" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3 rounded-2xl border border-blue-500/20 bg-blue-950/20 p-4" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-xs font-black text-blue-300 uppercase tracking-wider block" }, "Advocate Professional Verification Details"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 md:grid-cols-4 gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-400 block mb-1 font-bold" }, "Law Firm Name"), /* @__PURE__ */ import_react18.default.createElement(
+  )))), roleToCreate === "Lawyer" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3 rounded-2xl border border-blue-200 bg-blue-50/50 p-4" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-xs font-black text-blue-900 uppercase tracking-wider block" }, "Advocate Professional Verification Details"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 md:grid-cols-4 gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-600 block mb-1 font-bold" }, "Law Firm Name"), /* @__PURE__ */ import_react18.default.createElement(
     "input",
     {
       type: "text",
       value: lawFirmName,
       onChange: (e) => setLawFirmName(e.target.value),
       placeholder: "e.g. Mwangi & Associates Advocates",
-      className: "w-full h-10 rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white outline-none focus:border-blue-500"
+      className: "w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-blue-500"
     }
-  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-400 block mb-1 font-bold" }, "LSK Roll Number"), /* @__PURE__ */ import_react18.default.createElement(
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-600 block mb-1 font-bold" }, "LSK Roll Number"), /* @__PURE__ */ import_react18.default.createElement(
     "input",
     {
       type: "text",
       value: lskNumber,
       onChange: (e) => setLskNumber(e.target.value),
       placeholder: "e.g. P.105/14820/18",
-      className: "w-full h-10 rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white outline-none focus:border-blue-500"
+      className: "w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-blue-500"
     }
-  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-400 block mb-1 font-bold" }, "Practicing Cert No"), /* @__PURE__ */ import_react18.default.createElement(
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-600 block mb-1 font-bold" }, "Practicing Cert No"), /* @__PURE__ */ import_react18.default.createElement(
     "input",
     {
       type: "text",
       value: practicingCert,
       onChange: (e) => setPracticingCert(e.target.value),
       placeholder: "e.g. LSK-PC-2026-8492",
-      className: "w-full h-10 rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white outline-none focus:border-blue-500"
+      className: "w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-blue-500"
     }
-  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-400 block mb-1 font-bold" }, "Admission Year"), /* @__PURE__ */ import_react18.default.createElement(
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-600 block mb-1 font-bold" }, "Admission Year"), /* @__PURE__ */ import_react18.default.createElement(
     "input",
     {
       type: "text",
       value: yearOfAdmission,
       onChange: (e) => setYearOfAdmission(e.target.value),
       placeholder: "2018",
-      className: "w-full h-10 rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white outline-none focus:border-blue-500"
+      className: "w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-blue-500"
     }
-  )))), roleToCreate === "Agent" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3 rounded-2xl border border-emerald-500/20 bg-emerald-950/20 p-4" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-xs font-black text-emerald-300 uppercase tracking-wider block" }, "Real Estate Agent Licensing Details"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-400 block mb-1 font-bold" }, "Agency / Brokerage Name"), /* @__PURE__ */ import_react18.default.createElement(
+  )))), roleToCreate === "Agent" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-xs font-black text-emerald-900 uppercase tracking-wider block" }, "Real Estate Agent Licensing Details"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-600 block mb-1 font-bold" }, "Agency / Brokerage Name"), /* @__PURE__ */ import_react18.default.createElement(
     "input",
     {
       type: "text",
       value: agencyName,
       onChange: (e) => setAgencyName(e.target.value),
       placeholder: "e.g. Prime Ridge Properties Ltd",
-      className: "w-full h-10 rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white outline-none focus:border-emerald-500"
+      className: "w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-emerald-500"
     }
-  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-400 block mb-1 font-bold" }, "EARB Registration No"), /* @__PURE__ */ import_react18.default.createElement(
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-600 block mb-1 font-bold" }, "EARB Registration No"), /* @__PURE__ */ import_react18.default.createElement(
     "input",
     {
       type: "text",
       value: earbNumber,
       onChange: (e) => setEarbNumber(e.target.value),
       placeholder: "e.g. EARB/2026/0842",
-      className: "w-full h-10 rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white outline-none focus:border-emerald-500"
+      className: "w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-emerald-500"
     }
-  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-400 block mb-1 font-bold" }, "DCI Good Conduct Certificate"), /* @__PURE__ */ import_react18.default.createElement(
+  )), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-[11px] text-slate-600 block mb-1 font-bold" }, "DCI Good Conduct Certificate"), /* @__PURE__ */ import_react18.default.createElement(
     "input",
     {
       type: "text",
       value: goodConductNumber,
       onChange: (e) => setGoodConductNumber(e.target.value),
       placeholder: "e.g. DCI/PCC/2026/19482",
-      className: "w-full h-10 rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white outline-none focus:border-emerald-500"
+      className: "w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-emerald-500"
     }
   )))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-end pt-2" }, /* @__PURE__ */ import_react18.default.createElement(
     Button,
     {
       type: "submit",
       disabled: isSubmitting,
-      className: "h-11 rounded-2xl px-6 text-xs font-black bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20"
+      className: "h-11 rounded-2xl px-6 text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20"
     },
     isSubmitting ? "Provisioning User..." : /* @__PURE__ */ import_react18.default.createElement(import_react18.default.Fragment, null, /* @__PURE__ */ import_react18.default.createElement(UserCheck, { className: "mr-2 h-4 w-4" }), "Provision ", roleToCreate, " Account")
   )))));
@@ -30927,25 +30977,25 @@ function AdminKycDeskView() {
       setIsProcessing(false);
     }
   };
-  return /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "border-b border-white/[0.08] pb-4" }, /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-lg font-black text-white" }, "KYC & Document Verification Station"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-400" }, "Inspect uploaded credentials, AI OCR extracted signals, and execute statutory human review decisions.")), feedbackMessage && /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300" }, /* @__PURE__ */ import_react18.default.createElement(CircleCheck, { className: "h-4 w-4 shrink-0" }), /* @__PURE__ */ import_react18.default.createElement("span", null, feedbackMessage)), applications.length === 0 ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-white/10 bg-[#080c16] p-12 text-center space-y-3" }, /* @__PURE__ */ import_react18.default.createElement(CircleCheck, { className: "mx-auto h-10 w-10 text-emerald-400" }), /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-white" }, "KYC Approvals Queue Clear"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-400" }, "All submitted agent, lawyer, and seller documents have been reviewed.")) : /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-12 gap-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "lg:col-span-4 space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-black uppercase text-slate-400 px-1" }, "Pending Applications (", applications.length, ")"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2 max-h-[600px] overflow-y-auto pr-1" }, applications.map((app) => /* @__PURE__ */ import_react18.default.createElement(
+  return /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "border-b border-slate-200 pb-4" }, /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-lg font-black text-slate-900" }, "KYC & Document Verification Station"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-500 font-medium" }, "Inspect uploaded credentials, AI OCR extracted signals, and execute statutory human review decisions.")), feedbackMessage && /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-50 p-3 text-xs text-emerald-800 font-medium" }, /* @__PURE__ */ import_react18.default.createElement(CircleCheck, { className: "h-4 w-4 shrink-0 text-emerald-600" }), /* @__PURE__ */ import_react18.default.createElement("span", null, feedbackMessage)), applications.length === 0 ? /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-12 text-center shadow-xs space-y-3" }, /* @__PURE__ */ import_react18.default.createElement(CircleCheck, { className: "mx-auto h-10 w-10 text-emerald-600" }), /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, "KYC Approvals Queue Clear"), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-500" }, "All submitted agent, lawyer, and seller documents have been reviewed.")) : /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-12 gap-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "lg:col-span-4 space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-black uppercase text-slate-500 px-1" }, "Pending Applications (", applications.length, ")"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2 max-h-[600px] overflow-y-auto pr-1" }, applications.map((app) => /* @__PURE__ */ import_react18.default.createElement(
     "button",
     {
       key: app.id,
       type: "button",
       onClick: () => setSelectedApp(app),
-      className: `w-full rounded-2xl border p-4 text-left transition ${selectedApp?.id === app.id ? "border-emerald-500 bg-emerald-500/10 text-white" : "border-white/10 bg-[#080c16] text-slate-300 hover:border-white/20"}`
+      className: `w-full rounded-2xl border p-4 text-left transition ${selectedApp?.id === app.id ? "border-emerald-600 bg-emerald-50 text-slate-900 shadow-xs ring-1 ring-emerald-600" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"}`
     },
-    /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-xs text-white" }, app.name), /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "warning", className: "text-[9px] uppercase font-bold py-0" }, app.status || "Pending")),
-    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] text-slate-400 mt-1" }, app.email),
-    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "ID: ", app.id_number, " | KRA: ", app.kra_pin)
-  )))), selectedApp && /* @__PURE__ */ import_react18.default.createElement("div", { className: "lg:col-span-8 rounded-3xl border border-white/10 bg-[#080c16] p-6 space-y-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.08] pb-4" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-base font-black text-white" }, selectedApp.name), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs text-slate-400" }, selectedApp.email, " \u2022 ", selectedApp.phone || "No phone")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-500/30" }, "National ID: ", selectedApp.id_number), /* @__PURE__ */ import_react18.default.createElement("span", { className: "rounded-full bg-blue-500/20 px-2.5 py-0.5 text-[10px] font-bold text-blue-300 border border-blue-500/30" }, "KRA: ", selectedApp.kra_pin))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-white/10 bg-black/40 p-4 space-y-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] font-bold uppercase text-slate-400 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "Uploaded ID Document"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-emerald-400 text-[10px]" }, "High Res")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "aspect-[4/3] rounded-xl border border-white/10 bg-slate-950 flex flex-col items-center justify-center p-4 text-center" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-12 w-12 text-emerald-400 mb-2 opacity-80" }), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-bold text-white" }, "Kenyan National ID Card"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-mono text-[10px] text-slate-400 mt-1" }, "ID No: ", selectedApp.id_number), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[9px] text-slate-500 mt-0.5" }, "Holder: ", selectedApp.name))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-white/10 bg-black/40 p-4 space-y-3 text-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] font-bold uppercase text-slate-400 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "AI Verification Signals"), /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "success", className: "text-[9px] py-0 font-bold" }, "Passed")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-1 border-b border-white/[0.04]" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-400" }, "OCR Confidence:"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-emerald-400" }, "96.4%")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-1 border-b border-white/[0.04]" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-400" }, "Laplacian Blur Score:"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-emerald-400" }, "88.5 (Sharp)")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-1 border-b border-white/[0.04]" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-400" }, "Canny Edge Density:"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-emerald-400" }, "0.0240 (No Tamper)")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-1 border-b border-white/[0.04]" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-400" }, "Government Template Match:"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-emerald-400" }, "95.0%")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-1 border-b border-white/[0.04]" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-400" }, "Identity Cross-Match:"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-emerald-400" }, "Exact Match"))))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3 rounded-2xl border border-white/15 bg-white/[0.02] p-4" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-xs font-bold text-slate-300 uppercase tracking-wider block" }, "Human Review & Decision Authority"), /* @__PURE__ */ import_react18.default.createElement(
+    /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-xs text-slate-900" }, app.name), /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "warning", className: "text-[9px] uppercase font-bold py-0" }, app.status || "Pending")),
+    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] text-slate-500 mt-1" }, app.email),
+    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-400 mt-0.5" }, "ID: ", app.id_number, " | KRA: ", app.kra_pin)
+  )))), selectedApp && /* @__PURE__ */ import_react18.default.createElement("div", { className: "lg:col-span-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-base font-black text-slate-900" }, selectedApp.name), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs text-slate-500 font-medium" }, selectedApp.email, " \u2022 ", selectedApp.phone || "No phone")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200" }, "National ID: ", selectedApp.id_number), /* @__PURE__ */ import_react18.default.createElement("span", { className: "rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold text-blue-800 border border-blue-200" }, "KRA: ", selectedApp.kra_pin))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] font-bold uppercase text-slate-600 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "Uploaded ID Document"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-emerald-700 font-bold text-[10px]" }, "High Res")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "aspect-[4/3] rounded-xl border border-slate-200 bg-white flex flex-col items-center justify-center p-4 text-center" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-12 w-12 text-emerald-600 mb-2 opacity-90" }), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-bold text-slate-900" }, "Kenyan National ID Card"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-mono text-[10px] text-slate-500 mt-1" }, "ID No: ", selectedApp.id_number), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[9px] text-slate-400 mt-0.5" }, "Holder: ", selectedApp.name))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3 text-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] font-bold uppercase text-slate-600 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "AI Verification Signals"), /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "success", className: "text-[9px] py-0 font-bold" }, "Passed")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-1 border-b border-slate-200/60" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-500 font-medium" }, "OCR Confidence:"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-emerald-700" }, "96.4%")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-1 border-b border-slate-200/60" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-500 font-medium" }, "Laplacian Blur Score:"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-emerald-700" }, "88.5 (Sharp)")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-1 border-b border-slate-200/60" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-500 font-medium" }, "Canny Edge Density:"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-emerald-700" }, "0.0240 (No Tamper)")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-1 border-b border-slate-200/60" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-500 font-medium" }, "Government Template Match:"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-emerald-700" }, "95.0%")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-1 border-b border-slate-200/60" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-500 font-medium" }, "Identity Cross-Match:"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-emerald-700" }, "Exact Match"))))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4" }, /* @__PURE__ */ import_react18.default.createElement("label", { className: "text-xs font-bold text-slate-700 uppercase tracking-wider block" }, "Human Review & Decision Authority"), /* @__PURE__ */ import_react18.default.createElement(
     "textarea",
     {
       value: reviewNotes,
       onChange: (e) => setReviewNotes(e.target.value),
       placeholder: "Optional decision notes / statutory justification...",
       rows: 2,
-      className: "w-full rounded-xl border border-white/15 bg-white/[0.04] p-3 text-xs text-white outline-none focus:border-emerald-500"
+      className: "w-full rounded-xl border border-slate-300 bg-white p-3 text-xs text-slate-900 outline-none focus:border-emerald-500"
     }
   ), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-end gap-2 pt-2" }, /* @__PURE__ */ import_react18.default.createElement(
     Button,
@@ -30953,7 +31003,7 @@ function AdminKycDeskView() {
       type: "button",
       disabled: isProcessing,
       onClick: () => handleDecision("REQUEST_INFO"),
-      className: "h-9 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 text-xs font-bold"
+      className: "h-9 rounded-xl border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 text-xs font-bold"
     },
     "Request Info"
   ), /* @__PURE__ */ import_react18.default.createElement(
@@ -30962,7 +31012,7 @@ function AdminKycDeskView() {
       type: "button",
       disabled: isProcessing,
       onClick: () => handleDecision("REJECT"),
-      className: "h-9 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 text-xs font-bold"
+      className: "h-9 rounded-xl border border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100 text-xs font-bold"
     },
     "Reject Application"
   ), /* @__PURE__ */ import_react18.default.createElement(
@@ -30971,7 +31021,7 @@ function AdminKycDeskView() {
       type: "button",
       disabled: isProcessing,
       onClick: () => handleDecision("APPROVE"),
-      className: "h-9 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black shadow-lg shadow-emerald-500/20"
+      className: "h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-md shadow-emerald-600/20"
     },
     /* @__PURE__ */ import_react18.default.createElement(CircleCheck, { className: "mr-1.5 h-3.5 w-3.5" }),
     " Approve & Activate"
@@ -31005,40 +31055,40 @@ function AdminAIEvaluationLabView() {
     }
   };
   const cm = evaluation?.confusion_matrix || { true_positives: 5, true_negatives: 5, false_positives: 0, false_negatives: 0 };
-  return /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] pb-4" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-lg font-black text-white" }, "AI Document Verification Lab & Evaluation Suite"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "rounded-full bg-purple-500/20 px-2 py-0.5 text-[10px] font-black uppercase text-purple-300 border border-purple-500/30" }, "Auditable AI")), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-400" }, "Empirical benchmark evaluation of OpenCV Laplacian blur detection, Tesseract OCR, and Canny edge analysis against ground-truth Kenyan statutory documents.")), /* @__PURE__ */ import_react18.default.createElement(
+  return /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-lg font-black text-slate-900" }, "AI Document Verification Lab & Evaluation Suite"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-black uppercase text-purple-800 border border-purple-200" }, "Auditable AI")), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-500 font-medium" }, "Empirical benchmark evaluation of OpenCV Laplacian blur detection, Tesseract OCR, and Canny edge analysis against ground-truth Kenyan statutory documents.")), /* @__PURE__ */ import_react18.default.createElement(
     Button,
     {
       type: "button",
       disabled: isRunning,
       onClick: runEvaluation,
-      className: "h-10 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 px-5 text-xs font-black text-white shadow-lg shadow-purple-600/30 hover:scale-[1.02] transition"
+      className: "h-10 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 px-5 text-xs font-black text-white shadow-md shadow-purple-600/30 hover:scale-[1.02] transition"
     },
     isRunning ? "Evaluating Benchmark..." : /* @__PURE__ */ import_react18.default.createElement(import_react18.default.Fragment, null, /* @__PURE__ */ import_react18.default.createElement(Sparkles, { className: "mr-2 h-4 w-4" }), " Run Benchmark Evaluation")
-  )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-white/10 bg-[#080c16] p-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-400" }, "Overall Accuracy"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-emerald-400" }, evaluation?.accuracy_pct || 100, "%"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, evaluation?.correct_predictions || 10, "/", evaluation?.total_tested || 10, " Correct")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-white/10 bg-[#080c16] p-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-400" }, "Precision"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-purple-400" }, evaluation?.precision_pct || 100, "%"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "TP / (TP + FP)")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-white/10 bg-[#080c16] p-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-400" }, "Recall"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-blue-400" }, evaluation?.recall_pct || 100, "%"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "TP / (TP + FN)")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-white/10 bg-[#080c16] p-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-400" }, "F1 Score"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-amber-400" }, evaluation?.f1_score_pct || 100, "%"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "Harmonic Mean")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-white/10 bg-[#080c16] p-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-400" }, "False Positives"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-slate-200" }, cm.false_positives), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-emerald-400 mt-0.5" }, "Zero Fraud Escapes")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-white/10 bg-[#080c16] p-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-400" }, "False Negatives"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-slate-200" }, cm.false_negatives), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-emerald-400 mt-0.5" }, "Zero Valid Rejections"))), evaluation?.results && /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-12 gap-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "lg:col-span-5 rounded-3xl border border-white/10 bg-[#080c16] p-5 space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-black uppercase text-slate-400" }, "Benchmark Dataset Test Cases (", evaluation.results.length, ")"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2 max-h-[500px] overflow-y-auto pr-1" }, evaluation.results.map((tc) => /* @__PURE__ */ import_react18.default.createElement(
+  )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Overall Accuracy"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-emerald-600" }, evaluation?.accuracy_pct || 100, "%"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, evaluation?.correct_predictions || 10, "/", evaluation?.total_tested || 10, " Correct")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Precision"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-purple-600" }, evaluation?.precision_pct || 100, "%"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "TP / (TP + FP)")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Recall"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-blue-600" }, evaluation?.recall_pct || 100, "%"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "TP / (TP + FN)")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "F1 Score"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-amber-600" }, evaluation?.f1_score_pct || 100, "%"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "Harmonic Mean")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "False Positives"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-slate-800" }, cm.false_positives), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-emerald-600 font-bold mt-0.5" }, "Zero Fraud Escapes")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "False Negatives"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-slate-800" }, cm.false_negatives), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-emerald-600 font-bold mt-0.5" }, "Zero Valid Rejections"))), evaluation?.results && /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-12 gap-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "lg:col-span-5 rounded-3xl border border-slate-200 bg-white p-5 shadow-xs space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-black uppercase text-slate-500" }, "Benchmark Dataset Test Cases (", evaluation.results.length, ")"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2 max-h-[500px] overflow-y-auto pr-1" }, evaluation.results.map((tc) => /* @__PURE__ */ import_react18.default.createElement(
     "button",
     {
       key: tc.test_case_id,
       type: "button",
       onClick: () => setSelectedTestCase(tc),
-      className: `w-full rounded-2xl border p-3 text-left transition ${selectedTestCase?.test_case_id === tc.test_case_id ? "border-purple-500 bg-purple-500/10 text-white" : "border-white/10 bg-white/[0.02] text-slate-300 hover:border-white/20"}`
+      className: `w-full rounded-2xl border p-3 text-left transition ${selectedTestCase?.test_case_id === tc.test_case_id ? "border-purple-600 bg-purple-50 text-slate-900 shadow-xs ring-1 ring-purple-600" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"}`
     },
-    /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-mono text-[10px] font-bold text-slate-400" }, tc.test_case_id), /* @__PURE__ */ import_react18.default.createElement(
+    /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-mono text-[10px] font-bold text-slate-500" }, tc.test_case_id), /* @__PURE__ */ import_react18.default.createElement(
       "span",
       {
-        className: `text-[10px] font-black uppercase rounded-full px-2 py-0.5 ${tc.predicted_label === "APPROVED" ? "bg-emerald-500/20 text-emerald-300" : "bg-rose-500/20 text-rose-300"}`
+        className: `text-[10px] font-black uppercase rounded-full px-2 py-0.5 ${tc.predicted_label === "APPROVED" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`
       },
       tc.predicted_label
     )),
-    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-bold text-white mt-1" }, tc.name),
+    /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-bold text-slate-900 mt-1" }, tc.name),
     /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "OCR: ", tc.ocr_confidence, "% | Blur: ", tc.blur_score)
-  )))), selectedTestCase && /* @__PURE__ */ import_react18.default.createElement("div", { className: "lg:col-span-7 rounded-3xl border border-white/10 bg-[#080c16] p-6 space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "border-b border-white/[0.08] pb-3 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-white" }, selectedTestCase.name), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] text-slate-400 font-mono" }, "Test Case ID: ", selectedTestCase.test_case_id)), /* @__PURE__ */ import_react18.default.createElement(
+  )))), selectedTestCase && /* @__PURE__ */ import_react18.default.createElement("div", { className: "lg:col-span-7 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "border-b border-slate-100 pb-3 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, selectedTestCase.name), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] text-slate-500 font-mono" }, "Test Case ID: ", selectedTestCase.test_case_id)), /* @__PURE__ */ import_react18.default.createElement(
     Badge,
     {
       tone: selectedTestCase.is_correct ? "success" : "danger",
       className: "text-[10px] uppercase font-bold"
     },
     selectedTestCase.is_correct ? "Prediction Matched" : "Prediction Discrepancy"
-  )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-2 gap-3 text-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-white/10 bg-black/40 p-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-slate-400 text-[10px] uppercase font-bold" }, "Expected Label"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-black text-white mt-0.5" }, selectedTestCase.expected_label)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-white/10 bg-black/40 p-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-slate-400 text-[10px] uppercase font-bold" }, "AI Predicted Label"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-black text-emerald-400 mt-0.5" }, selectedTestCase.predicted_label)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-white/10 bg-black/40 p-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-slate-400 text-[10px] uppercase font-bold" }, "OCR Confidence"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-black text-white mt-0.5" }, selectedTestCase.ocr_confidence, "%")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-white/10 bg-black/40 p-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-slate-400 text-[10px] uppercase font-bold" }, "Laplacian Blur Score"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-black text-white mt-0.5" }, selectedTestCase.blur_score))), selectedTestCase.reasons && selectedTestCase.reasons.length > 0 && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-1 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-rose-300" }, "AI Rejection / Warning Reasons:"), selectedTestCase.reasons.map((r2, idx) => /* @__PURE__ */ import_react18.default.createElement("div", { key: idx, className: "text-slate-300" }, "\u2022 ", r2))))));
+  )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-2 gap-3 text-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-slate-50 p-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-slate-500 text-[10px] uppercase font-bold" }, "Expected Label"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-black text-slate-900 mt-0.5" }, selectedTestCase.expected_label)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-slate-50 p-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-slate-500 text-[10px] uppercase font-bold" }, "AI Predicted Label"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-black text-emerald-700 mt-0.5" }, selectedTestCase.predicted_label)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-slate-50 p-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-slate-500 text-[10px] uppercase font-bold" }, "OCR Confidence"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-black text-slate-900 mt-0.5" }, selectedTestCase.ocr_confidence, "%")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-slate-50 p-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-slate-500 text-[10px] uppercase font-bold" }, "Laplacian Blur Score"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-black text-slate-900 mt-0.5" }, selectedTestCase.blur_score))), selectedTestCase.reasons && selectedTestCase.reasons.length > 0 && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-1 rounded-2xl border border-rose-200 bg-rose-50 p-3 text-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-rose-800" }, "AI Rejection / Warning Reasons:"), selectedTestCase.reasons.map((r2, idx) => /* @__PURE__ */ import_react18.default.createElement("div", { key: idx, className: "text-slate-700" }, "\u2022 ", r2))))));
 }
 
 // src/components/layout/partition-guard.tsx
@@ -35230,6 +35280,14 @@ lucide-react/dist/esm/icons/target.js:
    *)
 
 lucide-react/dist/esm/icons/ticket.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
+lucide-react/dist/esm/icons/trash-2.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *

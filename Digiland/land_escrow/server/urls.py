@@ -49,6 +49,7 @@ urlpatterns = [
     path('admin/api/users/', views.admin_users_api, name='admin_users_api'),
     path('admin/api/users/<uuid:user_id>/update-role/', views.admin_update_user_role, name='admin_update_user_role'),
     path('admin/api/users/<uuid:user_id>/toggle-status/', views.admin_toggle_user_status, name='admin_toggle_user_status'),
+    path('admin/api/users/<uuid:user_id>/delete/', views.admin_delete_user, name='admin_delete_user'),
     path('admin/api/kyc/<uuid:application_id>/decision/', views.admin_kyc_decision, name='admin_kyc_decision'),
     path('admin/transaction/<uuid:transaction_id>/release/', views.admin_release_escrow, name='admin_release_escrow'),
     path('admin/transaction/<uuid:transaction_id>/refund/', views.admin_refund_escrow, name='admin_refund_escrow'),
