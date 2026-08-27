@@ -849,15 +849,15 @@ function DashboardPage() {
   }, [rawStats, role]);
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] min-h-[680px] flex-col overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#0c111e] shadow-2xl backdrop-blur-xl md:flex-row">
+    <div className="flex h-[calc(100vh-8rem)] min-h-[680px] flex-col overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-xl md:flex-row text-slate-900">
       {/* Left Sub-Sidebar: Role Workspace Channels */}
-      <div className="flex w-full flex-col border-b border-white/[0.08] bg-[#080b14] md:w-64 lg:w-72 md:border-r md:border-b-0 shrink-0">
+      <div className="flex w-full flex-col border-b border-slate-200/90 bg-slate-50 md:w-64 lg:w-72 md:border-r md:border-b-0 shrink-0">
         {/* Workspace Title Header */}
-        <div className="flex h-14 items-center justify-between border-b border-white/[0.08] px-4">
+        <div className="flex h-14 items-center justify-between border-b border-slate-200 px-4 bg-white">
           <div className="flex items-center gap-2">
-            <span className="font-black text-sm text-slate-100 tracking-wide">{role} Workspace</span>
+            <span className="font-black text-sm text-slate-900 tracking-wide">{role} Workspace</span>
           </div>
-          <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-300 border border-emerald-500/30">
+          <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[9px] font-black uppercase text-emerald-700 border border-emerald-200">
             Live
           </span>
         </div>
@@ -867,7 +867,7 @@ function DashboardPage() {
           <div>
             <div className="px-2 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center justify-between">
               <span>Modules</span>
-              <span className="text-[9px] text-emerald-400 font-bold">{role}</span>
+              <span className="text-[9px] text-emerald-700 font-bold">{role}</span>
             </div>
             <div className="mt-1 space-y-0.5">
               {channels.map((channel) => {
@@ -880,16 +880,16 @@ function DashboardPage() {
                     className={cn(
                       'flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-bold transition-all duration-150',
                       isActive
-                        ? 'bg-emerald-500/15 text-emerald-300 shadow-[inset_0_0_8px_rgba(16,185,129,0.2)]'
-                        : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
+                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                     )}
                   >
                     <div className="flex items-center gap-2.5 truncate">
-                      <span className={cn('text-sm font-extrabold', isActive ? 'text-emerald-400' : 'text-slate-500')}>#</span>
+                      <span className={cn('text-sm font-extrabold', isActive ? 'text-emerald-700' : 'text-slate-400')}>#</span>
                       <span className="truncate">{channel.name}</span>
                     </div>
                     {channel.badge && channel.badge !== '0' && (
-                      <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.2 text-[9px] font-black text-emerald-300">
+                      <span className="rounded-full bg-emerald-100 px-1.5 py-0.2 text-[9px] font-black text-emerald-800">
                         {channel.badge}
                       </span>
                     )}
@@ -907,24 +907,24 @@ function DashboardPage() {
             <div className="mt-1 space-y-1">
               <a
                 href="/messages/"
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 transition"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition"
               >
-                <MessageSquare className="h-4 w-4 text-purple-400" />
+                <MessageSquare className="h-4 w-4 text-purple-600" />
                 <span>Open Chat & DMs</span>
               </a>
               <a
                 href="/transactions/"
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 transition"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition"
               >
-                <ReceiptText className="h-4 w-4 text-emerald-400" />
+                <ReceiptText className="h-4 w-4 text-emerald-600" />
                 <span>Escrow Ledger</span>
               </a>
               {isSeller && (
                 <a
                   href="/seller/promotions/"
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 transition"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition"
                 >
-                  <Sparkles className="h-4 w-4 text-amber-400" />
+                  <Sparkles className="h-4 w-4 text-amber-600" />
                   <span>Promote Listing</span>
                 </a>
               )}
@@ -933,31 +933,31 @@ function DashboardPage() {
         </div>
 
         {/* User Status Bar Footer */}
-        <div className="border-t border-white/[0.08] p-3 bg-[#06080e] flex items-center justify-between">
+        <div className="border-t border-slate-200 p-3 bg-white flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-xs font-black text-slate-950 shrink-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600 text-xs font-black text-white shrink-0 shadow-xs">
               {displayName.charAt(0).toUpperCase()}
             </div>
-            <div className="min-w-0">
-              <div className="truncate text-xs font-bold text-slate-200">{displayName}</div>
-              <div className="text-[10px] text-emerald-400 font-medium capitalize">{role} Verified</div>
+            <div className="min-w-0 text-left">
+              <div className="truncate text-xs font-bold text-slate-900">{displayName}</div>
+              <div className="text-[10px] text-emerald-700 font-semibold capitalize">{role} Verified</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Right Main Dashboard Workspace Canvas */}
-      <div className="flex flex-1 flex-col bg-[#0e1322] overflow-hidden">
+      <div className="flex flex-1 flex-col bg-slate-50/50 overflow-hidden">
         {/* Workspace Canvas Header */}
-        <div className="flex h-14 items-center justify-between border-b border-white/[0.08] px-6 bg-[#0c101d] shrink-0">
+        <div className="flex h-14 items-center justify-between border-b border-slate-200 px-6 bg-white shrink-0">
           <div className="flex items-center gap-3">
-            <span className="text-xl font-extrabold text-emerald-400">#</span>
+            <span className="text-xl font-extrabold text-emerald-600">#</span>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-black text-white capitalize">
+                <h3 className="text-sm font-black text-slate-900 capitalize">
                   {channels.find((c) => c.id === activeTab)?.name || activeTab}
                 </h3>
-                <Badge tone="outline" className="bg-white/[0.04] text-[9px] uppercase font-bold py-0 text-slate-300">
+                <Badge tone="outline" className="bg-slate-100 text-[9px] uppercase font-bold py-0 text-slate-700 border-slate-200">
                   {role} Hub
                 </Badge>
               </div>
@@ -967,12 +967,12 @@ function DashboardPage() {
           {/* Header Action Buttons */}
           <div className="flex items-center gap-2">
             {!isSeller && !isAdmin && !isAgent && !isLawyer && (
-              <a href="/parcels/" className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-4 text-xs font-bold transition shadow-md gap-1.5">
+              <a href="/parcels/" className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-4 text-xs font-bold transition shadow-xs gap-1.5">
                 <Grid2X2 className="h-3.5 w-3.5" /> Browse Parcels
               </a>
             )}
             {isSeller && (
-              <a href="/parcels/upload/" className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-4 text-xs font-bold transition shadow-md gap-1.5">
+              <a href="/parcels/upload/" className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-4 text-xs font-bold transition shadow-xs gap-1.5">
                 <Plus className="h-3.5 w-3.5" /> List Parcel
               </a>
             )}
@@ -981,39 +981,39 @@ function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => setActiveTab('people')}
-                  className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-3.5 text-xs font-black transition shadow-md gap-1.5"
+                  className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 text-xs font-bold transition shadow-xs gap-1.5"
                 >
                   <UserCheck className="h-3.5 w-3.5" /> People & Staff
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab('kyc')}
-                  className="hidden sm:inline-flex h-9 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] text-white px-3.5 text-xs font-bold transition gap-1.5"
+                  className="hidden sm:inline-flex h-9 items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 px-3.5 text-xs font-bold transition gap-1.5"
                 >
-                  <ShieldAlert className="h-3.5 w-3.5 text-amber-400" /> KYC Desk
+                  <ShieldAlert className="h-3.5 w-3.5 text-amber-600" /> KYC Desk
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab('ailab')}
-                  className="hidden md:inline-flex h-9 items-center justify-center rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 px-3 text-xs font-bold transition gap-1.5"
+                  className="hidden md:inline-flex h-9 items-center justify-center rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-800 px-3 text-xs font-bold transition gap-1.5"
                 >
-                  <Sparkles className="h-3.5 w-3.5 text-purple-400" /> AI Eval Lab
+                  <Sparkles className="h-3.5 w-3.5 text-purple-600" /> AI Eval Lab
                 </button>
                 <a
                   href="/admin/"
                   target="_blank"
                   rel="noreferrer"
-                  className="hidden lg:inline-flex h-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-slate-300 px-3 text-xs font-bold transition gap-1"
+                  className="hidden lg:inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 px-3 text-xs font-bold transition gap-1"
                 >
                   <ExternalLink className="h-3.5 w-3.5" /> Django Admin
                 </a>
               </>
             ) : (isAgent || isLawyer) ? (
-              <a href="/agent/approvals/" className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-4 text-xs font-bold transition shadow-md gap-1.5">
+              <a href="/agent/approvals/" className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-4 text-xs font-bold transition shadow-xs gap-1.5">
                 <Gavel className="h-3.5 w-3.5" /> Approvals Hub
               </a>
             ) : null}
-            <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-300">
+            <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-bold text-emerald-800">
               <ShieldCheck className="h-3.5 w-3.5" />
               <span>Dual Escrow</span>
             </div>
@@ -1026,44 +1026,44 @@ function DashboardPage() {
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* Hero Banner Card */}
-              <div className="rounded-3xl border border-white/10 bg-gradient-to-r from-emerald-950/80 via-[#0d1424] to-[#080c16] p-6 text-white shadow-xl relative overflow-hidden">
-                <div className="absolute right-0 top-0 h-48 w-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="rounded-3xl border border-emerald-200/80 bg-gradient-to-r from-emerald-50 via-teal-50/50 to-white p-6 text-slate-900 shadow-sm relative overflow-hidden">
+                <div className="absolute right-0 top-0 h-48 w-48 bg-emerald-200/40 rounded-full blur-3xl pointer-events-none" />
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="space-y-1 text-left">
                     <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider">
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-black uppercase tracking-wider">
                         {role} Verified
                       </span>
-                      <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
-                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-[11px] text-slate-500 font-semibold flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                         Live Escrow Session
                       </span>
                     </div>
-                    <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                    <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-950">
                       Welcome back, {displayName}
                     </h2>
-                    <p className="text-xs text-slate-300 max-w-xl font-light">
+                    <p className="text-xs text-slate-600 max-w-xl font-medium leading-relaxed">
                       Real-time overview of your land escrow pipeline, legal clearances, and verified settlements across Kenya.
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* KPI Stats Row (Dark Aesthetic) */}
+              {/* KPI Stats Row (Rafiki AI Light Aesthetic) */}
               {stats.length > 0 && (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {stats.map((stat) => (
                     <div
                       key={stat.label}
-                      className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 text-left backdrop-blur-md transition hover:border-emerald-500/40 hover:bg-white/[0.04]"
+                      className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-xs transition hover:border-emerald-400 hover:shadow-md"
                     >
-                      <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-slate-500">
                         {stat.label}
                       </div>
-                      <div className="mt-2 text-2xl font-black tracking-tight text-white">
+                      <div className="mt-2 text-2xl font-black tracking-tight text-slate-950">
                         {stat.value}
                       </div>
-                      <div className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-emerald-400">
+                      <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-emerald-700">
                         <ShieldCheck className="h-3 w-3" />
                         <span>Escrow Protected</span>
                       </div>
@@ -1076,22 +1076,22 @@ function DashboardPage() {
               {isAdmin && (
                 <div className="grid gap-4 md:grid-cols-3">
                   {/* People & Staff Provisioning Card */}
-                  <div className="rounded-3xl border border-blue-500/30 bg-gradient-to-br from-blue-950/40 via-[#0c1424] to-[#080d18] p-5 text-left space-y-3">
+                  <div className="rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50/70 to-white p-5 text-left space-y-3 shadow-xs">
                     <div className="flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-blue-300 border border-blue-500/30">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-black uppercase text-blue-800 border border-blue-200">
                         <Gavel className="h-3 w-3" /> People Hub
                       </span>
-                      <span className="text-[10px] text-slate-400 font-bold">Direct & Invite Modes</span>
+                      <span className="text-[10px] text-slate-500 font-bold">Direct & Invite Modes</span>
                     </div>
-                    <h4 className="text-base font-black text-white">People & Staff Hub</h4>
-                    <p className="text-xs text-slate-300 leading-relaxed">
+                    <h4 className="text-base font-black text-slate-900">People & Staff Hub</h4>
+                    <p className="text-xs text-slate-600 leading-relaxed">
                       Manage all platform users, reassign roles, and provision verified Advocates (LSK Roll) and Licensed Agents (EARB).
                     </p>
                     <div className="pt-1">
                       <button
                         type="button"
                         onClick={() => setActiveTab('people')}
-                        className="inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 text-xs font-bold text-white shadow-lg shadow-blue-500/20 hover:scale-[1.02] transition gap-1.5"
+                        className="inline-flex h-9 items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-500 px-4 text-xs font-bold text-white shadow-xs transition gap-1.5"
                       >
                         <UserCheck className="h-3.5 w-3.5" />
                         Open People Hub →
@@ -1100,24 +1100,24 @@ function DashboardPage() {
                   </div>
 
                   {/* KYC Approvals & Identity Verification Card */}
-                  <div className="rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-950/40 via-[#0c1424] to-[#080d18] p-5 text-left space-y-3">
+                  <div className="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50/70 to-white p-5 text-left space-y-3 shadow-xs">
                     <div className="flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-amber-300 border border-amber-500/30">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-black uppercase text-amber-800 border border-amber-200">
                         <ShieldAlert className="h-3 w-3" /> Identity Desk
                       </span>
-                      <span className="text-[10px] text-amber-400 font-bold">
+                      <span className="text-[10px] text-amber-700 font-bold">
                         {(bootstrap.pending_agent_applications || []).length} Pending
                       </span>
                     </div>
-                    <h4 className="text-base font-black text-white">KYC Verification Desk</h4>
-                    <p className="text-xs text-slate-300 leading-relaxed">
+                    <h4 className="text-base font-black text-slate-900">KYC Verification Desk</h4>
+                    <p className="text-xs text-slate-600 leading-relaxed">
                       Side-by-side inspection of National IDs, DCI Good Conduct certificates, and KRA PINs with AI telemetry.
                     </p>
                     <div className="pt-1">
                       <button
                         type="button"
                         onClick={() => setActiveTab('kyc')}
-                        className="inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 text-xs font-black text-slate-950 shadow-lg shadow-amber-500/20 hover:scale-[1.02] transition gap-1.5"
+                        className="inline-flex h-9 items-center justify-center rounded-xl bg-amber-600 hover:bg-amber-500 px-4 text-xs font-bold text-white shadow-xs transition gap-1.5"
                       >
                         <ShieldCheck className="h-3.5 w-3.5" />
                         Review Pending KYC →
@@ -1126,24 +1126,24 @@ function DashboardPage() {
                   </div>
 
                   {/* AI Evaluation Benchmark Lab Card */}
-                  <div className="rounded-3xl border border-purple-500/30 bg-gradient-to-br from-purple-950/40 via-[#0c1424] to-[#080d18] p-5 text-left space-y-3">
+                  <div className="rounded-3xl border border-purple-200 bg-gradient-to-br from-purple-50/70 to-white p-5 text-left space-y-3 shadow-xs">
                     <div className="flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-purple-300 border border-purple-500/30">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-2.5 py-0.5 text-[10px] font-black uppercase text-purple-800 border border-purple-200">
                         <Sparkles className="h-3 w-3" /> AI Lab
                       </span>
-                      <span className="text-[10px] text-purple-300 font-bold">
+                      <span className="text-[10px] text-purple-700 font-bold">
                         {bootstrap.ai_evaluation?.accuracy_pct || 100}% Accuracy
                       </span>
                     </div>
-                    <h4 className="text-base font-black text-white">AI Evaluation Suite</h4>
-                    <p className="text-xs text-slate-300 leading-relaxed">
+                    <h4 className="text-base font-black text-slate-900">AI Evaluation Suite</h4>
+                    <p className="text-xs text-slate-600 leading-relaxed">
                       Benchmark Laplacian blur, Tesseract OCR, and Canny edge analysis against ground-truth Kenyan documents.
                     </p>
                     <div className="pt-1">
                       <button
                         type="button"
                         onClick={() => setActiveTab('ailab')}
-                        className="inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 text-xs font-bold text-white shadow-lg shadow-purple-500/20 hover:scale-[1.02] transition gap-1.5"
+                        className="inline-flex h-9 items-center justify-center rounded-xl bg-purple-600 hover:bg-purple-500 px-4 text-xs font-bold text-white shadow-xs transition gap-1.5"
                       >
                         <Sparkles className="h-3.5 w-3.5" />
                         Open AI Evaluation Lab →
@@ -1155,26 +1155,26 @@ function DashboardPage() {
 
               {/* Spotlight Active Pipeline Card */}
               {activeSpotlightCommission && (
-                <div className="rounded-3xl border border-emerald-500/30 bg-emerald-950/20 p-5 text-left backdrop-blur-xl shadow-lg relative overflow-hidden">
+                <div className="rounded-3xl border border-emerald-200 bg-emerald-50/60 p-5 text-left shadow-xs relative overflow-hidden">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-300">
+                        <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-800">
                           Spotlight Workflow
                         </span>
-                        <span className="text-xs text-slate-400 font-bold">Parcel {activeSpotlightCommission.parcel_number}</span>
+                        <span className="text-xs text-slate-600 font-bold">Parcel {activeSpotlightCommission.parcel_number}</span>
                       </div>
-                      <h4 className="text-base font-black text-white">
+                      <h4 className="text-base font-black text-slate-900">
                         {activeSpotlightCommission.status_display || activeSpotlightCommission.status}
                       </h4>
-                      <p className="text-xs text-slate-400">
-                        Assigned Agent: <strong className="text-slate-200">{activeSpotlightCommission.accepted_by?.full_name || 'Awaiting Agent'}</strong> · County: {activeSpotlightCommission.county || 'Kenya'}
+                      <p className="text-xs text-slate-600">
+                        Assigned Agent: <strong className="text-slate-900">{activeSpotlightCommission.accepted_by?.full_name || 'Awaiting Agent'}</strong> · County: {activeSpotlightCommission.county || 'Kenya'}
                       </p>
                     </div>
 
                     <a
                       href={activeSpotlightCommission.detail_url || '/buyer/dashboard/'}
-                      className="inline-flex h-10 items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-5 text-xs font-extrabold transition shadow-md whitespace-nowrap gap-1.5"
+                      className="inline-flex h-10 items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-5 text-xs font-bold transition shadow-xs whitespace-nowrap gap-1.5"
                     >
                       <span>Manage Pipeline</span>
                       <ArrowRight className="h-3.5 w-3.5" />
@@ -1184,15 +1184,15 @@ function DashboardPage() {
               )}
 
               {/* Recent Activity Stream */}
-              <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-5 text-left space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+              <div className="rounded-3xl border border-slate-200 bg-white p-5 text-left space-y-4 shadow-sm">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                   <div className="flex items-center gap-2">
-                    <ReceiptText className="h-4 w-4 text-emerald-400" />
-                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-200">
+                    <ReceiptText className="h-4 w-4 text-emerald-600" />
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">
                       Recent Escrow Activity
                     </h4>
                   </div>
-                  <a href="/transactions/" className="text-[11px] font-bold text-emerald-400 hover:underline">
+                  <a href="/transactions/" className="text-[11px] font-bold text-emerald-700 hover:underline">
                     View full ledger →
                   </a>
                 </div>
@@ -1202,15 +1202,15 @@ function DashboardPage() {
                     No recent transaction events recorded yet.
                   </div>
                 ) : (
-                  <div className="divide-y divide-white/[0.04]">
+                  <div className="divide-y divide-slate-100">
                     {recentTransactions.map((tx: any) => (
                       <div key={tx.id} className="flex items-center justify-between py-3 gap-3">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] text-emerald-400 font-bold border border-white/10">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
                             <ReceiptText className="h-4 w-4" />
                           </div>
                           <div>
-                            <div className="font-bold text-xs text-slate-200">Parcel {tx.parcel_number}</div>
+                            <div className="font-bold text-xs text-slate-900">Parcel {tx.parcel_number}</div>
                             <div className="text-[10px] text-slate-500 truncate max-w-xs sm:max-w-md">
                               Buyer: {tx.buyer_email}
                             </div>
@@ -1219,12 +1219,12 @@ function DashboardPage() {
 
                         <div className="flex items-center gap-3">
                           <div className="text-right">
-                            <div className="font-black text-emerald-400 text-xs">KES {money(tx.amount)}</div>
+                            <div className="font-black text-emerald-700 text-xs">KES {money(tx.amount)}</div>
                             <div className="text-[9px] text-slate-500 font-semibold uppercase">{tx.status}</div>
                           </div>
                           <a
                             href="/transactions/"
-                            className="hidden sm:inline-flex h-7 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[10px] font-bold text-slate-300 hover:bg-white/[0.08]"
+                            className="hidden sm:inline-flex h-7 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-[10px] font-bold text-slate-700 hover:bg-slate-100"
                           >
                             Details
                           </a>
@@ -1243,26 +1243,26 @@ function DashboardPage() {
               {isAdmin ? (
                 <>
                   {/* Admin KYC Header */}
-                  <div className="rounded-3xl border border-amber-500/20 bg-gradient-to-r from-amber-950/30 via-[#0c1424] to-[#080d18] p-5 space-y-2">
+                  <div className="rounded-3xl border border-amber-200 bg-amber-50/60 p-5 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <ShieldAlert className="h-5 w-5 text-amber-400" />
-                        <h4 className="text-sm font-black text-white">Agent KYC & Identity Verification Queue</h4>
+                        <ShieldAlert className="h-5 w-5 text-amber-600" />
+                        <h4 className="text-sm font-black text-slate-900">Agent KYC & Identity Verification Queue</h4>
                       </div>
-                      <span className="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-500/30">
+                      <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 border border-amber-200">
                         {(bootstrap.pending_agent_applications || []).length} Pending Review
                       </span>
                     </div>
-                    <p className="text-xs text-slate-300 max-w-2xl">
+                    <p className="text-xs text-slate-600 max-w-2xl">
                       Review statutory compliance documents submitted by field agent applicants before granting escrow inspection clearance.
                     </p>
                   </div>
 
                   {/* Applications Grid */}
                   {(!bootstrap.pending_agent_applications || bootstrap.pending_agent_applications.length === 0) ? (
-                    <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-12 text-center text-slate-400 space-y-3">
-                      <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-500" />
-                      <div className="text-sm font-bold text-slate-200">All agent applications are reviewed!</div>
+                    <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-500 space-y-3 shadow-sm">
+                      <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-600" />
+                      <div className="text-sm font-bold text-slate-900">All agent applications are reviewed!</div>
                       <p className="text-xs text-slate-500 max-w-sm mx-auto">
                         No pending applicant KYC records currently awaiting administrative verification.
                       </p>
@@ -1270,35 +1270,35 @@ function DashboardPage() {
                   ) : (
                     <div className="grid gap-4 md:grid-cols-2">
                       {bootstrap.pending_agent_applications.map((app: any) => (
-                        <div key={app.id} className="rounded-2xl border border-white/10 bg-[#0a0f1d] p-5 space-y-4 shadow-md">
-                          <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+                        <div key={app.id} className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 shadow-sm">
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                             <div className="flex items-center gap-3">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400 font-black border border-amber-500/20">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700 font-black border border-amber-200">
                                 {app.name?.charAt(0) || 'A'}
                               </div>
                               <div>
-                                <div className="font-bold text-xs text-white">{app.name || app.email}</div>
-                                <div className="text-[10px] text-slate-400">{app.email}</div>
+                                <div className="font-bold text-xs text-slate-900">{app.name || app.email}</div>
+                                <div className="text-[10px] text-slate-500">{app.email}</div>
                                 <div className="text-[10px] text-slate-500">{app.phone || 'No phone'}</div>
                               </div>
                             </div>
-                            <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[9px] font-black uppercase text-amber-300 border border-amber-500/30">
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black uppercase text-amber-800 border border-amber-200">
                               {app.kyc?.status || 'Pending'}
                             </span>
                           </div>
 
                           {/* Documents Row */}
                           <div className="space-y-1.5 text-xs">
-                            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Attached Documents</div>
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Attached Documents</div>
                             <div className="flex flex-wrap gap-2">
                               {app.kyc?.id_photo_url && (
                                 <a
                                   href={app.kyc.id_photo_url}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold text-slate-300 hover:bg-white/10"
+                                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-700 hover:bg-slate-100"
                                 >
-                                  <FileText className="h-3 w-3 text-blue-400" /> National ID Photo
+                                  <FileText className="h-3 w-3 text-blue-600" /> National ID Photo
                                 </a>
                               )}
                               {app.kyc?.resume_url && (
@@ -1306,9 +1306,9 @@ function DashboardPage() {
                                   href={app.kyc.resume_url}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold text-slate-300 hover:bg-white/10"
+                                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-700 hover:bg-slate-100"
                                 >
-                                  <FileText className="h-3 w-3 text-purple-400" /> Resume / CV
+                                  <FileText className="h-3 w-3 text-purple-600" /> Resume / CV
                                 </a>
                               )}
                               {app.kyc?.certificate_url && (
@@ -1316,9 +1316,9 @@ function DashboardPage() {
                                   href={app.kyc.certificate_url}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold text-slate-300 hover:bg-white/10"
+                                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-700 hover:bg-slate-100"
                                 >
-                                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> DCI Good Conduct
+                                  <ShieldCheck className="h-3 w-3 text-emerald-600" /> DCI Good Conduct
                                 </a>
                               )}
                               {app.kyc?.practicing_cert_url && (
@@ -1326,21 +1326,21 @@ function DashboardPage() {
                                   href={app.kyc.practicing_cert_url}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold text-slate-300 hover:bg-white/10"
+                                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-700 hover:bg-slate-100"
                                 >
-                                  <Scale className="h-3 w-3 text-amber-400" /> Practicing Certificate
+                                  <Scale className="h-3 w-3 text-amber-600" /> Practicing Certificate
                                 </a>
                               )}
                             </div>
                           </div>
 
                           {/* Action Form Buttons */}
-                          <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/[0.06]">
+                          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                             <form method="POST" action={app.reject_url}>
                               <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token} />
                               <button
                                 type="submit"
-                                className="h-8 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 text-[11px] font-bold text-rose-300 hover:bg-rose-500/20 transition"
+                                className="h-8 rounded-xl border border-rose-200 bg-rose-50 px-3 text-[11px] font-bold text-rose-700 hover:bg-rose-100 transition"
                               >
                                 Reject
                               </button>
@@ -1349,7 +1349,7 @@ function DashboardPage() {
                               <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token} />
                               <button
                                 type="submit"
-                                className="h-8 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 px-4 text-[11px] font-black text-slate-950 shadow-md shadow-emerald-500/20 hover:scale-105 transition flex items-center gap-1.5"
+                                className="h-8 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 text-[11px] font-bold text-white shadow-xs transition flex items-center gap-1.5"
                               >
                                 <CheckCircle2 className="h-3.5 w-3.5" /> Approve & License
                               </button>
@@ -1362,24 +1362,24 @@ function DashboardPage() {
 
                   {/* Individual Buyers Promotion Desk */}
                   {bootstrap.individual_buyers && bootstrap.individual_buyers.length > 0 && (
-                    <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-5 space-y-4">
-                      <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+                    <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-sm">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                         <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-emerald-400" />
-                          <h4 className="text-xs font-black uppercase tracking-wider text-slate-200">
+                          <Users className="h-4 w-4 text-emerald-600" />
+                          <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">
                             Buyer Account Upgrades (Individual → Joint)
                           </h4>
                         </div>
-                        <span className="text-[11px] text-slate-400">
+                        <span className="text-[11px] text-slate-500">
                           {bootstrap.individual_buyers.length} Individual Buyers
                         </span>
                       </div>
 
-                      <div className="divide-y divide-white/[0.04]">
+                      <div className="divide-y divide-slate-100">
                         {bootstrap.individual_buyers.slice(0, 10).map((buyer: any) => (
                           <div key={buyer.id} className="flex items-center justify-between py-2.5 gap-3">
                             <div>
-                              <div className="font-bold text-xs text-slate-200">{buyer.name || buyer.email}</div>
+                              <div className="font-bold text-xs text-slate-900">{buyer.name || buyer.email}</div>
                               <div className="text-[10px] text-slate-500">{buyer.email}</div>
                             </div>
 
@@ -1387,7 +1387,7 @@ function DashboardPage() {
                               <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token} />
                               <button
                                 type="submit"
-                                className="h-7 rounded-lg border border-purple-500/40 bg-purple-500/10 px-3 text-[10px] font-bold text-purple-300 hover:bg-purple-500/20 transition"
+                                className="h-7 rounded-lg border border-purple-200 bg-purple-50 px-3 text-[10px] font-bold text-purple-700 hover:bg-purple-100 transition"
                               >
                                 Upgrade to Joint
                               </button>
@@ -1401,31 +1401,31 @@ function DashboardPage() {
               ) : (
                 <>
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-black text-white">Active Commissions & Conveyancing</h4>
-                    <span className="text-xs text-slate-400">{activeCommissions.length} active records</span>
+                    <h4 className="text-sm font-black text-slate-900">Active Commissions & Conveyancing</h4>
+                    <span className="text-xs text-slate-500">{activeCommissions.length} active records</span>
                   </div>
                   {activeCommissions.length === 0 ? (
-                    <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-12 text-center text-slate-400 space-y-3">
-                      <ShieldCheck className="mx-auto h-8 w-8 text-slate-600" />
-                      <div className="text-sm font-bold text-slate-300">No active commissions currently in progress.</div>
-                      <a href="/parcels/" className="inline-block font-bold text-xs text-emerald-400 hover:underline">
+                    <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-500 space-y-3 shadow-sm">
+                      <ShieldCheck className="mx-auto h-8 w-8 text-slate-400" />
+                      <div className="text-sm font-bold text-slate-900">No active commissions currently in progress.</div>
+                      <a href="/parcels/" className="inline-block font-bold text-xs text-emerald-700 hover:underline">
                         Explore available land parcels →
                       </a>
                     </div>
                   ) : (
                     <div className="grid gap-3 lg:grid-cols-2">
                       {activeCommissions.map((comm: any) => (
-                        <div key={comm.id} className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-3">
+                        <div key={comm.id} className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 shadow-sm">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-emerald-400">Parcel {comm.parcel?.parcel_number || comm.parcel_number}</span>
+                            <span className="text-xs font-bold text-emerald-700">Parcel {comm.parcel?.parcel_number || comm.parcel_number}</span>
                             <Badge tone="accent" className="text-[9px]">{comm.status_label || comm.status}</Badge>
                           </div>
-                          <div className="text-xs text-slate-300">
+                          <div className="text-xs text-slate-600">
                             County: <strong>{comm.parcel?.county || comm.county || 'Kenya'}</strong> · Price: KES {money(comm.parcel?.displayed_price || comm.parcel?.asking_price || '0')}
                           </div>
                           <div className="pt-1 flex items-center justify-between">
                             <span className="text-[10px] text-slate-500">Dual-escrow verified</span>
-                            <a href={comm.detail_url || '/buyer/dashboard/'} className="text-xs font-bold text-emerald-400 hover:underline">
+                            <a href={comm.detail_url || '/buyer/dashboard/'} className="text-xs font-bold text-emerald-700 hover:underline">
                               View details →
                             </a>
                           </div>
@@ -1450,24 +1450,24 @@ function DashboardPage() {
             ) : (
               <div className="space-y-4 text-left">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-black text-white">Escrow Ledger & Settlement Register</h4>
-                  <a href="/transactions/" className="text-xs font-bold text-emerald-400 hover:underline">
+                  <h4 className="text-sm font-black text-slate-900">Escrow Ledger & Settlement Register</h4>
+                  <a href="/transactions/" className="text-xs font-bold text-emerald-700 hover:underline">
                     Full Transaction Register →
                   </a>
                 </div>
-                <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-4 divide-y divide-white/[0.04]">
+                <div className="rounded-3xl border border-slate-200 bg-white p-4 divide-y divide-slate-100 shadow-sm">
                   {transactions.length === 0 ? (
                     <div className="py-8 text-center text-xs text-slate-500">No escrow transactions found.</div>
                   ) : (
                     transactions.map((tx: any) => (
                       <div key={tx.id} className="flex items-center justify-between py-3 gap-3">
                         <div>
-                          <div className="font-bold text-xs text-slate-200">Parcel {tx.parcel_number}</div>
+                          <div className="font-bold text-xs text-slate-900">Parcel {tx.parcel_number}</div>
                           <div className="text-[10px] text-slate-500">Ref: {tx.id.substring(0, 8)}...</div>
                         </div>
                         <div className="text-right">
-                          <div className="font-black text-emerald-400 text-xs">KES {money(tx.amount)}</div>
-                          <div className="text-[9px] text-slate-400 uppercase">{tx.status}</div>
+                          <div className="font-black text-emerald-700 text-xs">KES {money(tx.amount)}</div>
+                          <div className="text-[9px] text-slate-500 uppercase font-semibold">{tx.status}</div>
                         </div>
                       </div>
                     ))
@@ -1481,8 +1481,8 @@ function DashboardPage() {
           {activeTab === 'parcels' && (
             <div className="space-y-4 text-left">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-black text-white">Parcels & Listings</h4>
-                <a href="/parcels/" className="text-xs font-bold text-emerald-400 hover:underline">
+                <h4 className="text-sm font-black text-slate-900">{isSeller ? 'My Listed Parcels' : 'Parcels & Listings'}</h4>
+                <a href="/parcels/" className="text-xs font-bold text-emerald-700 hover:underline">
                   Open Marketplace →
                 </a>
               </div>
@@ -1494,19 +1494,19 @@ function DashboardPage() {
           {activeTab === 'legal' && (
             <div className="space-y-4 text-left">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-black text-white">Legal Statutes & Statutory Clearances</h4>
-                <a href={isSeller ? '/seller/laws/' : '/escrow-acts/'} className="text-xs font-bold text-emerald-400 hover:underline">
+                <h4 className="text-sm font-black text-slate-900">Legal Statutes & Statutory Clearances</h4>
+                <a href={isSeller ? '/seller/laws/' : '/escrow-acts/'} className="text-xs font-bold text-emerald-700 hover:underline">
                   Print A4 Brief →
                 </a>
               </div>
-              <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-5 space-y-4">
-                <div className="text-xs text-slate-300 leading-relaxed">
+              <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-sm">
+                <div className="text-xs text-slate-600 leading-relaxed font-medium">
                   Every land transaction in Digiland is governed under Kenyan land laws including the Land Registration Act No. 3 of 2012, Section 54 dual signatures, and LCB Consent under Land Control Act Cap 302.
                 </div>
                 <div className="flex flex-wrap gap-2 pt-2">
                   <a
                     href={isSeller ? '/seller/laws/' : '/escrow-acts/'}
-                    className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-4 text-xs font-bold transition hover:bg-emerald-500/30"
+                    className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 text-xs font-bold transition hover:bg-emerald-100"
                   >
                     View Official Legal Checklist
                   </a>
@@ -1515,46 +1515,46 @@ function DashboardPage() {
             </div>
           )}
 
-          {/* TAB 6: PROMOTIONS */}
+          {/* TAB 6: PROMOTIONS (SELLER / BUYER) */}
           {activeTab === 'promotions' && (
             <div className="space-y-4 text-left">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-black text-white">
+                <h4 className="text-sm font-black text-slate-900">
                   {isSeller ? 'Promotions & Boost Campaigns' : 'Featured Promotions & Exclusive Land Deals'}
                 </h4>
                 <a
                   href={isSeller ? '/seller/promotions/' : '/parcels/'}
-                  className="text-xs font-bold text-emerald-400 hover:underline"
+                  className="text-xs font-bold text-emerald-700 hover:underline"
                 >
                   {isSeller ? 'Promotions Hub →' : 'Browse All Marketplace Deals →'}
                 </a>
               </div>
 
               {isSeller ? (
-                <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-6 text-center space-y-3">
-                  <Sparkles className="mx-auto h-8 w-8 text-amber-400" />
-                  <div className="text-sm font-bold text-white">Boost your parcels to the top of Kenyan land buyer searches.</div>
-                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                <div className="rounded-3xl border border-amber-200 bg-amber-50/60 p-6 text-center space-y-3 shadow-sm">
+                  <Sparkles className="mx-auto h-8 w-8 text-amber-600" />
+                  <div className="text-sm font-bold text-slate-900">Boost your parcels to the top of Kenyan land buyer searches.</div>
+                  <p className="text-xs text-slate-600 max-w-md mx-auto">
                     Sponsored cards, featured homepage badges, and high-priority WhatsApp/SMS notifications.
                   </p>
                   <a
                     href="/seller/promotions/"
-                    className="inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold px-5 text-xs shadow-lg"
+                    className="inline-flex h-9 items-center justify-center rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold px-5 text-xs shadow-xs"
                   >
                     Manage Boost Campaigns
                   </a>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/40 to-[#080c16] p-6 text-left space-y-2">
+                  <div className="rounded-3xl border border-emerald-200 bg-emerald-50/60 p-6 text-left space-y-2 shadow-sm">
                     <div className="flex items-center gap-2">
-                      <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-emerald-300 border border-emerald-500/30">
+                      <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black uppercase text-emerald-800 border border-emerald-200">
                         Buyer Exclusive
                       </span>
-                      <span className="text-xs text-slate-400">Zero-Fraud Escrow Guarantee</span>
+                      <span className="text-xs text-slate-500 font-semibold">Zero-Fraud Escrow Guarantee</span>
                     </div>
-                    <h3 className="text-base font-black text-white">Verified Title Deed Listings with Subsidized Legal Clearance</h3>
-                    <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                    <h3 className="text-base font-black text-slate-900">Verified Title Deed Listings with Subsidized Legal Clearance</h3>
+                    <p className="text-xs text-slate-600 max-w-2xl leading-relaxed">
                       All promoted parcels feature pre-verified Ministry of Lands search certificates, beacon survey validation, and discounted advocate conveyancing fees.
                     </p>
                   </div>
