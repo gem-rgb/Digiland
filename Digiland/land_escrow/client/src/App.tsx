@@ -24,7 +24,51 @@ import { HeroShowcase } from './components/landing/hero-showcase.js';
 import { AnimatedWalkthrough } from './components/landing/animated-walkthrough.js';
 import { PremiumFooter } from './components/landing/premium-footer.js';
 import { PriceEstimatorSection } from './components/landing/price-estimator-section.js';
-import { AdminPeopleHubView, AdminKycDeskView, AdminAIEvaluationLabView, AdminTransactionsManagementView } from './components/admin/admin-views.js';
+import { AdminPeopleHubView, AdminKycDeskView, AdminAIEvaluationLabView } from './components/admin/admin-views.js';
+import { PartitionProvider, usePartition, isRoleAllowedOnPartition, type Partition } from './lib/partition-context.js';
+import { PartitionGuard } from './components/layout/partition-guard.js';
+import { StaffLoginPage } from './pages/staff-login-page.js';
+
+function PortalBar() {
+  const { activePartition, setActivePartition, getPortalUrl } = usePartition();
+
+  const portals: { key: Partition; label: string; icon: string }[] = [
+    { key: 'marketing', label: '🌐 Marketing (digiland.co.ke)', icon: '🌐' },
+    { key: 'app', label: '📱 App (app.digiland.co.ke)', icon: '📱' },
+    { key: 'staff', label: '👔 Staff (staff.digiland.co.ke)', icon: '👔' },
+    { key: 'admin', label: '🛡️ Admin (admin.digiland.co.ke)', icon: '🛡️' },
+  ];
+
+  return (
+    <div className="bg-slate-950 border-b border-emerald-900/60 py-2 px-4 text-xs flex flex-wrap items-center justify-between gap-2 z-50 relative">
+      <div className="flex items-center gap-2 text-slate-400 font-medium">
+        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+        <span>Digiland Partition Architecture:</span>
+        <span className="font-mono text-emerald-300 font-bold uppercase">[{activePartition} portal]</span>
+      </div>
+
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {portals.map((p) => {
+          const isActive = activePartition === p.key;
+          return (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => setActivePartition(p.key)}
+              className={`px-3 py-1 rounded-lg font-semibold transition flex items-center gap-1.5 ${
+                isActive
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950/40 ring-1 ring-emerald-400'
+                  : 'bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800'
+              }`}
+            >
+              <span>{p.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 const bootstrap = readBootstrap();
 const kshFormatter = new Intl.NumberFormat('en-KE', {
@@ -3551,7 +3595,7 @@ function PublicSectionCards({ sections }: { sections: NonNullable<typeof bootstr
   );
 }
 
-function LandingPage() {
+function LandingPage({ onNavigatePartition }: { onNavigatePartition?: (partition: 'app' | 'staff' | 'admin' | 'marketing') => void }) {
   const stats = bootstrap.stats || [];
 
   return (
@@ -3569,6 +3613,7 @@ function LandingPage() {
           stats={stats}
           csrfToken={bootstrap.csrf_token}
           isAuthenticated={Boolean(bootstrap.user)}
+          onNavigatePartition={onNavigatePartition}
         />
       </PublicShell>
       <PremiumFooter />
@@ -8107,8 +8152,32 @@ function NotFoundPage() {
 }
 
 
-function ReactApp() {
+function ReactAppInner() {
+  const { activePartition, setActivePartition, isRoleAllowed } = usePartition();
   const page = bootstrap.page;
+  const user = bootstrap.user;
+  const userRole = user?.role;
+
+  // Enforce Partition Access Guard if user is logged in with incompatible role
+  if (user && userRole && !isRoleAllowed(userRole)) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white">
+        <PortalBar />
+        <PartitionGuard userRole={userRole} currentPartition={activePartition} onSwitchPortal={setActivePartition} />
+      </div>
+    );
+  }
+
+  // Handle staff partition login override
+  if (activePartition === 'staff' && (page === 'staff-login' || !user)) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white">
+        <PortalBar />
+        <StaffLoginPage onNavigateToApp={() => setActivePartition('app')} />
+      </div>
+    );
+  }
+
   const shellProps = {
     title: bootstrap.title,
     subtitle: bootstrap.subtitle,
@@ -8120,14 +8189,15 @@ function ReactApp() {
 
   let pageContent: ReactNode = null;
 
-  if (page === 'landing') pageContent = <LandingPage />;
+  if (activePartition === 'marketing' || page === 'landing') pageContent = <LandingPage onNavigatePartition={setActivePartition} />;
   else if (page === '404') pageContent = <NotFoundPage />;
   else if (page === 'features') pageContent = <FeaturesPage />;
 
   else if (page === 'onboarding-select-role') pageContent = <RoleSelectionPage shellProps={shellProps} />;
   else if (page === 'content') pageContent = <ContentPage />;
   else if (page === 'status') pageContent = <StatusPage />;
-  else if (page === 'form' || page === 'staff-login' || page === 'agent-kyc' || page === 'payment-onboarding') pageContent = <GenericFormPage />;
+  else if (page === 'staff-login') pageContent = <StaffLoginPage onNavigateToApp={() => setActivePartition('app')} />;
+  else if (page === 'form' || page === 'agent-kyc' || page === 'payment-onboarding') pageContent = <GenericFormPage />;
   else if (page === 'ai-kyc') pageContent = <AIKYCPage />;
   else if (page === 'buyer-choice') pageContent = <AppShell {...shellProps}><BuyerChoicePage /></AppShell>;
   else if (page === 'legal' || page === 'joint-laws') pageContent = <AppShell {...shellProps} activeNav="legal"><LegalPage /></AppShell>;
@@ -8185,9 +8255,18 @@ function ReactApp() {
 
   return (
     <>
+      <PortalBar />
       {pageContent}
       <PopupAdManager popupAds={bootstrap.popup_ads} csrfToken={bootstrap.csrf_token} />
     </>
+  );
+}
+
+function ReactApp() {
+  return (
+    <PartitionProvider>
+      <ReactAppInner />
+    </PartitionProvider>
   );
 }
 

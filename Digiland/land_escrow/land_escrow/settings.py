@@ -121,17 +121,17 @@ if IS_VERCEL and os.getenv("VERCEL_ENV") == "production":
 
 TESTING = "test" in sys.argv
 
-ALLOWED_HOSTS = [
+ALLOWED_HOSTS = list(set([
     h.strip()
     for h in config('ALLOWED_HOSTS', default='localhost,127.0.0.1,.vercel.app').split(',')
     if h.strip()
-]
+] + ['localhost', '127.0.0.1', 'testserver', '.digiland.co.ke', 'digiland.co.ke', 'app.digiland.co.ke', 'staff.digiland.co.ke', 'admin.digiland.co.ke']))
 
 CSRF_TRUSTED_ORIGINS = [
     o.strip()
     for o in config(
         'CSRF_TRUSTED_ORIGINS',
-        default='http://localhost:8000,http://127.0.0.1:8000,https://*.vercel.app',
+        default='http://localhost:8000,http://127.0.0.1:8000,https://*.vercel.app,https://*.digiland.co.ke,https://digiland.co.ke,https://app.digiland.co.ke,https://staff.digiland.co.ke,https://admin.digiland.co.ke',
     ).split(',')
     if o.strip()
 ]
@@ -213,6 +213,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
     'core.middleware.MultiDomainRoutingMiddleware',
+    'core.partition_middleware.PartitionIsolationMiddleware',
 
     # Admin Control Plane middleware (network isolation, session security, audit)
     'admin_control_plane.middleware.AdminNetworkIsolationMiddleware',

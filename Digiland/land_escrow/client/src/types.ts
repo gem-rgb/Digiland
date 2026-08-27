@@ -58,6 +58,8 @@ export interface UserSummary {
   role: string;
   buyer_account_type?: string | null;
   is_identity_verified?: boolean;
+  is_superuser?: boolean;
+  is_staff?: boolean;
   full_name?: string | null;
   phone_number?: string | null;
 }

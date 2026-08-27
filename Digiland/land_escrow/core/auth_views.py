@@ -331,6 +331,33 @@ def login_view(request):
     if not user.is_active:
         return Response({"error": "Account is disabled."}, status=status.HTTP_403_FORBIDDEN)
 
+    # Check portal partition compatibility
+    from .partition_middleware import resolve_request_partition
+    requested_portal = resolve_request_partition(request)
+    user_role = getattr(user, "role", "") or ""
+
+    if requested_portal == "app" and user_role in {"Agent", "Lawyer", "Land_Official"}:
+        return Response(
+            {
+                "error": f"{user_role} accounts are not permitted on the App portal. Please log in via staff.digiland.co.ke",
+                "error_code": "PARTITION_ROLE_MISMATCH",
+                "required_portal": "staff",
+                "target_url": "https://staff.digiland.co.ke"
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    if requested_portal == "staff" and user_role in {"Buyer", "Seller"}:
+        return Response(
+            {
+                "error": f"{user_role} accounts are not permitted on the Staff portal. Please log in via app.digiland.co.ke",
+                "error_code": "PARTITION_ROLE_MISMATCH",
+                "required_portal": "app",
+                "target_url": "https://app.digiland.co.ke"
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
     if getattr(user, "role", "") == "Admin" or getattr(user, "is_superuser", False):
         AuditService.log_event(
             "ADMIN_LOGIN_BLOCKED_ON_PUBLIC_API",
