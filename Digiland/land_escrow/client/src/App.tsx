@@ -23,9 +23,7 @@ import { PaymentMethodSelector } from './components/checkout/payment-method-sele
 import { HeroShowcase } from './components/landing/hero-showcase.js';
 import { AnimatedWalkthrough } from './components/landing/animated-walkthrough.js';
 import { PremiumFooter } from './components/landing/premium-footer.js';
-import { PriceEstimatorSection } from './components/landing/price-estimator-section.js';
-import { AdminPeopleHubView, AdminKycDeskView, AdminAIEvaluationLabView } from './components/admin/admin-views.js';
-import { PartitionProvider, usePartition, isRoleAllowedOnPartition, type Partition } from './lib/partition-context.js';
+import { AdminPeopleHubView, AdminKycDeskView, AdminAIEvaluationLabView, AdminTransactionsManagementView, AdminAnalyticsSuiteView } from './components/admin/admin-views.js';
 import { PartitionGuard } from './components/layout/partition-guard.js';
 import { StaffLoginPage } from './pages/staff-login-page.js';
 
@@ -1577,6 +1575,16 @@ function DashboardPage() {
           {/* TAB: AI DOCUMENT VERIFICATION BENCHMARK LAB (ADMIN ONLY) */}
           {activeTab === 'ailab' && (
             <AdminAIEvaluationLabView />
+          )}
+
+          {/* TAB: ESCROW SETTLEMENTS DESK (ADMIN ONLY) */}
+          {isAdmin && (activeTab === 'transactions' || activeTab === 'settlements') && (
+            <AdminTransactionsManagementView />
+          )}
+
+          {/* TAB: EXECUTIVE ANALYTICS SUITE (ADMIN ONLY) */}
+          {(activeTab === 'analytics' || activeTab === 'analytics-suite' || activeTab === 'stats') && (
+            <AdminAnalyticsSuiteView />
           )}
         </div>
       </div>
@@ -8257,6 +8265,7 @@ function ReactAppInner() {
   else if (page === 'agent-withdraw') pageContent = <AgentWithdrawPage />;
   else if (page === 'dashboard' || page === 'admin-dashboard' || page === 'agent-dashboard' || page === 'lawyer-dashboard') pageContent = <AppShell {...shellProps}><DashboardPage /></AppShell>;
   else if (page === 'finance') pageContent = <AppShell {...shellProps}><AdminFinancePage /></AppShell>;
+  else if (page === 'analytics' || page === 'analytics-suite') pageContent = <AppShell {...shellProps} activeNav="analytics"><div className="space-y-6"><PageHeader kicker="Admin Command Centre" title="Executive Analytics Suite" subtitle="Live oversight of users, escrow finances, professional hires, statutory taxes, and system reliability." badge={{ text: 'Live Monitoring', tone: 'accent' }} /><AdminAnalyticsSuiteView /></div></AppShell>;
   else if (page === 'contract-fullpage') pageContent = <ContractFullPage />;
   else if (page === 'admin-withdraw') pageContent = <AdminWithdrawPage />;
   else if (page === 'message-thread') pageContent = <MessageThreadPage />;

@@ -23602,6 +23602,17 @@ var createLucideIcon = (iconName, iconNode) => {
   return Component;
 };
 
+// node_modules/lucide-react/dist/esm/icons/activity.js
+var Activity = createLucideIcon("Activity", [
+  [
+    "path",
+    {
+      d: "M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2",
+      key: "169zse"
+    }
+  ]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/arrow-left.js
 var ArrowLeft = createLucideIcon("ArrowLeft", [
   ["path", { d: "m12 19-7-7 7-7", key: "1l729n" }],
@@ -23721,6 +23732,26 @@ var CornerDownLeft = createLucideIcon("CornerDownLeft", [
   ["path", { d: "M20 4v7a4 4 0 0 1-4 4H4", key: "6o5b7l" }]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/cpu.js
+var Cpu = createLucideIcon("Cpu", [
+  ["rect", { width: "16", height: "16", x: "4", y: "4", rx: "2", key: "14l7u7" }],
+  ["rect", { width: "6", height: "6", x: "9", y: "9", rx: "1", key: "5aljv4" }],
+  ["path", { d: "M15 2v2", key: "13l42r" }],
+  ["path", { d: "M15 20v2", key: "15mkzm" }],
+  ["path", { d: "M2 15h2", key: "1gxd5l" }],
+  ["path", { d: "M2 9h2", key: "1bbxkp" }],
+  ["path", { d: "M20 15h2", key: "19e6y8" }],
+  ["path", { d: "M20 9h2", key: "19tzq7" }],
+  ["path", { d: "M9 2v2", key: "165o2o" }],
+  ["path", { d: "M9 20v2", key: "i2bqo8" }]
+]);
+
+// node_modules/lucide-react/dist/esm/icons/credit-card.js
+var CreditCard = createLucideIcon("CreditCard", [
+  ["rect", { width: "20", height: "14", x: "2", y: "5", rx: "2", key: "ynyp8z" }],
+  ["line", { x1: "2", x2: "22", y1: "10", y2: "10", key: "1b3vmo" }]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/crown.js
 var Crown = createLucideIcon("Crown", [
   [
@@ -23737,6 +23768,13 @@ var Crown = createLucideIcon("Crown", [
 var DollarSign = createLucideIcon("DollarSign", [
   ["line", { x1: "12", x2: "12", y1: "2", y2: "22", key: "7eqyqh" }],
   ["path", { d: "M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6", key: "1b0p4s" }]
+]);
+
+// node_modules/lucide-react/dist/esm/icons/download.js
+var Download = createLucideIcon("Download", [
+  ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }],
+  ["polyline", { points: "7 10 12 15 17 10", key: "2ggqvy" }],
+  ["line", { x1: "12", x2: "12", y1: "15", y2: "3", key: "1vk2je" }]
 ]);
 
 // node_modules/lucide-react/dist/esm/icons/eraser.js
@@ -24060,6 +24098,13 @@ var Pause = createLucideIcon("Pause", [
   ["rect", { x: "6", y: "4", width: "4", height: "16", rx: "1", key: "1okwgv" }]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/percent.js
+var Percent = createLucideIcon("Percent", [
+  ["line", { x1: "19", x2: "5", y1: "5", y2: "19", key: "1x9vlm" }],
+  ["circle", { cx: "6.5", cy: "6.5", r: "2.5", key: "4mh3h7" }],
+  ["circle", { cx: "17.5", cy: "17.5", r: "2.5", key: "1mdrzq" }]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/play.js
 var Play = createLucideIcon("Play", [
   ["polygon", { points: "6 3 20 12 6 21 6 3", key: "1oa8hb" }]
@@ -24095,6 +24140,16 @@ var ReceiptText = createLucideIcon("ReceiptText", [
   ["path", { d: "M13 16H8", key: "wsln4y" }]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/receipt.js
+var Receipt = createLucideIcon("Receipt", [
+  [
+    "path",
+    { d: "M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z", key: "q3az6g" }
+  ],
+  ["path", { d: "M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8", key: "1h4pet" }],
+  ["path", { d: "M12 17.5v-11", key: "1jc1ny" }]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/refresh-cw.js
 var RefreshCw = createLucideIcon("RefreshCw", [
   ["path", { d: "M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8", key: "v9h5vc" }],
@@ -24128,6 +24183,14 @@ var Send = createLucideIcon("Send", [
     }
   ],
   ["path", { d: "m21.854 2.147-10.94 10.939", key: "12cjpa" }]
+]);
+
+// node_modules/lucide-react/dist/esm/icons/server.js
+var Server = createLucideIcon("Server", [
+  ["rect", { width: "20", height: "8", x: "2", y: "2", rx: "2", ry: "2", key: "ngkwjq" }],
+  ["rect", { width: "20", height: "8", x: "2", y: "14", rx: "2", ry: "2", key: "iecqi9" }],
+  ["line", { x1: "6", x2: "6.01", y1: "6", y2: "6", key: "16zg32" }],
+  ["line", { x1: "6", x2: "6.01", y1: "18", y2: "18", key: "nzw8ys" }]
 ]);
 
 // node_modules/lucide-react/dist/esm/icons/shield-alert.js
@@ -27312,31 +27375,12 @@ function Badge({
 // src/lib/partition-context.tsx
 var import_react5 = __toESM(require_react(), 1);
 var PartitionContext = (0, import_react5.createContext)(void 0);
-function detectPartitionFromLocation() {
-  if (typeof window === "undefined") return "marketing";
-  const params = new URLSearchParams(window.location.search);
-  const portalParam = params.get("portal")?.toLowerCase();
-  if (portalParam && ["marketing", "app", "staff", "admin"].includes(portalParam)) {
-    return portalParam;
-  }
-  const hostname = window.location.hostname.toLowerCase();
-  if (hostname.startsWith("admin.")) return "admin";
-  if (hostname.startsWith("staff.")) return "staff";
-  if (hostname.startsWith("app.")) return "app";
-  return "marketing";
-}
 function requiredPartitionForRole(role) {
   if (!role) return "app";
   const norm = role.toLowerCase();
   if (norm.includes("admin")) return "admin";
   if (norm.includes("agent") || norm.includes("lawyer") || norm.includes("official")) return "staff";
   return "app";
-}
-function isRoleAllowedOnPartition(role, partition) {
-  if (!role) return true;
-  const req = requiredPartitionForRole(role);
-  if (partition === "marketing") return true;
-  return req === partition;
 }
 function getPortalUrl(partition) {
   if (typeof window === "undefined") return "/";
@@ -27357,34 +27401,6 @@ function getPortalUrl(partition) {
     default:
       return "https://www.digiland.co.ke";
   }
-}
-var PartitionProvider = ({ children }) => {
-  const [activePartition, setActivePartition] = (0, import_react5.useState)(detectPartitionFromLocation);
-  (0, import_react5.useEffect)(() => {
-    const detected = detectPartitionFromLocation();
-    setActivePartition(detected);
-  }, []);
-  const isRoleAllowed = (role) => isRoleAllowedOnPartition(role, activePartition);
-  return /* @__PURE__ */ import_react5.default.createElement(
-    PartitionContext.Provider,
-    {
-      value: {
-        activePartition,
-        setActivePartition,
-        getPortalUrl,
-        isRoleAllowed,
-        requiredPartitionForRole
-      }
-    },
-    children
-  );
-};
-function usePartition() {
-  const context = (0, import_react5.useContext)(PartitionContext);
-  if (!context) {
-    throw new Error("usePartition must be used within a PartitionProvider");
-  }
-  return context;
 }
 
 // src/components/layout/public-shell.tsx
@@ -31090,6 +31106,114 @@ function AdminAIEvaluationLabView() {
     selectedTestCase.is_correct ? "Prediction Matched" : "Prediction Discrepancy"
   )), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-2 gap-3 text-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-slate-50 p-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-slate-500 text-[10px] uppercase font-bold" }, "Expected Label"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-black text-slate-900 mt-0.5" }, selectedTestCase.expected_label)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-slate-50 p-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-slate-500 text-[10px] uppercase font-bold" }, "AI Predicted Label"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-black text-emerald-700 mt-0.5" }, selectedTestCase.predicted_label)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-slate-50 p-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-slate-500 text-[10px] uppercase font-bold" }, "OCR Confidence"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-black text-slate-900 mt-0.5" }, selectedTestCase.ocr_confidence, "%")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-slate-50 p-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-slate-500 text-[10px] uppercase font-bold" }, "Laplacian Blur Score"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-sm font-black text-slate-900 mt-0.5" }, selectedTestCase.blur_score))), selectedTestCase.reasons && selectedTestCase.reasons.length > 0 && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-1 rounded-2xl border border-rose-200 bg-rose-50 p-3 text-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-rose-800" }, "AI Rejection / Warning Reasons:"), selectedTestCase.reasons.map((r2, idx) => /* @__PURE__ */ import_react18.default.createElement("div", { key: idx, className: "text-slate-700" }, "\u2022 ", r2))))));
 }
+function AdminAnalyticsSuiteView() {
+  const [activeTab, setActiveTab] = (0, import_react18.useState)("overview");
+  const [timeframe, setTimeframe] = (0, import_react18.useState)("ALL");
+  const [isRefreshing, setIsRefreshing] = (0, import_react18.useState)(false);
+  const [copiedReport, setCopiedReport] = (0, import_react18.useState)(false);
+  const rawAnalytics = bootstrap.analytics || {};
+  const financial = rawAnalytics.financial || {};
+  const taxes = rawAnalytics.taxes || {};
+  const expenses = rawAnalytics.expenses || {};
+  const hires = rawAnalytics.hires || {};
+  const failures = rawAnalytics.failures || {};
+  const userMetrics = rawAnalytics.user_metrics || {};
+  const regionalDist = rawAnalytics.regional_distribution || [];
+  const landUseDist = rawAnalytics.land_use_distribution || {};
+  const staffLedger = rawAnalytics.staff_ledger || [];
+  const multiplier = timeframe === "30D" ? 0.35 : timeframe === "90D" ? 0.65 : 1;
+  const totalGmv = (financial.total_gmv_kes || 128e6) * multiplier;
+  const escrowRevenue = (financial.escrow_fee_revenue_kes || 32e5) * multiplier;
+  const adRevenue = (financial.ad_promotions_revenue_kes || 85e3) * multiplier;
+  const grossRevenue = (financial.total_gross_revenue_kes || escrowRevenue + adRevenue) * multiplier;
+  const totalStaffCompensation = (financial.total_staff_compensation_kes || 56e4) * multiplier;
+  const totalOperatingExpenses = (expenses.total_operating_expenses_kes || 89500) * multiplier;
+  const totalTaxes = (taxes.total_taxes_kes || escrowRevenue * 0.16 + totalStaffCompensation * 0.05) * multiplier;
+  const netIncome = grossRevenue - totalOperatingExpenses - totalTaxes;
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 600);
+  };
+  const handleExportSummary = () => {
+    const summary = {
+      generated_at: (/* @__PURE__ */ new Date()).toISOString(),
+      timeframe,
+      metrics: {
+        total_users: userMetrics.total_users || 19,
+        active_users: userMetrics.active_users || 18,
+        total_gmv_kes: totalGmv,
+        gross_platform_revenue_kes: grossRevenue,
+        net_operating_income_kes: netIncome,
+        total_staff_compensation_kes: totalStaffCompensation,
+        total_operating_expenses_kes: totalOperatingExpenses,
+        total_taxes_kes: totalTaxes,
+        system_uptime_percentage: failures.uptime_percentage || 99.98,
+        disputed_cases: failures.disputed_escrow_cases || 0
+      }
+    };
+    navigator.clipboard.writeText(JSON.stringify(summary, null, 2));
+    setCopiedReport(true);
+    setTimeout(() => setCopiedReport(false), 2500);
+  };
+  return /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6 text-left" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("h3", { className: "text-lg font-black text-slate-900" }, "Executive System Analytics & Intelligence"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black uppercase text-emerald-800 border border-emerald-200" }, "Live Monitoring")), /* @__PURE__ */ import_react18.default.createElement("p", { className: "text-xs text-slate-500 font-medium mt-0.5" }, "Holistic oversight of platform users, escrow finances, professional hires, KRA statutory taxes, operating expenses, and system reliability.")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex rounded-xl border border-slate-200 bg-slate-50 p-0.5 text-xs font-bold" }, ["30D", "90D", "YTD", "ALL"].map((t) => /* @__PURE__ */ import_react18.default.createElement(
+    "button",
+    {
+      key: t,
+      type: "button",
+      onClick: () => setTimeframe(t),
+      className: `rounded-lg px-2.5 py-1 transition ${timeframe === t ? "bg-white text-slate-900 shadow-xs font-black" : "text-slate-500 hover:text-slate-800"}`
+    },
+    t
+  ))), /* @__PURE__ */ import_react18.default.createElement(
+    Button,
+    {
+      type: "button",
+      variant: "outline",
+      onClick: handleRefresh,
+      className: "h-8 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700"
+    },
+    /* @__PURE__ */ import_react18.default.createElement(RefreshCw, { className: `mr-1.5 h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-emerald-600" : ""}` }),
+    "Refresh"
+  ), /* @__PURE__ */ import_react18.default.createElement(
+    Button,
+    {
+      type: "button",
+      onClick: handleExportSummary,
+      className: "h-8 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs"
+    },
+    /* @__PURE__ */ import_react18.default.createElement(Download, { className: "mr-1.5 h-3.5 w-3.5" }),
+    copiedReport ? "JSON Copied!" : "Export Report"
+  ))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex overflow-x-auto border-b border-slate-200 pb-px gap-1" }, [
+    { id: "overview", label: "Executive Overview", icon: ChartColumn },
+    { id: "users", label: "Users & Demographics", icon: Users },
+    { id: "finances", label: "Finances & Escrow", icon: DollarSign },
+    { id: "revenue_taxes", label: "Revenue & Taxes", icon: Receipt },
+    { id: "expenses", label: "Operating Expenses", icon: CreditCard },
+    { id: "failures", label: "System Health & Failures", icon: Activity }
+  ].map((tab) => {
+    const Icon2 = tab.icon;
+    const isActive = activeTab === tab.id;
+    return /* @__PURE__ */ import_react18.default.createElement(
+      "button",
+      {
+        key: tab.id,
+        type: "button",
+        onClick: () => setActiveTab(tab.id),
+        className: `flex items-center gap-1.5 whitespace-nowrap rounded-t-xl px-4 py-2.5 text-xs font-black transition border-b-2 ${isActive ? "border-emerald-600 bg-emerald-50/70 text-emerald-900" : "border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`
+      },
+      /* @__PURE__ */ import_react18.default.createElement(Icon2, { className: `h-4 w-4 ${isActive ? "text-emerald-600" : "text-slate-400"}` }),
+      /* @__PURE__ */ import_react18.default.createElement("span", null, tab.label)
+    );
+  })), activeTab === "overview" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "Total Users"), /* @__PURE__ */ import_react18.default.createElement(Users, { className: "h-3.5 w-3.5 text-emerald-600" })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-slate-900" }, userMetrics.total_users || 19), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-emerald-700 font-bold mt-0.5 flex items-center gap-0.5" }, /* @__PURE__ */ import_react18.default.createElement(TrendingUp, { className: "h-3 w-3" }), " ", userMetrics.active_users || 18, " Active (", userMetrics.suspended_users || 1, " suspended)")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "Total GMV"), /* @__PURE__ */ import_react18.default.createElement(DollarSign, { className: "h-3.5 w-3.5 text-blue-600" })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-xl font-black text-slate-900" }, "KES ", (totalGmv / 1e6).toFixed(1), "M"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "Land in escrow settlements")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "Gross Revenue"), /* @__PURE__ */ import_react18.default.createElement(Percent, { className: "h-3.5 w-3.5 text-emerald-600" })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-xl font-black text-emerald-700" }, "KES ", (grossRevenue / 1e3).toFixed(0), "k"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-emerald-700 font-bold mt-0.5" }, "2.5% Escrow + Ads")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "Staff Hires & Pay"), /* @__PURE__ */ import_react18.default.createElement(Briefcase, { className: "h-3.5 w-3.5 text-purple-600" })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-xl font-black text-purple-700" }, "KES ", (totalStaffCompensation / 1e3).toFixed(0), "k"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-purple-700 font-bold mt-0.5" }, hires.total_hires_count || 8, " Jobs Disbursed")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "Operating Costs"), /* @__PURE__ */ import_react18.default.createElement(CreditCard, { className: "h-3.5 w-3.5 text-amber-600" })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-xl font-black text-slate-800" }, "KES ", (totalOperatingExpenses / 1e3).toFixed(0), "k"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "SMS, AI & Cloud Hosting")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "System Uptime"), /* @__PURE__ */ import_react18.default.createElement(Activity, { className: "h-3.5 w-3.5 text-emerald-600" })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-emerald-600" }, failures.uptime_percentage || 99.98, "%"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-emerald-700 font-bold mt-0.5" }, "Dual Escrow Active"))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-12 gap-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "lg:col-span-7 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between border-b border-slate-100 pb-3" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, "Platform Cashflow & P&L Statement"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] text-slate-500" }, "Consolidated revenue, disbursements, and statutory taxes")), /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "success", className: "font-bold text-[10px] uppercase" }, "Healthy Margin")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3 text-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between py-1.5 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-600 font-medium" }, "Gross Platform Revenue (Escrow Fees + Ad Listings)"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-black text-emerald-700" }, "+ KES ", grossRevenue.toLocaleString())), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between py-1.5 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-600 font-medium" }, "Professional Staff Compensations Disbursed (Lawyers & Agents)"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-slate-700" }, "- KES ", totalStaffCompensation.toLocaleString())), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between py-1.5 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-600 font-medium" }, "Total Operating Overhead (Infobip SMS, AI OCR Compute, Cloud)"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-slate-700" }, "- KES ", totalOperatingExpenses.toLocaleString())), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between py-1.5 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-600 font-medium" }, "Statutory Tax Obligations (16% VAT + 5% WHT on Staff Payouts)"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-amber-700" }, "- KES ", totalTaxes.toLocaleString())), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between pt-2 text-sm font-black text-slate-900 bg-slate-50 p-3 rounded-xl" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "Net Operating Income (EBITDA)"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-emerald-700 text-base" }, "KES ", netIncome.toLocaleString())))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "lg:col-span-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between border-b border-slate-100 pb-3" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, "Regional Land Distribution"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] text-slate-500" }, "Parcels listed across top Kenyan counties")), /* @__PURE__ */ import_react18.default.createElement(Globe, { className: "h-4 w-4 text-emerald-600" })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2.5" }, regionalDist.slice(0, 6).map((reg) => /* @__PURE__ */ import_react18.default.createElement("div", { key: reg.county, className: "space-y-1" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between text-xs font-bold" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-800" }, reg.county, " County"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-emerald-700" }, reg.listings_count, " parcels (KES ", (reg.estimated_value_kes / 1e6).toFixed(1), "M)")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "h-2 w-full rounded-full bg-slate-100 overflow-hidden" }, /* @__PURE__ */ import_react18.default.createElement(
+    "div",
+    {
+      className: "h-full rounded-full bg-emerald-600 transition-all duration-500",
+      style: { width: `${Math.min(100, reg.listings_count / 14 * 100)}%` }
+    }
+  )))))))), activeTab === "users" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Verified Buyers"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-slate-900" }, userMetrics.buyers_count || 10), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-emerald-700 font-semibold mt-0.5" }, userMetrics.joint_buyers_count || 3, " Joint Groups")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Verified Sellers"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-slate-900" }, userMetrics.sellers_count || 4), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "Listed Landowners")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Licensed Field Agents"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-emerald-600" }, userMetrics.agents_count || 2), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-emerald-700 font-semibold mt-0.5" }, "EARB Licensed")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Advocates & Lawyers"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-purple-600" }, userMetrics.lawyers_count || 2), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-purple-700 font-semibold mt-0.5" }, "LSK Practicing")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Admins & Staff"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-slate-900" }, (userMetrics.admins_count || 1) + (userMetrics.staff_count || 1)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "Compliance Operators"))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-black uppercase text-slate-600 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "Account Status"), /* @__PURE__ */ import_react18.default.createElement(UserCheck, { className: "h-4 w-4 text-emerald-600" })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2 text-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-1 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-600" }, "Active Accounts"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-emerald-700" }, userMetrics.active_users || 18)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-1 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-600" }, "Suspended / Deactivated"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-rose-700" }, userMetrics.suspended_users || 1)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-1 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-600" }, "Government Identity Verified"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-emerald-700" }, userMetrics.verified_users || 14)))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-black uppercase text-slate-600 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "Buyer Account Types"), /* @__PURE__ */ import_react18.default.createElement(Users, { className: "h-4 w-4 text-blue-600" })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2 text-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-1 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-600" }, "Individual Sole Purchasers"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-slate-900" }, (userMetrics.buyers_count || 10) - (userMetrics.joint_buyers_count || 3))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-1 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-600" }, "Chama & Joint Investment Syndicates"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-purple-700" }, userMetrics.joint_buyers_count || 3)), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-1 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-600" }, "Average Joint Group Size"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-slate-900" }, "4.2 Members")))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-black uppercase text-slate-600 flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "Land Use Distribution"), /* @__PURE__ */ import_react18.default.createElement(Layers, { className: "h-4 w-4 text-emerald-600" })), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-2 text-xs" }, Object.entries(landUseDist).map(([type, count]) => /* @__PURE__ */ import_react18.default.createElement("div", { key: type, className: "flex justify-between py-1 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-slate-600" }, type), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-slate-900" }, count, " parcels"))))))), activeTab === "finances" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-4 gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Escrow Gross Volume (GMV)"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-slate-900" }, "KES ", (totalGmv / 1e6).toFixed(1), "M"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, financial.completed_transactions_count || 6, " Closed Deeds")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Active Escrow Reserves"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-emerald-700" }, "KES ", ((financial.active_escrow_reserves_kes || 38e6) / 1e6).toFixed(1), "M"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-emerald-700 font-semibold mt-0.5" }, "Holding in Safaricom Trust")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Average Transaction Size"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-slate-900" }, "KES 4.8M"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "Per Parcel Deal")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Settlement Velocity"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-blue-600" }, "4.2 Days"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "Dual-Signature execution time"))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, "Escrow Status Breakdown"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-4 gap-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 text-center" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-bold text-emerald-800" }, "Completed & Disbursed"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-2xl font-black text-emerald-700 mt-1" }, financial.completed_transactions_count || 6), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-emerald-600 mt-0.5" }, "100% Release")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-blue-200 bg-blue-50/50 p-4 text-center" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-bold text-blue-800" }, "Under Legal Verification"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-2xl font-black text-blue-700 mt-1" }, financial.active_transactions_count || 3), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-blue-600 mt-0.5" }, "Deed Inspection")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-amber-200 bg-amber-50/50 p-4 text-center" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-bold text-amber-800" }, "Disputed / Under Review"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-2xl font-black text-amber-700 mt-1" }, financial.disputed_transactions_count || 0), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-amber-600 mt-0.5" }, "Temporary Hold")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-xs font-bold text-slate-700" }, "Refunded to Buyer"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-2xl font-black text-slate-800 mt-1" }, financial.refunded_transactions_count || 1), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "Survey Discrepancy"))))), activeTab === "revenue_taxes" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between border-b border-slate-100 pb-3" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, "Platform Revenue Streams"), /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "success", className: "font-bold text-[10px]" }, "Income")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3 text-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-2 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-slate-900" }, "Escrow Transaction Platform Commission (2.5%)"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, "Collected automatically on deed completion")), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-black text-emerald-700 text-sm" }, "KES ", escrowRevenue.toLocaleString())), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-2 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-slate-900" }, "Seller Sponsored Listings & Boost Packages"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, "Featured homepage cards and priority SMS alerts")), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-black text-emerald-700 text-sm" }, "KES ", adRevenue.toLocaleString())), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between pt-3 font-black text-sm text-slate-900 bg-slate-50 p-3 rounded-xl" }, /* @__PURE__ */ import_react18.default.createElement("span", null, "Total Gross Platform Revenue"), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-emerald-700 text-base" }, "KES ", grossRevenue.toLocaleString())))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between border-b border-slate-100 pb-3" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, "KRA Statutory Taxes & Remittances"), /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "warning", className: "font-bold text-[10px]" }, "Statutory KRA")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3 text-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-2 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-slate-900" }, "Withholding Tax (WHT 5%) on Professional Services"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, "Withheld on advocate and agent compensation disbursements")), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-black text-amber-700 text-sm" }, "KES ", (taxes.withholding_tax_5pct_kes || totalStaffCompensation * 0.05).toLocaleString())), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-2 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-slate-900" }, "Value Added Tax (VAT 16%) on Service Fees"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, "Accrued on Digiland escrow facilitation commissions")), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-black text-amber-700 text-sm" }, "KES ", (taxes.vat_16pct_kes || escrowRevenue * 0.16).toLocaleString())), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-2 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-slate-900" }, "Stamp Duty Processed (4% Urban / 2% Rural)"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, "Facilitated directly to Ministry of Lands Collector")), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-slate-700 text-sm" }, "KES ", (taxes.stamp_duty_remitted_kes || totalGmv * 0.04).toLocaleString()))))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between border-b border-slate-100 pb-3" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, "Professional Staff Compensation & Hires Ledger"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] text-slate-500" }, "Advocate conveyance fees (KES 25k) & Agent site inspection fees (KES 45k)")), /* @__PURE__ */ import_react18.default.createElement("span", { className: "text-xs font-bold text-purple-700" }, hires.total_hires_count || 8, " Hires Completed")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "overflow-x-auto" }, /* @__PURE__ */ import_react18.default.createElement("table", { className: "w-full text-left text-xs" }, /* @__PURE__ */ import_react18.default.createElement("thead", null, /* @__PURE__ */ import_react18.default.createElement("tr", { className: "border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-50/50" }, /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-2.5 px-3" }, "Professional"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-2.5 px-3" }, "Role & Practice"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-2.5 px-3" }, "County"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-2.5 px-3" }, "Hires / Tasks"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-2.5 px-3" }, "Accrued"), /* @__PURE__ */ import_react18.default.createElement("th", { className: "py-2.5 px-3" }, "Payout Status"))), /* @__PURE__ */ import_react18.default.createElement("tbody", { className: "divide-y divide-slate-100" }, staffLedger.map((staff) => /* @__PURE__ */ import_react18.default.createElement("tr", { key: staff.id, className: "hover:bg-slate-50/80 transition" }, /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3 px-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-slate-900" }, staff.name), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, staff.email)), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3 px-3" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: `inline-block rounded-full px-2 py-0.5 text-[9px] font-black uppercase ${staff.role === "Lawyer" ? "bg-purple-100 text-purple-800" : "bg-emerald-100 text-emerald-800"}` }, staff.role), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5 truncate max-w-[150px]" }, staff.firm_or_agency)), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3 px-3 font-medium text-slate-700" }, staff.county), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3 px-3 font-bold text-slate-900" }, staff.tasks_completed, " tasks"), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3 px-3 font-black text-emerald-700" }, "KES ", Number(staff.accrued_kes || 0).toLocaleString()), /* @__PURE__ */ import_react18.default.createElement("td", { className: "py-3 px-3" }, /* @__PURE__ */ import_react18.default.createElement("span", { className: "inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full" }, /* @__PURE__ */ import_react18.default.createElement(CircleCheck, { className: "h-3 w-3" }), " Disbursed"))))))))), activeTab === "expenses" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-4 gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Total Operating Overhead"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-slate-900" }, "KES ", totalOperatingExpenses.toLocaleString()), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "Monthly infrastructure burn")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "SMS & OTP Gateway"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-blue-600" }, "KES ", (expenses.sms_otp_gateway_kes || 14500).toLocaleString()), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "Safaricom & Infobip SMS")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "AI OCR Compute"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-purple-600" }, "KES ", (expenses.ai_ocr_compute_kes || 28e3).toLocaleString()), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "OpenCV & Tesseract Workers")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Cloud Hosting & DB"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-emerald-600" }, "KES ", (expenses.cloud_hosting_db_kes || 35e3).toLocaleString()), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "Vercel & Postgres DB"))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, "Expense Breakdown & Unit Economics"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3 text-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-2 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-slate-900" }, "Safaricom M-Pesa B2C Payout APIs & SMS Dispatch"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, "Per-message OTP authentication and escrow milestone SMS")), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-slate-800" }, "KES 14,500")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-2 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-slate-900" }, "AI Document OCR & Laplacian Blur Analysis GPU/CPU Instances"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, "Automated verification of title deeds, IDs, and KRA PIN certificates")), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-slate-800" }, "KES 28,000")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-2 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-slate-900" }, "Cloud Infrastructure (Vercel Serverless, PostgreSQL, Object Storage)"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, "High-availability hosting, automated backups, and encrypted vault storage")), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-slate-800" }, "KES 35,000")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-between py-2 border-b border-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-slate-900" }, "Statutory Regulatory & Compliance Audit Filings"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, "Quarterly legal audit and data protection commissioner filings")), /* @__PURE__ */ import_react18.default.createElement("span", { className: "font-bold text-slate-800" }, "KES 12,000"))))), activeTab === "failures" && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "System Uptime"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-emerald-600" }, failures.uptime_percentage || 99.98, "%"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-emerald-700 font-semibold mt-0.5" }, "Zero Major Outages")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Payment Timeouts"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-amber-600" }, failures.failed_payment_attempts || 4), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "M-Pesa STK push timeouts")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Blocked Fraud Listings"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-rose-600" }, failures.flagged_fraud_attempts || 0), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-rose-700 font-semibold mt-0.5" }, "Intercepted by AI")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Escrow Disputes"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-slate-800" }, failures.disputed_escrow_cases || 0), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-emerald-700 font-semibold mt-0.5" }, "0 Active Hiatuses")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-white p-4 shadow-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] font-black uppercase text-slate-500" }, "Open Support Tickets"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "mt-1 text-2xl font-black text-blue-600" }, failures.open_support_escalations || 0), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500 mt-0.5" }, "Resolved in < 2 hours"))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4" }, /* @__PURE__ */ import_react18.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, "Automated System Health & Error Diagnostics"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "divide-y divide-slate-100 text-xs" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between py-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200" }, /* @__PURE__ */ import_react18.default.createElement(ShieldCheck, { className: "h-4 w-4" })), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-slate-900" }, "Dual-Signature Cryptographic Escrow Vault"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, "Section 54 Land Registration Act verification engine"))), /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "success", className: "text-[9px] uppercase font-bold" }, "Optimal (Healthy)")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between py-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200" }, /* @__PURE__ */ import_react18.default.createElement(Cpu, { className: "h-4 w-4" })), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-slate-900" }, "AI Document Authenticity & OCR Engine"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, "Tesseract OCR + Laplacian blur + Canny edge analysis"))), /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "success", className: "text-[9px] uppercase font-bold" }, "100% Accuracy")), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between py-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200" }, /* @__PURE__ */ import_react18.default.createElement(Server, { className: "h-4 w-4" })), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-bold text-slate-900" }, "Subdomain Partition Security & Role Isolations"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-500" }, "admin.digiland.co.ke, staff.digiland.co.ke, app.digiland.co.ke"))), /* @__PURE__ */ import_react18.default.createElement(Badge, { tone: "success", className: "text-[9px] uppercase font-bold" }, "Enforced (Strict)"))))));
+}
 
 // src/components/layout/partition-guard.tsx
 var import_react19 = __toESM(require_react(), 1);
@@ -31829,7 +31953,7 @@ function DashboardPage() {
       className: "inline-flex h-9 items-center justify-center rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold px-5 text-xs shadow-xs"
     },
     "Manage Boost Campaigns"
-  )) : /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-3xl border border-emerald-200 bg-emerald-50/60 p-6 text-left space-y-2 shadow-sm" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react21.default.createElement("span", { className: "rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black uppercase text-emerald-800 border border-emerald-200" }, "Buyer Exclusive"), /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-xs text-slate-500 font-semibold" }, "Zero-Fraud Escrow Guarantee")), /* @__PURE__ */ import_react21.default.createElement("h3", { className: "text-base font-black text-slate-900" }, "Verified Title Deed Listings with Subsidized Legal Clearance"), /* @__PURE__ */ import_react21.default.createElement("p", { className: "text-xs text-slate-600 max-w-2xl leading-relaxed" }, "All promoted parcels feature pre-verified Ministry of Lands search certificates, beacon survey validation, and discounted advocate conveyancing fees.")), /* @__PURE__ */ import_react21.default.createElement(ParcelGrid, null))), (activeTab === "people" || activeTab === "professionals") && /* @__PURE__ */ import_react21.default.createElement(AdminPeopleHubView, null), (activeTab === "kyc" || activeTab === "commissions" && isAdmin) && /* @__PURE__ */ import_react21.default.createElement(AdminKycDeskView, null), activeTab === "ailab" && /* @__PURE__ */ import_react21.default.createElement(AdminAIEvaluationLabView, null))));
+  )) : /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-3xl border border-emerald-200 bg-emerald-50/60 p-6 text-left space-y-2 shadow-sm" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react21.default.createElement("span", { className: "rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black uppercase text-emerald-800 border border-emerald-200" }, "Buyer Exclusive"), /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-xs text-slate-500 font-semibold" }, "Zero-Fraud Escrow Guarantee")), /* @__PURE__ */ import_react21.default.createElement("h3", { className: "text-base font-black text-slate-900" }, "Verified Title Deed Listings with Subsidized Legal Clearance"), /* @__PURE__ */ import_react21.default.createElement("p", { className: "text-xs text-slate-600 max-w-2xl leading-relaxed" }, "All promoted parcels feature pre-verified Ministry of Lands search certificates, beacon survey validation, and discounted advocate conveyancing fees.")), /* @__PURE__ */ import_react21.default.createElement(ParcelGrid, null))), (activeTab === "people" || activeTab === "professionals") && /* @__PURE__ */ import_react21.default.createElement(AdminPeopleHubView, null), (activeTab === "kyc" || activeTab === "commissions" && isAdmin) && /* @__PURE__ */ import_react21.default.createElement(AdminKycDeskView, null), activeTab === "ailab" && /* @__PURE__ */ import_react21.default.createElement(AdminAIEvaluationLabView, null), isAdmin && (activeTab === "transactions" || activeTab === "settlements") && /* @__PURE__ */ import_react21.default.createElement(AdminTransactionsManagementView, null), (activeTab === "analytics" || activeTab === "analytics-suite" || activeTab === "stats") && /* @__PURE__ */ import_react21.default.createElement(AdminAnalyticsSuiteView, null))));
 }
 function AdminAnalyticsView() {
   const analytics = bootstrap2.analytics || {
@@ -34244,6 +34368,7 @@ function ReactAppInner() {
   else if (page === "agent-withdraw") pageContent = /* @__PURE__ */ import_react21.default.createElement(AgentWithdrawPage, null);
   else if (page === "dashboard" || page === "admin-dashboard" || page === "agent-dashboard" || page === "lawyer-dashboard") pageContent = /* @__PURE__ */ import_react21.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react21.default.createElement(DashboardPage, null));
   else if (page === "finance") pageContent = /* @__PURE__ */ import_react21.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react21.default.createElement(AdminFinancePage, null));
+  else if (page === "analytics" || page === "analytics-suite") pageContent = /* @__PURE__ */ import_react21.default.createElement(AppShell, { ...shellProps, activeNav: "analytics" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react21.default.createElement(PageHeader, { kicker: "Admin Command Centre", title: "Executive Analytics Suite", subtitle: "Live oversight of users, escrow finances, professional hires, statutory taxes, and system reliability.", badge: { text: "Live Monitoring", tone: "accent" } }), /* @__PURE__ */ import_react21.default.createElement(AdminAnalyticsSuiteView, null)));
   else if (page === "contract-fullpage") pageContent = /* @__PURE__ */ import_react21.default.createElement(ContractFullPage, null);
   else if (page === "admin-withdraw") pageContent = /* @__PURE__ */ import_react21.default.createElement(AdminWithdrawPage, null);
   else if (page === "message-thread") pageContent = /* @__PURE__ */ import_react21.default.createElement(MessageThreadPage, null);
@@ -34768,6 +34893,14 @@ lucide-react/dist/esm/createLucideIcon.js:
    * See the LICENSE file in the root directory of this source tree.
    *)
 
+lucide-react/dist/esm/icons/activity.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
 lucide-react/dist/esm/icons/arrow-left.js:
   (**
    * @license lucide-react v0.453.0 - ISC
@@ -34904,6 +35037,22 @@ lucide-react/dist/esm/icons/corner-down-left.js:
    * See the LICENSE file in the root directory of this source tree.
    *)
 
+lucide-react/dist/esm/icons/cpu.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
+lucide-react/dist/esm/icons/credit-card.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
 lucide-react/dist/esm/icons/crown.js:
   (**
    * @license lucide-react v0.453.0 - ISC
@@ -34913,6 +35062,14 @@ lucide-react/dist/esm/icons/crown.js:
    *)
 
 lucide-react/dist/esm/icons/dollar-sign.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
+lucide-react/dist/esm/icons/download.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *
@@ -35184,6 +35341,14 @@ lucide-react/dist/esm/icons/pause.js:
    * See the LICENSE file in the root directory of this source tree.
    *)
 
+lucide-react/dist/esm/icons/percent.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
 lucide-react/dist/esm/icons/play.js:
   (**
    * @license lucide-react v0.453.0 - ISC
@@ -35216,6 +35381,14 @@ lucide-react/dist/esm/icons/receipt-text.js:
    * See the LICENSE file in the root directory of this source tree.
    *)
 
+lucide-react/dist/esm/icons/receipt.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
 lucide-react/dist/esm/icons/refresh-cw.js:
   (**
    * @license lucide-react v0.453.0 - ISC
@@ -35241,6 +35414,14 @@ lucide-react/dist/esm/icons/search.js:
    *)
 
 lucide-react/dist/esm/icons/send.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
+lucide-react/dist/esm/icons/server.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *

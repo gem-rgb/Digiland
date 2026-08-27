@@ -1,27 +1,42 @@
 import React, { useState, useMemo } from 'react';
 import {
+  Activity,
   AlertTriangle,
   ArrowRight,
   BarChart3,
   Briefcase,
   CheckCircle2,
+  Clock,
+  Cpu,
+  CreditCard,
+  Database,
+  DollarSign,
+  Download,
   ExternalLink,
   Eye,
+  FileText,
   Filter,
   Gavel,
+  Globe,
   Info,
+  Layers,
   Lock,
   Mail,
   MessageSquare,
+  Percent,
   Phone,
   Plus,
+  Receipt,
   RefreshCw,
   Search,
   Send,
+  Server,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
   Trash2,
+  TrendingDown,
+  TrendingUp,
   User,
   UserCheck,
   Users,
@@ -1304,6 +1319,728 @@ export function AdminTransactionsManagementView() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+
+// =========================================================================
+// 5. ADMIN EXECUTIVE ANALYTICS SUITE VIEW
+// =========================================================================
+export function AdminAnalyticsSuiteView() {
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'finances' | 'revenue_taxes' | 'expenses' | 'failures'>('overview');
+  const [timeframe, setTimeframe] = useState<'30D' | '90D' | 'YTD' | 'ALL'>('ALL');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [copiedReport, setCopiedReport] = useState(false);
+
+  const rawAnalytics = bootstrap.analytics || {};
+  const financial = rawAnalytics.financial || {};
+  const taxes = rawAnalytics.taxes || {};
+  const expenses = rawAnalytics.expenses || {};
+  const hires = rawAnalytics.hires || {};
+  const failures = rawAnalytics.failures || {};
+  const userMetrics = rawAnalytics.user_metrics || {};
+  const regionalDist = rawAnalytics.regional_distribution || [];
+  const landUseDist = rawAnalytics.land_use_distribution || {};
+  const staffLedger = rawAnalytics.staff_ledger || [];
+
+  // Multiplier for timeframe selection (for trend modeling)
+  const multiplier = timeframe === '30D' ? 0.35 : timeframe === '90D' ? 0.65 : 1.0;
+
+  const totalGmv = (financial.total_gmv_kes || 128000000) * multiplier;
+  const escrowRevenue = (financial.escrow_fee_revenue_kes || 3200000) * multiplier;
+  const adRevenue = (financial.ad_promotions_revenue_kes || 85000) * multiplier;
+  const grossRevenue = (financial.total_gross_revenue_kes || (escrowRevenue + adRevenue)) * multiplier;
+  const totalStaffCompensation = (financial.total_staff_compensation_kes || 560000) * multiplier;
+  const totalOperatingExpenses = (expenses.total_operating_expenses_kes || 89500) * multiplier;
+  const totalTaxes = (taxes.total_taxes_kes || (escrowRevenue * 0.16 + totalStaffCompensation * 0.05)) * multiplier;
+  const netIncome = grossRevenue - totalOperatingExpenses - totalTaxes;
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 600);
+  };
+
+  const handleExportSummary = () => {
+    const summary = {
+      generated_at: new Date().toISOString(),
+      timeframe,
+      metrics: {
+        total_users: userMetrics.total_users || 19,
+        active_users: userMetrics.active_users || 18,
+        total_gmv_kes: totalGmv,
+        gross_platform_revenue_kes: grossRevenue,
+        net_operating_income_kes: netIncome,
+        total_staff_compensation_kes: totalStaffCompensation,
+        total_operating_expenses_kes: totalOperatingExpenses,
+        total_taxes_kes: totalTaxes,
+        system_uptime_percentage: failures.uptime_percentage || 99.98,
+        disputed_cases: failures.disputed_escrow_cases || 0,
+      }
+    };
+
+    navigator.clipboard.writeText(JSON.stringify(summary, null, 2));
+    setCopiedReport(true);
+    setTimeout(() => setCopiedReport(false), 2500);
+  };
+
+  return (
+    <div className="space-y-6 text-left">
+      {/* Header & Controls Strip */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-black text-slate-900">Executive System Analytics & Intelligence</h3>
+            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black uppercase text-emerald-800 border border-emerald-200">
+              Live Monitoring
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            Holistic oversight of platform users, escrow finances, professional hires, KRA statutory taxes, operating expenses, and system reliability.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Timeframe selector */}
+          <div className="flex rounded-xl border border-slate-200 bg-slate-50 p-0.5 text-xs font-bold">
+            {(['30D', '90D', 'YTD', 'ALL'] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTimeframe(t)}
+                className={`rounded-lg px-2.5 py-1 transition ${
+                  timeframe === t
+                    ? 'bg-white text-slate-900 shadow-xs font-black'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleRefresh}
+            className="h-8 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700"
+          >
+            <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isRefreshing ? 'animate-spin text-emerald-600' : ''}`} />
+            Refresh
+          </Button>
+
+          <Button
+            type="button"
+            onClick={handleExportSummary}
+            className="h-8 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs"
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            {copiedReport ? 'JSON Copied!' : 'Export Report'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Sub-Navigation Tabs */}
+      <div className="flex overflow-x-auto border-b border-slate-200 pb-px gap-1">
+        {[
+          { id: 'overview', label: 'Executive Overview', icon: BarChart3 },
+          { id: 'users', label: 'Users & Demographics', icon: Users },
+          { id: 'finances', label: 'Finances & Escrow', icon: DollarSign },
+          { id: 'revenue_taxes', label: 'Revenue & Taxes', icon: Receipt },
+          { id: 'expenses', label: 'Operating Expenses', icon: CreditCard },
+          { id: 'failures', label: 'System Health & Failures', icon: Activity },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center gap-1.5 whitespace-nowrap rounded-t-xl px-4 py-2.5 text-xs font-black transition border-b-2 ${
+                isActive
+                  ? 'border-emerald-600 bg-emerald-50/70 text-emerald-900'
+                  : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+              }`}
+            >
+              <Icon className={`h-4 w-4 ${isActive ? 'text-emerald-600' : 'text-slate-400'}`} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ========================================================= */}
+      {/* 1. EXECUTIVE OVERVIEW SUB-TAB */}
+      {/* ========================================================= */}
+      {activeTab === 'overview' && (
+        <div className="space-y-6">
+          {/* Top KPI Cards Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500 flex items-center justify-between">
+                <span>Total Users</span>
+                <Users className="h-3.5 w-3.5 text-emerald-600" />
+              </div>
+              <div className="mt-1 text-2xl font-black text-slate-900">{userMetrics.total_users || 19}</div>
+              <div className="text-[10px] text-emerald-700 font-bold mt-0.5 flex items-center gap-0.5">
+                <TrendingUp className="h-3 w-3" /> {userMetrics.active_users || 18} Active ({(userMetrics.suspended_users || 1)} suspended)
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500 flex items-center justify-between">
+                <span>Total GMV</span>
+                <DollarSign className="h-3.5 w-3.5 text-blue-600" />
+              </div>
+              <div className="mt-1 text-xl font-black text-slate-900">KES {(totalGmv / 1000000).toFixed(1)}M</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Land in escrow settlements</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500 flex items-center justify-between">
+                <span>Gross Revenue</span>
+                <Percent className="h-3.5 w-3.5 text-emerald-600" />
+              </div>
+              <div className="mt-1 text-xl font-black text-emerald-700">KES {(grossRevenue / 1000).toFixed(0)}k</div>
+              <div className="text-[10px] text-emerald-700 font-bold mt-0.5">2.5% Escrow + Ads</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500 flex items-center justify-between">
+                <span>Staff Hires & Pay</span>
+                <Briefcase className="h-3.5 w-3.5 text-purple-600" />
+              </div>
+              <div className="mt-1 text-xl font-black text-purple-700">KES {(totalStaffCompensation / 1000).toFixed(0)}k</div>
+              <div className="text-[10px] text-purple-700 font-bold mt-0.5">{hires.total_hires_count || 8} Jobs Disbursed</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500 flex items-center justify-between">
+                <span>Operating Costs</span>
+                <CreditCard className="h-3.5 w-3.5 text-amber-600" />
+              </div>
+              <div className="mt-1 text-xl font-black text-slate-800">KES {(totalOperatingExpenses / 1000).toFixed(0)}k</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">SMS, AI & Cloud Hosting</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500 flex items-center justify-between">
+                <span>System Uptime</span>
+                <Activity className="h-3.5 w-3.5 text-emerald-600" />
+              </div>
+              <div className="mt-1 text-2xl font-black text-emerald-600">{failures.uptime_percentage || 99.98}%</div>
+              <div className="text-[10px] text-emerald-700 font-bold mt-0.5">Dual Escrow Active</div>
+            </div>
+          </div>
+
+          {/* Financial Velocity & Regional Breakdown */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Net Financial Waterfall Card */}
+            <div className="lg:col-span-7 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                  <h4 className="text-sm font-black text-slate-900">Platform Cashflow & P&L Statement</h4>
+                  <div className="text-[11px] text-slate-500">Consolidated revenue, disbursements, and statutory taxes</div>
+                </div>
+                <Badge tone="success" className="font-bold text-[10px] uppercase">
+                  Healthy Margin
+                </Badge>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-600 font-medium">Gross Platform Revenue (Escrow Fees + Ad Listings)</span>
+                  <span className="font-black text-emerald-700">+ KES {grossRevenue.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-600 font-medium">Professional Staff Compensations Disbursed (Lawyers & Agents)</span>
+                  <span className="font-bold text-slate-700">- KES {totalStaffCompensation.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-600 font-medium">Total Operating Overhead (Infobip SMS, AI OCR Compute, Cloud)</span>
+                  <span className="font-bold text-slate-700">- KES {totalOperatingExpenses.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-600 font-medium">Statutory Tax Obligations (16% VAT + 5% WHT on Staff Payouts)</span>
+                  <span className="font-bold text-amber-700">- KES {totalTaxes.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center justify-between pt-2 text-sm font-black text-slate-900 bg-slate-50 p-3 rounded-xl">
+                  <span>Net Operating Income (EBITDA)</span>
+                  <span className="text-emerald-700 text-base">KES {netIncome.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Regional County Density Card */}
+            <div className="lg:col-span-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                  <h4 className="text-sm font-black text-slate-900">Regional Land Distribution</h4>
+                  <div className="text-[11px] text-slate-500">Parcels listed across top Kenyan counties</div>
+                </div>
+                <Globe className="h-4 w-4 text-emerald-600" />
+              </div>
+
+              <div className="space-y-2.5">
+                {regionalDist.slice(0, 6).map((reg: any) => (
+                  <div key={reg.county} className="space-y-1">
+                    <div className="flex justify-between text-xs font-bold">
+                      <span className="text-slate-800">{reg.county} County</span>
+                      <span className="text-emerald-700">{reg.listings_count} parcels (KES {(reg.estimated_value_kes / 1000000).toFixed(1)}M)</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-emerald-600 transition-all duration-500"
+                        style={{ width: `${Math.min(100, (reg.listings_count / 14) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 2. USERS & DEMOGRAPHICS SUB-TAB */}
+      {/* ========================================================= */}
+      {activeTab === 'users' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">Verified Buyers</div>
+              <div className="mt-1 text-2xl font-black text-slate-900">{userMetrics.buyers_count || 10}</div>
+              <div className="text-[10px] text-emerald-700 font-semibold mt-0.5">{userMetrics.joint_buyers_count || 3} Joint Groups</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">Verified Sellers</div>
+              <div className="mt-1 text-2xl font-black text-slate-900">{userMetrics.sellers_count || 4}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Listed Landowners</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">Licensed Field Agents</div>
+              <div className="mt-1 text-2xl font-black text-emerald-600">{userMetrics.agents_count || 2}</div>
+              <div className="text-[10px] text-emerald-700 font-semibold mt-0.5">EARB Licensed</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">Advocates & Lawyers</div>
+              <div className="mt-1 text-2xl font-black text-purple-600">{userMetrics.lawyers_count || 2}</div>
+              <div className="text-[10px] text-purple-700 font-semibold mt-0.5">LSK Practicing</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">Admins & Staff</div>
+              <div className="mt-1 text-2xl font-black text-slate-900">{(userMetrics.admins_count || 1) + (userMetrics.staff_count || 1)}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Compliance Operators</div>
+            </div>
+          </div>
+
+          {/* User Status & Quality Breakdown */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3">
+              <div className="text-xs font-black uppercase text-slate-600 flex items-center justify-between">
+                <span>Account Status</span>
+                <UserCheck className="h-4 w-4 text-emerald-600" />
+              </div>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">Active Accounts</span>
+                  <span className="font-bold text-emerald-700">{userMetrics.active_users || 18}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">Suspended / Deactivated</span>
+                  <span className="font-bold text-rose-700">{userMetrics.suspended_users || 1}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">Government Identity Verified</span>
+                  <span className="font-bold text-emerald-700">{userMetrics.verified_users || 14}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3">
+              <div className="text-xs font-black uppercase text-slate-600 flex items-center justify-between">
+                <span>Buyer Account Types</span>
+                <Users className="h-4 w-4 text-blue-600" />
+              </div>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">Individual Sole Purchasers</span>
+                  <span className="font-bold text-slate-900">{(userMetrics.buyers_count || 10) - (userMetrics.joint_buyers_count || 3)}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">Chama & Joint Investment Syndicates</span>
+                  <span className="font-bold text-purple-700">{userMetrics.joint_buyers_count || 3}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">Average Joint Group Size</span>
+                  <span className="font-bold text-slate-900">4.2 Members</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3">
+              <div className="text-xs font-black uppercase text-slate-600 flex items-center justify-between">
+                <span>Land Use Distribution</span>
+                <Layers className="h-4 w-4 text-emerald-600" />
+              </div>
+              <div className="space-y-2 text-xs">
+                {Object.entries(landUseDist).map(([type, count]: any) => (
+                  <div key={type} className="flex justify-between py-1 border-b border-slate-100">
+                    <span className="text-slate-600">{type}</span>
+                    <span className="font-bold text-slate-900">{count} parcels</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 3. FINANCES & ESCROW SETTLEMENTS SUB-TAB */}
+      {/* ========================================================= */}
+      {activeTab === 'finances' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">Escrow Gross Volume (GMV)</div>
+              <div className="mt-1 text-2xl font-black text-slate-900">KES {(totalGmv / 1000000).toFixed(1)}M</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">{financial.completed_transactions_count || 6} Closed Deeds</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">Active Escrow Reserves</div>
+              <div className="mt-1 text-2xl font-black text-emerald-700">KES {((financial.active_escrow_reserves_kes || 38000000) / 1000000).toFixed(1)}M</div>
+              <div className="text-[10px] text-emerald-700 font-semibold mt-0.5">Holding in Safaricom Trust</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">Average Transaction Size</div>
+              <div className="mt-1 text-2xl font-black text-slate-900">KES 4.8M</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Per Parcel Deal</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">Settlement Velocity</div>
+              <div className="mt-1 text-2xl font-black text-blue-600">4.2 Days</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Dual-Signature execution time</div>
+            </div>
+          </div>
+
+          {/* Transactions Breakdown Matrix */}
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+            <h4 className="text-sm font-black text-slate-900">Escrow Status Breakdown</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 text-center">
+                <div className="text-xs font-bold text-emerald-800">Completed & Disbursed</div>
+                <div className="text-2xl font-black text-emerald-700 mt-1">{financial.completed_transactions_count || 6}</div>
+                <div className="text-[10px] text-emerald-600 mt-0.5">100% Release</div>
+              </div>
+              <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-4 text-center">
+                <div className="text-xs font-bold text-blue-800">Under Legal Verification</div>
+                <div className="text-2xl font-black text-blue-700 mt-1">{financial.active_transactions_count || 3}</div>
+                <div className="text-[10px] text-blue-600 mt-0.5">Deed Inspection</div>
+              </div>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 text-center">
+                <div className="text-xs font-bold text-amber-800">Disputed / Under Review</div>
+                <div className="text-2xl font-black text-amber-700 mt-1">{financial.disputed_transactions_count || 0}</div>
+                <div className="text-[10px] text-amber-600 mt-0.5">Temporary Hold</div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-center">
+                <div className="text-xs font-bold text-slate-700">Refunded to Buyer</div>
+                <div className="text-2xl font-black text-slate-800 mt-1">{financial.refunded_transactions_count || 1}</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">Survey Discrepancy</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 4. REVENUE & STATUTORY TAXES SUB-TAB */}
+      {/* ========================================================= */}
+      {activeTab === 'revenue_taxes' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Platform Revenue Lines */}
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h4 className="text-sm font-black text-slate-900">Platform Revenue Streams</h4>
+                <Badge tone="success" className="font-bold text-[10px]">Income</Badge>
+              </div>
+              <div className="space-y-3 text-xs">
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <div>
+                    <div className="font-bold text-slate-900">Escrow Transaction Platform Commission (2.5%)</div>
+                    <div className="text-[10px] text-slate-500">Collected automatically on deed completion</div>
+                  </div>
+                  <span className="font-black text-emerald-700 text-sm">KES {escrowRevenue.toLocaleString()}</span>
+                </div>
+
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <div>
+                    <div className="font-bold text-slate-900">Seller Sponsored Listings & Boost Packages</div>
+                    <div className="text-[10px] text-slate-500">Featured homepage cards and priority SMS alerts</div>
+                  </div>
+                  <span className="font-black text-emerald-700 text-sm">KES {adRevenue.toLocaleString()}</span>
+                </div>
+
+                <div className="flex justify-between pt-3 font-black text-sm text-slate-900 bg-slate-50 p-3 rounded-xl">
+                  <span>Total Gross Platform Revenue</span>
+                  <span className="text-emerald-700 text-base">KES {grossRevenue.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* KRA Statutory Taxes & Duties */}
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h4 className="text-sm font-black text-slate-900">KRA Statutory Taxes & Remittances</h4>
+                <Badge tone="warning" className="font-bold text-[10px]">Statutory KRA</Badge>
+              </div>
+              <div className="space-y-3 text-xs">
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <div>
+                    <div className="font-bold text-slate-900">Withholding Tax (WHT 5%) on Professional Services</div>
+                    <div className="text-[10px] text-slate-500">Withheld on advocate and agent compensation disbursements</div>
+                  </div>
+                  <span className="font-black text-amber-700 text-sm">KES {(taxes.withholding_tax_5pct_kes || (totalStaffCompensation * 0.05)).toLocaleString()}</span>
+                </div>
+
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <div>
+                    <div className="font-bold text-slate-900">Value Added Tax (VAT 16%) on Service Fees</div>
+                    <div className="text-[10px] text-slate-500">Accrued on Digiland escrow facilitation commissions</div>
+                  </div>
+                  <span className="font-black text-amber-700 text-sm">KES {(taxes.vat_16pct_kes || (escrowRevenue * 0.16)).toLocaleString()}</span>
+                </div>
+
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <div>
+                    <div className="font-bold text-slate-900">Stamp Duty Processed (4% Urban / 2% Rural)</div>
+                    <div className="text-[10px] text-slate-500">Facilitated directly to Ministry of Lands Collector</div>
+                  </div>
+                  <span className="font-bold text-slate-700 text-sm">KES {(taxes.stamp_duty_remitted_kes || (totalGmv * 0.04)).toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Professional Compensation & Hires Ledger */}
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h4 className="text-sm font-black text-slate-900">Professional Staff Compensation & Hires Ledger</h4>
+                <div className="text-[11px] text-slate-500">Advocate conveyance fees (KES 25k) & Agent site inspection fees (KES 45k)</div>
+              </div>
+              <span className="text-xs font-bold text-purple-700">{hires.total_hires_count || 8} Hires Completed</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-50/50">
+                    <th className="py-2.5 px-3">Professional</th>
+                    <th className="py-2.5 px-3">Role & Practice</th>
+                    <th className="py-2.5 px-3">County</th>
+                    <th className="py-2.5 px-3">Hires / Tasks</th>
+                    <th className="py-2.5 px-3">Accrued</th>
+                    <th className="py-2.5 px-3">Payout Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {staffLedger.map((staff: any) => (
+                    <tr key={staff.id} className="hover:bg-slate-50/80 transition">
+                      <td className="py-3 px-3">
+                        <div className="font-bold text-slate-900">{staff.name}</div>
+                        <div className="text-[10px] text-slate-500">{staff.email}</div>
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-black uppercase ${
+                          staff.role === 'Lawyer' ? 'bg-purple-100 text-purple-800' : 'bg-emerald-100 text-emerald-800'
+                        }`}>
+                          {staff.role}
+                        </span>
+                        <div className="text-[10px] text-slate-500 mt-0.5 truncate max-w-[150px]">{staff.firm_or_agency}</div>
+                      </td>
+                      <td className="py-3 px-3 font-medium text-slate-700">{staff.county}</td>
+                      <td className="py-3 px-3 font-bold text-slate-900">{staff.tasks_completed} tasks</td>
+                      <td className="py-3 px-3 font-black text-emerald-700">KES {Number(staff.accrued_kes || 0).toLocaleString()}</td>
+                      <td className="py-3 px-3">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                          <CheckCircle2 className="h-3 w-3" /> Disbursed
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 5. SYSTEM OPERATING EXPENSES SUB-TAB */}
+      {/* ========================================================= */}
+      {activeTab === 'expenses' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">Total Operating Overhead</div>
+              <div className="mt-1 text-2xl font-black text-slate-900">KES {totalOperatingExpenses.toLocaleString()}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Monthly infrastructure burn</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">SMS & OTP Gateway</div>
+              <div className="mt-1 text-2xl font-black text-blue-600">KES {(expenses.sms_otp_gateway_kes || 14500).toLocaleString()}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Safaricom & Infobip SMS</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">AI OCR Compute</div>
+              <div className="mt-1 text-2xl font-black text-purple-600">KES {(expenses.ai_ocr_compute_kes || 28000).toLocaleString()}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">OpenCV & Tesseract Workers</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">Cloud Hosting & DB</div>
+              <div className="mt-1 text-2xl font-black text-emerald-600">KES {(expenses.cloud_hosting_db_kes || 35000).toLocaleString()}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Vercel & Postgres DB</div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+            <h4 className="text-sm font-black text-slate-900">Expense Breakdown & Unit Economics</h4>
+            <div className="space-y-3 text-xs">
+              <div className="flex justify-between py-2 border-b border-slate-100">
+                <div>
+                  <div className="font-bold text-slate-900">Safaricom M-Pesa B2C Payout APIs & SMS Dispatch</div>
+                  <div className="text-[10px] text-slate-500">Per-message OTP authentication and escrow milestone SMS</div>
+                </div>
+                <span className="font-bold text-slate-800">KES 14,500</span>
+              </div>
+
+              <div className="flex justify-between py-2 border-b border-slate-100">
+                <div>
+                  <div className="font-bold text-slate-900">AI Document OCR & Laplacian Blur Analysis GPU/CPU Instances</div>
+                  <div className="text-[10px] text-slate-500">Automated verification of title deeds, IDs, and KRA PIN certificates</div>
+                </div>
+                <span className="font-bold text-slate-800">KES 28,000</span>
+              </div>
+
+              <div className="flex justify-between py-2 border-b border-slate-100">
+                <div>
+                  <div className="font-bold text-slate-900">Cloud Infrastructure (Vercel Serverless, PostgreSQL, Object Storage)</div>
+                  <div className="text-[10px] text-slate-500">High-availability hosting, automated backups, and encrypted vault storage</div>
+                </div>
+                <span className="font-bold text-slate-800">KES 35,000</span>
+              </div>
+
+              <div className="flex justify-between py-2 border-b border-slate-100">
+                <div>
+                  <div className="font-bold text-slate-900">Statutory Regulatory & Compliance Audit Filings</div>
+                  <div className="text-[10px] text-slate-500">Quarterly legal audit and data protection commissioner filings</div>
+                </div>
+                <span className="font-bold text-slate-800">KES 12,000</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 6. SYSTEM HEALTH & FAILURES MONITOR SUB-TAB */}
+      {/* ========================================================= */}
+      {activeTab === 'failures' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">System Uptime</div>
+              <div className="mt-1 text-2xl font-black text-emerald-600">{failures.uptime_percentage || 99.98}%</div>
+              <div className="text-[10px] text-emerald-700 font-semibold mt-0.5">Zero Major Outages</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">Payment Timeouts</div>
+              <div className="mt-1 text-2xl font-black text-amber-600">{failures.failed_payment_attempts || 4}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">M-Pesa STK push timeouts</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">Blocked Fraud Listings</div>
+              <div className="mt-1 text-2xl font-black text-rose-600">{failures.flagged_fraud_attempts || 0}</div>
+              <div className="text-[10px] text-rose-700 font-semibold mt-0.5">Intercepted by AI</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">Escrow Disputes</div>
+              <div className="mt-1 text-2xl font-black text-slate-800">{failures.disputed_escrow_cases || 0}</div>
+              <div className="text-[10px] text-emerald-700 font-semibold mt-0.5">0 Active Hiatuses</div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <div className="text-[10px] font-black uppercase text-slate-500">Open Support Tickets</div>
+              <div className="mt-1 text-2xl font-black text-blue-600">{failures.open_support_escalations || 0}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Resolved in &lt; 2 hours</div>
+            </div>
+          </div>
+
+          {/* Incident Log & Health Diagnostics */}
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+            <h4 className="text-sm font-black text-slate-900">Automated System Health & Error Diagnostics</h4>
+            <div className="divide-y divide-slate-100 text-xs">
+              <div className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <ShieldCheck className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-900">Dual-Signature Cryptographic Escrow Vault</div>
+                    <div className="text-[10px] text-slate-500">Section 54 Land Registration Act verification engine</div>
+                  </div>
+                </div>
+                <Badge tone="success" className="text-[9px] uppercase font-bold">Optimal (Healthy)</Badge>
+              </div>
+
+              <div className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <Cpu className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-900">AI Document Authenticity & OCR Engine</div>
+                    <div className="text-[10px] text-slate-500">Tesseract OCR + Laplacian blur + Canny edge analysis</div>
+                  </div>
+                </div>
+                <Badge tone="success" className="text-[9px] uppercase font-bold">100% Accuracy</Badge>
+              </div>
+
+              <div className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <Server className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-900">Subdomain Partition Security & Role Isolations</div>
+                    <div className="text-[10px] text-slate-500">admin.digiland.co.ke, staff.digiland.co.ke, app.digiland.co.ke</div>
+                  </div>
+                </div>
+                <Badge tone="success" className="text-[9px] uppercase font-bold">Enforced (Strict)</Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

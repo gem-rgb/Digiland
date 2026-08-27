@@ -55,6 +55,8 @@ urlpatterns = [
     path('admin/transaction/<uuid:transaction_id>/refund/', views.admin_refund_escrow, name='admin_refund_escrow'),
     path('admin/transaction/<uuid:transaction_id>/freeze/', views.admin_freeze_transaction, name='admin_freeze_transaction'),
     path('admin/transaction/<uuid:transaction_id>/unfreeze/', views.admin_unfreeze_transaction, name='admin_unfreeze_transaction'),
+    path('analytics/', views.admin_analytics_view, name='admin_analytics'),
+    path('admin/analytics/', views.admin_analytics_view, name='admin_analytics_alt'),
     path('agent/transaction/<uuid:transaction_id>/finalize/', views.agent_finalize_transaction, name='agent_finalize_transaction'),
 
     path('agent/escrow-release/', views.escrow_release, name='escrow_release'),
