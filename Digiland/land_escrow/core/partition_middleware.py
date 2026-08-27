@@ -122,6 +122,21 @@ class PartitionIsolationMiddleware:
                 elif any(path.startswith(prefix) for prefix in ADMIN_ONLY_PREFIXES):
                     return HttpResponseRedirect(f"{PORTAL_URLS['admin']}{path}{qs_suffix}")
 
+                # Marketing-First Access Gate: Direct unauthenticated visits to app.digiland.co.ke must pass through marketing
+                user = getattr(request, 'user', None)
+                if not (user and user.is_authenticated):
+                    is_auth_route = path.startswith('/accounts/') or path.startswith('/onboarding/') or path.startswith('/auth/')
+                    referer = request.META.get('HTTP_REFERER', '')
+                    has_marketing_transit = (
+                        'digiland.co.ke' in referer
+                        or request.GET.get('src') == 'marketing'
+                        or request.COOKIES.get('digiland_marketing_passed') == '1'
+                    )
+
+                    # Direct cold access to root / or deep app pages without session or marketing referrer
+                    if path == '/' or (not is_auth_route and not has_marketing_transit):
+                        return HttpResponseRedirect(f"{PORTAL_URLS['marketing']}/")
+
         # If user is authenticated, check role compatibility with requested portal
         user = getattr(request, 'user', None)
         if user and user.is_authenticated:
@@ -161,4 +176,21 @@ class PartitionIsolationMiddleware:
                     qs_suffix = f"?{query_string}" if query_string else ""
                     return HttpResponseRedirect(f"{target_base}{path}{qs_suffix}")
 
-        return self.get_response(request)
+        response = self.get_response(request)
+
+        # Set transit cookie when user visits marketing site to unlock app access
+        if portal == 'marketing' and not is_local:
+            try:
+                response.set_cookie(
+                    'digiland_marketing_passed',
+                    '1',
+                    max_age=86400 * 30,
+                    domain='.digiland.co.ke',
+                    path='/',
+                    samesite='Lax',
+                    secure=True,
+                )
+            except Exception:
+                pass
+
+        return response

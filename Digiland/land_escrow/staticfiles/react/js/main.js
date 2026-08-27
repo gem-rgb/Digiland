@@ -34369,6 +34369,15 @@ function ReactAppInner() {
     } else if (isBuyerSeller && (hostname.startsWith("admin.") || hostname.startsWith("staff."))) {
       window.location.href = `https://app.digiland.co.ke${window.location.pathname}${window.location.search}`;
     }
+    if (hostname.startsWith("app.") && !user) {
+      const pathname = window.location.pathname;
+      const isAuthRoute = pathname.startsWith("/accounts/") || pathname.startsWith("/onboarding/");
+      const hasCookie = document.cookie.includes("digiland_marketing_passed=1");
+      const hasMarketingRef = document.referrer.includes("digiland.co.ke") || new URLSearchParams(window.location.search).has("src");
+      if (pathname === "/" || !isAuthRoute && !hasCookie && !hasMarketingRef) {
+        window.location.href = "https://www.digiland.co.ke/";
+      }
+    }
   }, [userRole]);
   if (user && userRole && !isRoleAllowed(userRole)) {
     return /* @__PURE__ */ import_react21.default.createElement("div", { className: "min-h-screen bg-slate-950 text-white" }, /* @__PURE__ */ import_react21.default.createElement(PortalBar, null), /* @__PURE__ */ import_react21.default.createElement(PartitionGuard, { userRole, currentPartition: activePartition, onSwitchPortal: setActivePartition }));
