@@ -23614,6 +23614,12 @@ var ArrowRight = createLucideIcon("ArrowRight", [
   ["path", { d: "m12 5 7 7-7 7", key: "xquz4c" }]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/arrow-up-right.js
+var ArrowUpRight = createLucideIcon("ArrowUpRight", [
+  ["path", { d: "M7 7h10v10", key: "1tivn9" }],
+  ["path", { d: "M7 17 17 7", key: "1vkiza" }]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/badge-check.js
 var BadgeCheck = createLucideIcon("BadgeCheck", [
   [
@@ -23648,21 +23654,6 @@ var Building2 = createLucideIcon("Building2", [
   ["path", { d: "M10 10h4", key: "tcdvrf" }],
   ["path", { d: "M10 14h4", key: "kelpxr" }],
   ["path", { d: "M10 18h4", key: "1ulq68" }]
-]);
-
-// node_modules/lucide-react/dist/esm/icons/building.js
-var Building = createLucideIcon("Building", [
-  ["rect", { width: "16", height: "20", x: "4", y: "2", rx: "2", ry: "2", key: "76otgf" }],
-  ["path", { d: "M9 22v-4h6v4", key: "r93iot" }],
-  ["path", { d: "M8 6h.01", key: "1dz90k" }],
-  ["path", { d: "M16 6h.01", key: "1x0f13" }],
-  ["path", { d: "M12 6h.01", key: "1vi96p" }],
-  ["path", { d: "M12 10h.01", key: "1nrarc" }],
-  ["path", { d: "M12 14h.01", key: "1etili" }],
-  ["path", { d: "M16 10h.01", key: "1m94wz" }],
-  ["path", { d: "M16 14h.01", key: "1gbofw" }],
-  ["path", { d: "M8 10h.01", key: "19clt8" }],
-  ["path", { d: "M8 14h.01", key: "6423bh" }]
 ]);
 
 // node_modules/lucide-react/dist/esm/icons/chart-column.js
@@ -23791,13 +23782,6 @@ var FileCheck2 = createLucideIcon("FileCheck2", [
   ["path", { d: "M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4", key: "1pf5j1" }],
   ["path", { d: "M14 2v4a2 2 0 0 0 2 2h4", key: "tnqrlb" }],
   ["path", { d: "m3 15 2 2 4-4", key: "1lhrkk" }]
-]);
-
-// node_modules/lucide-react/dist/esm/icons/file-check.js
-var FileCheck = createLucideIcon("FileCheck", [
-  ["path", { d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z", key: "1rqfz7" }],
-  ["path", { d: "M14 2v4a2 2 0 0 0 2 2h4", key: "tnqrlb" }],
-  ["path", { d: "m9 15 2 2 4-4", key: "1grp1n" }]
 ]);
 
 // node_modules/lucide-react/dist/esm/icons/file-pen-line.js
@@ -28213,6 +28197,9 @@ function usePartition() {
   return context;
 }
 
+// src/assets/own_your_plot_poster.jpg
+var own_your_plot_poster_default = "./own_your_plot_poster-XYDOZRCR.jpg";
+
 // src/components/landing/hero-showcase.tsx
 function HeroShowcase({
   notice,
@@ -28230,16 +28217,8 @@ function HeroShowcase({
       window.location.href = `${appUrl}?search=${encodeURIComponent(searchQuery)}`;
     }
   };
-  return /* @__PURE__ */ import_react15.default.createElement("div", { className: "relative overflow-hidden bg-slate-950 py-12 sm:py-20 text-white border-b border-slate-800" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "pointer-events-none absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-emerald-600/15 blur-[120px]" }), /* @__PURE__ */ import_react15.default.createElement("div", { className: "pointer-events-none absolute top-1/2 -right-40 h-[500px] w-[500px] rounded-full bg-purple-600/10 blur-[140px]" }), /* @__PURE__ */ import_react15.default.createElement("div", { className: "relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "mb-8 flex flex-wrap items-center justify-between gap-4" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-semibold text-emerald-300 backdrop-blur-md" }, /* @__PURE__ */ import_react15.default.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-400 animate-pulse" }), /* @__PURE__ */ import_react15.default.createElement("span", null, notice || "Digiland Protocol v2.0 \u2022 Kenya Land Escrow & Verification"), /* @__PURE__ */ import_react15.default.createElement(Badge, { tone: "purple", className: "ml-2 text-[10px] px-2 py-0.5 uppercase tracking-wider" }, "AI Verified")), /* @__PURE__ */ import_react15.default.createElement("div", { className: "flex items-center gap-3 text-xs text-slate-400" }, /* @__PURE__ */ import_react15.default.createElement("span", { className: "inline-flex items-center gap-1 text-emerald-400 font-medium" }, /* @__PURE__ */ import_react15.default.createElement(ShieldCheck, { className: "w-4 h-4" }), " ArdhiSasa Integrated"), /* @__PURE__ */ import_react15.default.createElement("span", null, "\u2022"), /* @__PURE__ */ import_react15.default.createElement("span", { className: "inline-flex items-center gap-1 text-purple-400 font-medium" }, /* @__PURE__ */ import_react15.default.createElement(Sparkles, { className: "w-4 h-4" }), " Smart Escrow"))), /* @__PURE__ */ import_react15.default.createElement("div", { className: "grid items-center gap-12 lg:grid-cols-12 lg:gap-8" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "lg:col-span-7 space-y-6" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "inline-flex items-center gap-2 rounded-lg bg-slate-900 border border-slate-800 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-emerald-400" }, /* @__PURE__ */ import_react15.default.createElement(Building, { className: "w-3.5 h-3.5 text-emerald-400" }), "Kenya's #1 Land Escrow Platform"), /* @__PURE__ */ import_react15.default.createElement("h1", { className: "text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-[1.08]" }, "OWN YOUR ", /* @__PURE__ */ import_react15.default.createElement("br", null), /* @__PURE__ */ import_react15.default.createElement("span", { className: "bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-200 bg-clip-text text-transparent" }, "PLOT.")), /* @__PURE__ */ import_react15.default.createElement("p", { className: "text-xl font-bold text-slate-200 tracking-wide" }, "Safe. Simple. Secure."), /* @__PURE__ */ import_react15.default.createElement("p", { className: "text-base sm:text-lg text-slate-300 max-w-xl leading-relaxed" }, "Verify title deeds, execute lawyer-backed escrow agreements, and complete land purchases with 100% fraud protection and M-Pesa / Bank integration."), /* @__PURE__ */ import_react15.default.createElement("form", { onSubmit: handleSearch, className: "flex flex-col sm:flex-row gap-2 max-w-xl bg-slate-900/90 p-2 rounded-2xl border border-slate-800 shadow-xl" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "flex-1 flex items-center px-3 gap-2" }, /* @__PURE__ */ import_react15.default.createElement(Search, { className: "w-5 h-5 text-emerald-400" }), /* @__PURE__ */ import_react15.default.createElement(
-    "input",
-    {
-      type: "text",
-      value: searchQuery,
-      onChange: (e) => setSearchQuery(e.target.value),
-      placeholder: "Search plot by County, Parcel ID, or Town...",
-      className: "w-full bg-transparent text-sm text-white placeholder-slate-500 outline-none py-2.5"
-    }
-  )), /* @__PURE__ */ import_react15.default.createElement(Button, { type: "submit", className: "bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-6 py-2.5 rounded-xl flex items-center justify-center gap-2" }, /* @__PURE__ */ import_react15.default.createElement("span", null, "Explore"), /* @__PURE__ */ import_react15.default.createElement(ArrowRight, { className: "w-4 h-4" }))), /* @__PURE__ */ import_react15.default.createElement("div", { className: "pt-4 flex flex-wrap items-center gap-4" }, /* @__PURE__ */ import_react15.default.createElement(
+  const popularLocations = ["Nairobi", "Nakuru", "Kiambu", "Kajiado", "Naivasha", "Eldoret"];
+  return /* @__PURE__ */ import_react15.default.createElement("section", { className: "relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50/70 py-16 sm:py-24 lg:py-28 text-slate-900 border-b border-slate-200/80 min-h-[85vh] flex items-center" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "pointer-events-none absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full bg-emerald-400/10 blur-[140px]" }), /* @__PURE__ */ import_react15.default.createElement("div", { className: "pointer-events-none absolute top-1/3 -right-40 h-[500px] w-[500px] rounded-full bg-purple-400/10 blur-[140px]" }), /* @__PURE__ */ import_react15.default.createElement("div", { className: "relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "mb-6 flex flex-wrap items-center justify-between gap-4" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold text-emerald-800 shadow-sm" }, /* @__PURE__ */ import_react15.default.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-500 animate-pulse" }), /* @__PURE__ */ import_react15.default.createElement("span", null, notice || "Kenya's #1 Autonomous Land Escrow Protocol"), /* @__PURE__ */ import_react15.default.createElement("span", { className: "ml-1 inline-flex items-center gap-1 text-[10px] bg-purple-600 text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider" }, /* @__PURE__ */ import_react15.default.createElement(Sparkles, { className: "w-3 h-3" }), " AI Verified")), /* @__PURE__ */ import_react15.default.createElement("div", { className: "flex items-center gap-4 text-xs font-semibold text-slate-600" }, /* @__PURE__ */ import_react15.default.createElement(
     "a",
     {
       href: getPortalUrl("app"),
@@ -28249,11 +28228,11 @@ function HeroShowcase({
           onNavigatePartition("app");
         }
       },
-      className: "inline-flex items-center gap-3 px-7 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-base shadow-lg shadow-emerald-950/50 transition-all hover:scale-[1.02]"
+      className: "hover:text-emerald-700 transition flex items-center gap-1"
     },
-    /* @__PURE__ */ import_react15.default.createElement("span", null, "Launch User App (Buyers & Sellers)"),
-    /* @__PURE__ */ import_react15.default.createElement(ArrowRight, { className: "w-5 h-5" })
-  ), /* @__PURE__ */ import_react15.default.createElement(
+    /* @__PURE__ */ import_react15.default.createElement("span", null, "Selling Land? List as Seller"),
+    /* @__PURE__ */ import_react15.default.createElement(ArrowUpRight, { className: "w-3.5 h-3.5" })
+  ), /* @__PURE__ */ import_react15.default.createElement("span", null, "\u2022"), /* @__PURE__ */ import_react15.default.createElement(
     "a",
     {
       href: getPortalUrl("staff"),
@@ -28263,18 +28242,75 @@ function HeroShowcase({
           onNavigatePartition("staff");
         }
       },
-      className: "inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold text-sm transition-all"
+      className: "hover:text-purple-700 transition flex items-center gap-1"
     },
-    /* @__PURE__ */ import_react15.default.createElement(UserCheck, { className: "w-4 h-4 text-purple-400" }),
-    /* @__PURE__ */ import_react15.default.createElement("span", null, "Staff Portal (Agents & Lawyers)")
-  )), /* @__PURE__ */ import_react15.default.createElement("div", { className: "pt-6 grid grid-cols-3 gap-4 border-t border-slate-800/80 max-w-xl text-slate-300" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "flex items-center gap-2.5" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" }, /* @__PURE__ */ import_react15.default.createElement(CircleCheck, { className: "w-4 h-4" })), /* @__PURE__ */ import_react15.default.createElement("div", null, /* @__PURE__ */ import_react15.default.createElement("div", { className: "text-xs font-bold text-white" }, "Verified Lands"), /* @__PURE__ */ import_react15.default.createElement("div", { className: "text-[10px] text-slate-400" }, "ArdhiSasa checked"))), /* @__PURE__ */ import_react15.default.createElement("div", { className: "flex items-center gap-2.5" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" }, /* @__PURE__ */ import_react15.default.createElement(Lock, { className: "w-4 h-4" })), /* @__PURE__ */ import_react15.default.createElement("div", null, /* @__PURE__ */ import_react15.default.createElement("div", { className: "text-xs font-bold text-white" }, "Secure Escrow"), /* @__PURE__ */ import_react15.default.createElement("div", { className: "text-[10px] text-slate-400" }, "Locked till transfer"))), /* @__PURE__ */ import_react15.default.createElement("div", { className: "flex items-center gap-2.5" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "p-2 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20" }, /* @__PURE__ */ import_react15.default.createElement(FileCheck, { className: "w-4 h-4" })), /* @__PURE__ */ import_react15.default.createElement("div", null, /* @__PURE__ */ import_react15.default.createElement("div", { className: "text-xs font-bold text-white" }, "Instant Titles"), /* @__PURE__ */ import_react15.default.createElement("div", { className: "text-[10px] text-slate-400" }, "Digital certificate"))))), /* @__PURE__ */ import_react15.default.createElement("div", { className: "lg:col-span-5 relative" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "relative mx-auto max-w-md lg:max-w-none" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "absolute -inset-1.5 rounded-3xl bg-gradient-to-r from-emerald-500/40 via-teal-500/30 to-purple-600/30 blur-xl opacity-70 animate-pulse" }), /* @__PURE__ */ import_react15.default.createElement("div", { className: "relative rounded-3xl bg-slate-900 border border-slate-700/80 p-3 shadow-2xl overflow-hidden group" }, /* @__PURE__ */ import_react15.default.createElement(
+    /* @__PURE__ */ import_react15.default.createElement("span", null, "Staff Portal (Agents & Advocates)"),
+    /* @__PURE__ */ import_react15.default.createElement(ArrowUpRight, { className: "w-3.5 h-3.5" })
+  ))), /* @__PURE__ */ import_react15.default.createElement("div", { className: "grid items-center gap-12 lg:grid-cols-12 lg:gap-12" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "lg:col-span-7 space-y-6" }, /* @__PURE__ */ import_react15.default.createElement("h1", { className: "text-4xl sm:text-6xl font-black tracking-tight text-slate-950 leading-[1.06]" }, "Find, Choose & Own ", /* @__PURE__ */ import_react15.default.createElement("br", null), /* @__PURE__ */ import_react15.default.createElement("span", { className: "bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 bg-clip-text text-transparent" }, "Land Made Simple.")), /* @__PURE__ */ import_react15.default.createElement("p", { className: "text-lg sm:text-xl text-slate-600 max-w-2xl font-medium leading-relaxed" }, "Buy verified land parcels in Kenya with total confidence. Instant ArdhiSasa title checking, M-Pesa escrow protection, and legal advocate sign-off."), /* @__PURE__ */ import_react15.default.createElement("div", { className: "pt-2 max-w-2xl space-y-3" }, /* @__PURE__ */ import_react15.default.createElement("form", { onSubmit: handleSearch, className: "flex flex-col sm:flex-row gap-2 bg-white p-2.5 rounded-2xl border border-slate-300 shadow-xl shadow-slate-200/60" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "flex-1 flex items-center px-3 gap-3" }, /* @__PURE__ */ import_react15.default.createElement(Search, { className: "w-5 h-5 text-emerald-600 shrink-0" }), /* @__PURE__ */ import_react15.default.createElement(
+    "input",
+    {
+      type: "text",
+      value: searchQuery,
+      onChange: (e) => setSearchQuery(e.target.value),
+      placeholder: "Search land by County, Town, or Parcel Number...",
+      className: "w-full bg-transparent text-sm text-slate-900 placeholder-slate-400 outline-none py-2 font-medium"
+    }
+  )), /* @__PURE__ */ import_react15.default.createElement(
+    Button,
+    {
+      type: "submit",
+      className: "bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-7 py-3 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-emerald-950/20 text-sm"
+    },
+    /* @__PURE__ */ import_react15.default.createElement("span", null, "Search Plots"),
+    /* @__PURE__ */ import_react15.default.createElement(ArrowRight, { className: "w-4 h-4" })
+  )), /* @__PURE__ */ import_react15.default.createElement("div", { className: "flex flex-wrap items-center gap-2 text-xs text-slate-500 pt-1" }, /* @__PURE__ */ import_react15.default.createElement("span", { className: "font-semibold text-slate-700" }, "Popular:"), popularLocations.map((loc) => /* @__PURE__ */ import_react15.default.createElement(
+    "button",
+    {
+      key: loc,
+      type: "button",
+      onClick: () => {
+        setSearchQuery(loc);
+        const appUrl = getPortalUrl("app");
+        if (onNavigatePartition) {
+          onNavigatePartition("app");
+        } else {
+          window.location.href = `${appUrl}?search=${encodeURIComponent(loc)}`;
+        }
+      },
+      className: "px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 font-medium transition text-slate-600"
+    },
+    loc
+  )))), /* @__PURE__ */ import_react15.default.createElement("div", { className: "pt-4 flex flex-wrap items-center gap-4" }, /* @__PURE__ */ import_react15.default.createElement(
+    "a",
+    {
+      href: getPortalUrl("app"),
+      onClick: (e) => {
+        if (onNavigatePartition) {
+          e.preventDefault();
+          onNavigatePartition("app");
+        }
+      },
+      className: "inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-base shadow-xl shadow-emerald-600/30 transition-all hover:scale-[1.02]"
+    },
+    /* @__PURE__ */ import_react15.default.createElement(Compass, { className: "w-5 h-5" }),
+    /* @__PURE__ */ import_react15.default.createElement("span", null, "Explore Marketplace"),
+    /* @__PURE__ */ import_react15.default.createElement(ArrowRight, { className: "w-5 h-5" })
+  ), /* @__PURE__ */ import_react15.default.createElement(
+    "a",
+    {
+      href: "#features",
+      className: "inline-flex items-center gap-2 px-6 py-4 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-sm shadow-sm transition"
+    },
+    /* @__PURE__ */ import_react15.default.createElement(ShieldCheck, { className: "w-4 h-4 text-emerald-600" }),
+    /* @__PURE__ */ import_react15.default.createElement("span", null, "How Escrow Works")
+  )), /* @__PURE__ */ import_react15.default.createElement("div", { className: "pt-4 flex flex-wrap items-center gap-6 text-xs font-bold text-slate-600" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react15.default.createElement(CircleCheck, { className: "w-4 h-4 text-emerald-600" }), /* @__PURE__ */ import_react15.default.createElement("span", null, "100% Title Deed Verification")), /* @__PURE__ */ import_react15.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react15.default.createElement(CircleCheck, { className: "w-4 h-4 text-emerald-600" }), /* @__PURE__ */ import_react15.default.createElement("span", null, "M-Pesa & Bank Escrow Lock")), /* @__PURE__ */ import_react15.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react15.default.createElement(CircleCheck, { className: "w-4 h-4 text-purple-600" }), /* @__PURE__ */ import_react15.default.createElement("span", null, "LSK Advocate Authenticated")))), /* @__PURE__ */ import_react15.default.createElement("div", { className: "lg:col-span-5 relative" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "relative mx-auto max-w-md lg:max-w-none" }, /* @__PURE__ */ import_react15.default.createElement("div", { className: "absolute -inset-2 rounded-3xl bg-gradient-to-r from-emerald-400/20 via-teal-400/20 to-purple-400/20 blur-2xl opacity-70" }), /* @__PURE__ */ import_react15.default.createElement("div", { className: "relative rounded-3xl bg-white border border-slate-200 p-3 shadow-2xl shadow-slate-300/70 overflow-hidden group" }, /* @__PURE__ */ import_react15.default.createElement(
     "img",
     {
-      src: "/images/own_your_plot_poster.jpg",
+      src: own_your_plot_poster_default,
       alt: "Digiland - Own Your Plot Banner",
-      className: "w-full h-auto rounded-2xl object-cover transform transition duration-500 group-hover:scale-[1.01]"
+      className: "w-full h-auto rounded-2xl object-cover shadow-sm transition duration-500 group-hover:scale-[1.01]"
     }
-  ), /* @__PURE__ */ import_react15.default.createElement("div", { className: "absolute top-6 left-6 bg-slate-950/90 border border-emerald-500/40 backdrop-blur-md px-3.5 py-1.5 rounded-full flex items-center gap-2 shadow-lg" }, /* @__PURE__ */ import_react15.default.createElement("span", { className: "w-2 h-2 rounded-full bg-emerald-400 animate-ping" }), /* @__PURE__ */ import_react15.default.createElement("span", { className: "text-xs font-bold text-white" }, "Verified Plot Listings")), /* @__PURE__ */ import_react15.default.createElement("div", { className: "absolute bottom-6 right-6 bg-slate-950/90 border border-purple-500/40 backdrop-blur-md px-4 py-2 rounded-xl flex items-center gap-2.5 shadow-lg" }, /* @__PURE__ */ import_react15.default.createElement(Sparkles, { className: "w-4 h-4 text-purple-400" }), /* @__PURE__ */ import_react15.default.createElement("div", null, /* @__PURE__ */ import_react15.default.createElement("div", { className: "text-xs font-bold text-purple-200" }, "Legal Title Guarantee"), /* @__PURE__ */ import_react15.default.createElement("div", { className: "text-[10px] text-slate-400" }, "Lawyer Verified")))))))));
+  ), /* @__PURE__ */ import_react15.default.createElement("div", { className: "absolute top-6 left-6 bg-white/95 border border-emerald-500/30 backdrop-blur-md px-3.5 py-2 rounded-xl flex items-center gap-2.5 shadow-lg" }, /* @__PURE__ */ import_react15.default.createElement("span", { className: "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" }), /* @__PURE__ */ import_react15.default.createElement("div", null, /* @__PURE__ */ import_react15.default.createElement("div", { className: "text-xs font-extrabold text-slate-900" }, "ArdhiSasa Verified"), /* @__PURE__ */ import_react15.default.createElement("div", { className: "text-[10px] text-emerald-700 font-semibold" }, "100% Title Deeds Synced"))), /* @__PURE__ */ import_react15.default.createElement("div", { className: "absolute bottom-6 right-6 bg-slate-900 border border-purple-500/40 text-white backdrop-blur-md px-4 py-2.5 rounded-xl flex items-center gap-2.5 shadow-xl" }, /* @__PURE__ */ import_react15.default.createElement(Sparkles, { className: "w-4 h-4 text-purple-400" }), /* @__PURE__ */ import_react15.default.createElement("div", null, /* @__PURE__ */ import_react15.default.createElement("div", { className: "text-xs font-bold text-purple-200" }, "Advocate Title Guarantee"), /* @__PURE__ */ import_react15.default.createElement("div", { className: "text-[10px] text-slate-400" }, "Law Society of Kenya")))))))));
 }
 
 // src/components/landing/animated-walkthrough.tsx
@@ -34885,6 +34921,14 @@ lucide-react/dist/esm/icons/arrow-right.js:
    * See the LICENSE file in the root directory of this source tree.
    *)
 
+lucide-react/dist/esm/icons/arrow-up-right.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
 lucide-react/dist/esm/icons/badge-check.js:
   (**
    * @license lucide-react v0.453.0 - ISC
@@ -34910,14 +34954,6 @@ lucide-react/dist/esm/icons/briefcase.js:
    *)
 
 lucide-react/dist/esm/icons/building-2.js:
-  (**
-   * @license lucide-react v0.453.0 - ISC
-   *
-   * This source code is licensed under the ISC license.
-   * See the LICENSE file in the root directory of this source tree.
-   *)
-
-lucide-react/dist/esm/icons/building.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *
@@ -35054,14 +35090,6 @@ lucide-react/dist/esm/icons/eye.js:
    *)
 
 lucide-react/dist/esm/icons/file-check-2.js:
-  (**
-   * @license lucide-react v0.453.0 - ISC
-   *
-   * This source code is licensed under the ISC license.
-   * See the LICENSE file in the root directory of this source tree.
-   *)
-
-lucide-react/dist/esm/icons/file-check.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *

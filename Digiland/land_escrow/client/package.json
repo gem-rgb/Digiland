@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build:css": "tailwindcss -i ./src/styles/globals.css -o ./dist/react/styles.css --minify",
-    "build:js": "esbuild ./src/main.tsx --bundle --format=esm --platform=browser --target=es2020 --outfile=./dist/react/js/main.js --sourcemap",
+    "build:js": "esbuild ./src/main.tsx --bundle --format=esm --platform=browser --target=es2020 --outfile=./dist/react/js/main.js --loader:.jpg=file --loader:.png=file --loader:.svg=file --sourcemap",
     "build": "npm run build:css && npm run build:js"
   },
   "dependencies": {
