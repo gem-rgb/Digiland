@@ -2,14 +2,14 @@
 ===================================================
 
 Enforces strict domain/subdomain partition isolation across the 4 frontends:
-1. Marketing (digiland.co.ke / www.digiland.co.ke)
-2. App Portal (app.digiland.co.ke) -> Buyers & Sellers only
+1. Marketing (digiland.co.ke / www.digiland.co.ke) -> Landing page & marketing content only
+2. App Portal (app.digiland.co.ke) -> Buyers & Sellers dashboards, marketplace, and escrow
 3. Staff Portal (staff.digiland.co.ke) -> Agents, Lawyers, Land Officials only
 4. Admin Portal (admin.digiland.co.ke) -> Admins / Superusers only
 """
 
 import logging
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -29,14 +29,27 @@ PORTAL_URLS = {
     'marketing': 'https://www.digiland.co.ke',
 }
 
+APP_ONLY_PREFIXES = (
+    '/buyer/',
+    '/seller/',
+    '/parcels/',
+    '/transactions/',
+    '/messages/',
+    '/accounts/login/',
+    '/accounts/signup/',
+    '/accounts/register/',
+    '/checkout/',
+    '/joint-groups/',
+)
+
+STAFF_ONLY_PREFIXES = (
+    '/staff-login/',
+    '/agent/',
+    '/lawyer/',
+)
+
 def resolve_request_partition(request) -> str:
-    """Resolve the partition string for an incoming request.
-    
-    Order of precedence:
-    1. Header 'X-Digiland-Portal'
-    2. Query param 'portal'
-    3. HTTP_HOST header matching subdomains
-    """
+    """Resolve the partition string for an incoming request."""
     header_portal = request.META.get('HTTP_X_DIGILAND_PORTAL')
     if header_portal and header_portal.lower() in PORTAL_ROLE_MAP:
         return header_portal.lower()
@@ -56,16 +69,14 @@ def resolve_request_partition(request) -> str:
     return 'marketing'
 
 class PartitionIsolationMiddleware:
-    """Middleware enforcing role-based subdomain partition safety."""
+    """Middleware enforcing role-based subdomain partition safety and domain redirection."""
 
     EXEMPT_PATH_PREFIXES = (
         '/static/',
         '/media/',
-        '/admin/login/',
-        '/api/v1/auth/login/',
-        '/api/v1/auth/staff-login/',
-        '/api/v1/auth/register/',
-        '/api/v1/health/',
+        '/api/',
+        '/health/',
+        '/favicon.ico',
     )
 
     def __init__(self, get_response):
@@ -74,12 +85,25 @@ class PartitionIsolationMiddleware:
     def __call__(self, request):
         path = request.path
 
-        # Allow exempt static and authentication setup endpoints
+        # Allow exempt static and API endpoints
         if any(path.startswith(prefix) for prefix in self.EXEMPT_PATH_PREFIXES):
             return self.get_response(request)
 
         portal = resolve_request_partition(request)
         request.digiland_portal = portal
+        host = request.get_host().split(':')[0].lower()
+
+        # In production (when not on localhost), redirect app/staff paths hit on marketing domain to dedicated subdomains
+        if not (host in {'localhost', '127.0.0.1'} or host.endswith('.vercel.app')):
+            if portal == 'marketing':
+                if any(path.startswith(prefix) for prefix in APP_ONLY_PREFIXES):
+                    query_string = request.META.get('QUERY_STRING', '')
+                    target = f"{PORTAL_URLS['app']}{path}{('?' + query_string) if query_string else ''}"
+                    return HttpResponseRedirect(target)
+                elif any(path.startswith(prefix) for prefix in STAFF_ONLY_PREFIXES):
+                    query_string = request.META.get('QUERY_STRING', '')
+                    target = f"{PORTAL_URLS['staff']}{path}{('?' + query_string) if query_string else ''}"
+                    return HttpResponseRedirect(target)
 
         # If user is authenticated, check role compatibility with requested portal
         user = getattr(request, 'user', None)
@@ -87,13 +111,12 @@ class PartitionIsolationMiddleware:
             user_role = getattr(user, 'role', '') or ('Admin' if user.is_superuser or user.is_staff else '')
             allowed_roles = PORTAL_ROLE_MAP.get(portal, set())
 
-            # For admin portal, allow if user.is_staff or user.is_superuser
             if portal == 'admin':
                 is_allowed = user_role == 'Admin' or user.is_staff or user.is_superuser
             elif portal in ('app', 'staff'):
                 is_allowed = user_role in allowed_roles
             else:
-                is_allowed = True  # Marketing portal allows public/all
+                is_allowed = True
 
             if not is_allowed:
                 correct_portal = 'staff' if user_role in {'Agent', 'Lawyer', 'Land_Official'} else ('admin' if (user_role == 'Admin' or user.is_staff) else 'app')

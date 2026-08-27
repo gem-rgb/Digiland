@@ -6,6 +6,7 @@ import { Badge } from '../ui/badge.js';
 import { Button } from '../ui/button.js';
 import { LocationPermissionModal } from '../ui/location-permission-modal.js';
 import { cn } from '../../lib/utils.js';
+import { getPortalUrl } from '../../lib/partition-context.js';
 
 function actionClass(tone?: ActionLink['tone']) {
   return cn(
@@ -125,14 +126,14 @@ export function PublicShell({
                 ) : (
                   <>
                     <a
-                      href="/accounts/login/"
+                      href={`${getPortalUrl('app')}/accounts/login/`}
                       className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-xs font-bold text-slate-700 shadow-xs hover:bg-slate-50 hover:text-slate-950 transition"
                     >
                       <LogIn className="mr-1.5 h-3.5 w-3.5 text-slate-500" />
                       Sign In
                     </a>
                     <a
-                      href="/accounts/signup/"
+                      href={`${getPortalUrl('app')}/accounts/signup/`}
                       className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-600 px-4 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-500 transition hover:scale-[1.02]"
                     >
                       <UserPlus className="mr-1.5 h-3.5 w-3.5" />

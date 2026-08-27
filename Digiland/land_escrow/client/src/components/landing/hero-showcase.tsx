@@ -42,7 +42,8 @@ export function HeroShowcase({
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const targetUrl = `/parcels/${searchQuery.trim() ? `?search=${encodeURIComponent(searchQuery.trim())}` : ''}`;
+    const appUrl = getPortalUrl('app');
+    const targetUrl = `${appUrl}/parcels/${searchQuery.trim() ? `?search=${encodeURIComponent(searchQuery.trim())}` : ''}`;
     window.location.href = targetUrl;
   };
 
@@ -125,7 +126,8 @@ export function HeroShowcase({
                     key={loc}
                     type="button"
                     onClick={() => {
-                      window.location.href = `/parcels/?search=${encodeURIComponent(loc)}`;
+                      const appUrl = getPortalUrl('app');
+                      window.location.href = `${appUrl}/parcels/?search=${encodeURIComponent(loc)}`;
                     }}
                     className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 font-medium transition text-slate-600"
                   >
@@ -138,7 +140,7 @@ export function HeroShowcase({
             {/* Primary Action Buttons (Public Only) */}
             <div className="pt-4 flex flex-wrap items-center gap-4">
               <a
-                href="/parcels/"
+                href={`${getPortalUrl('app')}/parcels/`}
                 className="inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-base shadow-xl shadow-emerald-600/30 transition-all hover:scale-[1.02]"
               >
                 <Compass className="w-5 h-5" />
