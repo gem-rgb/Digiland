@@ -27375,12 +27375,31 @@ function Badge({
 // src/lib/partition-context.tsx
 var import_react5 = __toESM(require_react(), 1);
 var PartitionContext = (0, import_react5.createContext)(void 0);
+function detectPartitionFromLocation() {
+  if (typeof window === "undefined") return "marketing";
+  const params = new URLSearchParams(window.location.search);
+  const portalParam = params.get("portal")?.toLowerCase();
+  if (portalParam && ["marketing", "app", "staff", "admin"].includes(portalParam)) {
+    return portalParam;
+  }
+  const hostname = window.location.hostname.toLowerCase();
+  if (hostname.startsWith("admin.")) return "admin";
+  if (hostname.startsWith("staff.")) return "staff";
+  if (hostname.startsWith("app.")) return "app";
+  return "marketing";
+}
 function requiredPartitionForRole(role) {
   if (!role) return "app";
   const norm = role.toLowerCase();
   if (norm.includes("admin")) return "admin";
   if (norm.includes("agent") || norm.includes("lawyer") || norm.includes("official")) return "staff";
   return "app";
+}
+function isRoleAllowedOnPartition(role, partition) {
+  if (!role) return true;
+  const req = requiredPartitionForRole(role);
+  if (partition === "marketing") return true;
+  return req === partition;
 }
 function getPortalUrl(partition) {
   if (typeof window === "undefined") return "/";
@@ -27401,6 +27420,34 @@ function getPortalUrl(partition) {
     default:
       return "https://www.digiland.co.ke";
   }
+}
+var PartitionProvider = ({ children }) => {
+  const [activePartition, setActivePartition] = (0, import_react5.useState)(detectPartitionFromLocation);
+  (0, import_react5.useEffect)(() => {
+    const detected = detectPartitionFromLocation();
+    setActivePartition(detected);
+  }, []);
+  const isRoleAllowed = (role) => isRoleAllowedOnPartition(role, activePartition);
+  return /* @__PURE__ */ import_react5.default.createElement(
+    PartitionContext.Provider,
+    {
+      value: {
+        activePartition,
+        setActivePartition,
+        getPortalUrl,
+        isRoleAllowed,
+        requiredPartitionForRole
+      }
+    },
+    children
+  );
+};
+function usePartition() {
+  const context = (0, import_react5.useContext)(PartitionContext);
+  if (!context) {
+    throw new Error("usePartition must be used within a PartitionProvider");
+  }
+  return context;
 }
 
 // src/components/layout/public-shell.tsx

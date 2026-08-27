@@ -24,6 +24,7 @@ import { HeroShowcase } from './components/landing/hero-showcase.js';
 import { AnimatedWalkthrough } from './components/landing/animated-walkthrough.js';
 import { PremiumFooter } from './components/landing/premium-footer.js';
 import { AdminPeopleHubView, AdminKycDeskView, AdminAIEvaluationLabView, AdminTransactionsManagementView, AdminAnalyticsSuiteView } from './components/admin/admin-views.js';
+import { PartitionProvider, usePartition, isRoleAllowedOnPartition, type Partition } from './lib/partition-context.js';
 import { PartitionGuard } from './components/layout/partition-guard.js';
 import { StaffLoginPage } from './pages/staff-login-page.js';
 
