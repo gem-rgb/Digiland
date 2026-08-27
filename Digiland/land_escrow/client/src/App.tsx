@@ -2684,7 +2684,7 @@ function AdminAnalyticsView() {
               <span className="font-black text-amber-400">{health.active_disputes_count || 0} Under Review</span>
             </div>
             <div className="flex items-center justify-between rounded-2xl bg-white/[0.02] p-3 border border-white/[0.04]">
-              <span className="text-slate-300 font-semibold">Ministry of Lands Ardhisasa Sync</span>
+              <span className="text-slate-300 font-semibold">Ministry of Lands Registry Sync</span>
               <span className="font-bold text-emerald-400">Connected & Synced</span>
             </div>
           </div>
@@ -3659,7 +3659,7 @@ function FeaturesPage() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 font-bold mb-2">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
-                <CardTitle className="text-base font-bold text-slate-900">ArdhiSasa Registry Validation</CardTitle>
+                <CardTitle className="text-base font-bold text-slate-900 font-mono">Land Registry Title Validation</CardTitle>
               </CardHeader>
               <CardContent className="p-0 text-xs leading-relaxed text-slate-600">
                 Direct integration with Ministry of Lands land registry to confirm title deed ownership, encumbrances, and parcel boundaries before contract signing.
@@ -7290,7 +7290,7 @@ function LegalProtectionPanel() {
               </label>
             </div>
             <p className="text-xs text-amber-800 leading-relaxed">
-              ⚠️ <strong>Independent Search:</strong> Verify past owners and registry records directly via ArdhiSasa, not just the seller's uploaded copy.
+              ⚠️ <strong>Independent Search:</strong> Verify past owners and registry records directly via the official Land Registry, not just the seller's uploaded copy.
             </p>
           </div>
 
@@ -7581,7 +7581,7 @@ function ContractFullPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <input type="checkbox" id="audit-registry" required className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" />
-                        <label htmlFor="audit-registry" className="text-xs font-semibold text-slate-800 cursor-pointer select-none">I have verified the provenance of registry records on ArdhiSasa.</label>
+                        <label htmlFor="audit-registry" className="text-xs font-semibold text-slate-800 cursor-pointer select-none">I have verified the provenance of registry records at the Land Registry.</label>
                       </div>
                       <div className="flex items-center gap-2">
                         <input type="checkbox" id="audit-physical" required className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" />

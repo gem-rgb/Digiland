@@ -50,7 +50,7 @@ const NAV_COLUMNS: Array<{ title: string; links: NavLink[] }> = [
     links: [
       { label: 'Legal Framework', href: '/escrow-acts/' },
       { label: 'Joint Ownership Laws', href: '/joint-laws/' },
-      { label: 'ArdhiSasa Registry Sync', href: '/escrow-acts/' },
+      { label: 'Land Registry Sync', href: '/escrow-acts/' },
       { label: 'LSK Advocate Sign-Off', href: '/staff/login/' },
     ],
   },
@@ -100,8 +100,8 @@ const TRUST_ITEMS: TrustItem[] = [
   },
   {
     icon: FileCheck2,
-    label: 'ArdhiSasa Direct Sync',
-    description: 'Instant title deed validation against Ministry of Lands databases.',
+    label: 'Land Registry Direct Sync',
+    description: 'Instant title deed validation against official Ministry of Lands databases.',
   },
   {
     icon: Zap,
@@ -493,7 +493,7 @@ export function PremiumFooter() {
             </p>
 
             <p className="text-sm leading-6 text-slate-300 font-normal">
-              Digiland connects land buyers, property sellers, and Law Society of Kenya advocates. We combine automated ArdhiSasa title verification, M-Pesa deposit vaulting, and legal oversight to make Kenya land commerce 100% transparent and safe.
+              Digiland connects land buyers, property sellers, and Law Society of Kenya advocates. We combine automated title deed verification, M-Pesa deposit vaulting, and legal oversight to make Kenya land commerce 100% transparent and safe.
             </p>
 
             {/* Social media icons */}
