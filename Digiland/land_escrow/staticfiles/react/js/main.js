@@ -30262,30 +30262,37 @@ function AnimatedWalkthrough() {
 var import_react17 = __toESM(require_react(), 1);
 var FOOTER_NAV_COLUMNS = [
   {
-    title: "Platform",
+    title: "Buyers",
     links: [
-      { label: "Browse Verified Land", href: `${getPortalUrl("app")}/parcels/` },
-      { label: "How Escrow Works", href: "/escrow-acts/" },
-      { label: "AI Valuation Engine", href: "/#estimator" },
-      { label: "Fraud Guarantee", href: "/features/" }
+      { label: "Explore Land", href: `${getPortalUrl("app")}/parcels/` },
+      { label: "How Buying Works", href: "/escrow-acts/" },
+      { label: "Valuation Estimator", href: "/#estimator" },
+      { label: "Buyer Protection", href: "/features/" }
     ]
   },
   {
-    title: "Legal & Escrow",
+    title: "Sellers",
     links: [
-      { label: "Legal Framework", href: "/escrow-acts/" },
-      { label: "Joint Ownership Laws", href: "/joint-laws/" },
-      { label: "Land Registry Sync", href: "/escrow-acts/" },
-      { label: "Buyer Protection Policy", href: "/features/" }
+      { label: "Sell With Digiland", href: `${getPortalUrl("app")}/accounts/signup/?role=seller` },
+      { label: "List Your Property", href: `${getPortalUrl("app")}/parcels/upload/` },
+      { label: "Escrow Verification", href: "/escrow-acts/" }
     ]
   },
   {
     title: "Company",
     links: [
       { label: "About Digiland", href: "/features/" },
-      { label: "Buyer Protection", href: "/features/" },
-      { label: "Help & Support", href: "/support/" },
-      { label: "Partner Network", href: "/staff-login/" }
+      { label: "How It Works", href: "/escrow-acts/" },
+      { label: "Contact Support", href: "/support/" }
+    ]
+  },
+  {
+    title: "Legal & Account",
+    links: [
+      { label: "Privacy Policy", href: "/escrow-acts/" },
+      { label: "Terms & Conditions", href: "/escrow-acts/" },
+      { label: "Sign In", href: `${getPortalUrl("app")}/accounts/login/` },
+      { label: "Create Account", href: `${getPortalUrl("app")}/accounts/signup/` }
     ]
   }
 ];

@@ -346,6 +346,11 @@ def home(request):
             stats=stats,
             actions=dashboard_actions,
         )
+
+    portal = getattr(request, 'digiland_portal', 'marketing')
+    if portal == 'app':
+        return redirect('frontend:parcel_list')
+
     context = {
         'parcels': parcels,
         'transactions': transactions
