@@ -822,11 +822,18 @@ function DashboardPage() {
       const target = searchTab || hashTab || 'overview';
       setActiveTab(target);
     };
+    const handleCustomSwitch = (e: any) => {
+      if (e.detail) {
+        setActiveTab(e.detail);
+      }
+    };
     window.addEventListener('hashchange', syncTab);
     window.addEventListener('popstate', syncTab);
+    window.addEventListener('digiland:switch-tab', handleCustomSwitch);
     return () => {
       window.removeEventListener('hashchange', syncTab);
       window.removeEventListener('popstate', syncTab);
+      window.removeEventListener('digiland:switch-tab', handleCustomSwitch);
     };
   }, []);
 

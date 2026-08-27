@@ -369,6 +369,26 @@ def home(request):
         ],
     )
 
+@login_required
+def seller_dashboard(request):
+    """Seller workspace overview."""
+    return home(request)
+
+@login_required
+def buyer_dashboard(request):
+    """Buyer workspace overview."""
+    return home(request)
+
+@login_required
+def dashboard_redirect_view(request):
+    """Role-aware dashboard redirect."""
+    user = request.user
+    if user.role in STAFF_ROLES or user.is_superuser or user.is_staff:
+        return redirect('frontend:agent_dashboard')
+    elif user.role == 'Seller':
+        return redirect('frontend:seller_dashboard')
+    return redirect('frontend:buyer_dashboard')
+
 def features(request):
     return render_react_shell(
         request,

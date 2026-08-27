@@ -27268,6 +27268,16 @@ function AppShell({
       {
         key: item.label,
         href: item.href,
+        onClick: (e) => {
+          if (item.label === "Dashboard") {
+            if (item.active) {
+              e.preventDefault();
+              window.history.pushState({}, "", item.href);
+              window.dispatchEvent(new Event("popstate"));
+              window.dispatchEvent(new CustomEvent("digiland:switch-tab", { detail: "overview" }));
+            }
+          }
+        },
         title: item.label,
         className: cn(
           "group relative flex h-11 w-11 flex-col items-center justify-center rounded-2xl text-[10px] font-bold transition-all duration-150",
@@ -31775,11 +31785,18 @@ function DashboardPage() {
       const target = searchTab || hashTab || "overview";
       setActiveTab(target);
     };
+    const handleCustomSwitch = (e) => {
+      if (e.detail) {
+        setActiveTab(e.detail);
+      }
+    };
     window.addEventListener("hashchange", syncTab);
     window.addEventListener("popstate", syncTab);
+    window.addEventListener("digiland:switch-tab", handleCustomSwitch);
     return () => {
       window.removeEventListener("hashchange", syncTab);
       window.removeEventListener("popstate", syncTab);
+      window.removeEventListener("digiland:switch-tab", handleCustomSwitch);
     };
   }, []);
   const activeCommissions = bootstrap2.active_commissions || bootstrap2.commissions || [];
