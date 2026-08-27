@@ -30,7 +30,16 @@ import { PartitionGuard } from './components/layout/partition-guard.js';
 import { StaffLoginPage } from './pages/staff-login-page.js';
 
 function PortalBar() {
-  const { activePartition, setActivePartition, getPortalUrl } = usePartition();
+  const { activePartition, setActivePartition } = usePartition();
+
+  if (typeof window !== 'undefined') {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const params = new URLSearchParams(window.location.search);
+    const hasPortalQuery = params.has('portal') || params.has('dev');
+    if (!isLocal && !hasPortalQuery) {
+      return null;
+    }
+  }
 
   const portals: { key: Partition; label: string; icon: string }[] = [
     { key: 'marketing', label: '🌐 Marketing (digiland.co.ke)', icon: '🌐' },

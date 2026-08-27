@@ -6,13 +6,8 @@ import {
   ShieldCheck,
   CheckCircle2,
   Lock,
-  Building,
-  FileCheck,
-  MapPin,
   Compass,
-  ArrowUpRight,
 } from 'lucide-react';
-import { Badge } from '../ui/badge.js';
 import { Button } from '../ui/button.js';
 import { getPortalUrl } from '../../lib/partition-context.js';
 import posterImg from '../../assets/own_your_plot_poster.jpg';
@@ -51,59 +46,34 @@ export function HeroShowcase({
   const popularLocations = ['Nairobi', 'Nakuru', 'Kiambu', 'Kajiado', 'Naivasha', 'Eldoret'];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50/70 py-16 sm:py-24 lg:py-28 text-slate-900 border-b border-slate-200/80 min-h-[85vh] flex items-center">
+    <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50/70 py-12 sm:py-20 lg:py-24 text-slate-900 border-b border-slate-200/80 min-h-[85vh] flex items-center">
       
-      {/* Rafiki AI Ambient Soft Aura Background Glows */}
+      {/* Ambient Soft Aura Background Glows */}
       <div className="pointer-events-none absolute -top-40 -left-40 h-[600px] w-[600px] rounded-full bg-emerald-400/10 blur-[140px]" />
-      <div className="pointer-events-none absolute top-1/3 -right-40 h-[500px] w-[500px] rounded-full bg-purple-400/10 blur-[140px]" />
+      <div className="pointer-events-none absolute top-1/3 -right-40 h-[500px] w-[500px] rounded-full bg-teal-400/10 blur-[140px]" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full">
         
-        {/* Top Eyebrow Tag */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        {/* Top Eyebrow Notice */}
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold text-emerald-800 shadow-sm">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>{notice || "Kenya's #1 Autonomous Land Escrow Protocol"}</span>
-            <span className="ml-1 inline-flex items-center gap-1 text-[10px] bg-purple-600 text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-              <Sparkles className="w-3 h-3" /> AI Verified
+            <span>{notice || "Kenya's #1 Land Escrow & Verification Platform"}</span>
+            <span className="ml-1 inline-flex items-center gap-1 text-[10px] bg-emerald-600 text-white font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              <Sparkles className="w-3 h-3" /> ArdhiSasa Integrated
             </span>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-semibold text-slate-600">
-            <a
-              href={getPortalUrl('app')}
-              onClick={(e) => {
-                if (onNavigatePartition) {
-                  e.preventDefault();
-                  onNavigatePartition('app');
-                }
-              }}
-              className="hover:text-emerald-700 transition flex items-center gap-1"
-            >
-              <span>Selling Land? List as Seller</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </a>
-            <span>•</span>
-            <a
-              href={getPortalUrl('staff')}
-              onClick={(e) => {
-                if (onNavigatePartition) {
-                  e.preventDefault();
-                  onNavigatePartition('staff');
-                }
-              }}
-              className="hover:text-purple-700 transition flex items-center gap-1"
-            >
-              <span>Staff Portal (Agents & Advocates)</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </a>
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span>100% Fraud Protection & Escrow Guarantee</span>
           </div>
         </div>
 
-        {/* Hero Split Layout: Left Content (Buyer-Focused) | Right Mockup Showcase */}
+        {/* Hero Split Layout: Left Text & Search | Right Poster Image */}
         <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-12">
           
-          {/* Left Column (7 cols) - Buyer-Centric Messaging */}
+          {/* Left Column (7 cols) - Pure Buyer & Marketing Copy */}
           <div className="lg:col-span-7 space-y-6">
             
             <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-slate-950 leading-[1.06]">
@@ -114,7 +84,7 @@ export function HeroShowcase({
             </h1>
 
             <p className="text-lg sm:text-xl text-slate-600 max-w-2xl font-medium leading-relaxed">
-              Buy verified land parcels in Kenya with total confidence. Instant ArdhiSasa title checking, M-Pesa escrow protection, and legal advocate sign-off.
+              Buy verified land parcels across Kenya with complete peace of mind. Instant title deed validation, secure M-Pesa & bank escrow holding, and seamless digital closing.
             </p>
 
             {/* Fiverr-Style Hero Search Bar */}
@@ -139,9 +109,9 @@ export function HeroShowcase({
                 </Button>
               </form>
 
-              {/* Popular Tags (Fiverr style) */}
+              {/* Popular Category Tags (Fiverr style) */}
               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 pt-1">
-                <span className="font-semibold text-slate-700">Popular:</span>
+                <span className="font-semibold text-slate-700">Popular Locations:</span>
                 {popularLocations.map((loc) => (
                   <button
                     key={loc}
@@ -163,7 +133,7 @@ export function HeroShowcase({
               </div>
             </div>
 
-            {/* Primary Action Buttons */}
+            {/* Primary Action Buttons (Public Only) */}
             <div className="pt-4 flex flex-wrap items-center gap-4">
               <a
                 href={getPortalUrl('app')}
@@ -189,56 +159,38 @@ export function HeroShowcase({
               </a>
             </div>
 
-            {/* Bullet Proofs (Rafiki AI style) */}
+            {/* Value Guarantees */}
             <div className="pt-4 flex flex-wrap items-center gap-6 text-xs font-bold text-slate-600">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>100% Title Deed Verification</span>
+                <span>Title Deed Verified</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>M-Pesa & Bank Escrow Lock</span>
+                <span>M-Pesa & Bank Escrow</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-purple-600" />
-                <span>LSK Advocate Authenticated</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>Instant Documents</span>
               </div>
             </div>
 
           </div>
 
-          {/* Right Column (5 cols) - Rafiki AI Dual Mockup Stack */}
+          {/* Right Column (5 cols) - Side by Side Poster Image Showcase */}
           <div className="lg:col-span-5 relative">
             <div className="relative mx-auto max-w-md lg:max-w-none">
               
-              {/* Soft Drop Shadow Aura */}
-              <div className="absolute -inset-2 rounded-3xl bg-gradient-to-r from-emerald-400/20 via-teal-400/20 to-purple-400/20 blur-2xl opacity-70" />
+              {/* Soft Ambient Shadow Frame */}
+              <div className="absolute -inset-2 rounded-3xl bg-gradient-to-r from-emerald-400/20 via-teal-400/20 to-emerald-600/20 blur-xl opacity-60" />
 
-              {/* Main Poster Showcase Frame */}
-              <div className="relative rounded-3xl bg-white border border-slate-200 p-3 shadow-2xl shadow-slate-300/70 overflow-hidden group">
+              {/* Side-by-Side Image Display */}
+              <div className="relative rounded-3xl bg-white border border-slate-200/90 p-2.5 shadow-2xl shadow-slate-300/80 overflow-hidden">
                 <img
                   src={posterImg}
-                  alt="Digiland - Own Your Plot Banner"
-                  className="w-full h-auto rounded-2xl object-cover shadow-sm transition duration-500 group-hover:scale-[1.01]"
+                  alt="Digiland - Own Your Plot"
+                  className="w-full h-auto rounded-2xl object-cover shadow-sm"
                 />
-
-                {/* Floating Badge 1: Verified Plot */}
-                <div className="absolute top-6 left-6 bg-white/95 border border-emerald-500/30 backdrop-blur-md px-3.5 py-2 rounded-xl flex items-center gap-2.5 shadow-lg">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-                  <div>
-                    <div className="text-xs font-extrabold text-slate-900">ArdhiSasa Verified</div>
-                    <div className="text-[10px] text-emerald-700 font-semibold">100% Title Deeds Synced</div>
-                  </div>
-                </div>
-
-                {/* Floating Badge 2: Lawyer Authenticated */}
-                <div className="absolute bottom-6 right-6 bg-slate-900 border border-purple-500/40 text-white backdrop-blur-md px-4 py-2.5 rounded-xl flex items-center gap-2.5 shadow-xl">
-                  <Sparkles className="w-4 h-4 text-purple-400" />
-                  <div>
-                    <div className="text-xs font-bold text-purple-200">Advocate Title Guarantee</div>
-                    <div className="text-[10px] text-slate-400">Law Society of Kenya</div>
-                  </div>
-                </div>
               </div>
 
             </div>
