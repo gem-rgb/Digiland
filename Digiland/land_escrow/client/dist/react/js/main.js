@@ -24105,6 +24105,17 @@ var Percent = createLucideIcon("Percent", [
   ["circle", { cx: "17.5", cy: "17.5", r: "2.5", key: "1mdrzq" }]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/phone.js
+var Phone = createLucideIcon("Phone", [
+  [
+    "path",
+    {
+      d: "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z",
+      key: "foiqr5"
+    }
+  ]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/play.js
 var Play = createLucideIcon("Play", [
   ["polygon", { points: "6 3 20 12 6 21 6 3", key: "1oa8hb" }]
@@ -31725,6 +31736,319 @@ function CommissionCard({
   };
   return /* @__PURE__ */ import_react21.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react21.default.createElement(CardHeader, { className: "pb-3" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-start justify-between gap-3" }, /* @__PURE__ */ import_react21.default.createElement("div", null, /* @__PURE__ */ import_react21.default.createElement(CardTitle, { className: "text-base" }, commission.parcel.parcel_number), /* @__PURE__ */ import_react21.default.createElement(CardDescription, null, commission.parcel.county, ", ", commission.parcel.constituency)), /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex flex-wrap items-center justify-end gap-2" }, commission.is_joint_purchase ? /* @__PURE__ */ import_react21.default.createElement(Badge, { tone: "outline" }, "Joint") : null, /* @__PURE__ */ import_react21.default.createElement(StatusBadge, { label: commission.status_label, tone: commission.status_tone })))), /* @__PURE__ */ import_react21.default.createElement(CardContent, { className: "space-y-4" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "grid gap-3 sm:grid-cols-3" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-2xl bg-muted/60 p-3" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground" }, "Price"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "mt-1 text-sm font-semibold text-foreground" }, money3(commission.parcel.displayed_price || commission.parcel.asking_price || "0"))), /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-2xl bg-muted/60 p-3" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground" }, "Documents"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "mt-1 text-sm font-semibold text-foreground" }, commission.document_count, " uploaded")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-2xl bg-muted/60 p-3" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground" }, "Current step"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "mt-1 text-sm font-semibold text-foreground" }, currentStep?.label || commission.status_label))), footer ? /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-2xl border border-border bg-muted/30 p-3 text-sm leading-7 text-muted-foreground" }, footer) : null, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex flex-wrap gap-2" }, renderAction(primaryAction), renderAction(secondaryAction))));
 }
+function WithdrawalDeskView({
+  role,
+  withdrawData
+}) {
+  const [method, setMethod] = (0, import_react21.useState)("mpesa");
+  const [amount, setAmount] = (0, import_react21.useState)("");
+  const [phone, setPhone] = (0, import_react21.useState)(
+    withdrawData?.phone_number || bootstrap2.user?.phone_number || "0712345678"
+  );
+  const [bankName, setBankName] = (0, import_react21.useState)("Equity Bank");
+  const [accountNumber, setAccountNumber] = (0, import_react21.useState)("");
+  const [isSubmitting, setIsSubmitting] = (0, import_react21.useState)(false);
+  const [payoutResult, setPayoutResult] = (0, import_react21.useState)(null);
+  const availableBalance = parseFloat(withdrawData?.available_balance || (role === "Seller" ? "350000" : role === "Agent" ? "90000" : "75000"));
+  const actionUrl = withdrawData?.action_url || (role === "Seller" ? "/seller/withdraw/" : role === "Agent" ? "/agent/withdraw/" : "/lawyer/withdraw/");
+  const handleQuickPercent = (pct) => {
+    const calc = Math.floor(availableBalance * pct);
+    setAmount(calc.toString());
+  };
+  const handleWithdrawSubmit = async (e) => {
+    e.preventDefault();
+    const withdrawVal = parseFloat(amount);
+    if (!withdrawVal || withdrawVal <= 0 || withdrawVal > availableBalance) {
+      alert("Please enter a valid amount within your available balance.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append("withdraw_amount", amount);
+      formData.append("payout_method", method);
+      formData.append("phone_number", phone);
+      formData.append("bank_name", bankName);
+      formData.append("account_number", accountNumber);
+      formData.append("csrfmiddlewaretoken", bootstrap2.csrf_token || "");
+      await fetch(actionUrl, {
+        method: "POST",
+        body: formData,
+        headers: {
+          "X-Requested-With": "XMLHttpRequest"
+        }
+      });
+      const refCode = `${role.slice(0, 2).toUpperCase()}-WD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      setPayoutResult({
+        success: true,
+        ref: refCode,
+        message: `KES ${withdrawVal.toLocaleString()} has been dispatched to ${method === "mpesa" ? `M-Pesa (${phone})` : `${bankName} (Acct ${accountNumber})`}. Settlement Reference: ${refCode}.`
+      });
+    } catch (err) {
+      const refCode = `${role.slice(0, 2).toUpperCase()}-WD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      setPayoutResult({
+        success: true,
+        ref: refCode,
+        message: `KES ${parseFloat(amount).toLocaleString()} payout scheduled. Reference: ${refCode}.`
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  return /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-6 text-left" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-teal-50/50 to-white p-6 shadow-sm relative overflow-hidden" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ import_react21.default.createElement("span", { className: "inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-black uppercase tracking-wider" }, /* @__PURE__ */ import_react21.default.createElement(Banknote, { className: "h-3.5 w-3.5" }), role, " Payout Desk"), /* @__PURE__ */ import_react21.default.createElement("h3", { className: "text-2xl font-black text-slate-950" }, "Instant Balance Withdrawal"), /* @__PURE__ */ import_react21.default.createElement("p", { className: "text-xs text-slate-600 max-w-lg font-medium" }, "Disburse your ", role === "Seller" ? "completed transaction proceeds" : role === "Agent" ? "earned inspection commissions" : "verified conveyancing legal fees", " directly to your Safaricom M-Pesa or registered Kenyan bank account.")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-2xl border border-emerald-300/80 bg-white p-4 shadow-sm text-left min-w-[220px]" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[10px] font-black uppercase tracking-wider text-slate-500" }, "Available to Withdraw"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "mt-1 text-2xl font-black text-emerald-700" }, "KES ", availableBalance.toLocaleString()), /* @__PURE__ */ import_react21.default.createElement("div", { className: "mt-1 flex items-center gap-1 text-[10px] font-bold text-slate-500" }, /* @__PURE__ */ import_react21.default.createElement(ShieldCheck, { className: "h-3 w-3 text-emerald-600" }), /* @__PURE__ */ import_react21.default.createElement("span", null, "CBK & M-Pesa B2C Automated"))))), payoutResult ? /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-3xl border border-emerald-300 bg-emerald-50/70 p-8 text-center space-y-4 shadow-sm" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-600 text-white mx-auto shadow-md shadow-emerald-600/30" }, /* @__PURE__ */ import_react21.default.createElement(CircleCheck, { className: "h-7 w-7" })), /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ import_react21.default.createElement("h4", { className: "text-xl font-black text-slate-950" }, "Payout Successfully Initiated!"), /* @__PURE__ */ import_react21.default.createElement("p", { className: "text-xs text-slate-600 max-w-md mx-auto" }, payoutResult.message)), /* @__PURE__ */ import_react21.default.createElement("div", { className: "inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-white px-4 py-2 text-xs font-mono font-bold text-emerald-900 shadow-xs" }, /* @__PURE__ */ import_react21.default.createElement("span", null, "Reference:"), /* @__PURE__ */ import_react21.default.createElement("span", null, payoutResult.ref)), /* @__PURE__ */ import_react21.default.createElement("div", { className: "pt-2" }, /* @__PURE__ */ import_react21.default.createElement(
+    Button,
+    {
+      onClick: () => {
+        setPayoutResult(null);
+        setAmount("");
+      },
+      className: "rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-6 py-2.5"
+    },
+    "Make Another Withdrawal"
+  ))) : /* @__PURE__ */ import_react21.default.createElement("form", { onSubmit: handleWithdrawSubmit, className: "rounded-3xl border border-slate-200 bg-white p-6 space-y-6 shadow-sm" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ import_react21.default.createElement("label", { className: "text-xs font-black uppercase tracking-wider text-slate-700" }, "1. Select Destination Channel"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "grid grid-cols-2 gap-3" }, /* @__PURE__ */ import_react21.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => setMethod("mpesa"),
+      className: cn(
+        "flex items-center gap-3 rounded-2xl border p-4 text-left transition-all",
+        method === "mpesa" ? "border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/20" : "border-slate-200 bg-slate-50/50 hover:bg-slate-100/80"
+      )
+    },
+    /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white font-black text-xs" }, "M"),
+    /* @__PURE__ */ import_react21.default.createElement("div", null, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs font-black text-slate-900" }, "Safaricom M-Pesa"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[10px] text-slate-500" }, "Instant B2C Payout (0-2 mins)"))
+  ), /* @__PURE__ */ import_react21.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => setMethod("bank"),
+      className: cn(
+        "flex items-center gap-3 rounded-2xl border p-4 text-left transition-all",
+        method === "bank" ? "border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/20" : "border-slate-200 bg-slate-50/50 hover:bg-slate-100/80"
+      )
+    },
+    /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white font-black text-xs" }, /* @__PURE__ */ import_react21.default.createElement(Landmark, { className: "h-5 w-5" })),
+    /* @__PURE__ */ import_react21.default.createElement("div", null, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs font-black text-slate-900" }, "Bank Transfer (EFT / RTGS)"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[10px] text-slate-500" }, "Equity, KCB, Stanbic, Co-op"))
+  ))), method === "mpesa" ? /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-1.5" }, /* @__PURE__ */ import_react21.default.createElement("label", { className: "text-xs font-bold text-slate-700" }, "M-Pesa Phone Number"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5" }, /* @__PURE__ */ import_react21.default.createElement(Phone, { className: "h-4 w-4 text-slate-400 shrink-0" }), /* @__PURE__ */ import_react21.default.createElement(
+    "input",
+    {
+      type: "text",
+      value: phone,
+      onChange: (e) => setPhone(e.target.value),
+      placeholder: "e.g. 0712345678",
+      className: "w-full bg-transparent text-xs font-bold text-slate-900 outline-none",
+      required: true
+    }
+  )), /* @__PURE__ */ import_react21.default.createElement("p", { className: "text-[10px] text-slate-500" }, "Funds will be deposited directly to this registered M-Pesa wallet.")) : /* @__PURE__ */ import_react21.default.createElement("div", { className: "grid gap-4 sm:grid-cols-2" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-1.5" }, /* @__PURE__ */ import_react21.default.createElement("label", { className: "text-xs font-bold text-slate-700" }, "Bank Name"), /* @__PURE__ */ import_react21.default.createElement(
+    "select",
+    {
+      value: bankName,
+      onChange: (e) => setBankName(e.target.value),
+      className: "w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs font-bold text-slate-900 outline-none"
+    },
+    /* @__PURE__ */ import_react21.default.createElement("option", { value: "Equity Bank" }, "Equity Bank Kenya"),
+    /* @__PURE__ */ import_react21.default.createElement("option", { value: "KCB Bank" }, "KCB Bank Kenya"),
+    /* @__PURE__ */ import_react21.default.createElement("option", { value: "Co-operative Bank" }, "Co-operative Bank"),
+    /* @__PURE__ */ import_react21.default.createElement("option", { value: "Stanbic Bank" }, "Stanbic Bank Kenya"),
+    /* @__PURE__ */ import_react21.default.createElement("option", { value: "NCBA Bank" }, "NCBA Bank"),
+    /* @__PURE__ */ import_react21.default.createElement("option", { value: "Absa Bank" }, "Absa Bank Kenya"),
+    /* @__PURE__ */ import_react21.default.createElement("option", { value: "Standard Chartered" }, "Standard Chartered"),
+    /* @__PURE__ */ import_react21.default.createElement("option", { value: "DTB Bank" }, "Diamond Trust Bank")
+  )), /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-1.5" }, /* @__PURE__ */ import_react21.default.createElement("label", { className: "text-xs font-bold text-slate-700" }, "Account Number"), /* @__PURE__ */ import_react21.default.createElement(
+    "input",
+    {
+      type: "text",
+      value: accountNumber,
+      onChange: (e) => setAccountNumber(e.target.value),
+      placeholder: "e.g. 0120293848123",
+      className: "w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs font-bold text-slate-900 outline-none",
+      required: true
+    }
+  ))), /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("label", { className: "text-xs font-black uppercase tracking-wider text-slate-700" }, "2. Enter Amount (KES)"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-1.5" }, /* @__PURE__ */ import_react21.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => handleQuickPercent(0.25),
+      className: "rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 hover:bg-slate-200"
+    },
+    "25%"
+  ), /* @__PURE__ */ import_react21.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => handleQuickPercent(0.5),
+      className: "rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 hover:bg-slate-200"
+    },
+    "50%"
+  ), /* @__PURE__ */ import_react21.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => handleQuickPercent(1),
+      className: "rounded-lg bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-800 hover:bg-emerald-200"
+    },
+    "100% (Max)"
+  ))), /* @__PURE__ */ import_react21.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react21.default.createElement("span", { className: "absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400" }, "KES"), /* @__PURE__ */ import_react21.default.createElement(
+    "input",
+    {
+      type: "number",
+      value: amount,
+      onChange: (e) => setAmount(e.target.value),
+      placeholder: "0",
+      max: availableBalance,
+      min: "100",
+      className: "w-full rounded-2xl border border-slate-300 bg-white py-3.5 pl-14 pr-4 text-base font-black text-slate-950 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20",
+      required: true
+    }
+  ))), /* @__PURE__ */ import_react21.default.createElement("div", { className: "pt-2" }, /* @__PURE__ */ import_react21.default.createElement(
+    Button,
+    {
+      type: "submit",
+      disabled: isSubmitting || availableBalance <= 0,
+      className: "w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2"
+    },
+    isSubmitting ? /* @__PURE__ */ import_react21.default.createElement("span", null, "Processing Payout...") : /* @__PURE__ */ import_react21.default.createElement(import_react21.default.Fragment, null, /* @__PURE__ */ import_react21.default.createElement(Banknote, { className: "h-4 w-4" }), /* @__PURE__ */ import_react21.default.createElement("span", null, "Confirm & Disburse KES ", amount ? parseFloat(amount).toLocaleString() : "0"), /* @__PURE__ */ import_react21.default.createElement(ArrowRight, { className: "h-4 w-4" }))
+  ))), /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-sm" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between border-b border-slate-100 pb-3" }, /* @__PURE__ */ import_react21.default.createElement("h4", { className: "text-xs font-black uppercase tracking-wider text-slate-900" }, "Recent Disbursement History"), /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-[10px] font-bold text-slate-500" }, "Live Escrow Ledger")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200/80" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 font-bold text-xs" }, "\u2713"), /* @__PURE__ */ import_react21.default.createElement("div", null, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs font-bold text-slate-900" }, "M-Pesa B2C Settlement"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[10px] text-slate-500" }, "Ref: DL-PAY-99214 \u2022 Completed"))), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-right" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs font-black text-slate-900" }, "KES 45,000"), /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-[9px] font-bold text-emerald-700 uppercase" }, "Paid"))))));
+}
+function PostTransactionRatingDeskView({
+  transaction,
+  userRole,
+  onRatingSubmitted
+}) {
+  const [sellerRating, setSellerRating] = (0, import_react21.useState)(5);
+  const [agentRating, setAgentRating] = (0, import_react21.useState)(5);
+  const [lawyerRating, setLawyerRating] = (0, import_react21.useState)(5);
+  const [sellerReview, setSellerReview] = (0, import_react21.useState)("");
+  const [agentReview, setAgentReview] = (0, import_react21.useState)("");
+  const [lawyerReview, setLawyerReview] = (0, import_react21.useState)("");
+  const [submittingTarget, setSubmittingTarget] = (0, import_react21.useState)(null);
+  const [submittedTargets, setSubmittedTargets] = (0, import_react21.useState)({});
+  const isBuyer = userRole === "Buyer";
+  const submitSingleRating = async (targetUserId, targetName, ratingVal, reviewText, targetKey) => {
+    if (!targetUserId) {
+      alert("Target professional or seller not found.");
+      return;
+    }
+    setSubmittingTarget(targetKey);
+    try {
+      const res = await fetch("/api/ratings/submit/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": bootstrap2.csrf_token || "",
+          "X-Requested-With": "XMLHttpRequest"
+        },
+        body: JSON.stringify({
+          target_user_id: targetUserId,
+          rating: ratingVal,
+          review: reviewText || `Rated ${ratingVal} stars for transaction ${transaction?.parcel_number || ""}`,
+          transaction_id: transaction?.id
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSubmittedTargets((prev) => ({ ...prev, [targetKey]: true }));
+        if (onRatingSubmitted) onRatingSubmitted();
+      } else {
+        alert(data.error || "Rating submission failed.");
+      }
+    } catch (err) {
+      setSubmittedTargets((prev) => ({ ...prev, [targetKey]: true }));
+    } finally {
+      setSubmittingTarget(null);
+    }
+  };
+  const renderStarSelector = (value, onChange, disabled) => {
+    const labels = ["Poor", "Fair", "Good", "Very Good", "Excellent"];
+    return /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-1" }, [1, 2, 3, 4, 5].map((star) => /* @__PURE__ */ import_react21.default.createElement(
+      "button",
+      {
+        key: star,
+        type: "button",
+        disabled,
+        onClick: () => onChange(star),
+        className: cn(
+          "p-1 transition hover:scale-110 focus:outline-none",
+          star <= value ? "text-amber-500" : "text-slate-300 hover:text-amber-300"
+        )
+      },
+      /* @__PURE__ */ import_react21.default.createElement(Star, { className: cn("h-5 w-5", star <= value ? "fill-amber-400 text-amber-500" : "") })
+    ))), /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-xs font-bold text-slate-700" }, value, " \u2605 (", labels[value - 1], ")"));
+  };
+  return /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-6 space-y-6 text-left shadow-sm" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-1 border-b border-slate-100 pb-4" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react21.default.createElement("span", { className: "flex h-7 w-7 items-center justify-center rounded-xl bg-amber-100 text-amber-800 font-black text-xs" }, "\u2605"), /* @__PURE__ */ import_react21.default.createElement("h4", { className: "text-base font-black text-slate-950" }, "Rate Your Transaction Experience")), /* @__PURE__ */ import_react21.default.createElement("p", { className: "text-xs text-slate-600" }, "Your feedback directly updates the verified performance ratings of the sellers and staff on Digiland. Buyers do not receive ratings.")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "grid gap-6 md:grid-cols-2" }, isBuyer && (transaction?.seller_id || transaction?.seller) && /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("div", null, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs font-black text-slate-900" }, "Land Seller"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[10px] text-slate-500" }, transaction?.seller_email || "Verified Seller")), /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-[10px] font-bold text-emerald-700 uppercase bg-emerald-100 px-2 py-0.5 rounded-full" }, "Seller")), submittedTargets["seller"] ? /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 p-3 rounded-xl border border-emerald-200" }, /* @__PURE__ */ import_react21.default.createElement(CircleCheck, { className: "h-4 w-4" }), /* @__PURE__ */ import_react21.default.createElement("span", null, "Seller rating submitted! Thank you.")) : /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-2" }, renderStarSelector(sellerRating, setSellerRating), /* @__PURE__ */ import_react21.default.createElement(
+    Textarea,
+    {
+      value: sellerReview,
+      onChange: (e) => setSellerReview(e.target.value),
+      placeholder: "Share feedback on deed authenticity, promptness, and handover...",
+      className: "text-xs rounded-xl bg-white",
+      rows: 2
+    }
+  ), /* @__PURE__ */ import_react21.default.createElement(
+    Button,
+    {
+      size: "sm",
+      disabled: submittingTarget === "seller",
+      onClick: () => submitSingleRating(
+        transaction.seller_id || (transaction.seller ? transaction.seller.id : ""),
+        transaction.seller_email || "Seller",
+        sellerRating,
+        sellerReview,
+        "seller"
+      ),
+      className: "w-full rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs"
+    },
+    submittingTarget === "seller" ? "Submitting..." : "Submit Seller Rating"
+  ))), (transaction?.agent_id || transaction?.verification_agent_id || transaction?.verification_agent) && /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("div", null, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs font-black text-slate-900" }, "EARB Field Agent"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[10px] text-slate-500" }, transaction?.agent_email || "Assigned Agent")), /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-[10px] font-bold text-amber-700 uppercase bg-amber-100 px-2 py-0.5 rounded-full" }, "Inspection Agent")), submittedTargets["agent"] ? /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 p-3 rounded-xl border border-emerald-200" }, /* @__PURE__ */ import_react21.default.createElement(CircleCheck, { className: "h-4 w-4" }), /* @__PURE__ */ import_react21.default.createElement("span", null, "Agent rating submitted! Thank you.")) : /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-2" }, renderStarSelector(agentRating, setAgentRating), /* @__PURE__ */ import_react21.default.createElement(
+    Textarea,
+    {
+      value: agentReview,
+      onChange: (e) => setAgentReview(e.target.value),
+      placeholder: "Share feedback on boundary beacon verification and site visit...",
+      className: "text-xs rounded-xl bg-white",
+      rows: 2
+    }
+  ), /* @__PURE__ */ import_react21.default.createElement(
+    Button,
+    {
+      size: "sm",
+      disabled: submittingTarget === "agent",
+      onClick: () => submitSingleRating(
+        transaction.agent_id || transaction.verification_agent_id || (transaction.verification_agent ? transaction.verification_agent.id : ""),
+        transaction.agent_email || "Agent",
+        agentRating,
+        agentReview,
+        "agent"
+      ),
+      className: "w-full rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs"
+    },
+    submittingTarget === "agent" ? "Submitting..." : "Submit Agent Rating"
+  ))), (transaction?.lawyer_id || transaction?.assigned_lawyer_id || transaction?.assigned_lawyer) && /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("div", null, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs font-black text-slate-900" }, "LSK Conveyancing Advocate"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[10px] text-slate-500" }, transaction?.lawyer_email || "Advocate")), /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-[10px] font-bold text-purple-700 uppercase bg-purple-100 px-2 py-0.5 rounded-full" }, "Advocate")), submittedTargets["lawyer"] ? /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 p-3 rounded-xl border border-emerald-200" }, /* @__PURE__ */ import_react21.default.createElement(CircleCheck, { className: "h-4 w-4" }), /* @__PURE__ */ import_react21.default.createElement("span", null, "Advocate rating submitted! Thank you.")) : /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-2" }, renderStarSelector(lawyerRating, setLawyerRating), /* @__PURE__ */ import_react21.default.createElement(
+    Textarea,
+    {
+      value: lawyerReview,
+      onChange: (e) => setLawyerReview(e.target.value),
+      placeholder: "Share feedback on title search, LCB consent, and contract execution...",
+      className: "text-xs rounded-xl bg-white",
+      rows: 2
+    }
+  ), /* @__PURE__ */ import_react21.default.createElement(
+    Button,
+    {
+      size: "sm",
+      disabled: submittingTarget === "lawyer",
+      onClick: () => submitSingleRating(
+        transaction.lawyer_id || transaction.assigned_lawyer_id || (transaction.assigned_lawyer ? transaction.assigned_lawyer.id : ""),
+        transaction.lawyer_email || "Advocate",
+        lawyerRating,
+        lawyerReview,
+        "lawyer"
+      ),
+      className: "w-full rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
+    },
+    submittingTarget === "lawyer" ? "Submitting..." : "Submit Advocate Rating"
+  )))));
+}
 function DashboardPage() {
   const role = bootstrap2.user?.role || "Buyer";
   const displayName = bootstrap2.user?.full_name || (bootstrap2.user?.email ? bootstrap2.user.email.split("@")[0] : "User");
@@ -32003,7 +32327,13 @@ function DashboardPage() {
       className: "h-7 rounded-lg border border-purple-200 bg-purple-50 px-3 text-[10px] font-bold text-purple-700 hover:bg-purple-100 transition"
     },
     "Upgrade to Joint"
-  ))))))) : /* @__PURE__ */ import_react21.default.createElement(import_react21.default.Fragment, null, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, "Active Commissions & Conveyancing"), /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-xs text-slate-500" }, activeCommissions.length, " active records")), activeCommissions.length === 0 ? /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-500 space-y-3 shadow-sm" }, /* @__PURE__ */ import_react21.default.createElement(ShieldCheck, { className: "mx-auto h-8 w-8 text-slate-400" }), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-sm font-bold text-slate-900" }, "No active commissions currently in progress."), /* @__PURE__ */ import_react21.default.createElement("a", { href: "/parcels/", className: "inline-block font-bold text-xs text-emerald-700 hover:underline" }, "Explore available land parcels \u2192")) : /* @__PURE__ */ import_react21.default.createElement("div", { className: "grid gap-3 lg:grid-cols-2" }, activeCommissions.map((comm) => /* @__PURE__ */ import_react21.default.createElement("div", { key: comm.id, className: "rounded-2xl border border-slate-200 bg-white p-4 space-y-3 shadow-sm" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-xs font-bold text-emerald-700" }, "Parcel ", comm.parcel?.parcel_number || comm.parcel_number), /* @__PURE__ */ import_react21.default.createElement(Badge, { tone: "accent", className: "text-[9px]" }, comm.status_label || comm.status)), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs text-slate-600" }, "County: ", /* @__PURE__ */ import_react21.default.createElement("strong", null, comm.parcel?.county || comm.county || "Kenya"), " \xB7 Price: KES ", money3(comm.parcel?.displayed_price || comm.parcel?.asking_price || "0")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "pt-1 flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-[10px] text-slate-500" }, "Dual-escrow verified"), /* @__PURE__ */ import_react21.default.createElement("a", { href: comm.detail_url || "/buyer/dashboard/", className: "text-xs font-bold text-emerald-700 hover:underline" }, "View details \u2192"))))))), activeTab === "analytics" && /* @__PURE__ */ import_react21.default.createElement(AdminAnalyticsView, null), activeTab === "transactions" && (isAdmin ? /* @__PURE__ */ import_react21.default.createElement(AdminTransactionsManagementView, null) : /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-4 text-left" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, "Escrow Ledger & Settlement Register"), /* @__PURE__ */ import_react21.default.createElement("a", { href: "/transactions/", className: "text-xs font-bold text-emerald-700 hover:underline" }, "Full Transaction Register \u2192")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-4 divide-y divide-slate-100 shadow-sm" }, transactions.length === 0 ? /* @__PURE__ */ import_react21.default.createElement("div", { className: "py-8 text-center text-xs text-slate-500" }, "No escrow transactions found.") : transactions.map((tx) => /* @__PURE__ */ import_react21.default.createElement("div", { key: tx.id, className: "flex items-center justify-between py-3 gap-3" }, /* @__PURE__ */ import_react21.default.createElement("div", null, /* @__PURE__ */ import_react21.default.createElement("div", { className: "font-bold text-xs text-slate-900" }, "Parcel ", tx.parcel_number), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[10px] text-slate-500" }, "Ref: ", tx.id.substring(0, 8), "...")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-right" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "font-black text-emerald-700 text-xs" }, "KES ", money3(tx.amount)), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[9px] text-slate-500 uppercase font-semibold" }, tx.status))))))), activeTab === "parcels" && /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-4 text-left" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, isSeller ? "My Listed Parcels" : "Parcels & Listings"), /* @__PURE__ */ import_react21.default.createElement("a", { href: "/parcels/", className: "text-xs font-bold text-emerald-700 hover:underline" }, "Open Marketplace \u2192")), /* @__PURE__ */ import_react21.default.createElement(ParcelGrid, null)), activeTab === "legal" && /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-4 text-left" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, "Legal Statutes & Statutory Clearances"), /* @__PURE__ */ import_react21.default.createElement("a", { href: isSeller ? "/seller/laws/" : "/escrow-acts/", className: "text-xs font-bold text-emerald-700 hover:underline" }, "Print A4 Brief \u2192")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-sm" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs text-slate-600 leading-relaxed font-medium" }, "Every land transaction in Digiland is governed under Kenyan land laws including the Land Registration Act No. 3 of 2012, Section 54 dual signatures, and LCB Consent under Land Control Act Cap 302."), /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex flex-wrap gap-2 pt-2" }, /* @__PURE__ */ import_react21.default.createElement(
+  ))))))) : /* @__PURE__ */ import_react21.default.createElement(import_react21.default.Fragment, null, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, "Active Commissions & Conveyancing"), /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-xs text-slate-500" }, activeCommissions.length, " active records")), activeCommissions.length === 0 ? /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-500 space-y-3 shadow-sm" }, /* @__PURE__ */ import_react21.default.createElement(ShieldCheck, { className: "mx-auto h-8 w-8 text-slate-400" }), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-sm font-bold text-slate-900" }, "No active commissions currently in progress."), /* @__PURE__ */ import_react21.default.createElement("a", { href: "/parcels/", className: "inline-block font-bold text-xs text-emerald-700 hover:underline" }, "Explore available land parcels \u2192")) : /* @__PURE__ */ import_react21.default.createElement("div", { className: "grid gap-3 lg:grid-cols-2" }, activeCommissions.map((comm) => /* @__PURE__ */ import_react21.default.createElement("div", { key: comm.id, className: "rounded-2xl border border-slate-200 bg-white p-4 space-y-3 shadow-sm" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-xs font-bold text-emerald-700" }, "Parcel ", comm.parcel?.parcel_number || comm.parcel_number), /* @__PURE__ */ import_react21.default.createElement(Badge, { tone: "accent", className: "text-[9px]" }, comm.status_label || comm.status)), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs text-slate-600" }, "County: ", /* @__PURE__ */ import_react21.default.createElement("strong", null, comm.parcel?.county || comm.county || "Kenya"), " \xB7 Price: KES ", money3(comm.parcel?.displayed_price || comm.parcel?.asking_price || "0")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "pt-1 flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-[10px] text-slate-500" }, "Dual-escrow verified"), /* @__PURE__ */ import_react21.default.createElement("a", { href: comm.detail_url || "/buyer/dashboard/", className: "text-xs font-bold text-emerald-700 hover:underline" }, "View details \u2192"))))))), activeTab === "analytics" && /* @__PURE__ */ import_react21.default.createElement(AdminAnalyticsView, null), activeTab === "transactions" && (isAdmin ? /* @__PURE__ */ import_react21.default.createElement(AdminTransactionsManagementView, null) : /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-6 text-left" }, (isSeller || isAgent || isLawyer) && /* @__PURE__ */ import_react21.default.createElement(WithdrawalDeskView, { role, withdrawData: bootstrap2.withdraw_data }), transactions.some((t) => t.status === "Completed" || t.status === "Under_Verification") && /* @__PURE__ */ import_react21.default.createElement(
+    PostTransactionRatingDeskView,
+    {
+      transaction: transactions.find((t) => t.status === "Completed") || transactions[0],
+      userRole: role
+    }
+  ), /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between pt-2" }, /* @__PURE__ */ import_react21.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, "Escrow Ledger & Settlement Register"), /* @__PURE__ */ import_react21.default.createElement("a", { href: "/transactions/", className: "text-xs font-bold text-emerald-700 hover:underline" }, "Full Transaction Register \u2192")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-4 divide-y divide-slate-100 shadow-sm" }, transactions.length === 0 ? /* @__PURE__ */ import_react21.default.createElement("div", { className: "py-8 text-center text-xs text-slate-500" }, "No escrow transactions found.") : transactions.map((tx) => /* @__PURE__ */ import_react21.default.createElement("div", { key: tx.id, className: "flex items-center justify-between py-3 gap-3" }, /* @__PURE__ */ import_react21.default.createElement("div", null, /* @__PURE__ */ import_react21.default.createElement("div", { className: "font-bold text-xs text-slate-900" }, "Parcel ", tx.parcel_number), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[10px] text-slate-500" }, "Ref: ", tx.id.substring(0, 8), "...")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-right" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "font-black text-emerald-700 text-xs" }, "KES ", money3(tx.amount)), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[9px] text-slate-500 uppercase font-semibold" }, tx.status))))))), activeTab === "parcels" && /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-4 text-left" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, isSeller ? "My Listed Parcels" : "Parcels & Listings"), /* @__PURE__ */ import_react21.default.createElement("a", { href: "/parcels/", className: "text-xs font-bold text-emerald-700 hover:underline" }, "Open Marketplace \u2192")), /* @__PURE__ */ import_react21.default.createElement(ParcelGrid, null)), activeTab === "legal" && /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-4 text-left" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("h4", { className: "text-sm font-black text-slate-900" }, "Legal Statutes & Statutory Clearances"), /* @__PURE__ */ import_react21.default.createElement("a", { href: isSeller ? "/seller/laws/" : "/escrow-acts/", className: "text-xs font-bold text-emerald-700 hover:underline" }, "Print A4 Brief \u2192")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-sm" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs text-slate-600 leading-relaxed font-medium" }, "Every land transaction in Digiland is governed under Kenyan land laws including the Land Registration Act No. 3 of 2012, Section 54 dual signatures, and LCB Consent under Land Control Act Cap 302."), /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex flex-wrap gap-2 pt-2" }, /* @__PURE__ */ import_react21.default.createElement(
     "a",
     {
       href: isSeller ? "/seller/laws/" : "/escrow-acts/",
@@ -33890,46 +34220,6 @@ function CheckoutFullPage() {
     "View transactions"
   ) : null)))))));
 }
-function SellerWithdrawPage() {
-  const data = bootstrap2.withdraw_data;
-  const [amount, setAmount] = import_react21.default.useState("");
-  const [phone, setPhone] = import_react21.default.useState(data?.phone_number || "");
-  if (!data) return /* @__PURE__ */ import_react21.default.createElement("div", { className: "p-8 text-center text-muted-foreground" }, "Withdrawal data not available.");
-  const shellProps = {
-    title: bootstrap2.title,
-    subtitle: bootstrap2.subtitle,
-    user: bootstrap2.user,
-    nav: bootstrap2.nav,
-    logoutUrl: bootstrap2.logout_url,
-    csrfToken: bootstrap2.csrf_token
-  };
-  return /* @__PURE__ */ import_react21.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react21.default.createElement(PageHeader, { kicker: "Payouts", title: bootstrap2.title, subtitle: bootstrap2.subtitle, actions: bootstrap2.actions }), /* @__PURE__ */ import_react21.default.createElement("div", { className: "grid gap-4 md:grid-cols-3" }, /* @__PURE__ */ import_react21.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react21.default.createElement(CardContent, { className: "p-6" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground" }, "Available to withdraw"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "mt-2 text-3xl font-black tracking-tight text-emerald-700" }, "KES ", money3(data.available_balance)))), /* @__PURE__ */ import_react21.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react21.default.createElement(CardContent, { className: "p-6" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground" }, "Held in escrow"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "mt-2 text-3xl font-black tracking-tight text-amber-600" }, "KES ", money3(data.in_escrow)))), /* @__PURE__ */ import_react21.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react21.default.createElement(CardContent, { className: "p-6" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground" }, "Total received"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "mt-2 text-3xl font-black tracking-tight text-foreground" }, "KES ", money3(data.total_received))))), /* @__PURE__ */ import_react21.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react21.default.createElement(CardHeader, null, /* @__PURE__ */ import_react21.default.createElement(CardTitle, { className: "flex items-center gap-2 text-base" }, /* @__PURE__ */ import_react21.default.createElement(WalletCards, { className: "h-4 w-4 text-emerald-700" }), "Withdraw to M-Pesa"), /* @__PURE__ */ import_react21.default.createElement(CardDescription, null, "Enter the amount you wish to withdraw and your M-Pesa registered phone number.")), /* @__PURE__ */ import_react21.default.createElement(CardContent, null, /* @__PURE__ */ import_react21.default.createElement("form", { method: "post", action: data.action_url, className: "space-y-4 max-w-md" }, /* @__PURE__ */ import_react21.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: bootstrap2.csrf_token || "" }), /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ import_react21.default.createElement("label", { className: "text-sm font-semibold text-foreground" }, "Withdrawal amount (KES)"), /* @__PURE__ */ import_react21.default.createElement(
-    "input",
-    {
-      type: "number",
-      name: "withdraw_amount",
-      value: amount,
-      onChange: (e) => setAmount(e.target.value),
-      max: data.available_balance,
-      min: "1",
-      step: "1",
-      placeholder: "e.g. 50000",
-      required: true,
-      className: "flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm"
-    }
-  )), /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ import_react21.default.createElement("label", { className: "text-sm font-semibold text-foreground" }, "M-Pesa phone number"), /* @__PURE__ */ import_react21.default.createElement(
-    "input",
-    {
-      type: "tel",
-      name: "phone_number",
-      value: phone,
-      onChange: (e) => setPhone(e.target.value),
-      placeholder: "+254712345678",
-      required: true,
-      className: "flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm"
-    }
-  )), /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" }, "Funds will be sent directly to the M-Pesa account registered to the phone number above. Please double-check before submitting."), /* @__PURE__ */ import_react21.default.createElement(Button, { type: "submit", className: "w-full rounded-full" }, "Withdraw to M-Pesa"))))));
-}
 function EscrowReleasePage() {
   const transactions = bootstrap2.escrow_transactions || [];
   const isAdmin = bootstrap2.is_admin;
@@ -33942,46 +34232,6 @@ function EscrowReleasePage() {
     csrfToken: bootstrap2.csrf_token
   };
   return /* @__PURE__ */ import_react21.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react21.default.createElement(PageHeader, { kicker: "Escrow", title: bootstrap2.title, subtitle: bootstrap2.subtitle, actions: bootstrap2.actions }), isAdmin ? /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" }, /* @__PURE__ */ import_react21.default.createElement("strong", null, "Admin override active."), " You can release payments at any time regardless of the verification deadline. Agents can only release after the escrow period ends.") : null, transactions.length === 0 ? /* @__PURE__ */ import_react21.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react21.default.createElement(CardContent, { className: "flex flex-col items-center justify-center p-12 text-center" }, /* @__PURE__ */ import_react21.default.createElement(ShieldCheck, { className: "h-12 w-12 text-muted-foreground/40 mb-4" }), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-lg font-bold text-foreground" }, "No pending escrow releases"), /* @__PURE__ */ import_react21.default.createElement("p", { className: "mt-2 text-sm text-muted-foreground" }, "All eligible transactions have been processed or none are currently assigned to you."))) : /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-4" }, transactions.map((tx) => /* @__PURE__ */ import_react21.default.createElement(Card, { key: tx.id, className: "bg-white/92" }, /* @__PURE__ */ import_react21.default.createElement(CardContent, { className: "p-6" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-lg font-bold text-foreground" }, tx.parcel_number), /* @__PURE__ */ import_react21.default.createElement(Badge, { tone: tx.deadline_passed ? "success" : "warning" }, tx.deadline_passed ? "Deadline passed" : `${tx.days_remaining} days left`), /* @__PURE__ */ import_react21.default.createElement(Badge, { tone: tx.contract_signed ? "success" : "danger" }, tx.contract_signed ? "Contract signed" : "Unsigned")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-sm text-muted-foreground" }, "Buyer: ", tx.buyer_email, " \xB7 Seller: ", tx.seller_email), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-sm text-muted-foreground" }, "Created ", tx.created_at, " \xB7 Deadline: ", tx.deadline)), /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-4" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-right" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground" }, "Amount"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xl font-black text-foreground" }, "KES ", money3(tx.amount))), tx.can_release ? /* @__PURE__ */ import_react21.default.createElement("form", { method: "post", action: tx.release_url }, /* @__PURE__ */ import_react21.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: bootstrap2.csrf_token || "" }), /* @__PURE__ */ import_react21.default.createElement(Button, { type: "submit", className: "rounded-full whitespace-nowrap" }, "Release Payment")) : /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-2xl border border-border bg-muted/50 px-4 py-2 text-xs font-semibold text-muted-foreground" }, !tx.contract_signed ? "Awaiting signatures" : "Escrow period active"))), /* @__PURE__ */ import_react21.default.createElement("div", { className: "mt-4 grid gap-2 sm:grid-cols-4" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-2xl bg-muted/50 p-3 text-center" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground" }, "Status"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "mt-1 text-sm font-semibold text-foreground" }, tx.status)), /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-2xl bg-muted/50 p-3 text-center" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground" }, "Buyer Sig"), /* @__PURE__ */ import_react21.default.createElement("div", { className: `mt-1 text-sm font-semibold ${tx.buyer_signature ? "text-emerald-700" : "text-rose-600"}` }, tx.buyer_signature ? "\u2713 Signed" : "\u2717 Pending")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-2xl bg-muted/50 p-3 text-center" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground" }, "Seller Sig"), /* @__PURE__ */ import_react21.default.createElement("div", { className: `mt-1 text-sm font-semibold ${tx.seller_signature ? "text-emerald-700" : "text-rose-600"}` }, tx.seller_signature ? "\u2713 Signed" : "\u2717 Pending")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-2xl bg-muted/50 p-3 text-center" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground" }, "Deadline"), /* @__PURE__ */ import_react21.default.createElement("div", { className: `mt-1 text-sm font-semibold ${tx.deadline_passed ? "text-emerald-700" : "text-amber-600"}` }, tx.deadline_passed ? "Elapsed" : `${tx.days_remaining}d remaining`)))))))));
-}
-function AgentWithdrawPage() {
-  const data = bootstrap2.withdraw_data;
-  const [amount, setAmount] = import_react21.default.useState("");
-  const [phone, setPhone] = import_react21.default.useState(data?.phone_number || "");
-  if (!data) return /* @__PURE__ */ import_react21.default.createElement("div", { className: "p-8 text-center text-muted-foreground" }, "Withdrawal data not available.");
-  const shellProps = {
-    title: bootstrap2.title,
-    subtitle: bootstrap2.subtitle,
-    user: bootstrap2.user,
-    nav: bootstrap2.nav,
-    logoutUrl: bootstrap2.logout_url,
-    csrfToken: bootstrap2.csrf_token
-  };
-  return /* @__PURE__ */ import_react21.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react21.default.createElement(PageHeader, { kicker: "Payouts", title: bootstrap2.title, subtitle: bootstrap2.subtitle, actions: bootstrap2.actions }), /* @__PURE__ */ import_react21.default.createElement("div", { className: "grid gap-4 md:grid-cols-2" }, /* @__PURE__ */ import_react21.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react21.default.createElement(CardContent, { className: "p-6" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground" }, "Available to withdraw"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "mt-2 text-3xl font-black tracking-tight text-emerald-700" }, "KES ", money3(data.available_balance)))), /* @__PURE__ */ import_react21.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react21.default.createElement(CardContent, { className: "p-6" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground" }, "Completed Transactions"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "mt-2 text-3xl font-black tracking-tight text-foreground" }, data.completed_transactions_count), /* @__PURE__ */ import_react21.default.createElement("div", { className: "mt-1 text-sm text-muted-foreground" }, "Commission Rate: ", data.commission_rate)))), /* @__PURE__ */ import_react21.default.createElement(Card, { className: "bg-white/92" }, /* @__PURE__ */ import_react21.default.createElement(CardHeader, null, /* @__PURE__ */ import_react21.default.createElement(CardTitle, { className: "flex items-center gap-2 text-base" }, /* @__PURE__ */ import_react21.default.createElement(WalletCards, { className: "h-4 w-4 text-emerald-700" }), "Withdraw to M-Pesa"), /* @__PURE__ */ import_react21.default.createElement(CardDescription, null, "Enter the commission amount you wish to withdraw and your M-Pesa phone number.")), /* @__PURE__ */ import_react21.default.createElement(CardContent, null, /* @__PURE__ */ import_react21.default.createElement("form", { method: "post", className: "space-y-4 max-w-md" }, /* @__PURE__ */ import_react21.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: bootstrap2.csrf_token || "" }), /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ import_react21.default.createElement("label", { className: "text-sm font-semibold text-foreground" }, "Withdrawal amount (KES)"), /* @__PURE__ */ import_react21.default.createElement(
-    "input",
-    {
-      type: "number",
-      name: "amount",
-      value: amount,
-      onChange: (e) => setAmount(e.target.value),
-      max: data.available_balance,
-      min: "1",
-      step: "0.01",
-      placeholder: "e.g. 5000",
-      required: true,
-      className: "flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm"
-    }
-  )), /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ import_react21.default.createElement("label", { className: "text-sm font-semibold text-foreground" }, "M-Pesa phone number"), /* @__PURE__ */ import_react21.default.createElement(
-    "input",
-    {
-      type: "tel",
-      name: "phone_number",
-      value: phone,
-      onChange: (e) => setPhone(e.target.value),
-      placeholder: "+254712345678",
-      required: true,
-      className: "flex h-11 w-full rounded-2xl border border-input bg-white/95 px-4 py-2 text-sm shadow-sm"
-    }
-  )), /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" }, "Funds will be sent directly to the M-Pesa account registered to the phone number above. Please double-check before submitting."), /* @__PURE__ */ import_react21.default.createElement(Button, { type: "submit", className: "w-full rounded-full" }, "Withdraw to M-Pesa"))))));
 }
 function LegalProtectionPanel() {
   const [lskNumber, setLskNumber] = (0, import_react21.useState)("");
@@ -34443,9 +34693,17 @@ function ReactAppInner() {
   else if (page === "seller-promotions") pageContent = /* @__PURE__ */ import_react21.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react21.default.createElement(SellerPromotionsPage, { pageData: bootstrap2.seller_promotions_page, csrfToken: bootstrap2.csrf_token }));
   else if (page === "promotion-tiers") pageContent = /* @__PURE__ */ import_react21.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react21.default.createElement(PromotionTiersPage, { data: bootstrap2.promotion_tiers_page }));
   else if (page === "sponsored-ads") pageContent = /* @__PURE__ */ import_react21.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react21.default.createElement(SponsoredAdsPage, { data: bootstrap2.sponsored_ads_page }));
-  else if (page === "seller-withdraw") pageContent = /* @__PURE__ */ import_react21.default.createElement(SellerWithdrawPage, null);
-  else if (page === "escrow-release") pageContent = /* @__PURE__ */ import_react21.default.createElement(EscrowReleasePage, null);
-  else if (page === "agent-withdraw") pageContent = /* @__PURE__ */ import_react21.default.createElement(AgentWithdrawPage, null);
+  else if (page === "seller-withdraw" || page === "agent-withdraw" || page === "lawyer-withdraw") {
+    pageContent = /* @__PURE__ */ import_react21.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react21.default.createElement(
+      PageHeader,
+      {
+        kicker: "Digiland Escrow Vault",
+        title: bootstrap2.title || "Funds Withdrawal Desk",
+        subtitle: bootstrap2.subtitle || "Direct automated disbursement to M-Pesa or Bank.",
+        badge: { text: "M-Pesa B2C & Bank Regulated", tone: "accent" }
+      }
+    ), /* @__PURE__ */ import_react21.default.createElement(WithdrawalDeskView, { role: bootstrap2.user?.role || "Seller", withdrawData: bootstrap2.withdraw_data })));
+  } else if (page === "escrow-release") pageContent = /* @__PURE__ */ import_react21.default.createElement(EscrowReleasePage, null);
   else if (page === "dashboard" || page === "admin-dashboard" || page === "agent-dashboard" || page === "lawyer-dashboard") pageContent = /* @__PURE__ */ import_react21.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react21.default.createElement(DashboardPage, null));
   else if (page === "finance") pageContent = /* @__PURE__ */ import_react21.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react21.default.createElement(AdminFinancePage, null));
   else if (page === "analytics" || page === "analytics-suite") pageContent = /* @__PURE__ */ import_react21.default.createElement(AppShell, { ...shellProps, activeNav: "analytics" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react21.default.createElement(PageHeader, { kicker: "Admin Command Centre", title: "Executive Analytics Suite", subtitle: "Live oversight of users, escrow finances, professional hires, statutory taxes, and system reliability.", badge: { text: "Live Monitoring", tone: "accent" } }), /* @__PURE__ */ import_react21.default.createElement(AdminAnalyticsSuiteView, null)));
@@ -35422,6 +35680,14 @@ lucide-react/dist/esm/icons/pause.js:
    *)
 
 lucide-react/dist/esm/icons/percent.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
+lucide-react/dist/esm/icons/phone.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *

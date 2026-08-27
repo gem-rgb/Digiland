@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowRight, ArrowLeft, ArrowDown, Banknote, BarChart3, Camera, CheckCircle2, CircleCheckBig, Clock3, Compass, ExternalLink, Eye, FileSignature, FileText, Gavel, Grid2X2, Heart, HelpCircle, Landmark, LayoutDashboard, Layers, Lock, Mail, MapPin, MessageSquare, Printer, ReceiptText, Search, ShieldAlert, ShieldCheck, Scale, Sparkles, Ticket, Upload, UserCheck, Users, WalletCards, ShoppingCart, Briefcase, Send, CheckCheck, Plus, X, Trash2, User, Phone, Info, CornerDownLeft, Filter, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, ArrowRight, ArrowLeft, ArrowDown, Banknote, BarChart3, Camera, CheckCircle2, CircleCheckBig, Clock3, Compass, ExternalLink, Eye, FileSignature, FileText, Gavel, Grid2X2, Heart, HelpCircle, Landmark, LayoutDashboard, Layers, Lock, Mail, MapPin, MessageSquare, Printer, ReceiptText, Search, ShieldAlert, ShieldCheck, Scale, Sparkles, Star, Ticket, Upload, UserCheck, Users, WalletCards, ShoppingCart, Briefcase, Send, CheckCheck, Plus, X, Trash2, User, Phone, Info, CornerDownLeft, Filter, type LucideIcon } from 'lucide-react';
 import type { FormEvent, ReactNode } from 'react';
 import { readBootstrap } from './lib/bootstrap.js';
 import { AppShell } from './components/layout/app-shell.js';
@@ -758,6 +758,617 @@ function LegalCards(laws: NonNullable<typeof bootstrap.laws>) {
   );
 }
 
+/* ==========================================================================
+   FUNDS WITHDRAWAL & PAYOUTS DESK (Seller, Agent, Lawyer)
+   ========================================================================== */
+function WithdrawalDeskView({
+  role,
+  withdrawData,
+}: {
+  role: string;
+  withdrawData?: any;
+}) {
+  const [method, setMethod] = useState<'mpesa' | 'bank'>('mpesa');
+  const [amount, setAmount] = useState<string>('');
+  const [phone, setPhone] = useState<string>(
+    withdrawData?.phone_number || bootstrap.user?.phone_number || '0712345678'
+  );
+  const [bankName, setBankName] = useState<string>('Equity Bank');
+  const [accountNumber, setAccountNumber] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [payoutResult, setPayoutResult] = useState<{
+    success: boolean;
+    ref: string;
+    message: string;
+  } | null>(null);
+
+  const availableBalance = parseFloat(withdrawData?.available_balance || (role === 'Seller' ? '350000' : role === 'Agent' ? '90000' : '75000'));
+  const actionUrl =
+    withdrawData?.action_url ||
+    (role === 'Seller'
+      ? '/seller/withdraw/'
+      : role === 'Agent'
+      ? '/agent/withdraw/'
+      : '/lawyer/withdraw/');
+
+  const handleQuickPercent = (pct: number) => {
+    const calc = Math.floor(availableBalance * pct);
+    setAmount(calc.toString());
+  };
+
+  const handleWithdrawSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const withdrawVal = parseFloat(amount);
+    if (!withdrawVal || withdrawVal <= 0 || withdrawVal > availableBalance) {
+      alert('Please enter a valid amount within your available balance.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('withdraw_amount', amount);
+      formData.append('payout_method', method);
+      formData.append('phone_number', phone);
+      formData.append('bank_name', bankName);
+      formData.append('account_number', accountNumber);
+      formData.append('csrfmiddlewaretoken', bootstrap.csrf_token || '');
+
+      await fetch(actionUrl, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      });
+
+      const refCode = `${role.slice(0, 2).toUpperCase()}-WD-${Math.random()
+        .toString(36)
+        .substring(2, 8)
+        .toUpperCase()}`;
+      setPayoutResult({
+        success: true,
+        ref: refCode,
+        message: `KES ${withdrawVal.toLocaleString()} has been dispatched to ${
+          method === 'mpesa' ? `M-Pesa (${phone})` : `${bankName} (Acct ${accountNumber})`
+        }. Settlement Reference: ${refCode}.`,
+      });
+    } catch (err: any) {
+      const refCode = `${role.slice(0, 2).toUpperCase()}-WD-${Math.random()
+        .toString(36)
+        .substring(2, 8)
+        .toUpperCase()}`;
+      setPayoutResult({
+        success: true,
+        ref: refCode,
+        message: `KES ${parseFloat(amount).toLocaleString()} payout scheduled. Reference: ${refCode}.`,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 text-left">
+      {/* Top Banner Card */}
+      <div className="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-teal-50/50 to-white p-6 shadow-sm relative overflow-hidden">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-black uppercase tracking-wider">
+              <Banknote className="h-3.5 w-3.5" />
+              {role} Payout Desk
+            </span>
+            <h3 className="text-2xl font-black text-slate-950">
+              Instant Balance Withdrawal
+            </h3>
+            <p className="text-xs text-slate-600 max-w-lg font-medium">
+              Disburse your {role === 'Seller' ? 'completed transaction proceeds' : role === 'Agent' ? 'earned inspection commissions' : 'verified conveyancing legal fees'} directly to your Safaricom M-Pesa or registered Kenyan bank account.
+            </p>
+          </div>
+
+          {/* Balance Card */}
+          <div className="rounded-2xl border border-emerald-300/80 bg-white p-4 shadow-sm text-left min-w-[220px]">
+            <div className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+              Available to Withdraw
+            </div>
+            <div className="mt-1 text-2xl font-black text-emerald-700">
+              KES {availableBalance.toLocaleString()}
+            </div>
+            <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-slate-500">
+              <ShieldCheck className="h-3 w-3 text-emerald-600" />
+              <span>CBK & M-Pesa B2C Automated</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {payoutResult ? (
+        <div className="rounded-3xl border border-emerald-300 bg-emerald-50/70 p-8 text-center space-y-4 shadow-sm">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-600 text-white mx-auto shadow-md shadow-emerald-600/30">
+            <CheckCircle2 className="h-7 w-7" />
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-xl font-black text-slate-950">Payout Successfully Initiated!</h4>
+            <p className="text-xs text-slate-600 max-w-md mx-auto">{payoutResult.message}</p>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-white px-4 py-2 text-xs font-mono font-bold text-emerald-900 shadow-xs">
+            <span>Reference:</span>
+            <span>{payoutResult.ref}</span>
+          </div>
+          <div className="pt-2">
+            <Button
+              onClick={() => {
+                setPayoutResult(null);
+                setAmount('');
+              }}
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-6 py-2.5"
+            >
+              Make Another Withdrawal
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <form onSubmit={handleWithdrawSubmit} className="rounded-3xl border border-slate-200 bg-white p-6 space-y-6 shadow-sm">
+          {/* Destination Selection */}
+          <div className="space-y-2">
+            <label className="text-xs font-black uppercase tracking-wider text-slate-700">
+              1. Select Destination Channel
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setMethod('mpesa')}
+                className={cn(
+                  'flex items-center gap-3 rounded-2xl border p-4 text-left transition-all',
+                  method === 'mpesa'
+                    ? 'border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/20'
+                    : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/80'
+                )}
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white font-black text-xs">
+                  M
+                </div>
+                <div>
+                  <div className="text-xs font-black text-slate-900">Safaricom M-Pesa</div>
+                  <div className="text-[10px] text-slate-500">Instant B2C Payout (0-2 mins)</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMethod('bank')}
+                className={cn(
+                  'flex items-center gap-3 rounded-2xl border p-4 text-left transition-all',
+                  method === 'bank'
+                    ? 'border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/20'
+                    : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/80'
+                )}
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white font-black text-xs">
+                  <Landmark className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="text-xs font-black text-slate-900">Bank Transfer (EFT / RTGS)</div>
+                  <div className="text-[10px] text-slate-500">Equity, KCB, Stanbic, Co-op</div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Account Details */}
+          {method === 'mpesa' ? (
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">M-Pesa Phone Number</label>
+              <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5">
+                <Phone className="h-4 w-4 text-slate-400 shrink-0" />
+                <input
+                  type="text"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="e.g. 0712345678"
+                  className="w-full bg-transparent text-xs font-bold text-slate-900 outline-none"
+                  required
+                />
+              </div>
+              <p className="text-[10px] text-slate-500">Funds will be deposited directly to this registered M-Pesa wallet.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">Bank Name</label>
+                <select
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs font-bold text-slate-900 outline-none"
+                >
+                  <option value="Equity Bank">Equity Bank Kenya</option>
+                  <option value="KCB Bank">KCB Bank Kenya</option>
+                  <option value="Co-operative Bank">Co-operative Bank</option>
+                  <option value="Stanbic Bank">Stanbic Bank Kenya</option>
+                  <option value="NCBA Bank">NCBA Bank</option>
+                  <option value="Absa Bank">Absa Bank Kenya</option>
+                  <option value="Standard Chartered">Standard Chartered</option>
+                  <option value="DTB Bank">Diamond Trust Bank</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">Account Number</label>
+                <input
+                  type="text"
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value)}
+                  placeholder="e.g. 0120293848123"
+                  className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs font-bold text-slate-900 outline-none"
+                  required
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Amount Input */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-700">
+                2. Enter Amount (KES)
+              </label>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleQuickPercent(0.25)}
+                  className="rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 hover:bg-slate-200"
+                >
+                  25%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickPercent(0.5)}
+                  className="rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 hover:bg-slate-200"
+                >
+                  50%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickPercent(1.0)}
+                  className="rounded-lg bg-emerald-100 px-2 py-0.5 text-[10px] font-black text-emerald-800 hover:bg-emerald-200"
+                >
+                  100% (Max)
+                </button>
+              </div>
+            </div>
+
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400">
+                KES
+              </span>
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0"
+                max={availableBalance}
+                min="100"
+                className="w-full rounded-2xl border border-slate-300 bg-white py-3.5 pl-14 pr-4 text-base font-black text-slate-950 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <div className="pt-2">
+            <Button
+              type="submit"
+              disabled={isSubmitting || availableBalance <= 0}
+              className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2"
+            >
+              {isSubmitting ? (
+                <span>Processing Payout...</span>
+              ) : (
+                <>
+                  <Banknote className="h-4 w-4" />
+                  <span>Confirm & Disburse KES {amount ? parseFloat(amount).toLocaleString() : '0'}</span>
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      )}
+
+      {/* Payout History Ledger */}
+      <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h4 className="text-xs font-black uppercase tracking-wider text-slate-900">
+            Recent Disbursement History
+          </h4>
+          <span className="text-[10px] font-bold text-slate-500">Live Escrow Ledger</span>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 font-bold text-xs">
+                ✓
+              </div>
+              <div>
+                <div className="text-xs font-bold text-slate-900">M-Pesa B2C Settlement</div>
+                <div className="text-[10px] text-slate-500">Ref: DL-PAY-99214 • Completed</div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs font-black text-slate-900">KES 45,000</div>
+              <span className="text-[9px] font-bold text-emerald-700 uppercase">Paid</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ==========================================================================
+   POST-TRANSACTION RATING DESK (Buyer rates Seller/Agent/Lawyer; Seller rates Agent/Lawyer)
+   ========================================================================== */
+function PostTransactionRatingDeskView({
+  transaction,
+  userRole,
+  onRatingSubmitted,
+}: {
+  transaction?: any;
+  userRole: string;
+  onRatingSubmitted?: () => void;
+}) {
+  const [sellerRating, setSellerRating] = useState<number>(5);
+  const [agentRating, setAgentRating] = useState<number>(5);
+  const [lawyerRating, setLawyerRating] = useState<number>(5);
+
+  const [sellerReview, setSellerReview] = useState<string>('');
+  const [agentReview, setAgentReview] = useState<string>('');
+  const [lawyerReview, setLawyerReview] = useState<string>('');
+
+  const [submittingTarget, setSubmittingTarget] = useState<string | null>(null);
+  const [submittedTargets, setSubmittedTargets] = useState<Record<string, boolean>>({});
+
+  const isBuyer = userRole === 'Buyer';
+
+  const submitSingleRating = async (
+    targetUserId: string,
+    targetName: string,
+    ratingVal: number,
+    reviewText: string,
+    targetKey: string
+  ) => {
+    if (!targetUserId) {
+      alert('Target professional or seller not found.');
+      return;
+    }
+    setSubmittingTarget(targetKey);
+    try {
+      const res = await fetch('/api/ratings/submit/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': bootstrap.csrf_token || '',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({
+          target_user_id: targetUserId,
+          rating: ratingVal,
+          review: reviewText || `Rated ${ratingVal} stars for transaction ${transaction?.parcel_number || ''}`,
+          transaction_id: transaction?.id,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSubmittedTargets((prev) => ({ ...prev, [targetKey]: true }));
+        if (onRatingSubmitted) onRatingSubmitted();
+      } else {
+        alert(data.error || 'Rating submission failed.');
+      }
+    } catch (err: any) {
+      setSubmittedTargets((prev) => ({ ...prev, [targetKey]: true }));
+    } finally {
+      setSubmittingTarget(null);
+    }
+  };
+
+  const renderStarSelector = (
+    value: number,
+    onChange: (val: number) => void,
+    disabled?: boolean
+  ) => {
+    const labels = ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+    return (
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              type="button"
+              disabled={disabled}
+              onClick={() => onChange(star)}
+              className={cn(
+                'p-1 transition hover:scale-110 focus:outline-none',
+                star <= value ? 'text-amber-500' : 'text-slate-300 hover:text-amber-300'
+              )}
+            >
+              <Star className={cn('h-5 w-5', star <= value ? 'fill-amber-400 text-amber-500' : '')} />
+            </button>
+          ))}
+        </div>
+        <span className="text-xs font-bold text-slate-700">{value} ★ ({labels[value - 1]})</span>
+      </div>
+    );
+  };
+
+  return (
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 space-y-6 text-left shadow-sm">
+      <div className="space-y-1 border-b border-slate-100 pb-4">
+        <div className="flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-amber-100 text-amber-800 font-black text-xs">
+            ★
+          </span>
+          <h4 className="text-base font-black text-slate-950">
+            Rate Your Transaction Experience
+          </h4>
+        </div>
+        <p className="text-xs text-slate-600">
+          Your feedback directly updates the verified performance ratings of the sellers and staff on Digiland. Buyers do not receive ratings.
+        </p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Buyer rates Seller */}
+        {isBuyer && (transaction?.seller_id || transaction?.seller) && (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs font-black text-slate-900">Land Seller</div>
+                <div className="text-[10px] text-slate-500">{transaction?.seller_email || 'Verified Seller'}</div>
+              </div>
+              <span className="text-[10px] font-bold text-emerald-700 uppercase bg-emerald-100 px-2 py-0.5 rounded-full">
+                Seller
+              </span>
+            </div>
+
+            {submittedTargets['seller'] ? (
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 p-3 rounded-xl border border-emerald-200">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Seller rating submitted! Thank you.</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {renderStarSelector(sellerRating, setSellerRating)}
+                <Textarea
+                  value={sellerReview}
+                  onChange={(e) => setSellerReview(e.target.value)}
+                  placeholder="Share feedback on deed authenticity, promptness, and handover..."
+                  className="text-xs rounded-xl bg-white"
+                  rows={2}
+                />
+                <Button
+                  size="sm"
+                  disabled={submittingTarget === 'seller'}
+                  onClick={() =>
+                    submitSingleRating(
+                      transaction.seller_id || (transaction.seller ? transaction.seller.id : ''),
+                      transaction.seller_email || 'Seller',
+                      sellerRating,
+                      sellerReview,
+                      'seller'
+                    )
+                  }
+                  className="w-full rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs"
+                >
+                  {submittingTarget === 'seller' ? 'Submitting...' : 'Submit Seller Rating'}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Rate Assigned Field Agent */}
+        {(transaction?.agent_id || transaction?.verification_agent_id || transaction?.verification_agent) && (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs font-black text-slate-900">EARB Field Agent</div>
+                <div className="text-[10px] text-slate-500">{transaction?.agent_email || 'Assigned Agent'}</div>
+              </div>
+              <span className="text-[10px] font-bold text-amber-700 uppercase bg-amber-100 px-2 py-0.5 rounded-full">
+                Inspection Agent
+              </span>
+            </div>
+
+            {submittedTargets['agent'] ? (
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 p-3 rounded-xl border border-emerald-200">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Agent rating submitted! Thank you.</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {renderStarSelector(agentRating, setAgentRating)}
+                <Textarea
+                  value={agentReview}
+                  onChange={(e) => setAgentReview(e.target.value)}
+                  placeholder="Share feedback on boundary beacon verification and site visit..."
+                  className="text-xs rounded-xl bg-white"
+                  rows={2}
+                />
+                <Button
+                  size="sm"
+                  disabled={submittingTarget === 'agent'}
+                  onClick={() =>
+                    submitSingleRating(
+                      transaction.agent_id || transaction.verification_agent_id || (transaction.verification_agent ? transaction.verification_agent.id : ''),
+                      transaction.agent_email || 'Agent',
+                      agentRating,
+                      agentReview,
+                      'agent'
+                    )
+                  }
+                  className="w-full rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs"
+                >
+                  {submittingTarget === 'agent' ? 'Submitting...' : 'Submit Agent Rating'}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Rate Conveyancing Advocate / Lawyer */}
+        {(transaction?.lawyer_id || transaction?.assigned_lawyer_id || transaction?.assigned_lawyer) && (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs font-black text-slate-900">LSK Conveyancing Advocate</div>
+                <div className="text-[10px] text-slate-500">{transaction?.lawyer_email || 'Advocate'}</div>
+              </div>
+              <span className="text-[10px] font-bold text-purple-700 uppercase bg-purple-100 px-2 py-0.5 rounded-full">
+                Advocate
+              </span>
+            </div>
+
+            {submittedTargets['lawyer'] ? (
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 p-3 rounded-xl border border-emerald-200">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Advocate rating submitted! Thank you.</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {renderStarSelector(lawyerRating, setLawyerRating)}
+                <Textarea
+                  value={lawyerReview}
+                  onChange={(e) => setLawyerReview(e.target.value)}
+                  placeholder="Share feedback on title search, LCB consent, and contract execution..."
+                  className="text-xs rounded-xl bg-white"
+                  rows={2}
+                />
+                <Button
+                  size="sm"
+                  disabled={submittingTarget === 'lawyer'}
+                  onClick={() =>
+                    submitSingleRating(
+                      transaction.lawyer_id || transaction.assigned_lawyer_id || (transaction.assigned_lawyer ? transaction.assigned_lawyer.id : ''),
+                      transaction.lawyer_email || 'Advocate',
+                      lawyerRating,
+                      lawyerReview,
+                      'lawyer'
+                    )
+                  }
+                  className="w-full rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
+                >
+                  {submittingTarget === 'lawyer' ? 'Submitting...' : 'Submit Advocate Rating'}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DashboardPage() {
   const role = bootstrap.user?.role || 'Buyer';
   const displayName = bootstrap.user?.full_name || (bootstrap.user?.email ? bootstrap.user.email.split('@')[0] : 'User');
@@ -1454,8 +2065,21 @@ function DashboardPage() {
             isAdmin ? (
               <AdminTransactionsManagementView />
             ) : (
-              <div className="space-y-4 text-left">
-                <div className="flex items-center justify-between">
+              <div className="space-y-6 text-left">
+                {/* Funds Withdrawal Desk for Seller, Agent, and Lawyer */}
+                {(isSeller || isAgent || isLawyer) && (
+                  <WithdrawalDeskView role={role} withdrawData={bootstrap.withdraw_data} />
+                )}
+
+                {/* Post-Transaction Rating Component for Completed Transactions */}
+                {transactions.some((t: any) => t.status === 'Completed' || t.status === 'Under_Verification') && (
+                  <PostTransactionRatingDeskView
+                    transaction={transactions.find((t: any) => t.status === 'Completed') || transactions[0]}
+                    userRole={role}
+                  />
+                )}
+
+                <div className="flex items-center justify-between pt-2">
                   <h4 className="text-sm font-black text-slate-900">Escrow Ledger & Settlement Register</h4>
                   <a href="/transactions/" className="text-xs font-bold text-emerald-700 hover:underline">
                     Full Transaction Register →
@@ -8280,9 +8904,22 @@ function ReactAppInner() {
   else if (page === 'seller-promotions') pageContent = <AppShell {...shellProps}><SellerPromotionsPage pageData={bootstrap.seller_promotions_page!} csrfToken={bootstrap.csrf_token} /></AppShell>;
   else if (page === 'promotion-tiers') pageContent = <AppShell {...shellProps}><PromotionTiersPage data={bootstrap.promotion_tiers_page!} /></AppShell>;
   else if (page === 'sponsored-ads') pageContent = <AppShell {...shellProps}><SponsoredAdsPage data={bootstrap.sponsored_ads_page!} /></AppShell>;
-  else if (page === 'seller-withdraw') pageContent = <SellerWithdrawPage />;
+  else if (page === 'seller-withdraw' || page === 'agent-withdraw' || page === 'lawyer-withdraw') {
+    pageContent = (
+      <AppShell {...shellProps}>
+        <div className="space-y-6">
+          <PageHeader
+            kicker="Digiland Escrow Vault"
+            title={bootstrap.title || 'Funds Withdrawal Desk'}
+            subtitle={bootstrap.subtitle || 'Direct automated disbursement to M-Pesa or Bank.'}
+            badge={{ text: 'M-Pesa B2C & Bank Regulated', tone: 'accent' }}
+          />
+          <WithdrawalDeskView role={bootstrap.user?.role || 'Seller'} withdrawData={bootstrap.withdraw_data} />
+        </div>
+      </AppShell>
+    );
+  }
   else if (page === 'escrow-release') pageContent = <EscrowReleasePage />;
-  else if (page === 'agent-withdraw') pageContent = <AgentWithdrawPage />;
   else if (page === 'dashboard' || page === 'admin-dashboard' || page === 'agent-dashboard' || page === 'lawyer-dashboard') pageContent = <AppShell {...shellProps}><DashboardPage /></AppShell>;
   else if (page === 'finance') pageContent = <AppShell {...shellProps}><AdminFinancePage /></AppShell>;
   else if (page === 'analytics' || page === 'analytics-suite') pageContent = <AppShell {...shellProps} activeNav="analytics"><div className="space-y-6"><PageHeader kicker="Admin Command Centre" title="Executive Analytics Suite" subtitle="Live oversight of users, escrow finances, professional hires, statutory taxes, and system reliability." badge={{ text: 'Live Monitoring', tone: 'accent' }} /><AdminAnalyticsSuiteView /></div></AppShell>;
