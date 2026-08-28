@@ -1603,12 +1603,24 @@ def admin_provision_professional(request):
     if provision_mode == 'DIRECT_ACTIVE' and not password:
         password = 'Digiland@2026'
 
-    if CoreUser.objects.filter(email=email).exists():
-        err_msg = f'A user account with email {email} already exists.'
+    existing_user = CoreUser.objects.filter(email=email).first()
+    if existing_user:
+        err_msg = f'User with email "{email}" already exists in the database with role "{existing_user.role}". Double registration is prevented.'
         if is_ajax:
             return JsonResponse({'error': err_msg}, status=400)
         django_messages.error(request, err_msg)
         return redirect('frontend:agent_dashboard')
+
+    if phone_number:
+        phone_clean = phone_number.replace(' ', '').replace('-', '').replace('+', '')
+        phone_tail = phone_clean[-9:] if len(phone_clean) >= 9 else phone_clean
+        existing_phone_user = CoreUser.objects.filter(phone_number__icontains=phone_tail).first()
+        if existing_phone_user:
+            err_msg = f'Phone number "{phone_number}" is already registered to user "{existing_phone_user.email}" (Role: {existing_phone_user.role}).'
+            if is_ajax:
+                return JsonResponse({'error': err_msg}, status=400)
+            django_messages.error(request, err_msg)
+            return redirect('frontend:agent_dashboard')
 
     # Split name into first and last name
     name_parts = full_name.split(' ', 1)

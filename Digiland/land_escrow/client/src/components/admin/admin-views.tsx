@@ -746,19 +746,62 @@ export function AdminPeopleHubView() {
               </div>
             )}
 
-            {/* Submit Action */}
-            <div className="flex justify-end pt-2">
+            {/* Submit Action & Alerts */}
+            {formError && (
+              <div className="flex items-center gap-2 rounded-2xl border border-rose-300 bg-rose-50 p-4 text-xs text-rose-800 font-bold">
+                <AlertTriangle className="h-5 w-5 shrink-0 text-rose-600" />
+                <div>
+                  <div className="font-black text-rose-900">Provisioning Error</div>
+                  <div className="text-[11px] font-medium text-rose-700 mt-0.5">{formError}</div>
+                </div>
+              </div>
+            )}
+
+            {formSuccess && (
+              <div className="space-y-3 rounded-2xl border border-emerald-300 bg-emerald-50/80 p-5 text-xs text-emerald-900 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-black text-emerald-900 text-sm">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                    <span>{formSuccess}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveSubTab('directory')}
+                    className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-4 py-2 shadow-sm transition"
+                  >
+                    View in People Directory →
+                  </button>
+                </div>
+                {generatedInviteUrl && (
+                  <div className="rounded-xl border border-slate-200 bg-slate-900 p-3 text-slate-100">
+                    <div className="text-[11px] font-bold text-slate-300 mb-1">Single-Use Secure Invitation Link:</div>
+                    <div className="font-mono text-xs text-emerald-400 break-all select-all">{generatedInviteUrl}</div>
+                    <div className="text-[10px] text-slate-400 mt-1">Share this link with the user to configure their password and gain immediate workspace access.</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-2">
+              <button
+                type="button"
+                onClick={() => setActiveSubTab('directory')}
+                className="text-xs font-bold text-slate-500 hover:text-slate-800"
+              >
+                ← Back to People Directory
+              </button>
+
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="h-11 rounded-2xl px-6 text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20"
+                className="h-11 rounded-2xl px-8 text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20"
               >
                 {isSubmitting ? (
                   'Provisioning User...'
                 ) : (
                   <>
                     <UserCheck className="mr-2 h-4 w-4" />
-                    Provision {roleToCreate} Account
+                    Provision & Verify {roleToCreate}
                   </>
                 )}
               </Button>

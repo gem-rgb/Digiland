@@ -31028,14 +31028,30 @@ This action CANNOT be undone.`;
       placeholder: "e.g. DCI/PCC/2026/19482",
       className: "w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-emerald-500"
     }
-  )))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex justify-end pt-2" }, /* @__PURE__ */ import_react18.default.createElement(
+  )))), formError && /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2 rounded-2xl border border-rose-300 bg-rose-50 p-4 text-xs text-rose-800 font-bold" }, /* @__PURE__ */ import_react18.default.createElement(TriangleAlert, { className: "h-5 w-5 shrink-0 text-rose-600" }), /* @__PURE__ */ import_react18.default.createElement("div", null, /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-black text-rose-900" }, "Provisioning Error"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] font-medium text-rose-700 mt-0.5" }, formError))), formSuccess && /* @__PURE__ */ import_react18.default.createElement("div", { className: "space-y-3 rounded-2xl border border-emerald-300 bg-emerald-50/80 p-5 text-xs text-emerald-900 shadow-sm" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center gap-2 font-black text-emerald-900 text-sm" }, /* @__PURE__ */ import_react18.default.createElement(CircleCheck, { className: "h-5 w-5 text-emerald-600" }), /* @__PURE__ */ import_react18.default.createElement("span", null, formSuccess)), /* @__PURE__ */ import_react18.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => setActiveSubTab("directory"),
+      className: "rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-4 py-2 shadow-sm transition"
+    },
+    "View in People Directory \u2192"
+  )), generatedInviteUrl && /* @__PURE__ */ import_react18.default.createElement("div", { className: "rounded-xl border border-slate-200 bg-slate-900 p-3 text-slate-100" }, /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[11px] font-bold text-slate-300 mb-1" }, "Single-Use Secure Invitation Link:"), /* @__PURE__ */ import_react18.default.createElement("div", { className: "font-mono text-xs text-emerald-400 break-all select-all" }, generatedInviteUrl), /* @__PURE__ */ import_react18.default.createElement("div", { className: "text-[10px] text-slate-400 mt-1" }, "Share this link with the user to configure their password and gain immediate workspace access."))), /* @__PURE__ */ import_react18.default.createElement("div", { className: "flex items-center justify-between pt-2" }, /* @__PURE__ */ import_react18.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => setActiveSubTab("directory"),
+      className: "text-xs font-bold text-slate-500 hover:text-slate-800"
+    },
+    "\u2190 Back to People Directory"
+  ), /* @__PURE__ */ import_react18.default.createElement(
     Button,
     {
       type: "submit",
       disabled: isSubmitting,
-      className: "h-11 rounded-2xl px-6 text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20"
+      className: "h-11 rounded-2xl px-8 text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20"
     },
-    isSubmitting ? "Provisioning User..." : /* @__PURE__ */ import_react18.default.createElement(import_react18.default.Fragment, null, /* @__PURE__ */ import_react18.default.createElement(UserCheck, { className: "mr-2 h-4 w-4" }), "Provision ", roleToCreate, " Account")
+    isSubmitting ? "Provisioning User..." : /* @__PURE__ */ import_react18.default.createElement(import_react18.default.Fragment, null, /* @__PURE__ */ import_react18.default.createElement(UserCheck, { className: "mr-2 h-4 w-4" }), "Provision & Verify ", roleToCreate)
   )))));
 }
 function AdminKycDeskView() {
