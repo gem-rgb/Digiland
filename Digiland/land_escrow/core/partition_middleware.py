@@ -116,6 +116,22 @@ class PartitionIsolationMiddleware:
                 elif any(path.startswith(prefix) for prefix in ADMIN_ONLY_PREFIXES):
                     return HttpResponseRedirect(f"{PORTAL_URLS['admin']}{path}{qs_suffix}")
 
+            elif portal == 'admin':
+                if any(path.startswith(prefix) for prefix in STAFF_ONLY_PREFIXES):
+                    return HttpResponseRedirect(f"{PORTAL_URLS['admin']}/admin/login/{qs_suffix}")
+                user = getattr(request, 'user', None)
+                if not (user and user.is_authenticated):
+                    if not path.startswith('/admin/login') and not path.startswith('/auth/admin-login'):
+                        return HttpResponseRedirect(f"{PORTAL_URLS['admin']}/admin/login/{qs_suffix}")
+
+            elif portal == 'staff':
+                if any(path.startswith(prefix) for prefix in ADMIN_ONLY_PREFIXES):
+                    return HttpResponseRedirect(f"{PORTAL_URLS['admin']}{path}{qs_suffix}")
+                user = getattr(request, 'user', None)
+                if not (user and user.is_authenticated):
+                    if not path.startswith('/staff/login'):
+                        return HttpResponseRedirect(f"{PORTAL_URLS['staff']}/staff/login/{qs_suffix}")
+
             elif portal == 'app':
                 if any(path.startswith(prefix) for prefix in STAFF_ONLY_PREFIXES):
                     return HttpResponseRedirect(f"{PORTAL_URLS['staff']}{path}{qs_suffix}")

@@ -566,20 +566,22 @@ def logout_to_staff_login(request):
     if request.method == 'POST':
         logout(request)
         return redirect(reverse('frontend:staff_login'))
-    return redirect(reverse('frontend:agent_onboarding'))
+    return redirect(reverse('frontend:staff_login'))
 
 def staff_login(request):
-    """Staff & Administrative login portal for Admin, Lawyer, and Agent roles."""
+    """Staff login portal exclusively for EARB Agents and LSK Advocates/Lawyers."""
     from django.contrib.auth import authenticate, login as auth_login
 
-    # Consume session message
     error = None
     if request.session.pop('staff_blocked', False):
         error = 'Staff accounts can authenticate through this portal.'
 
     if request.user.is_authenticated:
-        if request.user.role in STAFF_ROLES:
+        role = getattr(request.user, 'role', '')
+        if role in {'Agent', 'Lawyer'}:
             return redirect('frontend:agent_dashboard')
+        elif role == 'Admin' or request.user.is_superuser:
+            return redirect('/admin/dashboard/')
         return redirect('frontend:parcel_list')
 
     if request.method == 'POST':
@@ -598,30 +600,17 @@ def staff_login(request):
         user = authenticate(request, email=email, password=password)
 
         if user is None:
-            error = 'Invalid credentials. Please verify your email/phone and password.'
+            error = 'Invalid staff credentials. Please verify your email/phone and password.'
         elif not user.is_active:
             error = 'Your account has been deactivated. Contact the system administrator.'
-        else:
-            role = getattr(user, 'role', None)
-            is_admin = role == 'Admin' or getattr(user, 'is_superuser', False) or getattr(user, 'is_staff', False)
-
-            auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-
-            if is_admin:
-                return redirect('frontend:agent_dashboard')
-            elif role == 'Lawyer':
-                return redirect('frontend:agent_dashboard')
-            elif role == 'Agent':
-                if not user.is_identity_verified:
-                    try:
-                        if user.kyc_application.kyc_submitted:
-                            return redirect('frontend:agent_onboarding')
-                    except Exception:
-                        pass
-                    return redirect('frontend:ai_kyc')
-                return redirect('frontend:agent_dashboard')
+        elif getattr(user, 'role', None) not in {'Agent', 'Lawyer'}:
+            if getattr(user, 'role', None) == 'Admin' or user.is_superuser:
+                error = 'Administrator accounts must sign in via the Admin Command Portal at admin.digiland.co.ke.'
             else:
-                return redirect('frontend:agent_dashboard')
+                error = 'Access restricted to licensed Agents and Advocates. Customers should sign in at app.digiland.co.ke.'
+        else:
+            auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            return redirect('frontend:agent_dashboard')
 
     # Consume the "just signed up" session flag set by agent_signup_complete
     signup_success = request.session.pop('agent_signup_success', False)
@@ -629,6 +618,46 @@ def staff_login(request):
     return render(request, 'frontend/staff_login.html', {
         'error': error,
         'signup_success': signup_success,
+    })
+
+
+def admin_login(request):
+    """Executive Administration login portal exclusively for Admin & Superuser roles."""
+    from django.contrib.auth import authenticate, login as auth_login
+
+    error = None
+    if request.user.is_authenticated:
+        role = getattr(request.user, 'role', '')
+        if role == 'Admin' or request.user.is_superuser or request.user.is_staff:
+            return redirect('frontend:agent_dashboard')
+        return redirect('frontend:home')
+
+    if request.method == 'POST':
+        identifier = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '').strip()
+        from core.models import User as CoreUser
+
+        email = identifier.lower()
+        if not '@' in identifier:
+            phone_clean = identifier.replace(' ', '').replace('-', '')
+            user_by_phone = CoreUser.objects.filter(phone_number__icontains=phone_clean).first()
+            if user_by_phone:
+                email = user_by_phone.email
+
+        user = authenticate(request, email=email, password=password)
+
+        if user is None:
+            error = 'Invalid administrative credentials. Please verify your root email and password.'
+        elif not user.is_active:
+            error = 'This administrative account is disabled. Contact system governance.'
+        elif getattr(user, 'role', None) != 'Admin' and not user.is_superuser and not user.is_staff:
+            error = 'Access Denied: Administrative privileges required. Staff (Agents/Lawyers) must use staff.digiland.co.ke.'
+        else:
+            auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            return redirect('frontend:agent_dashboard')
+
+    return render(request, 'frontend/admin_login.html', {
+        'error': error,
     })
 
 def parcel_list(request):

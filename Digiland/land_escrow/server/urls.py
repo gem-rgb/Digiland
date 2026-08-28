@@ -16,6 +16,8 @@ urlpatterns = [
     path('marketplace/', RedirectView.as_view(pattern_name='frontend:parcel_list', permanent=False, query_string=True)),
     path('staff/login/', views.staff_login, name='staff_login'),
     path('staff/logout-to-login/', views.logout_to_staff_login, name='logout_to_staff_login'),
+    path('admin/login/', views.admin_login, name='admin_login'),
+    path('auth/admin-login/', views.admin_login, name='admin_login_alias'),
     path('temp-approve/<str:email>/', views.temp_approve_agent, name='temp_approve_agent'),
     path('parcels/', views.parcel_list, name='parcel_list'),
     path('agent/onboarding/', views.agent_onboarding, name='agent_onboarding'),

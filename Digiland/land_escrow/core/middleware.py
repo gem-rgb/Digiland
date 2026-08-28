@@ -742,19 +742,34 @@ class MultiDomainRoutingMiddleware:
 
         request.domain_mode = domain_mode
 
-        # Security gate for staff / admin domain
-        if domain_mode in {'staff', 'admin'}:
-            if request.path.startswith('/accounts/login/'):
+        # Security gate for staff domain
+        if domain_mode == 'staff':
+            if request.path.startswith('/accounts/login/') or request.path.startswith('/admin/login/'):
                 return redirect('frontend:staff_login')
-            if domain_mode == 'staff' and request.path == '/':
+            if request.path in {'/', '/staff/', '/staff'}:
                 if not request.user.is_authenticated:
                     return redirect('frontend:staff_login')
                 return redirect('frontend:agent_dashboard')
             if not request.path.startswith('/staff/login/') and not request.path.startswith('/static/') and not request.path.startswith('/api/'):
                 if not request.user.is_authenticated:
                     return redirect('frontend:staff_login')
-                if domain_mode == 'admin' and getattr(request.user, 'role', None) != 'Admin' and not getattr(request.user, 'is_superuser', False):
-                    # Unauthorized on admin domain -> redirect to app dashboard
+                if getattr(request.user, 'role', None) not in {'Agent', 'Lawyer'}:
                     return redirect('frontend:agent_dashboard')
+
+        # Security gate for admin domain
+        elif domain_mode == 'admin':
+            if request.path.startswith('/accounts/login/') or request.path.startswith('/staff/login/'):
+                return redirect('frontend:admin_login')
+            if request.path in {'/', '/admin', '/admin/'}:
+                if not request.user.is_authenticated:
+                    return redirect('frontend:admin_login')
+                if getattr(request.user, 'role', None) != 'Admin' and not getattr(request.user, 'is_superuser', False):
+                    return redirect('frontend:admin_login')
+                return redirect('frontend:agent_dashboard')
+            if not request.path.startswith('/admin/login/') and not request.path.startswith('/auth/admin-login/') and not request.path.startswith('/static/') and not request.path.startswith('/api/'):
+                if not request.user.is_authenticated:
+                    return redirect('frontend:admin_login')
+                if getattr(request.user, 'role', None) != 'Admin' and not getattr(request.user, 'is_superuser', False):
+                    return redirect('frontend:admin_login')
 
         return self.get_response(request)
