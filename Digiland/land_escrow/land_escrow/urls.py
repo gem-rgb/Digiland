@@ -23,6 +23,7 @@ from core import admin_urls
 from land_escrow.health_views import health_check, run_migrations
 
 from core import api_views
+from server import views as server_views
 
 ADMIN_URL_PATH = getattr(settings, 'DJANGO_ADMIN_URL', 'admin/')
 
@@ -34,6 +35,8 @@ urlpatterns = [
     path('browse/', RedirectView.as_view(url='/parcels/', permanent=False)),
     path('marketplace', RedirectView.as_view(url='/parcels/', permanent=False, query_string=True)),
     path('marketplace/', RedirectView.as_view(url='/parcels/', permanent=False, query_string=True)),
+    path('admin/login/', server_views.admin_login, name='admin_login'),
+    path('auth/admin-login/', server_views.admin_login, name='admin_login_alias'),
     path(ADMIN_URL_PATH, admin.site.urls),
     path(ADMIN_URL_PATH, include(admin_urls)),
     path('api/v1/auth/', include('core.auth_urls')),
