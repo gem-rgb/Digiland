@@ -5,48 +5,60 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light">
-  <title>Staff Portal Sign In - DigiLand</title>
+  <title>Staff Portal Sign In - Digiland</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'react/styles.css' %}">
+  <link rel="stylesheet" href="{% static 'react/styles.css' %}?v=20260828-01">
   <style>
     body {
       font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       margin: 0;
       padding: 0;
+      background-color: #f8fafc;
     }
   </style>
 </head>
-<body class="min-h-screen relative flex items-center justify-center overflow-x-hidden">
+<body class="min-h-screen relative flex items-center justify-center overflow-x-hidden bg-gradient-to-b from-slate-50 via-white to-slate-50/80 text-slate-900 antialiased font-sans py-12 px-4 sm:px-6">
 
-  <!-- Fullscreen Split Background (Left: Crisp White, Right: Vibrant Royal Blue) -->
-  <div class="fixed inset-0 grid grid-cols-1 md:grid-cols-2 -z-10 h-full w-full pointer-events-none">
-    <div class="bg-white"></div>
-    <div class="hidden md:block bg-[#1665D8]"></div>
-  </div>
+  <!-- Ambient Soft Aura Background Glows -->
+  <div class="pointer-events-none fixed -top-40 -left-40 h-[600px] w-[600px] rounded-full bg-emerald-400/10 blur-[140px]"></div>
+  <div class="pointer-events-none fixed top-1/3 -right-40 h-[500px] w-[500px] rounded-full bg-teal-400/10 blur-[140px]"></div>
 
   <!-- Center Floating Card Container -->
-  <main class="w-full max-w-[480px] px-4 py-8 relative z-10">
-    <div class="rounded-3xl border border-slate-200/80 bg-white p-8 sm:p-10 shadow-2xl transition-all">
+  <main class="w-full max-w-[440px] relative z-10">
+    <div class="rounded-3xl border border-slate-200/90 bg-white p-7 sm:p-9 shadow-xl shadow-slate-200/60 transition-all text-left">
       
-      <!-- Brand Logo Header -->
-      <div class="flex items-center justify-center gap-2 mb-6">
-        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1665D8] text-white shadow-md">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Brand Logo & Eyebrow -->
+      <div class="flex flex-col items-center text-center space-y-3 mb-6">
+        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-md shadow-emerald-600/30">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
             <path d="m9 12 2 2 4-4"/>
           </svg>
         </div>
-        <span class="text-base font-black tracking-tight text-slate-900 uppercase">DIGILAND</span>
-      </div>
 
-      <!-- Welcome Headings -->
-      <div class="text-center mb-7 space-y-1.5">
-        <h1 class="text-2xl sm:text-[26px] font-extrabold tracking-tight text-slate-900">Welcome back</h1>
-        <p class="text-xs sm:text-sm text-slate-500 max-w-xs mx-auto leading-relaxed">
-          Sign in to your DigiLand staff account to manage your field sales and platform operations.
-        </p>
+        <div class="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3.5 py-1 text-[11px] font-bold text-emerald-800">
+          <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Staff Security Portal</span>
+        </div>
+
+        <div class="space-y-1">
+          <h1 class="text-2xl sm:text-[26px] font-black tracking-tight text-slate-950">Staff Workspace</h1>
+          <p class="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed font-medium">
+            Dedicated operational gateway for licensed Field Agents and Conveyancing Advocates.
+          </p>
+        </div>
+
+        <!-- Role Badges -->
+        <div class="flex items-center justify-center gap-2 pt-1">
+          <span class="inline-flex items-center gap-1 rounded-xl bg-slate-100 border border-slate-200 px-2.5 py-1 text-[10px] font-bold text-slate-700">
+            👔 EARB Field Agents
+          </span>
+          <span class="inline-flex items-center gap-1 rounded-xl bg-slate-100 border border-slate-200 px-2.5 py-1 text-[10px] font-bold text-slate-700">
+            ⚖️ LSK Advocates
+          </span>
+        </div>
       </div>
 
       <!-- Error & Status Alerts -->
@@ -59,31 +71,45 @@
       </div>
       {% endif %}
 
+      {% if signup_success %}
+      <div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs text-emerald-800 flex items-center gap-2.5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span class="font-semibold leading-tight">Account registration received. Sign in below to access your KYC onboarding queue.</span>
+      </div>
+      {% endif %}
+
       <!-- Staff Login Form (Login Only - No Public Signup) -->
-      <form method="POST" class="space-y-4 text-left">
+      <form method="POST" class="space-y-4">
         {% csrf_token %}
 
         <!-- Identifier: Email or Phone Number -->
         <div class="space-y-1.5">
-          <label for="id_email" class="block text-xs font-bold text-slate-800">
-            Email or Phone number
+          <label for="id_email" class="block text-xs font-bold text-slate-700">
+            Staff Email or Phone Number
           </label>
-          <div class="relative">
+          <div class="relative flex items-center">
+            <div class="absolute left-3.5 text-slate-400 pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+            </div>
             <input
               type="text"
               name="email"
               id="id_email"
               required
               autofocus
-              placeholder="+254  712 000 000"
-              class="flex h-11 w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#1665D8] focus:ring-2 focus:ring-[#1665D8]/20"
+              placeholder="e.g. advocate@firm.co.ke or 0712 345 678"
+              class="flex h-11 w-full rounded-2xl border border-slate-300 bg-white pl-10 pr-3.5 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 font-medium"
             />
           </div>
         </div>
 
         <!-- Password Field with Show/Hide Toggle -->
         <div class="space-y-1.5">
-          <label for="id_password" class="block text-xs font-bold text-slate-800">
+          <label for="id_password" class="block text-xs font-bold text-slate-700">
             Password
           </label>
           <div class="relative flex items-center">
@@ -97,8 +123,8 @@
               name="password"
               id="id_password"
               required
-              placeholder="Enter your password"
-              class="flex h-11 w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-10 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-[#1665D8] focus:ring-2 focus:ring-[#1665D8]/20"
+              placeholder="••••••••••••"
+              class="flex h-11 w-full rounded-2xl border border-slate-300 bg-white pl-10 pr-10 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 font-medium"
             />
             <button
               type="button"
@@ -120,15 +146,15 @@
               type="checkbox"
               name="remember_me"
               checked
-              class="h-4 w-4 rounded-md border-slate-300 text-[#1665D8] focus:ring-[#1665D8]/30 accent-[#1665D8]"
+              class="h-4 w-4 rounded-md border-slate-300 text-emerald-600 focus:ring-emerald-500/30 accent-emerald-600"
             />
-            <span class="text-xs font-semibold text-slate-700">Remember this session</span>
+            <span class="text-xs font-semibold text-slate-600">Remember this session</span>
           </label>
           <a
-            href="mailto:support@digiland.co.ke?subject=Staff%20Password%20Reset%20Request"
-            class="text-xs font-bold text-[#1665D8] hover:text-[#124cb4] transition"
+            href="mailto:support@digiland.co.ke?subject=Staff%20Credential%20Assistance"
+            class="text-xs font-bold text-emerald-700 hover:text-emerald-800 transition"
           >
-            Forgot password?
+            Need help?
           </a>
         </div>
 
@@ -136,17 +162,26 @@
         <div class="pt-2">
           <button
             type="submit"
-            class="flex h-11 w-full items-center justify-center rounded-2xl bg-[#1665D8] hover:bg-[#124cb4] text-white text-xs sm:text-sm font-bold shadow-lg shadow-[#1665D8]/30 transition active:scale-[0.99]"
+            class="flex h-12 w-full items-center justify-center rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.01] active:scale-[0.99] gap-2"
           >
-            Sign in
+            <span>Sign in to Workspace</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+            </svg>
           </button>
         </div>
       </form>
 
-      <!-- Bottom Disclaimer (Accounts Provisioned Internally) -->
-      <div class="text-center pt-6 mt-6 border-t border-slate-100">
+      <!-- Bottom Disclaimer (Accounts Provisioned Internally by Admin) -->
+      <div class="text-center pt-6 mt-6 border-t border-slate-100 space-y-2">
+        <div class="flex items-center justify-center gap-1.5 text-slate-500 text-[11px] font-semibold">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+          </svg>
+          <span>Admin-Provisioned Platform Access</span>
+        </div>
         <p class="text-[11px] text-slate-400 max-w-xs mx-auto leading-relaxed">
-          Accounts are provisioned internally. Contact your administrator for access.
+          Staff accounts are provisioned directly by the system administrator. Self-service registration is restricted for security.
         </p>
       </div>
 
