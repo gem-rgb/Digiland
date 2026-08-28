@@ -1824,7 +1824,6 @@ def admin_users_api(request):
             'buyer_account_type': getattr(u, 'buyer_account_type', None),
             'is_verified': u.is_identity_verified,
             'is_active': u.is_active,
-            'is_staff': u.is_staff,
             'county': getattr(u, 'agent_county', '') or 'N/A',
             'date_joined': u.date_joined.strftime('%b %d, %Y') if u.date_joined else 'N/A',
         })
@@ -1833,13 +1832,17 @@ def admin_users_api(request):
 
 
 @login_required
-@user_passes_test(lambda u: u.is_authenticated and getattr(u, 'role', None) == 'Admin', login_url='/')
 def admin_update_user_role(request, user_id):
     """Admin endpoint to safely reassign a user's role with RBAC and audit logging."""
     import json
     from django.http import JsonResponse
     from core.models import User as CoreUser
     from core.auth_services import AuditService
+
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required.'}, status=401)
+    if getattr(request.user, 'role', None) != 'Admin' and not request.user.is_superuser and not request.user.is_staff:
+        return JsonResponse({'error': 'Administrative privileges required.'}, status=403)
 
     if request.method != 'POST':
         return JsonResponse({'error': 'POST method required'}, status=405)
@@ -1879,12 +1882,16 @@ def admin_update_user_role(request, user_id):
 
 
 @login_required
-@user_passes_test(lambda u: u.is_authenticated and getattr(u, 'role', None) == 'Admin', login_url='/')
 def admin_toggle_user_status(request, user_id):
     """Admin endpoint to activate or suspend any user account."""
     from django.http import JsonResponse
     from core.models import User as CoreUser
     from core.auth_services import AuditService
+
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required.'}, status=401)
+    if getattr(request.user, 'role', None) != 'Admin' and not request.user.is_superuser and not request.user.is_staff:
+        return JsonResponse({'error': 'Administrative privileges required.'}, status=403)
 
     if request.method != 'POST':
         return JsonResponse({'error': 'POST method required'}, status=405)
@@ -1912,12 +1919,16 @@ def admin_toggle_user_status(request, user_id):
 
 
 @login_required
-@user_passes_test(lambda u: u.is_authenticated and (getattr(u, 'role', None) == 'Admin' or u.is_superuser or u.is_staff), login_url='/')
 def admin_delete_user(request, user_id):
     """Admin endpoint to permanently delete a user account and associated records."""
     from django.http import JsonResponse
     from core.models import User as CoreUser
     from core.auth_services import AuditService
+
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required.'}, status=401)
+    if getattr(request.user, 'role', None) != 'Admin' and not request.user.is_superuser and not request.user.is_staff:
+        return JsonResponse({'error': 'Administrative privileges required.'}, status=403)
 
     if request.method != 'POST':
         return JsonResponse({'error': 'POST method required'}, status=405)

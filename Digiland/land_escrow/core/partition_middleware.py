@@ -84,6 +84,7 @@ class PartitionIsolationMiddleware:
         '/static/',
         '/media/',
         '/api/',
+        '/admin/api/',
         '/health/',
         '/favicon.ico',
     )

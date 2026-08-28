@@ -766,7 +766,7 @@ class MultiDomainRoutingMiddleware:
                 if getattr(request.user, 'role', None) != 'Admin' and not getattr(request.user, 'is_superuser', False):
                     return redirect('frontend:admin_login')
                 return redirect('frontend:agent_dashboard')
-            if not request.path.startswith('/admin/login/') and not request.path.startswith('/auth/admin-login/') and not request.path.startswith('/static/') and not request.path.startswith('/api/'):
+            if not request.path.startswith('/admin/login/') and not request.path.startswith('/auth/admin-login/') and not request.path.startswith('/static/') and not request.path.startswith('/api/') and not request.path.startswith('/admin/api/'):
                 if not request.user.is_authenticated:
                     return redirect('frontend:admin_login')
                 if getattr(request.user, 'role', None) != 'Admin' and not getattr(request.user, 'is_superuser', False):
