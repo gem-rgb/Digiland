@@ -750,7 +750,22 @@ class MultiDomainRoutingMiddleware:
                 if not request.user.is_authenticated or getattr(request.user, 'role', None) not in {'Agent', 'Lawyer'}:
                     return redirect('frontend:staff_login')
                 return redirect('frontend:agent_dashboard')
-            if not request.path.startswith('/staff/login/') and not request.path.startswith('/static/') and not request.path.startswith('/api/'):
+            # Allow login page, static assets, API routes, and all /agent/ operational paths through
+            exempt = (
+                request.path.startswith('/staff/login/')
+                or request.path.startswith('/static/')
+                or request.path.startswith('/api/')
+                or request.path.startswith('/agent/')
+                or request.path.startswith('/lawyer/')
+                or request.path.startswith('/parcels/')
+                or request.path.startswith('/transactions/')
+                or request.path.startswith('/messages/')
+                or request.path.startswith('/commissions/')
+                or request.path.startswith('/support/')
+                or request.path.startswith('/media/')
+                or request.path.startswith('/dashboard/')
+            )
+            if not exempt:
                 if not request.user.is_authenticated or getattr(request.user, 'role', None) not in {'Agent', 'Lawyer'}:
                     return redirect('frontend:staff_login')
 

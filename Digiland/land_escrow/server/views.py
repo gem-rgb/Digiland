@@ -610,7 +610,8 @@ def staff_login(request):
         elif getattr(user, 'role', None) not in {'Agent', 'Lawyer', 'Admin'} and not user.is_superuser and not getattr(user, 'is_staff', False):
             error = 'Access restricted to licensed Agents, Advocates, and Platform Administrators.'
         else:
-            auth_login(request, user)
+            auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            request.session.save()  # Force session persistence before redirect
             return redirect('frontend:agent_dashboard')
 
     # Consume the "just signed up" session flag set by agent_signup_complete
