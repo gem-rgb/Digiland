@@ -26965,8 +26965,8 @@ var buttonVariants = cva(
       variant: {
         default: "bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-extrabold shadow-sm",
         secondary: "bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700",
-        outline: "border border-white/20 bg-white/10 text-white hover:bg-white/20 hover:border-emerald-400/60 hover:text-emerald-300 backdrop-blur-md",
-        ghost: "bg-transparent text-slate-200 hover:bg-white/10 hover:text-white",
+        outline: "border border-slate-300 bg-white text-slate-800 hover:bg-slate-100 hover:text-slate-900 dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/20",
+        ghost: "bg-transparent text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-white",
         accent: "bg-emerald-600 text-white hover:bg-emerald-500",
         danger: "bg-rose-600 text-white hover:bg-rose-500"
       },
@@ -27175,16 +27175,14 @@ function LocationPermissionModal({ onLocationUpdate }) {
     Button,
     {
       onClick: () => setStatus("denied"),
-      variant: "outline",
-      className: "w-full rounded-xl border-border hover:bg-muted font-semibold"
+      className: "w-full rounded-xl border border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 shadow-xs transition-colors"
     },
     "Select County Manually"
   )) : /* @__PURE__ */ import_react3.default.createElement(
     Button,
     {
       onClick: handleDismiss,
-      variant: "outline",
-      className: "w-full rounded-xl border-border hover:bg-muted font-semibold"
+      className: "w-full rounded-xl border border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 shadow-xs transition-colors"
     },
     "Close"
   ), /* @__PURE__ */ import_react3.default.createElement("div", { className: "mt-4 flex items-center gap-1.5 text-xs text-muted-foreground/80" }, /* @__PURE__ */ import_react3.default.createElement(ShieldCheckIcon, { className: "h-3.5 w-3.5 text-emerald-600" }), /* @__PURE__ */ import_react3.default.createElement("span", null, "Your location is only used to personalize your browsing experience.")))));

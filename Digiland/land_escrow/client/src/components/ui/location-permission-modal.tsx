@@ -207,8 +207,7 @@ export function LocationPermissionModal({ onLocationUpdate }: LocationPermission
 
               <Button
                 onClick={() => setStatus('denied')}
-                variant="outline"
-                className="w-full rounded-xl border-border hover:bg-muted font-semibold"
+                className="w-full rounded-xl border border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 shadow-xs transition-colors"
               >
                 Select County Manually
               </Button>
@@ -216,8 +215,7 @@ export function LocationPermissionModal({ onLocationUpdate }: LocationPermission
           ) : (
             <Button
               onClick={handleDismiss}
-              variant="outline"
-              className="w-full rounded-xl border-border hover:bg-muted font-semibold"
+              className="w-full rounded-xl border border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 shadow-xs transition-colors"
             >
               Close
             </Button>
