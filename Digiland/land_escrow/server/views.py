@@ -592,8 +592,12 @@ def staff_login(request):
         # Support sign in by either email or phone number
         email = identifier.lower()
         if not '@' in identifier:
-            phone_clean = identifier.replace(' ', '').replace('-', '')
-            user_by_phone = CoreUser.objects.filter(phone_number__icontains=phone_clean).first()
+            phone_clean = identifier.replace(' ', '').replace('-', '').replace('+', '')
+            phone_tail = phone_clean[-9:] if len(phone_clean) >= 9 else phone_clean
+            user_by_phone = (
+                CoreUser.objects.filter(phone_number__icontains=phone_tail).first()
+                or CoreUser.objects.filter(phone_number__icontains=phone_clean).first()
+            )
             if user_by_phone:
                 email = user_by_phone.email
 
@@ -1534,7 +1538,6 @@ def admin_analytics_view(request):
 
 
 @login_required
-@user_passes_test(lambda u: u.is_authenticated and getattr(u, 'role', None) == 'Admin', login_url='/')
 def admin_provision_professional(request):
     """Admin endpoint to create and verify Lawyers, Agents, and Staff with Direct or Invitation modes."""
     import json
@@ -1544,6 +1547,17 @@ def admin_provision_professional(request):
     from core.auth_services import AuditService
 
     is_ajax = request.headers.get('accept') == 'application/json' or request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json'
+
+    if not request.user.is_authenticated:
+        if is_ajax:
+            return JsonResponse({'error': 'Authentication required. Please refresh or log in.'}, status=401)
+        return redirect('frontend:admin_login')
+
+    is_admin = getattr(request.user, 'role', None) == 'Admin' or request.user.is_superuser or request.user.is_staff
+    if not is_admin:
+        if is_ajax:
+            return JsonResponse({'error': 'Administrative privileges required.'}, status=403)
+        return redirect('frontend:admin_login')
 
     if request.method != 'POST':
         return redirect('frontend:agent_dashboard')

@@ -30735,13 +30735,13 @@ This action CANNOT be undone.`;
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json",
-          "X-CSRFToken": bootstrap.csrf_token || ""
+          "X-CSRFToken": getCsrfToken()
         },
         body: JSON.stringify(payload)
       });
-      const data = await resp.json();
+      const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
-        throw new Error(data.error || "Failed to provision account");
+        throw new Error(data.error || `HTTP ${resp.status}: Failed to provision account`);
       }
       setFormSuccess(data.message || `Successfully provisioned ${roleToCreate} account for ${fullName}!`);
       if (data.invite_url) {
