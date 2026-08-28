@@ -30612,6 +30612,16 @@ function AdminPeopleHubView() {
       return true;
     });
   }, [usersList, roleFilter, searchQuery]);
+  const getCsrfToken = () => {
+    if (bootstrap.csrf_token) return bootstrap.csrf_token;
+    if (typeof document !== "undefined") {
+      const meta = document.querySelector('meta[name="csrf-token"]');
+      if (meta && meta.content) return meta.content;
+      const cookieMatch = document.cookie.match(/csrftoken=([^;]+)/);
+      if (cookieMatch) return decodeURIComponent(cookieMatch[1]);
+    }
+    return "";
+  };
   const handleToggleStatus = async (user) => {
     setActionLoadingId(user.id);
     setActionMessage(null);
@@ -30620,20 +30630,20 @@ function AdminPeopleHubView() {
         method: "POST",
         headers: {
           "Accept": "application/json",
-          "X-CSRFToken": bootstrap.csrf_token || ""
+          "X-CSRFToken": getCsrfToken()
         }
       });
-      const data = await resp.json();
+      const data = await resp.json().catch(() => ({}));
       if (resp.ok) {
         setUsersList(
           (prev) => prev.map((u) => u.id === user.id ? { ...u, is_active: data.is_active } : u)
         );
         setActionMessage(`Account for ${user.email} is now ${data.is_active ? "active" : "suspended"}.`);
       } else {
-        alert(data.error || "Failed to update account status");
+        alert(data.error || `HTTP ${resp.status}: Failed to update account status`);
       }
-    } catch {
-      alert("Network error updating status");
+    } catch (err) {
+      alert(`Network error updating status: ${err?.message || "Please check connection"}`);
     } finally {
       setActionLoadingId(null);
     }
@@ -30651,18 +30661,18 @@ This action CANNOT be undone.`;
         method: "POST",
         headers: {
           "Accept": "application/json",
-          "X-CSRFToken": bootstrap.csrf_token || ""
+          "X-CSRFToken": getCsrfToken()
         }
       });
-      const data = await resp.json();
+      const data = await resp.json().catch(() => ({}));
       if (resp.ok) {
         setUsersList((prev) => prev.filter((u) => u.id !== user.id));
         setActionMessage(`User account for ${user.email} was permanently deleted.`);
       } else {
-        alert(data.error || "Failed to delete user account");
+        alert(data.error || `HTTP ${resp.status}: Failed to delete user account`);
       }
-    } catch {
-      alert("Network error deleting user");
+    } catch (err) {
+      alert(`Network error deleting user: ${err?.message || "Please check connection"}`);
     } finally {
       setActionLoadingId(null);
     }
@@ -30676,21 +30686,21 @@ This action CANNOT be undone.`;
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json",
-          "X-CSRFToken": bootstrap.csrf_token || ""
+          "X-CSRFToken": getCsrfToken()
         },
         body: JSON.stringify({ role: newRole })
       });
-      const data = await resp.json();
+      const data = await resp.json().catch(() => ({}));
       if (resp.ok) {
         setUsersList(
           (prev) => prev.map((u) => u.id === user.id ? { ...u, role: newRole } : u)
         );
         setActionMessage(`Updated role to ${newRole} for ${user.email}`);
       } else {
-        alert(data.error || "Failed to update role");
+        alert(data.error || `HTTP ${resp.status}: Failed to update role`);
       }
-    } catch {
-      alert("Network error updating role");
+    } catch (err) {
+      alert(`Network error updating role: ${err?.message || "Please check connection"}`);
     } finally {
       setActionLoadingId(null);
     }

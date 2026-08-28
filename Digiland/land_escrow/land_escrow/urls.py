@@ -35,10 +35,6 @@ urlpatterns = [
     path('browse/', RedirectView.as_view(url='/parcels/', permanent=False)),
     path('marketplace', RedirectView.as_view(url='/parcels/', permanent=False, query_string=True)),
     path('marketplace/', RedirectView.as_view(url='/parcels/', permanent=False, query_string=True)),
-    path('admin/login/', server_views.admin_login, name='admin_login'),
-    path('auth/admin-login/', server_views.admin_login, name='admin_login_alias'),
-    path(ADMIN_URL_PATH, admin.site.urls),
-    path(ADMIN_URL_PATH, include(admin_urls)),
     path('api/v1/auth/', include('core.auth_urls')),
     path('api/auth/me/', api_views.auth_me_api, name='auth_me_api'),
     path('api/onboarding/select-role/', api_views.onboarding_select_role_api, name='onboarding_select_role_api'),
@@ -46,6 +42,8 @@ urlpatterns = [
     path('api/v1/', include('core.urls')),
     path('api/v1/admin/control-plane/', include('admin_control_plane.urls')),
     path('', include('server.urls')),
+    path(ADMIN_URL_PATH, admin.site.urls),
+    path(ADMIN_URL_PATH, include(admin_urls)),
 ]
 
 handler404 = 'server.views.custom_404_view'
