@@ -86,6 +86,13 @@ class PartitionIsolationMiddleware:
         '/api/',
         '/admin/api/',
         '/admin/staff/',
+        '/staff/login/',
+        '/staff-login/',
+        '/admin/login/',
+        '/auth/admin-login/',
+        '/accounts/login/',
+        '/accounts/logout/',
+        '/accounts/signup/',
         '/health/',
         '/favicon.ico',
     )
@@ -96,7 +103,7 @@ class PartitionIsolationMiddleware:
     def __call__(self, request):
         path = request.path
 
-        # Allow exempt static and API endpoints
+        # Allow exempt static, API, and dedicated login portal endpoints without cross-subdomain redirection
         if any(path.startswith(prefix) for prefix in self.EXEMPT_PATH_PREFIXES):
             return self.get_response(request)
 

@@ -580,9 +580,6 @@ def staff_login(request):
         role = getattr(request.user, 'role', '')
         if role in {'Agent', 'Lawyer'}:
             return redirect('frontend:agent_dashboard')
-        elif role == 'Admin' or request.user.is_superuser:
-            return redirect('/admin/dashboard/')
-        return redirect('frontend:parcel_list')
 
     if request.method == 'POST':
         identifier = request.POST.get('email', '').strip()

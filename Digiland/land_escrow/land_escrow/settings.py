@@ -136,8 +136,8 @@ CSRF_TRUSTED_ORIGINS = [
     if o.strip()
 ]
 
-CSRF_COOKIE_DOMAIN = config('CSRF_COOKIE_DOMAIN', default='.digiland.co.ke' if not DEBUG else None)
-SESSION_COOKIE_DOMAIN = config('SESSION_COOKIE_DOMAIN', default='.digiland.co.ke' if not DEBUG else None)
+CSRF_COOKIE_DOMAIN = None
+SESSION_COOKIE_DOMAIN = None
 CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_HTTPONLY = False

@@ -747,14 +747,12 @@ class MultiDomainRoutingMiddleware:
             if request.path.startswith('/accounts/login/') or request.path.startswith('/admin/login/'):
                 return redirect('frontend:staff_login')
             if request.path in {'/', '/staff/', '/staff'}:
-                if not request.user.is_authenticated:
+                if not request.user.is_authenticated or getattr(request.user, 'role', None) not in {'Agent', 'Lawyer'}:
                     return redirect('frontend:staff_login')
                 return redirect('frontend:agent_dashboard')
             if not request.path.startswith('/staff/login/') and not request.path.startswith('/static/') and not request.path.startswith('/api/'):
-                if not request.user.is_authenticated:
+                if not request.user.is_authenticated or getattr(request.user, 'role', None) not in {'Agent', 'Lawyer'}:
                     return redirect('frontend:staff_login')
-                if getattr(request.user, 'role', None) not in {'Agent', 'Lawyer'}:
-                    return redirect('frontend:agent_dashboard')
 
         # Security gate for admin domain
         elif domain_mode == 'admin':
