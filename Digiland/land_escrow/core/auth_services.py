@@ -756,6 +756,8 @@ class AuditService:
         user=None,
         ip_address: str = "",
         metadata: Optional[Dict[str, Any]] = None,
+        details: Optional[str] = None,
+        **kwargs,
     ) -> None:
         """Log an authentication audit event.
 
@@ -764,15 +766,22 @@ class AuditService:
             user: The User involved (may be None for anonymous events).
             ip_address: Client IP address.
             metadata: Optional dict with extra context.
+            details: Optional string description.
         """
         from .models import AuditLog
+
+        meta = dict(metadata or {})
+        if details:
+            meta["details"] = details
+        if kwargs:
+            meta.update(kwargs)
 
         try:
             AuditLog.objects.create(
                 user=user if user and hasattr(user, "pk") and user.is_authenticated else None,
                 action=action,
                 ip_address=ip_address or "0.0.0.0",
-                metadata=metadata or {},
+                metadata=meta,
             )
         except Exception:
             logger.exception("Failed to write audit log for action=%s", action)
