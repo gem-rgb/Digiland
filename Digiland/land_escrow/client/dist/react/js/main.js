@@ -33859,7 +33859,13 @@ function TaskManagementPage() {
 }
 function ApprovalsPage() {
   const page = bootstrap2.approvals_page;
-  const [activeTab, setActiveTab] = (0, import_react21.useState)("users");
+  const role = bootstrap2.user?.role || "Agent";
+  const isLawyer = role === "Lawyer";
+  const isAgent = role === "Agent";
+  const isAdmin = role === "Admin";
+  const [activeTab, setActiveTab] = (0, import_react21.useState)(
+    isLawyer ? "conveyancing" : "users"
+  );
   const [searchQuery, setSearchQuery] = (0, import_react21.useState)("");
   if (!page) {
     return /* @__PURE__ */ import_react21.default.createElement(AppShell, { ...{
@@ -33883,6 +33889,7 @@ function ApprovalsPage() {
   const pendingParcels = page.pending_parcels || [];
   const pendingTransactions = page.pending_transactions || [];
   const pendingRemovalRequests = page.pending_joint_removals || [];
+  const pendingCommissions = page.pending_commissions || [];
   const filteredUsers = pendingUsers.filter(
     (u) => !searchQuery || u.email?.toLowerCase().includes(searchQuery.toLowerCase()) || u.role?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -33895,14 +33902,30 @@ function ApprovalsPage() {
   const filteredRemovals = pendingRemovalRequests.filter(
     (r2) => !searchQuery || r2.group_name?.toLowerCase().includes(searchQuery.toLowerCase()) || r2.member?.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const filteredCommissions = pendingCommissions.filter(
+    (c) => !searchQuery || c.parcel?.parcel_number?.toLowerCase().includes(searchQuery.toLowerCase()) || c.buyer?.email?.toLowerCase().includes(searchQuery.toLowerCase()) || c.target_county?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   return /* @__PURE__ */ import_react21.default.createElement(AppShell, { ...shellProps }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-8 max-w-7xl mx-auto" }, /* @__PURE__ */ import_react21.default.createElement(
     PageHeader,
     {
-      kicker: "Command Hub",
-      title: "Central Approvals & Identity Verification",
-      subtitle: "Manage pending user KYC applications, parcel verification listings, escrow transfers, and joint member exits."
+      kicker: isLawyer ? "Legal Command Hub" : "Operational Hub",
+      title: isLawyer ? "Advocate Conveyancing & Legal Approvals" : "Central Approvals & Identity Verification",
+      subtitle: isLawyer ? "Review land transfer agreements, execute advocate cryptographic sign-offs, verify title deeds, and clear escrow legal conditions." : "Manage pending user KYC applications, parcel verification listings, escrow transfers, and joint member exits."
     }
-  ), /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-4" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex flex-wrap gap-2" }, /* @__PURE__ */ import_react21.default.createElement(
+  ), /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-4" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex flex-wrap gap-2" }, (isLawyer || isAdmin) && /* @__PURE__ */ import_react21.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => setActiveTab("conveyancing"),
+      className: cn(
+        "inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 cursor-pointer",
+        activeTab === "conveyancing" ? "bg-purple-700 text-white shadow-md" : "bg-white border border-border text-slate-700 hover:bg-slate-50"
+      )
+    },
+    /* @__PURE__ */ import_react21.default.createElement(Gavel, { className: "h-4 w-4" }),
+    /* @__PURE__ */ import_react21.default.createElement("span", null, isLawyer ? "Conveyancing Tasks" : "Conveyancing Reviews"),
+    /* @__PURE__ */ import_react21.default.createElement("span", { className: cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === "conveyancing" ? "bg-purple-800 text-purple-100" : "bg-slate-100 text-slate-700") }, pendingCommissions.length)
+  ), !isLawyer && /* @__PURE__ */ import_react21.default.createElement(
     "button",
     {
       type: "button",
@@ -33922,12 +33945,12 @@ function ApprovalsPage() {
       onClick: () => setActiveTab("parcels"),
       className: cn(
         "inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 cursor-pointer",
-        activeTab === "parcels" ? "bg-emerald-700 text-white shadow-md" : "bg-white border border-border text-slate-700 hover:bg-slate-50"
+        activeTab === "parcels" ? isLawyer ? "bg-purple-700 text-white shadow-md" : "bg-emerald-700 text-white shadow-md" : "bg-white border border-border text-slate-700 hover:bg-slate-50"
       )
     },
     /* @__PURE__ */ import_react21.default.createElement(Landmark, { className: "h-4 w-4" }),
-    /* @__PURE__ */ import_react21.default.createElement("span", null, "Pending Parcels"),
-    /* @__PURE__ */ import_react21.default.createElement("span", { className: cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === "parcels" ? "bg-emerald-800 text-emerald-100" : "bg-slate-100 text-slate-700") }, pendingParcels.length)
+    /* @__PURE__ */ import_react21.default.createElement("span", null, isLawyer ? "Title Deed Verification" : "Pending Parcels"),
+    /* @__PURE__ */ import_react21.default.createElement("span", { className: cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === "parcels" ? isLawyer ? "bg-purple-800 text-purple-100" : "bg-emerald-800 text-emerald-100" : "bg-slate-100 text-slate-700") }, pendingParcels.length)
   ), /* @__PURE__ */ import_react21.default.createElement(
     "button",
     {
@@ -33935,13 +33958,13 @@ function ApprovalsPage() {
       onClick: () => setActiveTab("transactions"),
       className: cn(
         "inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 cursor-pointer",
-        activeTab === "transactions" ? "bg-emerald-700 text-white shadow-md" : "bg-white border border-border text-slate-700 hover:bg-slate-50"
+        activeTab === "transactions" ? isLawyer ? "bg-purple-700 text-white shadow-md" : "bg-emerald-700 text-white shadow-md" : "bg-white border border-border text-slate-700 hover:bg-slate-50"
       )
     },
     /* @__PURE__ */ import_react21.default.createElement(WalletCards, { className: "h-4 w-4" }),
-    /* @__PURE__ */ import_react21.default.createElement("span", null, "Active Escrow"),
-    /* @__PURE__ */ import_react21.default.createElement("span", { className: cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === "transactions" ? "bg-emerald-800 text-emerald-100" : "bg-slate-100 text-slate-700") }, pendingTransactions.length)
-  ), /* @__PURE__ */ import_react21.default.createElement(
+    /* @__PURE__ */ import_react21.default.createElement("span", null, isLawyer ? "Escrow Legal Clearance" : "Active Escrow"),
+    /* @__PURE__ */ import_react21.default.createElement("span", { className: cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === "transactions" ? isLawyer ? "bg-purple-800 text-purple-100" : "bg-emerald-800 text-emerald-100" : "bg-slate-100 text-slate-700") }, pendingTransactions.length)
+  ), !isLawyer && /* @__PURE__ */ import_react21.default.createElement(
     "button",
     {
       type: "button",
@@ -33961,9 +33984,17 @@ function ApprovalsPage() {
       value: searchQuery,
       onChange: (e) => setSearchQuery(e.target.value),
       placeholder: "Filter current view...",
-      className: "w-full h-10 pl-9 pr-4 rounded-full border border-border bg-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-sm"
+      className: "w-full h-10 pl-9 pr-4 rounded-full border border-border bg-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm"
     }
-  ), /* @__PURE__ */ import_react21.default.createElement(MapPin, { className: "absolute left-3 top-3 h-4 w-4 text-slate-400" }))), activeTab === "users" && /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("h3", { className: "text-lg font-black text-slate-900" }, "User Identity & KYC Queue"), /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-xs text-muted-foreground" }, "Showing ", filteredUsers.length, " user(s) awaiting verification")), filteredUsers.length === 0 ? /* @__PURE__ */ import_react21.default.createElement(Card, { className: "bg-white/95" }, /* @__PURE__ */ import_react21.default.createElement(CardContent, { className: "p-12 text-center text-muted-foreground" }, /* @__PURE__ */ import_react21.default.createElement(Users, { className: "mx-auto mb-3 h-10 w-10 text-slate-300" }), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-base font-bold text-slate-700" }, "No Pending User Identity Verification Requests"), /* @__PURE__ */ import_react21.default.createElement("p", { className: "text-xs mt-1" }, "All buyer and seller identity submissions have been processed."))) : /* @__PURE__ */ import_react21.default.createElement("div", { className: "grid gap-4 md:grid-cols-2" }, filteredUsers.map((user) => /* @__PURE__ */ import_react21.default.createElement(Card, { key: user.email, className: "bg-white/95 border-slate-200/80 shadow-md rounded-[1.75rem] overflow-hidden hover:shadow-lg transition duration-200" }, /* @__PURE__ */ import_react21.default.createElement(CardContent, { className: "p-6 text-left space-y-4" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-start justify-between gap-4" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-3.5" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 font-bold text-lg border border-emerald-100" }, user.email.slice(0, 2).toUpperCase()), /* @__PURE__ */ import_react21.default.createElement("div", null, /* @__PURE__ */ import_react21.default.createElement("div", { className: "font-bold text-base text-slate-900 truncate max-w-[220px]" }, user.email), /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-2 mt-1" }, /* @__PURE__ */ import_react21.default.createElement(Badge, { tone: "outline", className: "text-xs font-semibold" }, user.role), /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-xs text-slate-400" }, "ID Verification Pending")))), /* @__PURE__ */ import_react21.default.createElement(Badge, { tone: "warning", className: "px-3 py-1 text-xs" }, "Needs KYC Review")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "grid grid-cols-2 gap-3 pt-2 text-xs border-t border-slate-100" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-xl bg-slate-50 p-2.5" }, /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-slate-400 block text-[10px] uppercase font-bold tracking-wider" }, "ID Number"), /* @__PURE__ */ import_react21.default.createElement("strong", { className: "text-slate-800 font-semibold" }, user.id_number || "Not provided")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-xl bg-slate-50 p-2.5" }, /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-slate-400 block text-[10px] uppercase font-bold tracking-wider" }, "KRA PIN"), /* @__PURE__ */ import_react21.default.createElement("strong", { className: "text-slate-800 font-semibold" }, user.kra_pin || "Not provided"))), /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-2 pt-2" }, /* @__PURE__ */ import_react21.default.createElement(
+  ), /* @__PURE__ */ import_react21.default.createElement(MapPin, { className: "absolute left-3 top-3 h-4 w-4 text-slate-400" }))), activeTab === "conveyancing" && /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("h3", { className: "text-lg font-black text-slate-900" }, "Conveyancing & Land Transfer Review Queue"), /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-xs text-muted-foreground" }, "Showing ", filteredCommissions.length, " land transfer agreement(s) awaiting advocate review")), filteredCommissions.length === 0 ? /* @__PURE__ */ import_react21.default.createElement(Card, { className: "bg-white/95" }, /* @__PURE__ */ import_react21.default.createElement(CardContent, { className: "p-12 text-center text-muted-foreground" }, /* @__PURE__ */ import_react21.default.createElement(Gavel, { className: "mx-auto mb-3 h-10 w-10 text-slate-300" }), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-base font-bold text-slate-700" }, "No Pending Conveyancing Verifications"), /* @__PURE__ */ import_react21.default.createElement("p", { className: "text-xs mt-1" }, "When buyers initiate land transfers and field agents submit inspection files, conveyancing agreements will appear here for your legal review."))) : /* @__PURE__ */ import_react21.default.createElement("div", { className: "grid gap-4 md:grid-cols-2" }, filteredCommissions.map((commission) => /* @__PURE__ */ import_react21.default.createElement(Card, { key: commission.id, className: "bg-white/95 border-purple-200/80 shadow-md rounded-[1.75rem] overflow-hidden hover:shadow-lg transition duration-200" }, /* @__PURE__ */ import_react21.default.createElement(CardContent, { className: "p-6 text-left space-y-4" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-start justify-between gap-4" }, /* @__PURE__ */ import_react21.default.createElement("div", null, /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs font-bold uppercase tracking-wider text-purple-700" }, "Land Conveyance File"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "font-black text-xl text-slate-900 mt-0.5" }, commission.parcel?.parcel_number || "Land Parcel"), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs font-medium text-slate-500 mt-1 flex items-center gap-1" }, /* @__PURE__ */ import_react21.default.createElement(MapPin, { className: "h-3.5 w-3.5 text-slate-400" }), commission.target_county || commission.parcel?.county || "Kenya", ", ", commission.target_constituency || commission.parcel?.constituency || "")), /* @__PURE__ */ import_react21.default.createElement(Badge, { tone: "accent", className: "px-3 py-1 text-xs" }, commission.status_label || "Advocate Review")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "grid grid-cols-2 gap-3 pt-2 text-xs border-t border-slate-100" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-xl bg-slate-50 p-2.5" }, /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-slate-400 block text-[10px] uppercase font-bold tracking-wider" }, "Property Value"), /* @__PURE__ */ import_react21.default.createElement("strong", { className: "text-emerald-700 font-bold text-sm" }, "KES ", money3(commission.parcel?.displayed_price || commission.parcel?.asking_price || "0"))), /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-xl bg-slate-50 p-2.5" }, /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-slate-400 block text-[10px] uppercase font-bold tracking-wider" }, "Advocate Fee"), /* @__PURE__ */ import_react21.default.createElement("strong", { className: "text-purple-700 font-bold text-sm" }, "KES 25,000"))), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-xs text-slate-600 space-y-1 bg-slate-50/70 p-3 rounded-xl border border-slate-100" }, /* @__PURE__ */ import_react21.default.createElement("div", null, "Buyer: ", /* @__PURE__ */ import_react21.default.createElement("strong", { className: "text-slate-800" }, commission.buyer?.full_name || commission.buyer?.email || "N/A")), /* @__PURE__ */ import_react21.default.createElement("div", null, "Field Agent: ", /* @__PURE__ */ import_react21.default.createElement("strong", { className: "text-slate-800" }, commission.accepted_by?.full_name || commission.accepted_by?.email || "Assigned")), /* @__PURE__ */ import_react21.default.createElement("div", null, "Statutory Documents: ", /* @__PURE__ */ import_react21.default.createElement("strong", { className: "text-purple-700" }, commission.document_count || 3, " Files Attached"))), /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-2 pt-2" }, /* @__PURE__ */ import_react21.default.createElement(
+    "a",
+    {
+      href: `/commissions/${commission.id}/`,
+      className: "flex-1 inline-flex h-11 items-center justify-center rounded-full bg-purple-700 hover:bg-purple-800 text-xs font-bold text-white transition shadow-md gap-2"
+    },
+    /* @__PURE__ */ import_react21.default.createElement(Gavel, { className: "h-4 w-4" }),
+    /* @__PURE__ */ import_react21.default.createElement("span", null, "Review & Execute Sign-Off")
+  ))))))), activeTab === "users" && /* @__PURE__ */ import_react21.default.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ import_react21.default.createElement("h3", { className: "text-lg font-black text-slate-900" }, "User Identity & KYC Queue"), /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-xs text-muted-foreground" }, "Showing ", filteredUsers.length, " user(s) awaiting verification")), filteredUsers.length === 0 ? /* @__PURE__ */ import_react21.default.createElement(Card, { className: "bg-white/95" }, /* @__PURE__ */ import_react21.default.createElement(CardContent, { className: "p-12 text-center text-muted-foreground" }, /* @__PURE__ */ import_react21.default.createElement(Users, { className: "mx-auto mb-3 h-10 w-10 text-slate-300" }), /* @__PURE__ */ import_react21.default.createElement("div", { className: "text-base font-bold text-slate-700" }, "No Pending User Identity Verification Requests"), /* @__PURE__ */ import_react21.default.createElement("p", { className: "text-xs mt-1" }, "All buyer and seller identity submissions have been processed."))) : /* @__PURE__ */ import_react21.default.createElement("div", { className: "grid gap-4 md:grid-cols-2" }, filteredUsers.map((user) => /* @__PURE__ */ import_react21.default.createElement(Card, { key: user.email, className: "bg-white/95 border-slate-200/80 shadow-md rounded-[1.75rem] overflow-hidden hover:shadow-lg transition duration-200" }, /* @__PURE__ */ import_react21.default.createElement(CardContent, { className: "p-6 text-left space-y-4" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-start justify-between gap-4" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-3.5" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 font-bold text-lg border border-emerald-100" }, user.email.slice(0, 2).toUpperCase()), /* @__PURE__ */ import_react21.default.createElement("div", null, /* @__PURE__ */ import_react21.default.createElement("div", { className: "font-bold text-base text-slate-900 truncate max-w-[220px]" }, user.email), /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-2 mt-1" }, /* @__PURE__ */ import_react21.default.createElement(Badge, { tone: "outline", className: "text-xs font-semibold" }, user.role), /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-xs text-slate-400" }, "ID Verification Pending")))), /* @__PURE__ */ import_react21.default.createElement(Badge, { tone: "warning", className: "px-3 py-1 text-xs" }, "Needs KYC Review")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "grid grid-cols-2 gap-3 pt-2 text-xs border-t border-slate-100" }, /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-xl bg-slate-50 p-2.5" }, /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-slate-400 block text-[10px] uppercase font-bold tracking-wider" }, "ID Number"), /* @__PURE__ */ import_react21.default.createElement("strong", { className: "text-slate-800 font-semibold" }, user.id_number || "Not provided")), /* @__PURE__ */ import_react21.default.createElement("div", { className: "rounded-xl bg-slate-50 p-2.5" }, /* @__PURE__ */ import_react21.default.createElement("span", { className: "text-slate-400 block text-[10px] uppercase font-bold tracking-wider" }, "KRA PIN"), /* @__PURE__ */ import_react21.default.createElement("strong", { className: "text-slate-800 font-semibold" }, user.kra_pin || "Not provided"))), /* @__PURE__ */ import_react21.default.createElement("div", { className: "flex items-center gap-2 pt-2" }, /* @__PURE__ */ import_react21.default.createElement(
     "a",
     {
       href: `/agent/approvals/${user.id}/review/`,

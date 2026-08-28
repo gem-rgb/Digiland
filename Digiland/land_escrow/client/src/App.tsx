@@ -6374,7 +6374,14 @@ function TaskManagementPage() {
 
 function ApprovalsPage() {
   const page = bootstrap.approvals_page;
-  const [activeTab, setActiveTab] = useState<'users' | 'parcels' | 'transactions' | 'removals'>('users');
+  const role = bootstrap.user?.role || 'Agent';
+  const isLawyer = role === 'Lawyer';
+  const isAgent = role === 'Agent';
+  const isAdmin = role === 'Admin';
+
+  const [activeTab, setActiveTab] = useState<'users' | 'parcels' | 'transactions' | 'removals' | 'conveyancing'>(
+    isLawyer ? 'conveyancing' : 'users'
+  );
   const [searchQuery, setSearchQuery] = useState('');
 
   if (!page) {
@@ -6411,6 +6418,7 @@ function ApprovalsPage() {
   const pendingParcels = page.pending_parcels || [];
   const pendingTransactions = page.pending_transactions || [];
   const pendingRemovalRequests = page.pending_joint_removals || [];
+  const pendingCommissions = page.pending_commissions || [];
 
   // Filter items by search query
   const filteredUsers = pendingUsers.filter(u => 
@@ -6431,85 +6439,123 @@ function ApprovalsPage() {
     !searchQuery || r.group_name?.toLowerCase().includes(searchQuery.toLowerCase()) || r.member?.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const filteredCommissions = pendingCommissions.filter(c =>
+    !searchQuery || c.parcel?.parcel_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.buyer?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.target_county?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <AppShell {...shellProps}>
       <div className="space-y-8 max-w-7xl mx-auto">
         <PageHeader 
-          kicker="Command Hub" 
-          title="Central Approvals & Identity Verification" 
-          subtitle="Manage pending user KYC applications, parcel verification listings, escrow transfers, and joint member exits." 
+          kicker={isLawyer ? "Legal Command Hub" : "Operational Hub"} 
+          title={isLawyer ? "Advocate Conveyancing & Legal Approvals" : "Central Approvals & Identity Verification"} 
+          subtitle={
+            isLawyer 
+              ? "Review land transfer agreements, execute advocate cryptographic sign-offs, verify title deeds, and clear escrow legal conditions."
+              : "Manage pending user KYC applications, parcel verification listings, escrow transfers, and joint member exits."
+          } 
         />
 
         {/* Tab Selection Navigation Bar */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-4">
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setActiveTab('users')}
-              className={cn(
-                "inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 cursor-pointer",
-                activeTab === 'users'
-                  ? "bg-emerald-700 text-white shadow-md"
-                  : "bg-white border border-border text-slate-700 hover:bg-slate-50"
-              )}
-            >
-              <Users className="h-4 w-4" />
-              <span>Pending Users</span>
-              <span className={cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === 'users' ? "bg-emerald-800 text-emerald-100" : "bg-slate-100 text-slate-700")}>
-                {pendingUsers.length}
-              </span>
-            </button>
+            {/* Lawyer specific tab: Conveyancing */}
+            {(isLawyer || isAdmin) && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('conveyancing')}
+                className={cn(
+                  "inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 cursor-pointer",
+                  activeTab === 'conveyancing'
+                    ? "bg-purple-700 text-white shadow-md"
+                    : "bg-white border border-border text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                <Gavel className="h-4 w-4" />
+                <span>{isLawyer ? 'Conveyancing Tasks' : 'Conveyancing Reviews'}</span>
+                <span className={cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === 'conveyancing' ? "bg-purple-800 text-purple-100" : "bg-slate-100 text-slate-700")}>
+                  {pendingCommissions.length}
+                </span>
+              </button>
+            )}
 
+            {/* Agent / Admin specific tab: Pending Users (Lawyer does NOT do User KYC) */}
+            {!isLawyer && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('users')}
+                className={cn(
+                  "inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 cursor-pointer",
+                  activeTab === 'users'
+                    ? "bg-emerald-700 text-white shadow-md"
+                    : "bg-white border border-border text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                <Users className="h-4 w-4" />
+                <span>Pending Users</span>
+                <span className={cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === 'users' ? "bg-emerald-800 text-emerald-100" : "bg-slate-100 text-slate-700")}>
+                  {pendingUsers.length}
+                </span>
+              </button>
+            )}
+
+            {/* Title Deeds / Parcels */}
             <button
               type="button"
               onClick={() => setActiveTab('parcels')}
               className={cn(
                 "inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 cursor-pointer",
                 activeTab === 'parcels'
-                  ? "bg-emerald-700 text-white shadow-md"
+                  ? (isLawyer ? "bg-purple-700 text-white shadow-md" : "bg-emerald-700 text-white shadow-md")
                   : "bg-white border border-border text-slate-700 hover:bg-slate-50"
               )}
             >
               <Landmark className="h-4 w-4" />
-              <span>Pending Parcels</span>
-              <span className={cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === 'parcels' ? "bg-emerald-800 text-emerald-100" : "bg-slate-100 text-slate-700")}>
+              <span>{isLawyer ? 'Title Deed Verification' : 'Pending Parcels'}</span>
+              <span className={cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === 'parcels' ? (isLawyer ? "bg-purple-800 text-purple-100" : "bg-emerald-800 text-emerald-100") : "bg-slate-100 text-slate-700")}>
                 {pendingParcels.length}
               </span>
             </button>
 
+            {/* Escrow Clearance / Deals */}
             <button
               type="button"
               onClick={() => setActiveTab('transactions')}
               className={cn(
                 "inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 cursor-pointer",
                 activeTab === 'transactions'
-                  ? "bg-emerald-700 text-white shadow-md"
+                  ? (isLawyer ? "bg-purple-700 text-white shadow-md" : "bg-emerald-700 text-white shadow-md")
                   : "bg-white border border-border text-slate-700 hover:bg-slate-50"
               )}
             >
               <WalletCards className="h-4 w-4" />
-              <span>Active Escrow</span>
-              <span className={cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === 'transactions' ? "bg-emerald-800 text-emerald-100" : "bg-slate-100 text-slate-700")}>
+              <span>{isLawyer ? 'Escrow Legal Clearance' : 'Active Escrow'}</span>
+              <span className={cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === 'transactions' ? (isLawyer ? "bg-purple-800 text-purple-100" : "bg-emerald-800 text-emerald-100") : "bg-slate-100 text-slate-700")}>
                 {pendingTransactions.length}
               </span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('removals')}
-              className={cn(
-                "inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 cursor-pointer",
-                activeTab === 'removals'
-                  ? "bg-emerald-700 text-white shadow-md"
-                  : "bg-white border border-border text-slate-700 hover:bg-slate-50"
-              )}
-            >
-              <Gavel className="h-4 w-4" />
-              <span>Joint Removals</span>
-              <span className={cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === 'removals' ? "bg-emerald-800 text-emerald-100" : "bg-slate-100 text-slate-700")}>
-                {pendingRemovalRequests.length}
-              </span>
-            </button>
+            {/* Agent / Admin specific tab: Joint Removals (Lawyer does NOT do joint removals) */}
+            {!isLawyer && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('removals')}
+                className={cn(
+                  "inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-200 cursor-pointer",
+                  activeTab === 'removals'
+                    ? "bg-emerald-700 text-white shadow-md"
+                    : "bg-white border border-border text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                <Gavel className="h-4 w-4" />
+                <span>Joint Removals</span>
+                <span className={cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === 'removals' ? "bg-emerald-800 text-emerald-100" : "bg-slate-100 text-slate-700")}>
+                  {pendingRemovalRequests.length}
+                </span>
+              </button>
+            )}
           </div>
 
           {/* Quick Search Input */}
@@ -6519,11 +6565,82 @@ function ApprovalsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filter current view..."
-              className="w-full h-10 pl-9 pr-4 rounded-full border border-border bg-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 shadow-sm"
+              className="w-full h-10 pl-9 pr-4 rounded-full border border-border bg-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-purple-500/20 shadow-sm"
             />
             <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
           </div>
         </div>
+
+        {/* TAB 0: LAWYER CONVEYANCING TASKS */}
+        {activeTab === 'conveyancing' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-black text-slate-900">Conveyancing & Land Transfer Review Queue</h3>
+              <span className="text-xs text-muted-foreground">Showing {filteredCommissions.length} land transfer agreement(s) awaiting advocate review</span>
+            </div>
+
+            {filteredCommissions.length === 0 ? (
+              <Card className="bg-white/95">
+                <CardContent className="p-12 text-center text-muted-foreground">
+                  <Gavel className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+                  <div className="text-base font-bold text-slate-700">No Pending Conveyancing Verifications</div>
+                  <p className="text-xs mt-1">When buyers initiate land transfers and field agents submit inspection files, conveyancing agreements will appear here for your legal review.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {filteredCommissions.map((commission) => (
+                  <Card key={commission.id} className="bg-white/95 border-purple-200/80 shadow-md rounded-[1.75rem] overflow-hidden hover:shadow-lg transition duration-200">
+                    <CardContent className="p-6 text-left space-y-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="text-xs font-bold uppercase tracking-wider text-purple-700">Land Conveyance File</div>
+                          <div className="font-black text-xl text-slate-900 mt-0.5">{commission.parcel?.parcel_number || 'Land Parcel'}</div>
+                          <div className="text-xs font-medium text-slate-500 mt-1 flex items-center gap-1">
+                            <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                            {commission.target_county || commission.parcel?.county || 'Kenya'}, {commission.target_constituency || commission.parcel?.constituency || ''}
+                          </div>
+                        </div>
+                        <Badge tone="accent" className="px-3 py-1 text-xs">
+                          {commission.status_label || 'Advocate Review'}
+                        </Badge>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 pt-2 text-xs border-t border-slate-100">
+                        <div className="rounded-xl bg-slate-50 p-2.5">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Property Value</span>
+                          <strong className="text-emerald-700 font-bold text-sm">
+                            KES {money(commission.parcel?.displayed_price || commission.parcel?.asking_price || '0')}
+                          </strong>
+                        </div>
+                        <div className="rounded-xl bg-slate-50 p-2.5">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Advocate Fee</span>
+                          <strong className="text-purple-700 font-bold text-sm">KES 25,000</strong>
+                        </div>
+                      </div>
+
+                      <div className="text-xs text-slate-600 space-y-1 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                        <div>Buyer: <strong className="text-slate-800">{commission.buyer?.full_name || commission.buyer?.email || 'N/A'}</strong></div>
+                        <div>Field Agent: <strong className="text-slate-800">{commission.accepted_by?.full_name || commission.accepted_by?.email || 'Assigned'}</strong></div>
+                        <div>Statutory Documents: <strong className="text-purple-700">{commission.document_count || 3} Files Attached</strong></div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-2">
+                        <a 
+                          href={`/commissions/${commission.id}/`}
+                          className="flex-1 inline-flex h-11 items-center justify-center rounded-full bg-purple-700 hover:bg-purple-800 text-xs font-bold text-white transition shadow-md gap-2"
+                        >
+                          <Gavel className="h-4 w-4" />
+                          <span>Review & Execute Sign-Off</span>
+                        </a>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* TAB 1: PENDING USERS */}
         {activeTab === 'users' && (

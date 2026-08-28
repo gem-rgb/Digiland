@@ -3074,23 +3074,61 @@ def reject_agent(request, user_id):
 @login_required
 @user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
 def agent_approvals(request):
-    """Agent/Admin: central approvals hub showing all pending items."""
+    """Approvals and verification hub tailored by role:
+       - Lawyer: Legal review of conveyancing agreements, escrow transactions, and title deeds.
+       - Agent: User identity verification, parcel site checks, and deal tasks.
+       - Admin: Global oversight of all queues.
+    """
     from core.models import User as CoreUser
     from django.db.models import Q
 
     context = {}
+    is_lawyer = getattr(request.user, 'role', '') == 'Lawyer'
+    is_admin = getattr(request.user, 'role', '') == 'Admin' or request.user.is_superuser
 
-    # Pending user identity approvals (Buyers/Sellers only — not Admin/Agent)
-    context['pending_users'] = CoreUser.objects.filter(
-        role__in=['Buyer', 'Seller'], is_identity_verified=False, is_active=True
-    ).order_by('date_joined')
+    if is_lawyer:
+        # Lawyers do NOT review user identity KYC or joint member removals
+        context['pending_users'] = []
+        context['pending_joint_removals'] = []
 
-    if request.user.role == 'Admin':
-        # Admin sees all pending parcels
+        # Lawyer: Conveyancing & Land Transfer Agreements awaiting Advocate Verification
+        commission_reviews_qs = PurchaseCommission.objects.filter(
+            Q(assigned_lawyer=request.user) | Q(assigned_lawyer__isnull=True)
+        ).select_related('buyer', 'land_parcel', 'accepted_by', 'assigned_lawyer').order_by('-created_at')
+        context['pending_commissions'] = commission_reviews_qs[:20]
+
+        # Lawyer: Active Escrow deals needing legal clearance / checklist sign-off
+        context['pending_transactions'] = Transaction.objects.filter(
+            status__in=['Deposit_Paid', 'Under_Verification', 'In_Escrow', 'Payment_Pending']
+        ).select_related('buyer', 'seller', 'land_parcel').order_by('-created_at')[:20]
+
+        # Lawyer: Title Deed Legal Verification Queue
+        context['pending_parcels'] = LandParcel.objects.filter(
+            verification_status__in=['Pending', 'Verified']
+        ).select_related('assigned_agent', 'listed_by').order_by('-ardhisasa_last_synced')[:20]
+
+        return render_react_shell(
+            request,
+            'approvals',
+            'Legal Verification & Conveyancing Hub',
+            'Advocate workspace for title deed search, conveyancing agreements, and escrow legal clearance.',
+            approvals_page={
+                'pending_users': [],
+                'pending_parcels': [serialize_parcel(parcel, request.user) for parcel in context['pending_parcels']],
+                'pending_transactions': [serialize_transaction(tx, request.user) for tx in context['pending_transactions']],
+                'pending_joint_removals': [],
+                'pending_commissions': [serialize_commission(comm, request.user) for comm in context['pending_commissions']],
+            },
+        )
+
+    elif is_admin:
+        # Admin sees all pending queues
+        context['pending_users'] = CoreUser.objects.filter(
+            role__in=['Buyer', 'Seller'], is_identity_verified=False, is_active=True
+        ).order_by('date_joined')
         context['pending_parcels'] = LandParcel.objects.filter(
             verification_status='Pending'
         ).select_related('assigned_agent', 'listed_by').order_by('-ardhisasa_last_synced')
-        # Admin sees all pending transactions
         context['pending_transactions'] = Transaction.objects.filter(
             contract_agreed=True,
             status__in=['Deposit_Paid', 'Under_Verification']
@@ -3098,12 +3136,18 @@ def agent_approvals(request):
         context['pending_joint_removals'] = JointMemberRemovalRequest.objects.filter(
             status='Pending_Admin_Review'
         ).select_related('group', 'member', 'requested_by').order_by('created_at')
+        context['pending_commissions'] = PurchaseCommission.objects.filter(
+            status='Lawyer_Verification'
+        ).select_related('buyer', 'land_parcel', 'accepted_by', 'assigned_lawyer').order_by('-created_at')
+
     else:
-        # Agent sees only their assigned parcels
+        # Agent sees user KYC, their assigned parcels, their deals, and NO joint removals
+        context['pending_users'] = CoreUser.objects.filter(
+            role__in=['Buyer', 'Seller'], is_identity_verified=False, is_active=True
+        ).order_by('date_joined')
         context['pending_parcels'] = LandParcel.objects.filter(
             assigned_agent=request.user, verification_status='Pending'
         ).select_related('listed_by').order_by('-ardhisasa_last_synced')
-        # Agent sees transactions for their assigned parcels
         context['pending_transactions'] = Transaction.objects.filter(
             contract_agreed=True,
             status__in=['Deposit_Paid', 'Under_Verification']
@@ -3113,6 +3157,7 @@ def agent_approvals(request):
             Q(seller=request.user)
         ).distinct().order_by('created_at')
         context['pending_joint_removals'] = []
+        context['pending_commissions'] = []
 
     return render_react_shell(
         request,
@@ -3123,7 +3168,8 @@ def agent_approvals(request):
             'pending_users': [serialize_review_user(user) for user in context['pending_users']],
             'pending_parcels': [serialize_parcel(parcel, request.user) for parcel in context['pending_parcels']],
             'pending_transactions': [serialize_transaction(tx, request.user) for tx in context['pending_transactions']],
-            'pending_joint_removals': [serialize_joint_member_removal_request(removal) for removal in context['pending_joint_removals']],
+            'pending_joint_removals': [serialize_joint_member_removal_request(removal) for removal in context.get('pending_joint_removals', [])],
+            'pending_commissions': [serialize_commission(comm, request.user) for comm in context.get('pending_commissions', [])],
         },
     )
 

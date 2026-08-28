@@ -789,6 +789,7 @@ export interface ApprovalsPageData {
   pending_parcels: ParcelSummary[];
   pending_transactions: TransactionSummary[];
   pending_joint_removals?: JointMemberRemovalRequestSummary[];
+  pending_commissions?: CommissionSummary[];
 }
 
 export interface JointMemberRemovalRequestSummary {
