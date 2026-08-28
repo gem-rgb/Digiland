@@ -30750,9 +30750,14 @@ This action CANNOT be undone.`;
       if (data.user) {
         setUsersList((prev) => [data.user, ...prev]);
       }
+      setTimeout(() => {
+        setFormSuccess(null);
+        setGeneratedInviteUrl(null);
+      }, 4e3);
       setFullName("");
       setEmail("");
       setPhone("");
+      setPassword("Digiland@2026");
       setNationalId("");
       setKraPin("");
       setLawFirmName("");

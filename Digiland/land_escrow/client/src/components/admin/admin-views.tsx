@@ -248,10 +248,17 @@ export function AdminPeopleHubView() {
         setUsersList((prev) => [data.user, ...prev]);
       }
 
+      // Auto-dismiss success notification after 4 seconds
+      setTimeout(() => {
+        setFormSuccess(null);
+        setGeneratedInviteUrl(null);
+      }, 4000);
+
       // Reset form
       setFullName('');
       setEmail('');
       setPhone('');
+      setPassword('Digiland@2026');
       setNationalId('');
       setKraPin('');
       setLawFirmName('');

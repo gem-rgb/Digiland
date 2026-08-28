@@ -153,35 +153,37 @@ class EmailOrUsernameModelBackend(ModelBackend):
     MAX_FAILED_ATTEMPTS = 5
     LOCKOUT_WINDOW_SECONDS = 900  # 15 minutes
 
-    def authenticate(self, request, username=None, password=None, **kwargs):
-        """Attempt to authenticate a user by email or username + password.
+    def authenticate(self, request, username=None, password=None, email=None, **kwargs):
+        """Attempt to authenticate a user by email, phone, or username + password.
 
         Args:
             request: The HTTP request (may be None).
-            username: Email address or username string.
+            username: Email address, phone number, or username string.
             password: Plaintext password.
+            email: Optional email keyword argument.
 
         Returns:
             The authenticated User, or None.
         """
-        if not username or not password:
+        identifier = username or email or kwargs.get('email') or kwargs.get('phone_number')
+        if not identifier or not password:
             return None
 
         # Check brute-force lockout
         ip_address = self._get_ip(request)
-        if self._is_locked_out(username, ip_address):
-            logger.warning("Account locked out: %s from IP %s", username, ip_address)
+        if self._is_locked_out(identifier, ip_address):
+            logger.warning("Account locked out: %s from IP %s", identifier, ip_address)
             return None
 
-        # Try email lookup first, then username
-        user = self._find_user(username)
+        # Try email/phone lookup first, then username
+        user = self._find_user(identifier)
         if user is None:
-            self._record_failure(username, ip_address)
+            self._record_failure(identifier, ip_address)
             return None
 
         # Verify password
         if not user.check_password(password):
-            self._record_failure(username, ip_address)
+            self._record_failure(identifier, ip_address)
             return None
 
         # Check is_active
@@ -189,18 +191,31 @@ class EmailOrUsernameModelBackend(ModelBackend):
             return None
 
         # Clear failed attempts on success
-        self._clear_failures(username, ip_address)
+        self._clear_failures(identifier, ip_address)
         return user
 
     def _find_user(self, identifier: str) -> Optional[User]:
-        """Look up a user by email first, then by username."""
+        """Look up a user by email first, phone number, then by username."""
         try:
             return User.objects.get(email__iexact=identifier)
         except User.DoesNotExist:
-            try:
-                return User.objects.get(username__iexact=identifier)
-            except (User.DoesNotExist, Exception):
-                return None
+            pass
+
+        # Try phone lookup if numeric or formatted phone
+        phone_clean = identifier.replace(' ', '').replace('-', '').replace('+', '')
+        if phone_clean.isdigit():
+            phone_tail = phone_clean[-9:] if len(phone_clean) >= 9 else phone_clean
+            user = (
+                User.objects.filter(phone_number__icontains=phone_tail).first()
+                or User.objects.filter(phone_number__icontains=phone_clean).first()
+            )
+            if user:
+                return user
+
+        try:
+            return User.objects.get(username__iexact=identifier)
+        except (User.DoesNotExist, Exception):
+            return None
 
     def _is_locked_out(self, identifier: str, ip_address: str) -> bool:
         """Check if the account or IP is temporarily locked."""
