@@ -744,15 +744,19 @@ class MultiDomainRoutingMiddleware:
 
         # Security gate for staff domain
         if domain_mode == 'staff':
-            if request.path.startswith('/accounts/login/') or request.path.startswith('/admin/login/'):
+            if request.path.startswith('/admin/login/') or request.path.startswith('/auth/admin-login/') or request.path.startswith('/admin/'):
+                admin_base = getattr(settings, 'ADMIN_DOMAIN', 'https://admin.digiland.co.ke').rstrip('/')
+                return redirect(f"{admin_base}/admin/login/")
+            if request.path.startswith('/accounts/login/'):
                 return redirect('frontend:staff_login')
             if request.path in {'/', '/staff/', '/staff'}:
-                if not request.user.is_authenticated or getattr(request.user, 'role', None) not in {'Agent', 'Lawyer'}:
+                if not request.user.is_authenticated or getattr(request.user, 'role', None) not in {'Agent', 'Lawyer', 'Land_Official'}:
                     return redirect('frontend:staff_login')
                 return redirect('frontend:agent_dashboard')
-            # Allow login page, static assets, API routes, and all /agent/ operational paths through
+            # Allow login page, static assets, API routes, and all operational paths through
             exempt = (
                 request.path.startswith('/staff/login/')
+                or request.path.startswith('/staff-login/')
                 or request.path.startswith('/static/')
                 or request.path.startswith('/api/')
                 or request.path.startswith('/agent/')
@@ -766,12 +770,15 @@ class MultiDomainRoutingMiddleware:
                 or request.path.startswith('/dashboard/')
             )
             if not exempt:
-                if not request.user.is_authenticated or getattr(request.user, 'role', None) not in {'Agent', 'Lawyer'}:
+                if not request.user.is_authenticated or getattr(request.user, 'role', None) not in {'Agent', 'Lawyer', 'Land_Official'}:
                     return redirect('frontend:staff_login')
 
         # Security gate for admin domain
         elif domain_mode == 'admin':
-            if request.path.startswith('/accounts/login/') or request.path.startswith('/staff/login/'):
+            if request.path.startswith('/staff/login/') or request.path.startswith('/staff-login/') or request.path.startswith('/agent/') or request.path.startswith('/lawyer/'):
+                staff_base = getattr(settings, 'STAFF_DOMAIN', 'https://staff.digiland.co.ke').rstrip('/')
+                return redirect(f"{staff_base}/staff/login/")
+            if request.path.startswith('/accounts/login/'):
                 return redirect('frontend:admin_login')
             if request.path in {'/', '/admin', '/admin/'}:
                 if not request.user.is_authenticated:

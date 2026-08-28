@@ -127,7 +127,7 @@ class PartitionIsolationMiddleware:
 
             elif portal == 'admin':
                 if any(path.startswith(prefix) for prefix in STAFF_ONLY_PREFIXES):
-                    return HttpResponseRedirect(f"{PORTAL_URLS['admin']}/admin/login/{qs_suffix}")
+                    return HttpResponseRedirect(f"{PORTAL_URLS['staff']}{path}{qs_suffix}")
                 user = getattr(request, 'user', None)
                 if not (user and user.is_authenticated):
                     if not path.startswith('/admin/login') and not path.startswith('/auth/admin-login'):
@@ -165,18 +165,18 @@ class PartitionIsolationMiddleware:
         # If user is authenticated, check role compatibility with requested portal
         user = getattr(request, 'user', None)
         if user and user.is_authenticated:
-            user_role = getattr(user, 'role', '') or ('Admin' if user.is_superuser or user.is_staff else '')
+            user_role = getattr(user, 'role', '') or ('Admin' if user.is_superuser else '')
             allowed_roles = PORTAL_ROLE_MAP.get(portal, set())
 
             if portal == 'admin':
-                is_allowed = user_role == 'Admin' or user.is_staff or user.is_superuser
+                is_allowed = user_role == 'Admin' or user.is_superuser
             elif portal in ('app', 'staff'):
                 is_allowed = user_role in allowed_roles
             else:
                 is_allowed = True
 
             if not is_allowed:
-                correct_portal = 'staff' if user_role in {'Agent', 'Lawyer', 'Land_Official'} else ('admin' if (user_role == 'Admin' or user.is_staff or user.is_superuser) else 'app')
+                correct_portal = 'staff' if user_role in {'Agent', 'Lawyer', 'Land_Official'} else ('admin' if (user_role == 'Admin' or user.is_superuser) else 'app')
                 target_base = PORTAL_URLS.get(correct_portal, PORTAL_URLS['app'])
                 
                 logger.warning(

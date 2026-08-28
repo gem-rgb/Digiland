@@ -578,8 +578,11 @@ def staff_login(request):
 
     if request.user.is_authenticated:
         role = getattr(request.user, 'role', '')
-        if role in {'Agent', 'Lawyer'}:
+        if role in {'Agent', 'Lawyer', 'Land_Official'}:
             return redirect('frontend:agent_dashboard')
+        elif role == 'Admin' or request.user.is_superuser:
+            return redirect(f"{getattr(settings, 'ADMIN_DOMAIN', 'https://admin.digiland.co.ke')}/admin/login/")
+        return redirect('frontend:home')
 
     if request.method == 'POST':
         identifier = request.POST.get('email', '').strip()
@@ -607,8 +610,8 @@ def staff_login(request):
             error = 'Invalid staff credentials. Please verify your email/phone and password.'
         elif not user.is_active:
             error = 'Your account has been deactivated. Contact the system administrator.'
-        elif getattr(user, 'role', None) not in {'Agent', 'Lawyer', 'Admin'} and not user.is_superuser and not getattr(user, 'is_staff', False):
-            error = 'Access restricted to licensed Agents, Advocates, and Platform Administrators.'
+        elif getattr(user, 'role', None) not in {'Agent', 'Lawyer', 'Land_Official'}:
+            error = 'Access restricted to licensed Agents, Advocates, and Field Staff. Platform Admins must use admin.digiland.co.ke.'
         else:
             auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             request.session.save()  # Force session persistence before redirect
@@ -630,8 +633,10 @@ def admin_login(request):
     error = None
     if request.user.is_authenticated:
         role = getattr(request.user, 'role', '')
-        if role == 'Admin' or request.user.is_superuser or request.user.is_staff:
+        if role == 'Admin' or request.user.is_superuser:
             return redirect('frontend:agent_dashboard')
+        elif role in {'Agent', 'Lawyer', 'Land_Official'}:
+            return redirect(f"{getattr(settings, 'STAFF_DOMAIN', 'https://staff.digiland.co.ke')}/staff/login/")
         return redirect('frontend:home')
 
     if request.method == 'POST':
@@ -655,7 +660,7 @@ def admin_login(request):
             error = 'Invalid administrative credentials. Please verify your root email and password.'
         elif not user.is_active:
             error = 'This administrative account is disabled. Contact system governance.'
-        elif getattr(user, 'role', None) != 'Admin' and not user.is_superuser and not user.is_staff:
+        elif getattr(user, 'role', None) != 'Admin' and not user.is_superuser:
             error = 'Access Denied: Administrative privileges required. Staff (Agents/Lawyers) must use staff.digiland.co.ke.'
         else:
             auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
@@ -828,14 +833,7 @@ def agent_dashboard(request):
     host = request.get_host().split(':')[0].lower()
     is_local = host in {'localhost', '127.0.0.1'}
 
-    # If Admin is on app.digiland.co.ke or staff.digiland.co.ke or marketing, redirect to admin.digiland.co.ke
-    if request.user.role == 'Admin' or request.user.is_superuser or request.user.is_staff:
-        if not is_local and not host.startswith('admin.'):
-            return HttpResponseRedirect(f"https://admin.digiland.co.ke{request.get_full_path()}")
-        context = {'unread_count': Message.objects.filter(receiver=request.user, is_read=False).count()}
-        return render_admin_dashboard(request, context)
-
-    # If Lawyer or Agent is not on staff subdomain, redirect to staff.digiland.co.ke
+    # If Lawyer, Agent, or Land Official, render their dedicated command centre on staff subdomain
     if request.user.role in {'Lawyer', 'Agent', 'Land_Official'}:
         if not is_local and not host.startswith('staff.'):
             return HttpResponseRedirect(f"https://staff.digiland.co.ke{request.get_full_path()}")
@@ -843,6 +841,13 @@ def agent_dashboard(request):
         if request.user.role == 'Lawyer':
             return render_lawyer_dashboard(request, context)
         return render_agent_dashboard(request, context)
+
+    # If Admin or Superuser, render admin command centre on admin subdomain
+    if request.user.role == 'Admin' or request.user.is_superuser:
+        if not is_local and not host.startswith('admin.'):
+            return HttpResponseRedirect(f"https://admin.digiland.co.ke{request.get_full_path()}")
+        context = {'unread_count': Message.objects.filter(receiver=request.user, is_read=False).count()}
+        return render_admin_dashboard(request, context)
 
     # If Buyer or Seller reaches staff dashboard, redirect to app.digiland.co.ke
     if not is_local:
