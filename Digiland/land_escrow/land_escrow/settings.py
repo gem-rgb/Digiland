@@ -136,6 +136,15 @@ CSRF_TRUSTED_ORIGINS = [
     if o.strip()
 ]
 
+CSRF_COOKIE_DOMAIN = config('CSRF_COOKIE_DOMAIN', default='.digiland.co.ke' if not DEBUG else None)
+SESSION_COOKIE_DOMAIN = config('SESSION_COOKIE_DOMAIN', default='.digiland.co.ke' if not DEBUG else None)
+CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_FAILURE_VIEW = 'server.views.csrf_failure'
+
 # ── Cloudflare / Reverse Proxy Configuration ──────────────────────────────────
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = config('USE_X_FORWARDED_HOST', default=True, cast=bool)

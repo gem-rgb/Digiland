@@ -667,6 +667,23 @@ def admin_login(request):
         'error': error,
     })
 
+
+def csrf_failure(request, reason=""):
+    """Graceful CSRF handler that redirects login attempts or displays a clean recovery view."""
+    from django.shortcuts import redirect
+    host = request.get_host().lower()
+    path = request.path.lower()
+    referer = request.META.get('HTTP_REFERER', '').lower()
+
+    if 'staff' in host or 'staff' in path or 'staff' in referer:
+        return redirect('/staff/login/')
+    elif 'admin' in host or 'admin' in path or 'admin' in referer:
+        return redirect('/admin/login/')
+    elif 'accounts/login' in path or 'accounts/login' in referer:
+        return redirect('/accounts/login/')
+
+    return render(request, '403_csrf.html', {'reason': reason}, status=403)
+
 def parcel_list(request):
     active_tx_statuses = ['Initiated', 'Deposit_Paid', 'Under_Verification', 'Completed']
     search_query = (request.GET.get('q') or '').strip()
