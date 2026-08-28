@@ -603,11 +603,8 @@ def staff_login(request):
             error = 'Invalid staff credentials. Please verify your email/phone and password.'
         elif not user.is_active:
             error = 'Your account has been deactivated. Contact the system administrator.'
-        elif getattr(user, 'role', None) not in {'Agent', 'Lawyer'}:
-            if getattr(user, 'role', None) == 'Admin' or user.is_superuser:
-                error = 'Administrator accounts must sign in via the Admin Command Portal at admin.digiland.co.ke.'
-            else:
-                error = 'Access restricted to licensed Agents and Advocates. Customers should sign in at app.digiland.co.ke.'
+        elif getattr(user, 'role', None) not in {'Agent', 'Lawyer', 'Admin'} and not user.is_superuser and not getattr(user, 'is_staff', False):
+            error = 'Access restricted to licensed Agents, Advocates, and Platform Administrators.'
         else:
             auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('frontend:agent_dashboard')
