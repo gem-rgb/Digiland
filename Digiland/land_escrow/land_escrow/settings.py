@@ -278,6 +278,11 @@ else:
         }
     }
 
+# On Vercel serverless, each invocation may get a fresh /tmp so DB-backed
+# sessions are lost between requests.  Use signed-cookie sessions instead.
+if os.environ.get('VERCEL'):
+    SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -990,9 +995,12 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # In production, share session across digiland.co.ke and all subdomains (.digiland.co.ke)
-if not DEBUG and not os.environ.get('VERCEL'):
+# This must also apply on Vercel so that staff.digiland.co.ke / app.digiland.co.ke share cookies.
+if not DEBUG or os.environ.get('VERCEL'):
     SESSION_COOKIE_DOMAIN = '.digiland.co.ke'
     CSRF_COOKIE_DOMAIN = '.digiland.co.ke'
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 
 
