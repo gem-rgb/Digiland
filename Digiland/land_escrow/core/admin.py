@@ -472,3 +472,70 @@ class PurchaseCommissionAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'updated_at', 'accepted_at', 'documents_reviewed_at', 'lawyer_submitted_at', 'lawyer_verified_at', 'site_visit_completed_at', 'closed_at')
     autocomplete_fields = ('buyer', 'land_parcel', 'accepted_by', 'assigned_lawyer', 'transaction')
 
+
+# ── Verification Engine Models ──
+from .models_verification import (
+    PropertyVerificationCase,
+    VerificationDocumentRequirement,
+    VerificationDocument,
+    VerificationLayer,
+    VerificationCheckItem,
+    VerificationRiskFlag,
+    VerificationAuditEvent,
+    BuyerInterestCase,
+)
+
+@admin.register(PropertyVerificationCase)
+class PropertyVerificationCaseAdmin(admin.ModelAdmin):
+    list_display = ('case_number', 'property', 'seller', 'current_phase', 'status', 'verification_level', 'overall_risk_level', 'created_at')
+    list_filter = ('current_phase', 'status', 'verification_level', 'overall_risk_level', 'property_type', 'tenure_type', 'ownership_type')
+    search_fields = ('case_number', 'property__parcel_number', 'seller__email', 'registered_owner_name')
+    readonly_fields = ('id', 'case_number', 'created_at', 'updated_at')
+    autocomplete_fields = ('property', 'seller', 'assigned_agent', 'assigned_surveyor', 'assigned_lawyer')
+
+@admin.register(VerificationDocumentRequirement)
+class VerificationDocumentRequirementAdmin(admin.ModelAdmin):
+    list_display = ('display_name', 'document_type', 'phase', 'is_core', 'ai_screening_enabled', 'customer_visible', 'sort_order', 'is_active')
+    list_filter = ('phase', 'is_core', 'ai_screening_enabled', 'is_active', 'primary_reviewer_role')
+    search_fields = ('display_name', 'document_type', 'description')
+    list_editable = ('sort_order', 'is_active', 'is_core')
+
+@admin.register(VerificationDocument)
+class VerificationDocumentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'case', 'document_type', 'verification_status', 'ai_status', 'ai_confidence_level', 'human_status', 'version', 'uploaded_at')
+    list_filter = ('verification_status', 'ai_status', 'ai_confidence_level', 'human_status', 'document_type')
+    search_fields = ('case__case_number', 'original_filename', 'file_hash')
+    readonly_fields = ('id', 'file_hash', 'created_at', 'updated_at', 'uploaded_at', 'ai_processed_at')
+
+@admin.register(VerificationLayer)
+class VerificationLayerAdmin(admin.ModelAdmin):
+    list_display = ('case', 'layer_type', 'status', 'risk_level', 'assigned_to', 'started_at', 'completed_at')
+    list_filter = ('layer_type', 'status', 'risk_level')
+    search_fields = ('case__case_number',)
+
+@admin.register(VerificationCheckItem)
+class VerificationCheckItemAdmin(admin.ModelAdmin):
+    list_display = ('check_name', 'layer', 'status', 'customer_visible', 'checked_by', 'checked_at')
+    list_filter = ('status', 'customer_visible')
+    search_fields = ('check_name', 'layer__case__case_number')
+
+@admin.register(VerificationRiskFlag)
+class VerificationRiskFlagAdmin(admin.ModelAdmin):
+    list_display = ('case', 'flag_type', 'severity', 'source', 'resolved', 'auto_escalate', 'created_at')
+    list_filter = ('severity', 'source', 'resolved', 'auto_escalate', 'flag_type')
+    search_fields = ('case__case_number', 'description')
+
+@admin.register(VerificationAuditEvent)
+class VerificationAuditEventAdmin(admin.ModelAdmin):
+    list_display = ('case', 'event_type', 'actor', 'customer_visible', 'timestamp')
+    list_filter = ('event_type', 'customer_visible')
+    search_fields = ('case__case_number', 'description', 'customer_display')
+    readonly_fields = ('timestamp',)
+
+@admin.register(BuyerInterestCase)
+class BuyerInterestCaseAdmin(admin.ModelAdmin):
+    list_display = ('interest_number', 'buyer', 'property', 'status', 'payment_status', 'created_at')
+    list_filter = ('status', 'payment_status')
+    search_fields = ('interest_number', 'buyer__email', 'property__parcel_number')
+    readonly_fields = ('interest_number', 'created_at', 'updated_at')
+

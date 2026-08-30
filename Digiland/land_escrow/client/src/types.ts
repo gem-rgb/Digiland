@@ -38,6 +38,8 @@ export type PageKind =
   | 'price-prediction'
   | 'admin-dashboard'
   | 'agent-dashboard'
+  | 'lawyer-dashboard'
+  | 'surveyor-dashboard'
   | 'seller-withdraw'
   | 'escrow-release'
   | 'agent-withdraw'
@@ -955,5 +957,203 @@ export interface BootstrapData {
   individual_buyers?: any[];
   message_thread?: any;
   is_admin?: boolean;
+  surveyor_profile?: SurveyorProfileData | null;
+  assignments?: SurveyAssignmentData[];
+  survey_findings?: SurveyAssignmentData[];
+  active_assignments_count?: number;
+  scheduled_visits_count?: number;
+  pending_reports_count?: number;
+  open_issues_count?: number;
+  completed_surveys_count?: number;
+  overdue_surveys_count?: number;
+  counties?: string[];
   [key: string]: any;
+}
+
+export interface SurveyBeaconData {
+  id: string;
+  beacon_id: string;
+  status: string;
+  status_display: string;
+  condition: string;
+  condition_display: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  easting?: number | null;
+  northing?: number | null;
+  elevation_meters?: number | null;
+  description?: string;
+  photo_url?: string | null;
+  notes?: string;
+  created_at?: string;
+}
+
+export interface SurveyBoundaryData {
+  id: string;
+  segment: string;
+  segment_display: string;
+  neighbouring_parcel_reference?: string;
+  physical_feature: string;
+  physical_feature_display: string;
+  condition_description?: string;
+  consistency_status: string;
+  consistency_status_display: string;
+  observation_notes?: string;
+  photo_url?: string | null;
+  created_at?: string;
+}
+
+export interface SurveyMeasurementData {
+  id: string;
+  point_id: string;
+  eastings?: number | null;
+  northings?: number | null;
+  elevation?: number | null;
+  distance_meters?: number | null;
+  bearing_degrees?: string;
+  instrument_method?: string;
+  accuracy_quality_note?: string;
+  surveyor_notes?: string;
+  created_at?: string;
+}
+
+export interface SurveyDocumentData {
+  id: string;
+  title: string;
+  document_type: string;
+  document_type_display: string;
+  source_type: string;
+  source_type_display: string;
+  visibility: string;
+  visibility_display: string;
+  file_url?: string | null;
+  file_format?: string;
+  file_size_bytes?: number;
+  version: number;
+  description?: string;
+  uploaded_by_email?: string;
+  created_at?: string;
+}
+
+export interface SurveyIssueData {
+  id: string;
+  issue_number: string;
+  issue_type: string;
+  issue_type_display: string;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | string;
+  severity_display: string;
+  status: 'OPEN' | 'UNDER_INVESTIGATION' | 'RESOLVED' | 'WAIVED' | string;
+  status_display: string;
+  title: string;
+  description: string;
+  evidence_notes?: string;
+  photo_url?: string | null;
+  surveyor_recommendation?: string;
+  assigned_to_email?: string;
+  resolution_notes?: string;
+  resolved_at?: string;
+  created_at?: string;
+}
+
+export interface SurveyReportData {
+  id: string;
+  version: number;
+  surveyor_email: string;
+  surveyor_name: string;
+  conclusion: string;
+  conclusion_display: string;
+  summary_findings: string;
+  boundary_findings: string;
+  area_comparison_notes: string;
+  site_observations: string;
+  discrepancies_summary: string;
+  professional_declaration_signed: boolean;
+  signed_at?: string;
+  submission_timestamp?: string;
+  review_status: string;
+  review_status_display: string;
+  reviewer_email?: string;
+  reviewer_feedback?: string;
+  reviewed_at?: string;
+  created_at?: string;
+}
+
+export interface SurveyAuditLogData {
+  id: string;
+  action: string;
+  user_email: string;
+  details?: Record<string, any>;
+  timestamp: string;
+}
+
+export interface SurveyAssignmentData {
+  id: string;
+  assignment_number: string;
+  parcel_number: string;
+  parcel_id: string;
+  county: string;
+  constituency?: string;
+  ward?: string;
+  land_use?: string;
+  seller_email: string;
+  surveyor_email: string;
+  surveyor_name: string;
+  surveyor_license?: string;
+  assignment_type: string;
+  assignment_type_display: string;
+  status: string;
+  status_display: string;
+  priority: string;
+  priority_display: string;
+  instructions?: string;
+  assigned_at?: string;
+  due_date?: string;
+  due_date_iso?: string;
+  accepted_at?: string;
+  completed_at?: string;
+  is_overdue?: boolean;
+  site_visit_date?: string;
+  site_visit_time?: string;
+  site_visit_status: string;
+  site_visit_status_display: string;
+  site_visit_contact_name?: string;
+  site_visit_contact_phone?: string;
+  site_visit_assistant_names?: string;
+  site_visit_notes?: string;
+  device_gps_lat?: number | null;
+  device_gps_lng?: number | null;
+  device_gps_accuracy_meters?: number | null;
+  pre_survey_checklist?: Record<string, boolean>;
+  completeness_pct?: number;
+  documented_area_acres?: number | null;
+  documented_area_sqm?: number | null;
+  calculated_area_sqm?: number | null;
+  area_discrepancy_detected?: boolean;
+  area_discrepancy_percentage?: number | null;
+  internal_notes?: string;
+  beacons: SurveyBeaconData[];
+  boundary_observations: SurveyBoundaryData[];
+  measurements: SurveyMeasurementData[];
+  documents: SurveyDocumentData[];
+  issues: SurveyIssueData[];
+  reports: SurveyReportData[];
+  audit_logs: SurveyAuditLogData[];
+  accept_url: string;
+  schedule_visit_url: string;
+  add_beacon_url: string;
+  add_boundary_url: string;
+  add_measurement_url: string;
+  upload_document_url: string;
+  add_issue_url: string;
+  submit_report_url: string;
+}
+
+export interface SurveyorProfileData {
+  full_name: string;
+  email: string;
+  license_number: string;
+  firm: string;
+  county: string;
+  is_verified: boolean;
+  phone_number?: string;
 }

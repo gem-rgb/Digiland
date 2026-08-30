@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowRight, ArrowLeft, ArrowDown, Banknote, BarChart3, Camera, CheckCircle2, CircleCheckBig, Clock3, Compass, ExternalLink, Eye, FileSignature, FileText, Gavel, Grid2X2, Heart, HelpCircle, Landmark, LayoutDashboard, Layers, Lock, Mail, MapPin, MessageSquare, Printer, ReceiptText, Search, ShieldAlert, ShieldCheck, Scale, Sparkles, Star, Ticket, Upload, UserCheck, Users, WalletCards, ShoppingCart, Briefcase, Send, CheckCheck, Plus, X, Trash2, User, Phone, Info, CornerDownLeft, Filter, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, ArrowRight, ArrowLeft, ArrowDown, Banknote, BarChart3, Calendar, Camera, CheckCircle2, CircleCheckBig, Clock3, Compass, ExternalLink, Eye, FileBadge, FileCheck, FileSignature, FileText, Gavel, Grid2X2, Heart, HelpCircle, Landmark, LayoutDashboard, Layers, Lock, Mail, MapPin, Maximize2, MessageSquare, Navigation, Printer, ReceiptText, Search, ShieldAlert, ShieldCheck, Scale, Sparkles, Star, Ticket, Upload, UserCheck, Users, WalletCards, ShoppingCart, Briefcase, Send, CheckCheck, Plus, X, Trash2, User, Phone, Info, CornerDownLeft, Filter, type LucideIcon } from 'lucide-react';
 import type { FormEvent, ReactNode } from 'react';
 import { readBootstrap } from './lib/bootstrap.js';
 import { AppShell } from './components/layout/app-shell.js';
@@ -24,6 +24,7 @@ import { HeroShowcase } from './components/landing/hero-showcase.js';
 import { AnimatedWalkthrough } from './components/landing/animated-walkthrough.js';
 import { PremiumFooter } from './components/landing/premium-footer.js';
 import { AdminPeopleHubView, AdminKycDeskView, AdminAIEvaluationLabView, AdminTransactionsManagementView, AdminAnalyticsSuiteView } from './components/admin/admin-views.js';
+import { SurveyorWorkspaceView } from './components/survey/surveyor-workspace.js';
 import { PartitionProvider, usePartition, isRoleAllowedOnPartition, type Partition } from './lib/partition-context.js';
 import { PartitionGuard } from './components/layout/partition-guard.js';
 import { StaffLoginPage } from './pages/staff-login-page.js';
@@ -32,12 +33,12 @@ function PortalBar() {
   const { activePartition, setActivePartition } = usePartition();
 
   if (typeof window !== 'undefined') {
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     const params = new URLSearchParams(window.location.search);
-    const hasPortalQuery = params.has('portal') || params.has('dev');
-    if (!isLocal && !hasPortalQuery) {
+    if (!params.has('debug_partition_bar')) {
       return null;
     }
+  } else {
+    return null;
   }
 
   const portals: { key: Partition; label: string; icon: string }[] = [
@@ -94,11 +95,14 @@ function statusTone(status?: string) {
 }
 
 function money(value: string | number) {
-  const parsed = typeof value === 'number' ? value : Number(String(value).replace(/,/g, ''));
+  if (value === null || value === undefined || value === '') return 'KES 0';
+  const str = String(value).trim();
+  const clean = str.replace(/^(KES|Ksh|KSH)\s*/i, '').replace(/,/g, '');
+  const parsed = Number(clean);
   if (Number.isFinite(parsed)) {
     return `KES ${kshFormatter.format(parsed)}`;
   }
-  return `KES ${value}`;
+  return str.toUpperCase().startsWith('KES') ? str : `KES ${str}`;
 }
 
 function splitParagraphs(content: string) {
@@ -183,7 +187,7 @@ function ListingCard({
           </div>
           {price ? (
             <div className="bg-emerald-700/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-black text-white shadow-md border border-emerald-400/30">
-              KES {money(price)}
+              {money(price)}
             </div>
           ) : null}
         </div>
@@ -1375,6 +1379,7 @@ function DashboardPage() {
   const isAdmin = role === 'Admin';
   const isAgent = role === 'Agent';
   const isLawyer = role === 'Lawyer';
+  const isSurveyor = role === 'Surveyor';
   const isSeller = role === 'Seller';
 
   // Role-customized sub-channels
@@ -1395,8 +1400,22 @@ function DashboardPage() {
     Lawyer: [
       { id: 'overview', name: 'overview', icon: LayoutDashboard },
       { id: 'commissions', name: 'conveyancing-tasks', icon: Gavel, badge: `${(bootstrap.active_commissions || []).length || ''}` },
+      { id: 'survey-findings', name: 'survey-cadastral-findings', icon: MapPin, badge: `${(bootstrap.survey_findings || []).length || ''}` },
       { id: 'transactions', name: 'escrow-settlements', icon: ReceiptText },
       { id: 'legal', name: 'legal-acts-lcb', icon: Scale },
+    ],
+    Surveyor: [
+      { id: 'overview', name: 'overview-kpis', icon: Compass },
+      { id: 'assignments', name: 'survey-assignments', icon: Layers, badge: `${(bootstrap.assignments || []).length || ''}` },
+      { id: 'presurvey', name: 'presurvey-review', icon: FileCheck },
+      { id: 'sitevisits', name: 'site-visit-logistics', icon: Calendar, badge: `${(bootstrap.scheduled_visits_count || '')}` },
+      { id: 'fieldmode', name: 'mobile-field-mode', icon: Navigation },
+      { id: 'beacons', name: 'beacons-boundaries', icon: MapPin },
+      { id: 'measurements', name: 'cad-discrepancies', icon: Scale },
+      { id: 'gismap', name: 'interactive-gis-map', icon: Maximize2 },
+      { id: 'issues', name: 'discrepancy-tracker', icon: AlertTriangle, badge: `${(bootstrap.open_issues_count || '')}` },
+      { id: 'reports', name: 'report-builder', icon: FileBadge },
+      { id: 'audit', name: 'survey-audit-trail', icon: Clock3 },
     ],
     Agent: [
       { id: 'overview', name: 'overview', icon: LayoutDashboard },
@@ -1464,6 +1483,87 @@ function DashboardPage() {
       return true;
     });
   }, [rawStats, role]);
+
+  // If Surveyor role, delegate directly to dedicated SurveyorWorkspaceView inside workspace canvas
+  if (isSurveyor) {
+    return (
+      <div className="flex h-[calc(100vh-8rem)] min-h-[680px] flex-col overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-xl md:flex-row text-slate-900">
+        {/* Left Sub-Sidebar */}
+        <div className="flex w-full flex-col border-b border-slate-200/90 bg-slate-50 md:w-64 lg:w-72 md:border-r md:border-b-0 shrink-0">
+          <div className="flex h-14 items-center justify-between border-b border-slate-200 px-4 bg-white">
+            <div className="flex items-center gap-2">
+              <Compass className="h-4 w-4 text-emerald-600" />
+              <span className="font-black text-sm text-slate-900 tracking-wide">Surveyor Portal</span>
+            </div>
+            <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[9px] font-black uppercase text-emerald-700 border border-emerald-200">
+              ISLK Active
+            </span>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
+            <div>
+              <div className="px-2 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center justify-between">
+                <span>Survey Modules</span>
+                <span className="text-[9px] text-emerald-700 font-bold">Cap 299</span>
+              </div>
+              <div className="mt-1 space-y-0.5">
+                {channels.map((channel) => {
+                  const isActive = activeTab === channel.id;
+                  const Icon = channel.icon;
+                  return (
+                    <button
+                      key={channel.id}
+                      onClick={() => setActiveTab(channel.id)}
+                      className={cn(
+                        'flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-bold transition-all duration-150',
+                        isActive
+                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-xs'
+                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5 truncate">
+                        <Icon className={cn('h-3.5 w-3.5', isActive ? 'text-emerald-700' : 'text-slate-400')} />
+                        <span className="truncate">{channel.name}</span>
+                      </div>
+                      {channel.badge && channel.badge !== '0' && (
+                        <span className="rounded-full bg-emerald-100 px-1.5 py-0.2 text-[9px] font-black text-emerald-800">
+                          {channel.badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200 p-3 bg-white flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600 text-xs font-black text-white shrink-0 shadow-xs">
+                {displayName.charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 text-left">
+                <div className="truncate text-xs font-bold text-slate-900">{displayName}</div>
+                <div className="text-[10px] text-emerald-700 font-semibold">Licensed Surveyor</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Main Dashboard Workspace Canvas */}
+        <div className="flex flex-1 flex-col bg-slate-50/50 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6">
+            <SurveyorWorkspaceView
+              profile={bootstrap.surveyor_profile}
+              assignments={bootstrap.assignments}
+              csrfToken={bootstrap.csrf_token}
+              initialTab={activeTab}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-[calc(100vh-8rem)] min-h-[680px] flex-col overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-xl md:flex-row text-slate-900">
@@ -1836,7 +1936,7 @@ function DashboardPage() {
 
                         <div className="flex items-center gap-3">
                           <div className="text-right">
-                            <div className="font-black text-emerald-700 text-xs">KES {money(tx.amount)}</div>
+                            <div className="font-black text-emerald-700 text-xs">{money(tx.amount)}</div>
                             <div className="text-[9px] text-slate-500 font-semibold uppercase">{tx.status}</div>
                           </div>
                           <a
@@ -2038,7 +2138,7 @@ function DashboardPage() {
                             <Badge tone="accent" className="text-[9px]">{comm.status_label || comm.status}</Badge>
                           </div>
                           <div className="text-xs text-slate-600">
-                            County: <strong>{comm.parcel?.county || comm.county || 'Kenya'}</strong> · Price: KES {money(comm.parcel?.displayed_price || comm.parcel?.asking_price || '0')}
+                            County: <strong>{comm.parcel?.county || comm.county || 'Kenya'}</strong> · Price: {money(comm.parcel?.displayed_price || comm.parcel?.asking_price || '0')}
                           </div>
                           <div className="pt-1 flex items-center justify-between">
                             <span className="text-[10px] text-slate-500">Dual-escrow verified</span>
@@ -2096,7 +2196,7 @@ function DashboardPage() {
                           <div className="text-[10px] text-slate-500">Ref: {tx.id.substring(0, 8)}...</div>
                         </div>
                         <div className="text-right">
-                          <div className="font-black text-emerald-700 text-xs">KES {money(tx.amount)}</div>
+                          <div className="font-black text-emerald-700 text-xs">{money(tx.amount)}</div>
                           <div className="text-[9px] text-slate-500 uppercase font-semibold">{tx.status}</div>
                         </div>
                       </div>
@@ -2218,15 +2318,99 @@ function DashboardPage() {
           {(activeTab === 'analytics' || activeTab === 'analytics-suite' || activeTab === 'stats') && (
             <AdminAnalyticsSuiteView />
           )}
+
+          {/* TAB: SURVEY FINDINGS & CADASTRAL STATUS (LAWYER / CONVEYANCING) */}
+          {activeTab === 'survey-findings' && (
+            <LawyerSurveyFindingsTab findings={bootstrap.survey_findings || []} />
+          )}
         </div>
       </div>
     </div>
   );
 }
 
+function LawyerSurveyFindingsTab({ findings }: { findings: any[] }) {
+  return (
+    <div className="space-y-6 text-left">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-base font-black text-slate-900">Physical Land Survey & Cadastral Verification Findings</h3>
+          <p className="text-xs text-slate-500">Cross-professional spatial verification reports prepared by licensed surveyors.</p>
+        </div>
+        <Badge tone="accent">{findings?.length || 0} Survey Records</Badge>
+      </div>
+
+      {(!findings || findings.length === 0) ? (
+        <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-12 text-center text-slate-500">
+          <MapPin className="mx-auto h-8 w-8 text-slate-400 mb-2" />
+          <div className="text-sm font-bold text-slate-900">No physical survey reports attached to current conveyancing transactions.</div>
+          <p className="text-xs text-slate-500 mt-1">Survey verification records will appear here as soon as the assigned surveyor logs beacon coordinates.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {findings.map((sv: any) => (
+            <Card key={sv.id} className="bg-white shadow-sm border-slate-200 overflow-hidden">
+              <CardHeader className="bg-slate-50/60 pb-3 border-b border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-emerald-700">{sv.assignment_number}</span>
+                    <Badge tone={sv.status === 'VERIFIED' ? 'success' : sv.status === 'DISCREPANCY_FOUND' ? 'danger' : 'warning'}>
+                      {sv.status_display}
+                    </Badge>
+                  </div>
+                  <span className="text-xs text-slate-500 font-medium">
+                    Surveyor: <strong>{sv.surveyor_name}</strong> ({sv.surveyor_license || 'Licensed ISLK'})
+                  </span>
+                </div>
+                <CardTitle className="text-base font-black text-slate-900 mt-1">
+                  Parcel {sv.parcel_number} · {sv.county}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 space-y-4 text-xs">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
+                    <span className="text-slate-400 font-bold block text-[10px]">CORNER BEACONS AUDITED</span>
+                    <span className="font-bold text-slate-900 text-sm">{sv.beacons?.length || 0} Beacons Recorded</span>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
+                    <span className="text-slate-400 font-bold block text-[10px]">GROUND AREA VARIANCE</span>
+                    <span className={cn('font-bold text-sm', sv.area_discrepancy_detected ? 'text-rose-600' : 'text-emerald-700')}>
+                      {sv.area_discrepancy_percentage ? `${sv.area_discrepancy_percentage}% Variance` : '0% (< 1% Margin)'}
+                    </span>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
+                    <span className="text-slate-400 font-bold block text-[10px]">PROFESSIONAL SIGN-OFF</span>
+                    <span className="font-bold text-slate-900 text-sm">
+                      {sv.reports?.some((r: any) => r.professional_declaration_signed) ? '✓ ISLK Declared' : 'Pending Formal Sign-off'}
+                    </span>
+                  </div>
+                </div>
+
+                {sv.issues?.length > 0 && (
+                  <div className="rounded-xl bg-rose-50 border border-rose-200 p-3 text-rose-900 space-y-1">
+                    <div className="font-bold flex items-center gap-1.5">
+                      <AlertTriangle className="h-4 w-4 text-rose-600" />
+                      <span>Surveyor Discrepancy Flag ({sv.issues.length} Issues)</span>
+                    </div>
+                    {sv.issues.map((issue: any) => (
+                      <div key={issue.id} className="text-[11px] text-rose-800">
+                        • <strong>{issue.title}:</strong> {issue.surveyor_recommendation || issue.description}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 function AdminStaffProvisioningView() {
-  const [roleToCreate, setRoleToCreate] = useState<'Lawyer' | 'Agent'>('Lawyer');
+  const [roleToCreate, setRoleToCreate] = useState<'Lawyer' | 'Surveyor' | 'Agent'>('Lawyer');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -2241,6 +2425,10 @@ function AdminStaffProvisioningView() {
   const [practicingCert, setPracticingCert] = useState('');
   const [yearOfAdmission, setYearOfAdmission] = useState('2020');
 
+  // Surveyor specific
+  const [surveyorLicenseNumber, setSurveyorLicenseNumber] = useState('');
+  const [surveyorFirm, setSurveyorFirm] = useState('');
+
   // Agent specific
   const [agencyName, setAgencyName] = useState('');
   const [earbNumber, setEarbNumber] = useState('');
@@ -2251,7 +2439,7 @@ function AdminStaffProvisioningView() {
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
   const [professionalsList, setProfessionalsList] = useState<any[]>(bootstrap.professionals || []);
   const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'All' | 'Lawyer' | 'Agent'>('All');
+  const [roleFilter, setRoleFilter] = useState<'All' | 'Lawyer' | 'Surveyor' | 'Agent'>('All');
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2272,6 +2460,8 @@ function AdminStaffProvisioningView() {
       lsk_number: lskNumber,
       practicing_cert_number: practicingCert,
       year_of_admission: yearOfAdmission,
+      surveyor_license_number: surveyorLicenseNumber,
+      surveyor_firm: surveyorFirm,
       agency_name: agencyName,
       earb_number: earbNumber,
       good_conduct_number: goodConductNumber,
@@ -2306,6 +2496,8 @@ function AdminStaffProvisioningView() {
       setLawFirmName('');
       setLskNumber('');
       setPracticingCert('');
+      setSurveyorLicenseNumber('');
+      setSurveyorFirm('');
       setAgencyName('');
       setEarbNumber('');
       setGoodConductNumber('');
@@ -2365,6 +2557,7 @@ function AdminStaffProvisioningView() {
         (p.county && p.county.toLowerCase().includes(q)) ||
         (p.firm_or_agency && p.firm_or_agency.toLowerCase().includes(q)) ||
         (p.lsk_number && p.lsk_number.toLowerCase().includes(q)) ||
+        (p.surveyor_license_number && p.surveyor_license_number.toLowerCase().includes(q)) ||
         (p.earb_number && p.earb_number.toLowerCase().includes(q));
       if (!match) return false;
     }
@@ -2383,7 +2576,7 @@ function AdminStaffProvisioningView() {
             </div>
             <h3 className="text-xl font-black text-white">Staff & Professional Onboarding & Verification</h3>
             <p className="text-xs text-slate-400 max-w-2xl">
-              Directly provision, verify, and authorize Advocates / Conveyancing Lawyers and Licensed Real Estate Agents. Admin-verified staff accounts are pre-cleared for escrow conveyancing and site inspections without 2FA friction.
+              Directly provision, verify, and authorize Advocates / Conveyancing Lawyers, ISLK Licensed Land Surveyors, and Licensed Real Estate Agents. Admin-verified staff accounts are pre-cleared for escrow conveyancing, boundary verification, and site inspections.
             </p>
           </div>
 
@@ -2431,6 +2624,22 @@ function AdminStaffProvisioningView() {
             <button
               type="button"
               onClick={() => {
+                setRoleToCreate('Surveyor');
+                setFormError(null);
+                setFormSuccess(null);
+              }}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black transition-all ${
+                roleToCreate === 'Surveyor'
+                  ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-slate-950 shadow-lg shadow-teal-500/20'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Compass className="h-4 w-4" />
+              Licensed Land Surveyor
+            </button>
+            <button
+              type="button"
+              onClick={() => {
                 setRoleToCreate('Agent');
                 setFormError(null);
                 setFormSuccess(null);
@@ -2474,14 +2683,14 @@ function AdminStaffProvisioningView() {
             {/* Full Legal Name */}
             <div>
               <label className="block text-[11px] font-bold text-slate-400 mb-1">
-                {roleToCreate === 'Lawyer' ? 'Advocate Full Legal Name *' : 'Agent Full Legal Name *'}
+                {roleToCreate === 'Lawyer' ? 'Advocate Full Legal Name *' : (roleToCreate === 'Surveyor' ? 'Surveyor Full Legal Name *' : 'Agent Full Legal Name *')}
               </label>
               <input
                 type="text"
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder={roleToCreate === 'Lawyer' ? 'e.g. Adv. Mwangi Kamau' : 'e.g. Grace Wanjiru Mutua'}
+                placeholder={roleToCreate === 'Lawyer' ? 'e.g. Adv. Mwangi Kamau' : (roleToCreate === 'Surveyor' ? 'e.g. Sur. Peter Maina' : 'e.g. Grace Wanjiru Mutua')}
                 className="h-10 w-full rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
               />
             </div>
@@ -2494,7 +2703,7 @@ function AdminStaffProvisioningView() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g. partner@lawfirm.co.ke"
+                placeholder="e.g. surveyor@geosurveys.co.ke"
                 className="h-10 w-full rounded-xl border border-white/15 bg-white/[0.04] px-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
               />
             </div>
@@ -2554,7 +2763,7 @@ function AdminStaffProvisioningView() {
             {/* County */}
             <div>
               <label className="block text-[11px] font-bold text-slate-400 mb-1">
-                {roleToCreate === 'Lawyer' ? 'Primary Practice County *' : 'Assigned Operating County *'}
+                {roleToCreate === 'Lawyer' ? 'Primary Practice County *' : (roleToCreate === 'Surveyor' ? 'Survey Operating County *' : 'Assigned Operating County *')}
               </label>
               <select
                 value={county}
@@ -2621,6 +2830,35 @@ function AdminStaffProvisioningView() {
               </>
             )}
 
+            {/* SURVEYOR SPECIFIC FIELDS */}
+            {roleToCreate === 'Surveyor' && (
+              <>
+                <div>
+                  <label className="block text-[11px] font-bold text-teal-300 mb-1">Survey Firm / Practice Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={surveyorFirm}
+                    onChange={(e) => setSurveyorFirm(e.target.value)}
+                    placeholder="e.g. Geospatial Surveys Kenya Ltd"
+                    className="h-10 w-full rounded-xl border border-teal-500/30 bg-teal-950/20 px-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-teal-300 mb-1">ISLK License / Registration Number *</label>
+                  <input
+                    type="text"
+                    required
+                    value={surveyorLicenseNumber}
+                    onChange={(e) => setSurveyorLicenseNumber(e.target.value)}
+                    placeholder="e.g. ISLK-4092/2026"
+                    className="h-10 w-full rounded-xl border border-teal-500/30 bg-teal-950/20 px-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400"
+                  />
+                </div>
+              </>
+            )}
+
             {/* AGENT SPECIFIC FIELDS */}
             {roleToCreate === 'Agent' && (
               <>
@@ -2680,6 +2918,8 @@ function AdminStaffProvisioningView() {
               className={`h-11 rounded-2xl px-6 text-xs font-black transition-all shadow-lg ${
                 roleToCreate === 'Lawyer'
                   ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-blue-600/30 hover:scale-[1.02]'
+                  : roleToCreate === 'Surveyor'
+                  ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-slate-950 shadow-teal-500/30 hover:scale-[1.02]'
                   : 'bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 shadow-emerald-500/30 hover:scale-[1.02]'
               }`}
             >
@@ -2688,7 +2928,7 @@ function AdminStaffProvisioningView() {
               ) : (
                 <>
                   <UserCheck className="mr-2 h-4 w-4" />
-                  Provision & Authorize {roleToCreate === 'Lawyer' ? 'Advocate' : 'Agent'} Account
+                  Provision & Authorize {roleToCreate === 'Lawyer' ? 'Advocate' : (roleToCreate === 'Surveyor' ? 'Land Surveyor' : 'Agent')} Account
                 </>
               )}
             </Button>
@@ -6610,7 +6850,7 @@ function ApprovalsPage() {
                         <div className="rounded-xl bg-slate-50 p-2.5">
                           <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Property Value</span>
                           <strong className="text-emerald-700 font-bold text-sm">
-                            KES {money(commission.parcel?.displayed_price || commission.parcel?.asking_price || '0')}
+                            {money(commission.parcel?.displayed_price || commission.parcel?.asking_price || '0')}
                           </strong>
                         </div>
                         <div className="rounded-xl bg-slate-50 p-2.5">
@@ -6748,7 +6988,7 @@ function ApprovalsPage() {
                       <div className="grid grid-cols-2 gap-3 pt-2 text-xs border-t border-slate-100">
                         <div className="rounded-xl bg-slate-50 p-2.5">
                           <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Asking Price</span>
-                          <strong className="text-emerald-700 font-bold text-sm">KES {money(parcel.displayed_price || parcel.asking_price || '0')}</strong>
+                          <strong className="text-emerald-700 font-bold text-sm">{money(parcel.displayed_price || parcel.asking_price || '0')}</strong>
                         </div>
                         <div className="rounded-xl bg-slate-50 p-2.5">
                           <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Land Size</span>
@@ -6806,7 +7046,7 @@ function ApprovalsPage() {
                       <div className="grid grid-cols-2 gap-3 pt-2 text-xs border-t border-slate-100">
                         <div className="rounded-xl bg-slate-50 p-2.5">
                           <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Escrow Amount</span>
-                          <strong className="text-emerald-700 font-bold text-sm">KES {money(tx.amount)}</strong>
+                          <strong className="text-emerald-700 font-bold text-sm">{money(tx.amount)}</strong>
                         </div>
                         <div className="rounded-xl bg-slate-50 p-2.5">
                           <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Contract Signed</span>
@@ -7727,19 +7967,19 @@ function SellerWithdrawPage() {
           <Card className="bg-white/92">
             <CardContent className="p-6">
               <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Available to withdraw</div>
-              <div className="mt-2 text-3xl font-black tracking-tight text-emerald-700">KES {money(data.available_balance)}</div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-emerald-700">{money(data.available_balance)}</div>
             </CardContent>
           </Card>
           <Card className="bg-white/92">
             <CardContent className="p-6">
               <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Held in escrow</div>
-              <div className="mt-2 text-3xl font-black tracking-tight text-amber-600">KES {money(data.in_escrow)}</div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-amber-600">{money(data.in_escrow)}</div>
             </CardContent>
           </Card>
           <Card className="bg-white/92">
             <CardContent className="p-6">
               <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Total received</div>
-              <div className="mt-2 text-3xl font-black tracking-tight text-foreground">KES {money(data.total_received)}</div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-foreground">{money(data.total_received)}</div>
             </CardContent>
           </Card>
         </div>
@@ -7842,7 +8082,7 @@ function EscrowReleasePage() {
                     <div className="flex items-center gap-4">
                       <div className="text-right">
                         <div className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">Amount</div>
-                        <div className="text-xl font-black text-foreground">KES {money(tx.amount)}</div>
+                        <div className="text-xl font-black text-foreground">{money(tx.amount)}</div>
                       </div>
 
                       {tx.can_release ? (
@@ -7913,7 +8153,7 @@ function AgentWithdrawPage() {
           <Card className="bg-white/92">
             <CardContent className="p-6">
               <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Available to withdraw</div>
-              <div className="mt-2 text-3xl font-black tracking-tight text-emerald-700">KES {money(data.available_balance)}</div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-emerald-700">{money(data.available_balance)}</div>
             </CardContent>
           </Card>
           <Card className="bg-white/92">
@@ -8206,7 +8446,7 @@ function ContractFullPage() {
           </div>
           <div className="rounded-3xl bg-white p-5 shadow-sm border border-border/50">
             <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Agreed Price</div>
-            <div className="mt-1 text-lg font-black text-emerald-700">KES {money(contract.agreed_price)}</div>
+            <div className="mt-1 text-lg font-black text-emerald-700">{money(contract.agreed_price)}</div>
           </div>
           <div className="rounded-3xl bg-white p-5 shadow-sm border border-border/50">
             <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Buyer</div>
@@ -8441,19 +8681,19 @@ function AdminWithdrawPage() {
           <Card className="bg-white/92">
             <CardContent className="p-6">
               <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Available to withdraw</div>
-              <div className="mt-2 text-3xl font-black tracking-tight text-emerald-700">KES {money(data.available_balance)}</div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-emerald-700">{money(data.available_balance)}</div>
             </CardContent>
           </Card>
           <Card className="bg-white/92">
             <CardContent className="p-6">
               <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Total Commission (4%)</div>
-              <div className="mt-2 text-3xl font-black tracking-tight text-foreground">KES {money(data.total_commission)}</div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-foreground">{money(data.total_commission)}</div>
             </CardContent>
           </Card>
           <Card className="bg-white/92">
             <CardContent className="p-6">
               <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Total Withdrawn</div>
-              <div className="mt-2 text-3xl font-black tracking-tight text-amber-600">KES {money(data.total_withdrawn)}</div>
+              <div className="mt-2 text-3xl font-black tracking-tight text-amber-600">{money(data.total_withdrawn)}</div>
             </CardContent>
           </Card>
         </div>
@@ -8523,7 +8763,7 @@ function AIKYCPage() {
           setMessage(data.message);
           clearInterval(interval);
           if (data.status === 'APPROVED') {
-            setTimeout(() => { window.location.href = '/agent/dashboard/'; }, 2000);
+            setTimeout(() => { window.location.href = '/staff/dashboard/'; }, 2000);
           }
         }
       } catch (e) {
@@ -8933,7 +9173,7 @@ function ReactAppInner() {
 
     const role = (user?.role || '').toLowerCase();
     const isAdmin = role === 'admin';
-    const isStaff = role === 'agent' || role === 'lawyer' || role === 'official';
+    const isStaff = role === 'agent' || role === 'lawyer' || role === 'official' || role === 'surveyor';
     const isBuyerSeller = role === 'buyer' || role === 'seller';
 
     if (isAdmin && !hostname.startsWith('admin.')) {
@@ -9037,7 +9277,7 @@ function ReactAppInner() {
     );
   }
   else if (page === 'escrow-release') pageContent = <EscrowReleasePage />;
-  else if (page === 'dashboard' || page === 'admin-dashboard' || page === 'agent-dashboard' || page === 'lawyer-dashboard') pageContent = <AppShell {...shellProps}><DashboardPage /></AppShell>;
+  else if (page === 'dashboard' || page === 'admin-dashboard' || page === 'agent-dashboard' || page === 'lawyer-dashboard' || page === 'surveyor-dashboard') pageContent = <AppShell {...shellProps}><DashboardPage /></AppShell>;
   else if (page === 'finance') pageContent = <AppShell {...shellProps}><AdminFinancePage /></AppShell>;
   else if (page === 'analytics' || page === 'analytics-suite') pageContent = <AppShell {...shellProps} activeNav="analytics"><div className="space-y-6"><PageHeader kicker="Admin Command Centre" title="Executive Analytics Suite" subtitle="Live oversight of users, escrow finances, professional hires, statutory taxes, and system reliability." badge={{ text: 'Live Monitoring', tone: 'accent' }} /><AdminAnalyticsSuiteView /></div></AppShell>;
   else if (page === 'contract-fullpage') pageContent = <ContractFullPage />;

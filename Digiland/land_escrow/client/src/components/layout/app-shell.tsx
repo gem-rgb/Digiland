@@ -65,8 +65,10 @@ export function AppShell({
   const allRailItems = [
     {
       label: 'Dashboard',
-      href: (user?.role === 'Admin' || user?.role === 'Agent' || user?.role === 'Lawyer' || user?.role === 'Staff' || user?.is_superuser)
-        ? '/agent/dashboard/'
+      href: (user?.role === 'Admin' || user?.is_superuser)
+        ? '/admin/dashboard/'
+        : (user?.role === 'Agent' || user?.role === 'Lawyer' || user?.role === 'Surveyor' || user?.role === 'Staff')
+        ? '/staff/dashboard/'
         : user?.role === 'Seller'
         ? '/seller/dashboard/'
         : '/buyer/dashboard/',

@@ -1,6 +1,7 @@
 from django.urls import path
 from django.views.generic import RedirectView
 from . import views
+from . import views_verification
 
 app_name = 'frontend'
 
@@ -18,6 +19,20 @@ urlpatterns = [
     path('staff/logout-to-login/', views.logout_to_staff_login, name='logout_to_staff_login'),
     path('admin/login/', views.admin_login, name='admin_login'),
     path('auth/admin-login/', views.admin_login, name='admin_login_alias'),
+    path('admin/dashboard/', views.admin_dashboard_view, name='admin_dashboard'),
+    path('staff/dashboard/', views.agent_dashboard, name='staff_dashboard'),
+    path('surveyor/dashboard/', views.surveyor_dashboard, name='surveyor_dashboard'),
+    path('surveyor/assignments/<uuid:assignment_id>/accept/', views.surveyor_accept_assignment, name='surveyor_accept_assignment'),
+    path('surveyor/assignments/<uuid:assignment_id>/schedule-visit/', views.surveyor_schedule_visit, name='surveyor_schedule_visit'),
+    path('surveyor/assignments/<uuid:assignment_id>/beacon/add/', views.surveyor_add_beacon, name='surveyor_add_beacon'),
+    path('surveyor/assignments/<uuid:assignment_id>/boundary/add/', views.surveyor_add_boundary_observation, name='surveyor_add_boundary_observation'),
+    path('surveyor/assignments/<uuid:assignment_id>/measurement/add/', views.surveyor_add_measurement, name='surveyor_add_measurement'),
+    path('surveyor/assignments/<uuid:assignment_id>/document/upload/', views.surveyor_upload_document, name='surveyor_upload_document'),
+    path('surveyor/assignments/<uuid:assignment_id>/issue/add/', views.surveyor_create_issue, name='surveyor_create_issue'),
+    path('surveyor/assignments/<uuid:assignment_id>/issue/<uuid:issue_id>/resolve/', views.surveyor_resolve_issue, name='surveyor_resolve_issue'),
+    path('surveyor/assignments/<uuid:assignment_id>/report/submit/', views.surveyor_submit_report, name='surveyor_submit_report'),
+    path('admin/survey/assign/', views.admin_create_survey_assignment, name='admin_create_survey_assignment'),
+    path('admin/survey/review/<uuid:report_id>/', views.admin_review_survey_report, name='admin_review_survey_report'),
     path('temp-approve/<str:email>/', views.temp_approve_agent, name='temp_approve_agent'),
     path('parcels/', views.parcel_list, name='parcel_list'),
     path('agent/onboarding/', views.agent_onboarding, name='agent_onboarding'),
@@ -144,4 +159,20 @@ urlpatterns = [
     path('onboarding/select-role/', views.onboarding_select_role, name='onboarding_select_role'),
     path('buyer/dashboard/', views.buyer_dashboard, name='buyer_dashboard'),
     path('seller/dashboard/', views.seller_dashboard, name='seller_dashboard'),
+
+    # ── Verification Engine URLs ──
+    path('seller/property/register/', views_verification.verification_wizard, name='verification_wizard'),
+    path('seller/property/register/<uuid:case_id>/step/<int:step>/', views_verification.verification_wizard_step, name='verification_wizard_step'),
+    path('seller/property/register/<uuid:case_id>/documents/upload/', views_verification.verification_document_upload, name='verification_document_upload'),
+    path('api/verification/<uuid:case_id>/', views_verification.verification_case_detail, name='verification_case_detail'),
+    path('api/verification/<uuid:case_id>/timeline/', views_verification.verification_timeline, name='verification_timeline'),
+    path('api/verification/<uuid:case_id>/passport/', views_verification.verification_passport, name='verification_passport'),
+    path('parcels/<path:parcel_number>/interest/', views_verification.express_buyer_interest, name='express_buyer_interest'),
+
+    # Staff verification management
+    path('staff/verification/<uuid:case_id>/document/<uuid:document_id>/review/', views_verification.staff_review_document, name='staff_review_document'),
+    path('staff/verification/<uuid:case_id>/layer/<str:layer_type>/', views_verification.staff_update_layer, name='staff_update_layer'),
+    path('staff/verification/<uuid:case_id>/flag/', views_verification.staff_raise_flag, name='staff_raise_flag'),
+    path('staff/verification/<uuid:case_id>/flag/<uuid:flag_id>/resolve/', views_verification.staff_resolve_flag, name='staff_resolve_flag'),
+    path('staff/verification/<uuid:case_id>/approve/', views_verification.staff_approve_case, name='staff_approve_case'),
 ]

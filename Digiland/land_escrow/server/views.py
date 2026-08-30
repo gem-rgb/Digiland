@@ -9,7 +9,14 @@ from django.db.models import Q
 from django.utils import timezone
 from django.contrib import messages as django_messages
 from datetime import timedelta
-from core.models import LandParcel, Transaction, PurchaseCommission, Message, SupportTicket, Document, User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite, JointBuyerGroup, JointBuyerMember, JointPaymentContribution, JointMemberRemovalRequest, AuditLog, PopupAdCampaign, DocumentAccessGrant, LawyerPostTransactionTask
+from core.models import (
+    LandParcel, Transaction, PurchaseCommission, Message, SupportTicket, Document,
+    User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite,
+    JointBuyerGroup, JointBuyerMember, JointPaymentContribution, JointMemberRemovalRequest,
+    AuditLog, PopupAdCampaign, DocumentAccessGrant, LawyerPostTransactionTask,
+    SurveyAssignment, SurveyBeacon, SurveyBoundaryObservation, SurveyMeasurement,
+    SurveyDocument, SurveyIssue, SurveyReport, SurveyAuditLog,
+)
 from core.legal import (
     LAND_TRANSACTION_LAWS,
     LAND_TRANSACTION_CHECKLIST,
@@ -42,6 +49,14 @@ from .react_data import (
     serialize_transaction,
     serialize_commission,
     serialize_user,
+    serialize_survey_assignment,
+    serialize_survey_beacon,
+    serialize_survey_boundary,
+    serialize_survey_measurement,
+    serialize_survey_document,
+    serialize_survey_issue,
+    serialize_survey_report,
+    serialize_survey_audit_log,
 )
 from core.services.popup_ads import build_popup_ads_payload, build_seller_promotions_dashboard, record_popup_event
 from core.services.commission import (
@@ -383,9 +398,13 @@ def buyer_dashboard(request):
 def dashboard_redirect_view(request):
     """Role-aware dashboard redirect."""
     user = request.user
-    if user.role in STAFF_ROLES or user.is_superuser or user.is_staff:
-        return redirect('frontend:agent_dashboard')
-    elif user.role == 'Seller':
+    if getattr(user, 'role', None) == 'Admin' or getattr(user, 'is_superuser', False):
+        return redirect('frontend:admin_dashboard')
+    elif getattr(user, 'role', None) == 'Surveyor':
+        return redirect('frontend:surveyor_dashboard')
+    elif getattr(user, 'role', None) in {'Agent', 'Lawyer', 'Land_Official'} or getattr(user, 'is_staff', False):
+        return redirect('frontend:staff_dashboard')
+    elif getattr(user, 'role', None) == 'Seller':
         return redirect('frontend:seller_dashboard')
     return redirect('frontend:buyer_dashboard')
 
@@ -569,20 +588,23 @@ def logout_to_staff_login(request):
     return redirect(reverse('frontend:staff_login'))
 
 def staff_login(request):
-    """Staff login portal exclusively for EARB Agents and LSK Advocates/Lawyers."""
+    """Staff login portal exclusively for EARB Agents, LSK Advocates/Lawyers, and ISLK Licensed Surveyors."""
     from django.contrib.auth import authenticate, login as auth_login
+    from core.auth_backends import EmailOrUsernameModelBackend
 
     error = None
+    info_message = None
     if request.session.pop('staff_blocked', False):
         error = 'Staff accounts can authenticate through this portal.'
 
+    next_url = request.GET.get('next') or request.POST.get('next') or reverse('frontend:staff_dashboard')
+
     if request.user.is_authenticated:
         role = getattr(request.user, 'role', '')
-        if role in {'Agent', 'Lawyer', 'Land_Official'}:
-            return redirect('frontend:agent_dashboard')
-        elif role == 'Admin' or request.user.is_superuser:
-            return redirect(f"{getattr(settings, 'ADMIN_DOMAIN', 'https://admin.digiland.co.ke')}/admin/login/")
-        return redirect('frontend:home')
+        if role in {'Agent', 'Lawyer', 'Surveyor', 'Land_Official'}:
+            return redirect(next_url if next_url and next_url != reverse('frontend:staff_login') else reverse('frontend:staff_dashboard'))
+        else:
+            info_message = f"Currently signed in as {request.user.email} ({role or 'Standard'}). Sign in below with a Staff account to access the workspace."
 
     if request.method == 'POST':
         identifier = request.POST.get('email', '').strip()
@@ -591,7 +613,7 @@ def staff_login(request):
 
         # Support sign in by either email or phone number
         email = identifier.lower()
-        if not '@' in identifier:
+        if '@' not in identifier:
             phone_clean = identifier.replace(' ', '').replace('-', '').replace('+', '')
             phone_tail = phone_clean[-9:] if len(phone_clean) >= 9 else phone_clean
             user_by_phone = (
@@ -601,43 +623,58 @@ def staff_login(request):
             if user_by_phone:
                 email = user_by_phone.email
 
-        user = (
-            authenticate(request, username=email, password=password)
-            or authenticate(request, email=email, password=password)
-        )
-
-        if user is None:
-            error = 'Invalid staff credentials. Please verify your email/phone and password.'
-        elif not user.is_active:
-            error = 'Your account has been deactivated. Contact the system administrator.'
-        elif getattr(user, 'role', None) not in {'Agent', 'Lawyer', 'Land_Official'}:
-            error = 'Access restricted to licensed Agents, Advocates, and Field Staff. Platform Admins must use admin.digiland.co.ke.'
+        # Check brute force lockout
+        from core.auth_services import _get_client_ip
+        client_ip = _get_client_ip(request)
+        is_locked, lock_msg = EmailOrUsernameModelBackend.is_locked_out_check(email, client_ip)
+        if is_locked:
+            error = lock_msg
         else:
-            auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            request.session.save()  # Force session persistence before redirect
-            return redirect('frontend:agent_dashboard')
+            user = (
+                authenticate(request, username=email, password=password)
+                or authenticate(request, email=email, password=password)
+            )
+
+            if user is None:
+                error = 'Invalid staff credentials. Please verify your email/phone and password.'
+            elif not user.is_active:
+                error = 'Your account has been deactivated. Contact the system administrator.'
+            elif getattr(user, 'role', None) not in {'Agent', 'Lawyer', 'Surveyor', 'Land_Official'}:
+                error = f"Access restricted to licensed Agents, Advocates, Land Surveyors, and Field Staff. Account '{user.email}' has role '{user.role}'."
+            else:
+                backend = getattr(user, 'backend', 'django.contrib.auth.backends.ModelBackend')
+                auth_login(request, user, backend=backend)
+                request.session['domain_mode'] = 'staff'
+                request.session.save()  # Force session persistence before redirect
+                target = next_url if (next_url and next_url != reverse('frontend:staff_login')) else reverse('frontend:staff_dashboard')
+                return redirect(target)
 
     # Consume the "just signed up" session flag set by agent_signup_complete
     signup_success = request.session.pop('agent_signup_success', False)
 
     return render(request, 'frontend/staff_login.html', {
         'error': error,
+        'info_message': info_message,
         'signup_success': signup_success,
+        'next': next_url,
     })
 
 
 def admin_login(request):
     """Executive Administration login portal exclusively for Admin & Superuser roles."""
     from django.contrib.auth import authenticate, login as auth_login
+    from core.auth_backends import EmailOrUsernameModelBackend
 
     error = None
+    info_message = None
+    next_url = request.GET.get('next') or request.POST.get('next') or reverse('frontend:admin_dashboard')
+
     if request.user.is_authenticated:
         role = getattr(request.user, 'role', '')
         if role == 'Admin' or request.user.is_superuser:
-            return redirect('frontend:agent_dashboard')
-        elif role in {'Agent', 'Lawyer', 'Land_Official'}:
-            return redirect(f"{getattr(settings, 'STAFF_DOMAIN', 'https://staff.digiland.co.ke')}/staff/login/")
-        return redirect('frontend:home')
+            return redirect(next_url if next_url and next_url != reverse('frontend:admin_login') else reverse('frontend:admin_dashboard'))
+        else:
+            info_message = f"Currently signed in as {request.user.email} ({role or 'Standard'}). Sign in below with an Administrator account to access the Command Centre."
 
     if request.method == 'POST':
         identifier = request.POST.get('email', '').strip()
@@ -645,29 +682,46 @@ def admin_login(request):
         from core.models import User as CoreUser
 
         email = identifier.lower()
-        if not '@' in identifier:
+        if '@' not in identifier:
             phone_clean = identifier.replace(' ', '').replace('-', '')
-            user_by_phone = CoreUser.objects.filter(phone_number__icontains=phone_clean).first()
+            phone_tail = phone_clean[-9:] if len(phone_clean) >= 9 else phone_clean
+            user_by_phone = (
+                CoreUser.objects.filter(phone_number__icontains=phone_tail).first()
+                or CoreUser.objects.filter(phone_number__icontains=phone_clean).first()
+            )
             if user_by_phone:
                 email = user_by_phone.email
 
-        user = (
-            authenticate(request, username=email, password=password)
-            or authenticate(request, email=email, password=password)
-        )
-
-        if user is None:
-            error = 'Invalid administrative credentials. Please verify your root email and password.'
-        elif not user.is_active:
-            error = 'This administrative account is disabled. Contact system governance.'
-        elif getattr(user, 'role', None) != 'Admin' and not user.is_superuser:
-            error = 'Access Denied: Administrative privileges required. Staff (Agents/Lawyers) must use staff.digiland.co.ke.'
+        # Check for brute-force lockout first
+        from core.auth_services import _get_client_ip
+        client_ip = _get_client_ip(request)
+        is_locked, lock_msg = EmailOrUsernameModelBackend.is_locked_out_check(email, client_ip)
+        if is_locked:
+            error = lock_msg
         else:
-            auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            return redirect('frontend:agent_dashboard')
+            user = (
+                authenticate(request, username=email, password=password)
+                or authenticate(request, email=email, password=password)
+            )
+
+            if user is None:
+                error = 'Invalid administrative credentials. Please verify your root administrator email and password.'
+            elif not user.is_active:
+                error = 'This administrative account is disabled. Contact system governance.'
+            elif getattr(user, 'role', None) != 'Admin' and not user.is_superuser:
+                error = f"Access Denied: Account '{user.email}' has role '{user.role}'. Administrative privileges are required for the Command Centre."
+            else:
+                backend = getattr(user, 'backend', 'django.contrib.auth.backends.ModelBackend')
+                auth_login(request, user, backend=backend)
+                request.session['domain_mode'] = 'admin'
+                request.session.save()
+                target = next_url if (next_url and next_url != reverse('frontend:admin_login')) else reverse('frontend:admin_dashboard')
+                return redirect(target)
 
     return render(request, 'frontend/admin_login.html', {
         'error': error,
+        'info_message': info_message,
+        'next': next_url,
     })
 
 
@@ -824,38 +878,634 @@ def agent_onboarding(request):
     )
 
 @login_required
+def admin_dashboard_view(request):
+    """Dedicated view for Admin Command Centre."""
+    from django.conf import settings
+    from django.http import HttpResponseRedirect
+    user = request.user
+    host = request.get_host().split(':')[0].lower()
+    is_local = (
+        host in {'localhost', '127.0.0.1', 'testserver', '0.0.0.0'}
+        or host.startswith('192.168.')
+        or host.startswith('10.')
+        or host.startswith('172.')
+        or getattr(settings, 'DEBUG', False)
+    )
+
+    if getattr(user, 'role', None) != 'Admin' and not getattr(user, 'is_superuser', False):
+        if getattr(user, 'role', None) in {'Agent', 'Lawyer', 'Land_Official'}:
+            if not is_local:
+                return HttpResponseRedirect("https://staff.digiland.co.ke/staff/dashboard/")
+            return redirect('frontend:staff_dashboard')
+        if not is_local:
+            return HttpResponseRedirect("https://app.digiland.co.ke/parcels/")
+        return redirect('frontend:home')
+
+    if not is_local and not host.startswith('admin.'):
+        return HttpResponseRedirect("https://admin.digiland.co.ke/admin/dashboard/")
+
+    context = {'unread_count': Message.objects.filter(receiver=request.user, is_read=False).count()}
+    return render_admin_dashboard(request, context)
+
+
+@login_required
 def agent_dashboard(request):
-    """Command Centre with strict subdomain partition redirection and role-based restrictions."""
+    """Staff Command Centre with strict subdomain partition redirection and role-based restrictions."""
+    from django.conf import settings
     from core.models import User as CoreUser
     from django.db.models import Q
     from django.http import HttpResponseRedirect
 
     host = request.get_host().split(':')[0].lower()
-    is_local = host in {'localhost', '127.0.0.1'}
+    is_local = (
+        host in {'localhost', '127.0.0.1', 'testserver', '0.0.0.0'}
+        or host.startswith('192.168.')
+        or host.startswith('10.')
+        or host.startswith('172.')
+        or getattr(settings, 'DEBUG', False)
+    )
 
-    # If Lawyer, Agent, or Land Official, render their dedicated command centre on staff subdomain
-    if request.user.role in {'Lawyer', 'Agent', 'Land_Official'}:
+    # If Admin or Superuser, send directly to Admin Command Centre
+    if getattr(request.user, 'role', None) == 'Admin' or request.user.is_superuser:
+        if not is_local:
+            return HttpResponseRedirect("https://admin.digiland.co.ke/admin/dashboard/")
+        return redirect('frontend:admin_dashboard')
+
+    # If Lawyer, Agent, Surveyor, or Land Official, render their dedicated command centre on staff subdomain
+    if getattr(request.user, 'role', None) in {'Lawyer', 'Agent', 'Surveyor', 'Land_Official'}:
         if not is_local and not host.startswith('staff.'):
-            return HttpResponseRedirect(f"https://staff.digiland.co.ke{request.get_full_path()}")
+            return HttpResponseRedirect("https://staff.digiland.co.ke/staff/dashboard/")
         context = {'unread_count': Message.objects.filter(receiver=request.user, is_read=False).count()}
         if request.user.role == 'Lawyer':
             return render_lawyer_dashboard(request, context)
+        elif request.user.role == 'Surveyor':
+            return render_surveyor_dashboard(request, context)
         return render_agent_dashboard(request, context)
-
-    # If Admin or Superuser, render admin command centre on admin subdomain
-    if request.user.role == 'Admin' or request.user.is_superuser:
-        if not is_local and not host.startswith('admin.'):
-            return HttpResponseRedirect(f"https://admin.digiland.co.ke{request.get_full_path()}")
-        context = {'unread_count': Message.objects.filter(receiver=request.user, is_read=False).count()}
-        return render_admin_dashboard(request, context)
 
     # If Buyer or Seller reaches staff dashboard, redirect to app.digiland.co.ke
     if not is_local:
-        return HttpResponseRedirect(f"https://app.digiland.co.ke/parcels/")
+        return HttpResponseRedirect("https://app.digiland.co.ke/parcels/")
     return redirect('frontend:parcel_list')
 
+def render_surveyor_dashboard(request, context):
+    """Render surveyor-specific command centre and professional fieldwork workspace."""
+    user = request.user
+    
+    # Query surveyor assignments
+    if user.role == 'Admin' or user.is_superuser:
+        assignments_qs = SurveyAssignment.objects.all().select_related('land_parcel', 'surveyor', 'requested_by').prefetch_related('beacons', 'boundary_observations', 'measurements', 'documents', 'issues', 'reports', 'audit_logs').order_by('-assigned_at')
+    else:
+        assignments_qs = SurveyAssignment.objects.filter(surveyor=user).select_related('land_parcel', 'surveyor', 'requested_by').prefetch_related('beacons', 'boundary_observations', 'measurements', 'documents', 'issues', 'reports', 'audit_logs').order_by('-assigned_at')
+
+    serialized_assignments = [serialize_survey_assignment(a, user) for a in assignments_qs]
+
+    # Metrics
+    active_count = assignments_qs.exclude(status__in=['VERIFIED', 'CANCELLED', 'VERIFIED_WITH_OBSERVATIONS']).count()
+    site_visits_count = assignments_qs.filter(site_visit_status='SCHEDULED').count()
+    pending_reports_count = assignments_qs.filter(status='REPORT_DRAFTING').count()
+    open_issues_count = SurveyIssue.objects.filter(assignment__in=assignments_qs, status__in=['OPEN', 'UNDER_INVESTIGATION']).count()
+    completed_count = assignments_qs.filter(status__in=['VERIFIED', 'VERIFIED_WITH_OBSERVATIONS']).count()
+    overdue_count = sum(1 for a in serialized_assignments if a.get('is_overdue'))
+
+    surveyor_profile = {
+        'full_name': f"{user.first_name} {user.last_name}".strip() or user.email,
+        'email': user.email,
+        'license_number': getattr(user, 'surveyor_license_number', 'ISLK-4092/2026') or 'ISLK-4092/2026',
+        'firm': getattr(user, 'surveyor_firm', 'Geospatial Surveys Kenya Ltd') or 'Geospatial Surveys Kenya Ltd',
+        'county': getattr(user, 'surveyor_county', 'Nairobi & Kiambu') or 'Nairobi & Kiambu',
+        'is_verified': getattr(user, 'is_surveyor_verified', True),
+        'phone_number': getattr(user, 'phone_number', '+254712345678') or '+254712345678',
+    }
+
+    # Available counties for filtering
+    counties = list(LandParcel.objects.values_list('county', flat=True).distinct())
+
+    return render_react_shell(
+        request,
+        'surveyor-dashboard',
+        'Surveyor Command Centre',
+        'Physical beacon audits, cadastral due diligence, boundary verification, and GIS data reconciliation.',
+        surveyor_profile=surveyor_profile,
+        assignments=serialized_assignments,
+        active_assignments_count=active_count,
+        scheduled_visits_count=site_visits_count,
+        pending_reports_count=pending_reports_count,
+        open_issues_count=open_issues_count,
+        completed_surveys_count=completed_count,
+        overdue_surveys_count=overdue_count,
+        counties=counties,
+        stats=[
+            {'label': 'Active Surveys', 'value': str(active_count), 'tone': 'accent'},
+            {'label': 'Site Visits', 'value': str(site_visits_count), 'tone': 'default'},
+            {'label': 'Pending Reports', 'value': str(pending_reports_count), 'tone': 'warning'},
+            {'label': 'Open Issues', 'value': str(open_issues_count), 'tone': 'danger' if open_issues_count > 0 else 'success'},
+            {'label': 'Verified Parcels', 'value': str(completed_count), 'tone': 'success'},
+            {'label': 'Overdue Work', 'value': str(overdue_count), 'tone': 'danger' if overdue_count > 0 else 'success'},
+        ],
+        actions=[
+            {'label': 'My Assignments', 'href': f"{reverse('frontend:surveyor_dashboard')}?tab=assignments", 'tone': 'default'},
+            {'label': 'Field Mode', 'href': f"{reverse('frontend:surveyor_dashboard')}?tab=field-mode", 'tone': 'secondary'},
+            {'label': 'Messages', 'href': reverse('frontend:messages'), 'tone': 'outline'},
+        ],
+    )
+
+
+@login_required
+def surveyor_dashboard(request):
+    """Dedicated view for Surveyor Command Centre."""
+    from django.conf import settings
+    from django.http import HttpResponseRedirect
+    user = request.user
+    host = request.get_host().split(':')[0].lower()
+    is_local = (
+        host in {'localhost', '127.0.0.1', 'testserver', '0.0.0.0'}
+        or host.startswith('192.168.')
+        or host.startswith('10.')
+        or host.startswith('172.')
+        or getattr(settings, 'DEBUG', False)
+    )
+
+    if getattr(user, 'role', None) != 'Surveyor' and getattr(user, 'role', None) != 'Admin' and not getattr(user, 'is_superuser', False):
+        if getattr(user, 'role', None) in {'Agent', 'Lawyer', 'Land_Official'}:
+            if not is_local:
+                return HttpResponseRedirect("https://staff.digiland.co.ke/staff/dashboard/")
+            return redirect('frontend:staff_dashboard')
+        if not is_local:
+            return HttpResponseRedirect("https://app.digiland.co.ke/parcels/")
+        return redirect('frontend:home')
+
+    if not is_local and not host.startswith('staff.'):
+        return HttpResponseRedirect("https://staff.digiland.co.ke/staff/dashboard/")
+
+    context = {'unread_count': Message.objects.filter(receiver=request.user, is_read=False).count()}
+    return render_surveyor_dashboard(request, context)
+
+
+@login_required
+def surveyor_accept_assignment(request, assignment_id):
+    """Surveyor accepts an assigned survey assignment."""
+    assignment = get_object_or_404(SurveyAssignment, id=assignment_id)
+    if request.user.role != 'Surveyor' and request.user.role != 'Admin' and not request.user.is_superuser:
+        django_messages.error(request, "Unauthorized to accept survey assignments.")
+        return redirect('frontend:surveyor_dashboard')
+    
+    assignment.status = 'PRE_SURVEY_REVIEW'
+    assignment.accepted_at = timezone.now()
+    assignment.save(update_fields=['status', 'accepted_at', 'updated_at'])
+
+    SurveyAuditLog.objects.create(
+        assignment=assignment,
+        user=request.user,
+        action='ASSIGNMENT_ACCEPTED',
+        details={'status': assignment.status, 'accepted_at': str(assignment.accepted_at)},
+        ip_address=request.META.get('REMOTE_ADDR')
+    )
+    django_messages.success(request, f"Assignment {assignment.assignment_number} accepted. Please review pre-survey documentation.")
+    return redirect(f"{reverse('frontend:surveyor_dashboard')}?tab=assignments&selected={assignment.id}")
+
+
+@login_required
+def surveyor_schedule_visit(request, assignment_id):
+    """Schedule or update site visit for survey assignment."""
+    assignment = get_object_or_404(SurveyAssignment, id=assignment_id)
+    if request.method == 'POST':
+        visit_date = request.POST.get('site_visit_date')
+        visit_time = request.POST.get('site_visit_time')
+        contact_name = request.POST.get('site_visit_contact_name', '')
+        contact_phone = request.POST.get('site_visit_contact_phone', '')
+        assistants = request.POST.get('site_visit_assistant_names', '')
+        notes = request.POST.get('site_visit_notes', '')
+        status = request.POST.get('site_visit_status', 'SCHEDULED')
+
+        if visit_date:
+            assignment.site_visit_date = visit_date
+        if visit_time:
+            assignment.site_visit_time = visit_time
+        assignment.site_visit_contact_name = contact_name
+        assignment.site_visit_contact_phone = contact_phone
+        assignment.site_visit_assistant_names = assistants
+        assignment.site_visit_notes = notes
+        assignment.site_visit_status = status
+        
+        if status == 'SCHEDULED' and assignment.status in ('PENDING_ACCEPTANCE', 'PRE_SURVEY_REVIEW'):
+            assignment.status = 'SITE_VISIT_SCHEDULED'
+        elif status == 'IN_PROGRESS':
+            assignment.status = 'FIELDWORK_IN_PROGRESS'
+        elif status == 'COMPLETED':
+            assignment.status = 'DATA_UPLOADED'
+
+        assignment.save()
+
+        SurveyAuditLog.objects.create(
+            assignment=assignment,
+            user=request.user,
+            action='SITE_VISIT_SCHEDULED',
+            details={'date': visit_date, 'time': visit_time, 'status': status, 'contact': contact_name},
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        django_messages.success(request, f"Site visit updated for {assignment.assignment_number}.")
+    return redirect(f"{reverse('frontend:surveyor_dashboard')}?tab=site-visits&selected={assignment.id}")
+
+
+@login_required
+def surveyor_add_beacon(request, assignment_id):
+    """Add or update physical beacon observation."""
+    assignment = get_object_or_404(SurveyAssignment, id=assignment_id)
+    if request.method == 'POST':
+        beacon_id = request.POST.get('beacon_id', '').strip()
+        status = request.POST.get('status', 'OBSERVED')
+        condition = request.POST.get('condition', 'GOOD')
+        lat = request.POST.get('latitude')
+        lng = request.POST.get('longitude')
+        easting = request.POST.get('easting')
+        northing = request.POST.get('northing')
+        elevation = request.POST.get('elevation_meters')
+        desc = request.POST.get('description', '')
+        notes = request.POST.get('notes', '')
+        photo = request.FILES.get('photo')
+
+        if not beacon_id:
+            django_messages.error(request, "Beacon ID is required.")
+            return redirect(f"{reverse('frontend:surveyor_dashboard')}?tab=beacons&selected={assignment.id}")
+
+        beacon, created = SurveyBeacon.objects.get_or_create(
+            assignment=assignment,
+            beacon_id=beacon_id,
+            defaults={
+                'status': status,
+                'condition': condition,
+                'latitude': float(lat) if lat else None,
+                'longitude': float(lng) if lng else None,
+                'easting': easting if easting else None,
+                'northing': northing if northing else None,
+                'elevation_meters': elevation if elevation else None,
+                'description': desc,
+                'notes': notes,
+                'photo': photo,
+            }
+        )
+        if not created:
+            beacon.status = status
+            beacon.condition = condition
+            if lat: beacon.latitude = float(lat)
+            if lng: beacon.longitude = float(lng)
+            if easting: beacon.easting = easting
+            if northing: beacon.northing = northing
+            if elevation: beacon.elevation_meters = elevation
+            beacon.description = desc
+            beacon.notes = notes
+            if photo: beacon.photo = photo
+            beacon.save()
+
+        SurveyAuditLog.objects.create(
+            assignment=assignment,
+            user=request.user,
+            action='BEACON_RECORDED',
+            details={'beacon_id': beacon_id, 'status': status, 'condition': condition},
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        django_messages.success(request, f"Beacon {beacon_id} saved successfully.")
+    return redirect(f"{reverse('frontend:surveyor_dashboard')}?tab=beacons&selected={assignment.id}")
+
+
+@login_required
+def surveyor_add_boundary_observation(request, assignment_id):
+    """Add boundary segment observation."""
+    assignment = get_object_or_404(SurveyAssignment, id=assignment_id)
+    if request.method == 'POST':
+        segment = request.POST.get('segment', 'NORTH')
+        neighbouring = request.POST.get('neighbouring_parcel_reference', '')
+        feature = request.POST.get('physical_feature', 'LIVE_HEDGE')
+        condition = request.POST.get('condition_description', '')
+        consistency = request.POST.get('consistency_status', 'CONSISTENT')
+        notes = request.POST.get('observation_notes', '')
+        photo = request.FILES.get('photo')
+
+        boundary = SurveyBoundaryObservation.objects.create(
+            assignment=assignment,
+            segment=segment,
+            neighbouring_parcel_reference=neighbouring,
+            physical_feature=feature,
+            condition_description=condition,
+            consistency_status=consistency,
+            observation_notes=notes,
+            photo=photo,
+        )
+
+        SurveyAuditLog.objects.create(
+            assignment=assignment,
+            user=request.user,
+            action='BOUNDARY_OBSERVATION_RECORDED',
+            details={'segment': segment, 'consistency': consistency, 'feature': feature},
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        django_messages.success(request, f"{boundary.get_segment_display()} observation recorded.")
+    return redirect(f"{reverse('frontend:surveyor_dashboard')}?tab=boundaries&selected={assignment.id}")
+
+
+@login_required
+def surveyor_add_measurement(request, assignment_id):
+    """Add technical measurement / coordinate point."""
+    assignment = get_object_or_404(SurveyAssignment, id=assignment_id)
+    if request.method == 'POST':
+        point_id = request.POST.get('point_id', '').strip()
+        eastings = request.POST.get('eastings')
+        northings = request.POST.get('northings')
+        elevation = request.POST.get('elevation')
+        distance = request.POST.get('distance_meters')
+        bearing = request.POST.get('bearing_degrees', '')
+        instrument = request.POST.get('instrument_method', 'RTK GNSS / Total Station')
+        accuracy = request.POST.get('accuracy_quality_note', '±0.015m')
+        notes = request.POST.get('surveyor_notes', '')
+
+        if not point_id:
+            django_messages.error(request, "Point ID is required.")
+            return redirect(f"{reverse('frontend:surveyor_dashboard')}?tab=measurements&selected={assignment.id}")
+
+        SurveyMeasurement.objects.create(
+            assignment=assignment,
+            point_id=point_id,
+            eastings=eastings if eastings else None,
+            northings=northings if northings else None,
+            elevation=elevation if elevation else None,
+            distance_meters=distance if distance else None,
+            bearing_degrees=bearing,
+            instrument_method=instrument,
+            accuracy_quality_note=accuracy,
+            surveyor_notes=notes,
+        )
+
+        SurveyAuditLog.objects.create(
+            assignment=assignment,
+            user=request.user,
+            action='MEASUREMENT_ADDED',
+            details={'point_id': point_id, 'instrument': instrument},
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        django_messages.success(request, f"Measurement point {point_id} saved.")
+    return redirect(f"{reverse('frontend:surveyor_dashboard')}?tab=measurements&selected={assignment.id}")
+
+
+@login_required
+def surveyor_upload_document(request, assignment_id):
+    """Upload survey plan, CAD DXF, computation sheet, or site sketch."""
+    assignment = get_object_or_404(SurveyAssignment, id=assignment_id)
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        doc_type = request.POST.get('document_type', 'SURVEY_PLAN')
+        source_type = request.POST.get('source_type', 'SURVEYOR_UPLOAD')
+        visibility = request.POST.get('visibility', 'INTERNAL_STAFF')
+        desc = request.POST.get('description', '')
+        uploaded_file = request.FILES.get('file')
+
+        if not uploaded_file or not title:
+            django_messages.error(request, "Document title and file are required.")
+            return redirect(f"{reverse('frontend:surveyor_dashboard')}?tab=documents&selected={assignment.id}")
+
+        file_fmt = uploaded_file.name.split('.')[-1].lower() if '.' in uploaded_file.name else 'pdf'
+        doc = SurveyDocument.objects.create(
+            assignment=assignment,
+            land_parcel=assignment.land_parcel,
+            title=title,
+            document_type=doc_type,
+            source_type=source_type,
+            visibility=visibility,
+            file=uploaded_file,
+            file_size_bytes=uploaded_file.size,
+            file_format=file_fmt,
+            description=desc,
+            uploaded_by=request.user,
+        )
+
+        SurveyAuditLog.objects.create(
+            assignment=assignment,
+            user=request.user,
+            action='DOCUMENT_UPLOADED',
+            details={'title': title, 'type': doc_type, 'size': uploaded_file.size},
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        django_messages.success(request, f"Document '{title}' uploaded successfully.")
+    return redirect(f"{reverse('frontend:surveyor_dashboard')}?tab=documents&selected={assignment.id}")
+
+
+@login_required
+def surveyor_create_issue(request, assignment_id):
+    """Create discrepancy or survey issue."""
+    assignment = get_object_or_404(SurveyAssignment, id=assignment_id)
+    if request.method == 'POST':
+        issue_type = request.POST.get('issue_type', 'BOUNDARY_DISCREPANCY')
+        severity = request.POST.get('severity', 'MEDIUM')
+        title = request.POST.get('title', '').strip()
+        desc = request.POST.get('description', '')
+        evidence = request.POST.get('evidence_notes', '')
+        recommendation = request.POST.get('surveyor_recommendation', '')
+        photo = request.FILES.get('photo')
+
+        issue_count = SurveyIssue.objects.filter(assignment=assignment).count() + 1
+        issue_number = f"ISS-{assignment.assignment_number}-{issue_count:02d}"
+
+        issue = SurveyIssue.objects.create(
+            assignment=assignment,
+            issue_number=issue_number,
+            issue_type=issue_type,
+            severity=severity,
+            status='OPEN',
+            title=title,
+            description=desc,
+            evidence_notes=evidence,
+            surveyor_recommendation=recommendation,
+            photo=photo,
+            assigned_to=request.user,
+        )
+
+        if severity in ('HIGH', 'CRITICAL'):
+            assignment.status = 'DISCREPANCY_FOUND'
+            assignment.save(update_fields=['status', 'updated_at'])
+
+        SurveyAuditLog.objects.create(
+            assignment=assignment,
+            user=request.user,
+            action='DISCREPANCY_FLAGGED',
+            details={'issue_number': issue_number, 'severity': severity, 'type': issue_type},
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        django_messages.warning(request, f"Discrepancy {issue_number} flagged ({issue.get_severity_display()}).")
+    return redirect(f"{reverse('frontend:surveyor_dashboard')}?tab=issues&selected={assignment.id}")
+
+
+@login_required
+def surveyor_resolve_issue(request, assignment_id, issue_id):
+    """Resolve a survey discrepancy issue."""
+    assignment = get_object_or_404(SurveyAssignment, id=assignment_id)
+    issue = get_object_or_404(SurveyIssue, id=issue_id, assignment=assignment)
+    if request.method == 'POST':
+        notes = request.POST.get('resolution_notes', '')
+        issue.status = 'RESOLVED'
+        issue.resolution_notes = notes
+        issue.resolved_at = timezone.now()
+        issue.save()
+
+        # If no open critical issues remain, update assignment status
+        open_critical = SurveyIssue.objects.filter(assignment=assignment, status__in=['OPEN', 'UNDER_INVESTIGATION'], severity__in=['HIGH', 'CRITICAL']).exists()
+        if not open_critical and assignment.status == 'DISCREPANCY_FOUND':
+            assignment.status = 'REPORT_DRAFTING'
+            assignment.save(update_fields=['status', 'updated_at'])
+
+        SurveyAuditLog.objects.create(
+            assignment=assignment,
+            user=request.user,
+            action='DISCREPANCY_RESOLVED',
+            details={'issue_number': issue.issue_number, 'notes': notes},
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        django_messages.success(request, f"Issue {issue.issue_number} marked as resolved.")
+    return redirect(f"{reverse('frontend:surveyor_dashboard')}?tab=issues&selected={assignment.id}")
+
+
+@login_required
+def surveyor_submit_report(request, assignment_id):
+    """Generate and submit formal versioned survey report."""
+    assignment = get_object_or_404(SurveyAssignment, id=assignment_id)
+    if request.method == 'POST':
+        conclusion = request.POST.get('conclusion', 'SURVEY_VERIFIED')
+        summary = request.POST.get('summary_findings', '')
+        boundary = request.POST.get('boundary_findings', '')
+        area_notes = request.POST.get('area_comparison_notes', '')
+        site_obs = request.POST.get('site_observations', '')
+        discrepancies = request.POST.get('discrepancies_summary', '')
+        declaration = request.POST.get('professional_declaration_signed') == 'on' or request.POST.get('professional_declaration_signed') == 'true'
+
+        version = assignment.reports.count() + 1
+        report = SurveyReport.objects.create(
+            assignment=assignment,
+            version=version,
+            surveyor=request.user,
+            conclusion=conclusion,
+            summary_findings=summary,
+            boundary_findings=boundary,
+            area_comparison_notes=area_notes,
+            site_observations=site_obs,
+            discrepancies_summary=discrepancies,
+            professional_declaration_signed=declaration,
+            signed_at=timezone.now() if declaration else None,
+            submission_timestamp=timezone.now(),
+            review_status='SUBMITTED',
+        )
+
+        if conclusion == 'SURVEY_VERIFIED':
+            assignment.status = 'AWAITING_REVIEW'
+        elif conclusion == 'SURVEY_VERIFIED_WITH_OBSERVATIONS':
+            assignment.status = 'AWAITING_REVIEW'
+        elif conclusion == 'FURTHER_SURVEY_REQUIRED':
+            assignment.status = 'REQUIRES_FURTHER_SURVEY'
+        elif conclusion == 'DISCREPANCY_IDENTIFIED':
+            assignment.status = 'DISCREPANCY_FOUND'
+        else:
+            assignment.status = 'UNABLE_TO_VERIFY'
+        assignment.save(update_fields=['status', 'updated_at'])
+
+        SurveyAuditLog.objects.create(
+            assignment=assignment,
+            user=request.user,
+            action='SURVEY_REPORT_SUBMITTED',
+            details={'version': version, 'conclusion': conclusion, 'declaration': declaration},
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        django_messages.success(request, f"Survey Report v{version} submitted for internal Operations review.")
+    return redirect(f"{reverse('frontend:surveyor_dashboard')}?tab=reports&selected={assignment.id}")
+
+
+@login_required
+def admin_create_survey_assignment(request):
+    """Admin/Operations assigns a property survey to a licensed surveyor."""
+    if request.user.role != 'Admin' and not request.user.is_superuser:
+        django_messages.error(request, "Unauthorized to create survey assignments.")
+        return redirect('frontend:admin_dashboard')
+
+    if request.method == 'POST':
+        parcel_id = request.POST.get('parcel_id')
+        surveyor_id = request.POST.get('surveyor_id')
+        assignment_type = request.POST.get('assignment_type', 'BOUNDARY_VERIFICATION')
+        priority = request.POST.get('priority', 'NORMAL')
+        due_date = request.POST.get('due_date')
+        instructions = request.POST.get('instructions', '')
+
+        parcel = get_object_or_404(LandParcel, id=parcel_id)
+        surveyor = get_object_or_404(CoreUser, id=surveyor_id, role='Surveyor') if surveyor_id else None
+
+        count = SurveyAssignment.objects.count() + 1
+        assignment_number = f"SV-{count:06d}"
+
+        assignment = SurveyAssignment.objects.create(
+            assignment_number=assignment_number,
+            land_parcel=parcel,
+            surveyor=surveyor,
+            requested_by=request.user,
+            assignment_type=assignment_type,
+            priority=priority,
+            due_date=due_date if due_date else None,
+            instructions=instructions,
+            status='PENDING_ACCEPTANCE' if surveyor else 'PRE_SURVEY_REVIEW',
+            pre_survey_checklist={'parcel_ref': True, 'seller_docs': True, 'cadastral_rim': False, 'coords_reviewed': False}
+        )
+
+        SurveyAuditLog.objects.create(
+            assignment=assignment,
+            user=request.user,
+            action='ASSIGNMENT_CREATED',
+            details={'parcel': parcel.parcel_number, 'surveyor': surveyor.email if surveyor else 'Unassigned'},
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        django_messages.success(request, f"Survey assignment {assignment_number} created for parcel {parcel.parcel_number}.")
+    return redirect('frontend:admin_dashboard')
+
+
+@login_required
+def admin_review_survey_report(request, report_id):
+    """Admin/Operations review and approval of submitted survey reports."""
+    if request.user.role != 'Admin' and not request.user.is_superuser:
+        django_messages.error(request, "Unauthorized to review survey reports.")
+        return redirect('frontend:admin_dashboard')
+
+    report = get_object_or_404(SurveyReport, id=report_id)
+    if request.method == 'POST':
+        action = request.POST.get('action', 'APPROVE')
+        feedback = request.POST.get('reviewer_feedback', '')
+
+        report.reviewer = request.user
+        report.reviewer_feedback = feedback
+        report.reviewed_at = timezone.now()
+
+        if action == 'APPROVE':
+            report.review_status = 'APPROVED'
+            if report.conclusion in ('SURVEY_VERIFIED', 'SURVEY_VERIFIED_WITH_OBSERVATIONS'):
+                report.assignment.status = 'VERIFIED'
+                report.assignment.completed_at = timezone.now()
+            else:
+                report.assignment.status = 'DISCREPANCY_FOUND'
+        elif action == 'REQUEST_CHANGES':
+            report.review_status = 'CHANGES_REQUESTED'
+            report.assignment.status = 'REPORT_DRAFTING'
+        else:
+            report.review_status = 'REJECTED'
+            report.assignment.status = 'REQUIRES_FURTHER_SURVEY'
+
+        report.save()
+        report.assignment.save()
+
+        SurveyAuditLog.objects.create(
+            assignment=report.assignment,
+            user=request.user,
+            action=f"REPORT_REVIEW_{action}",
+            details={'report_version': report.version, 'status': report.review_status, 'feedback': feedback},
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        django_messages.success(request, f"Survey Report v{report.version} marked as {report.get_review_status_display()}.")
+    return redirect('frontend:admin_dashboard')
+
+
 def render_lawyer_dashboard(request, context):
-    """Render lawyer-specific command centre."""
+    """Render lawyer-specific command centre with legal due diligence & survey verification findings."""
     pending_transactions = Transaction.objects.filter(
         status='Under_Verification'
     ).select_related('buyer', 'seller', 'land_parcel').order_by('created_at')
@@ -872,10 +1522,16 @@ def render_lawyer_dashboard(request, context):
 
     commission_reviews = [serialize_commission(commission, request.user) for commission in commission_reviews_qs[:10]]
 
+    # Physical Survey findings on parcels undergoing lawyer conveyance review
+    parcels_in_review = [tx.land_parcel for tx in pending_transactions if tx.land_parcel]
+    survey_findings_qs = SurveyAssignment.objects.filter(land_parcel__in=parcels_in_review).select_related('land_parcel', 'surveyor').prefetch_related('beacons', 'issues', 'reports')
+    serialized_survey_findings = [serialize_survey_assignment(s, request.user) for s in survey_findings_qs]
+
     context.update({
         'pending_transactions': pending_transactions,
         'completed_transactions': completed_transactions,
         'commission_reviews': commission_reviews,
+        'survey_findings': serialized_survey_findings,
     })
 
     recent_transactions = [serialize_transaction(tx, request.user) for tx in pending_transactions[:10]]
@@ -893,14 +1549,15 @@ def render_lawyer_dashboard(request, context):
         request,
         'lawyer-dashboard',
         'Lawyer Command Centre',
-        'Review land transfer agreements, verify advocate status, and execute cryptographic sign-offs.',
+        'Review land transfer agreements, inspect physical survey findings, and execute cryptographic sign-offs.',
         transactions=recent_transactions,
         commission_reviews=commission_reviews,
+        survey_findings=serialized_survey_findings,
         stats=[
             {'label': 'Advocate Rating', 'value': lawyer_rating_display, 'tone': 'accent'},
             {'label': 'Earned Legal Fees', 'value': f'KES {lawyer_fee_balance:,.0f}', 'tone': 'success'},
             {'label': 'Pending reviews', 'value': str(pending_transactions.count()), 'tone': 'warning'},
-            {'label': 'Commission reviews', 'value': str(len(commission_reviews)), 'tone': 'accent'},
+            {'label': 'Survey Findings', 'value': str(len(serialized_survey_findings)), 'tone': 'accent'},
             {'label': 'Completed reviews', 'value': str(completed_transactions.count()), 'tone': 'success'},
         ],
         withdraw_data={
@@ -1407,15 +2064,25 @@ def render_admin_dashboard(request, context):
     ).order_by('created_at')
     pending_agents = CoreUser.objects.filter(role='Agent', is_identity_verified=False, is_active=True).order_by('date_joined')
     all_lawyers = CoreUser.objects.filter(role='Lawyer').order_by('-date_joined')
+    all_surveyors = CoreUser.objects.filter(role='Surveyor').order_by('-date_joined')
     all_agents = CoreUser.objects.filter(role='Agent').order_by('-date_joined')
+    all_staff = CoreUser.objects.filter(role='Staff').order_by('-date_joined')
     individual_buyers = CoreUser.objects.filter(role='Buyer', buyer_account_type='Individual', is_active=True).order_by('email')[:50]
 
-    # Serialize all professionals (Lawyers & Agents)
+    # Serialize all professionals (Lawyers, Surveyors, Agents, Operations Staff)
     professionals_data = []
-    for prof in list(all_lawyers) + list(all_agents):
+    for prof in list(all_lawyers) + list(all_surveyors) + list(all_agents) + list(all_staff):
         kyc = getattr(prof, 'kyc_profile', None)
         agent_kyc = getattr(prof, 'kyc_application', None)
         audit_meta = kyc.audit_log if (kyc and isinstance(kyc.audit_log, dict)) else {}
+        firm_or_agency = (
+            prof.surveyor_firm
+            or audit_meta.get('surveyor_firm')
+            or audit_meta.get('firm_or_agency')
+            or audit_meta.get('law_firm_name')
+            or audit_meta.get('agency_name')
+            or ('Geospatial Practice' if prof.role == 'Surveyor' else 'Independent')
+        )
         professionals_data.append({
             'id': str(prof.id),
             'email': prof.email,
@@ -1424,14 +2091,17 @@ def render_admin_dashboard(request, context):
             'role': prof.role,
             'id_number': prof.id_number or (kyc.id_number if kyc else None) or (agent_kyc.id_number if agent_kyc else None) or 'N/A',
             'kra_pin': prof.kra_pin or (agent_kyc.kra_pin if agent_kyc else None) or 'N/A',
-            'county': prof.agent_county or audit_meta.get('county') or 'National',
-            'firm_or_agency': audit_meta.get('firm_or_agency') or audit_meta.get('law_firm_name') or audit_meta.get('agency_name') or 'Independent',
+            'county': prof.surveyor_county or prof.agent_county or audit_meta.get('county') or 'National',
+            'firm_or_agency': firm_or_agency,
             'lsk_number': audit_meta.get('lsk_number') or 'N/A',
             'practicing_cert': audit_meta.get('practicing_cert') or 'N/A',
+            'surveyor_license_number': prof.surveyor_license_number or audit_meta.get('surveyor_license_number') or 'N/A',
+            'surveyor_firm': prof.surveyor_firm or audit_meta.get('surveyor_firm') or 'N/A',
+            'is_surveyor_verified': getattr(prof, 'is_surveyor_verified', False),
             'earb_number': audit_meta.get('earb_number') or 'N/A',
             'good_conduct_number': audit_meta.get('good_conduct_number') or 'N/A',
             'year_of_admission': audit_meta.get('year_of_admission') or 'N/A',
-            'is_verified': prof.is_identity_verified,
+            'is_verified': prof.is_identity_verified or getattr(prof, 'is_surveyor_verified', False),
             'is_active': prof.is_active,
             'date_joined': prof.date_joined.strftime('%b %d, %Y') if prof.date_joined else 'N/A',
             'verify_url': reverse('frontend:admin_verify_professional', args=[prof.id]),
@@ -1498,10 +2168,10 @@ def render_admin_dashboard(request, context):
             'phone': u.phone_number or 'N/A',
             'role': u.role,
             'buyer_account_type': getattr(u, 'buyer_account_type', None),
-            'is_verified': u.is_identity_verified,
+            'is_verified': u.is_identity_verified or getattr(u, 'is_surveyor_verified', False),
             'is_active': u.is_active,
             'is_staff': u.is_staff,
-            'county': getattr(u, 'agent_county', '') or 'N/A',
+            'county': getattr(u, 'surveyor_county', None) or getattr(u, 'agent_county', '') or 'N/A',
             'date_joined': u.date_joined.strftime('%b %d, %Y') if u.date_joined else 'N/A',
         })
 
@@ -1520,6 +2190,7 @@ def render_admin_dashboard(request, context):
         provision_action=reverse('frontend:admin_provision_professional'),
         stats=[
             {'label': 'Verified Lawyers', 'value': str(all_lawyers.filter(is_identity_verified=True).count()), 'tone': 'accent'},
+            {'label': 'Licensed Surveyors', 'value': str(all_surveyors.filter(Q(is_identity_verified=True) | Q(is_surveyor_verified=True)).count()), 'tone': 'accent'},
             {'label': 'Licensed Agents', 'value': str(all_agents.filter(is_identity_verified=True).count()), 'tone': 'success'},
             {'label': 'Escrow GMV', 'value': f"KES {analytics_data['financial']['total_gmv_kes']:,.0f}", 'tone': 'accent'},
             {'label': 'AI Accuracy', 'value': f"{ai_eval_data.get('accuracy_pct', 98.4)}%", 'tone': 'success'},
@@ -1565,7 +2236,7 @@ def admin_analytics_view(request):
 
 @login_required
 def admin_provision_professional(request):
-    """Admin endpoint to create and verify Lawyers, Agents, and Staff with Direct or Invitation modes."""
+    """Admin endpoint to create and verify Lawyers, Surveyors, Agents, and Staff with Direct or Invitation modes."""
     import json
     import secrets
     from django.http import JsonResponse
@@ -1597,7 +2268,7 @@ def admin_provision_professional(request):
         data = request.POST
 
     role = data.get('role', 'Lawyer').strip()
-    if role not in ['Lawyer', 'Agent', 'Staff', 'Admin']:
+    if role not in ['Lawyer', 'Surveyor', 'Agent', 'Staff', 'Admin']:
         role = 'Lawyer'
 
     provision_mode = data.get('provision_mode', 'DIRECT_ACTIVE').strip()  # DIRECT_ACTIVE or INVITATION
@@ -1614,6 +2285,9 @@ def admin_provision_professional(request):
     lsk_number = data.get('lsk_number', '').strip()
     practicing_cert_number = data.get('practicing_cert_number', '').strip()
     year_of_admission = data.get('year_of_admission', '').strip()
+
+    surveyor_license_number = data.get('surveyor_license_number', '').strip()
+    surveyor_firm = data.get('surveyor_firm', '').strip()
 
     agency_name = data.get('agency_name', '').strip()
     earb_number = data.get('earb_number', '').strip()
@@ -1666,8 +2340,12 @@ def admin_provision_professional(request):
             id_number=national_id or None,
             kra_pin=kra_pin or None,
             role=role,
-            agent_county=county,
-            is_staff=role in ['Admin', 'Staff', 'Lawyer', 'Agent'],
+            agent_county=county if role == 'Agent' else '',
+            surveyor_license_number=surveyor_license_number if role == 'Surveyor' else '',
+            surveyor_firm=surveyor_firm if role == 'Surveyor' else '',
+            surveyor_county=county if role == 'Surveyor' else '',
+            is_surveyor_verified=True if role == 'Surveyor' else False,
+            is_staff=role in ['Admin', 'Staff', 'Lawyer', 'Surveyor', 'Agent'],
             is_active=True,
             is_identity_verified=True,
             is_email_verified=True,
@@ -1677,15 +2355,23 @@ def admin_provision_professional(request):
         user.save()
 
         # Audit metadata
+        firm_or_agency = (
+            law_firm_name if role == 'Lawyer'
+            else (surveyor_firm if role == 'Surveyor'
+            else (agency_name if role == 'Agent'
+            else 'DigiLand Internal'))
+        )
         audit_meta = {
             'provisioned_by_admin': request.user.email,
             'provision_mode': provision_mode,
             'role': role,
             'county': county,
-            'firm_or_agency': law_firm_name if role == 'Lawyer' else (agency_name if role == 'Agent' else 'DigiLand Internal'),
+            'firm_or_agency': firm_or_agency,
             'lsk_number': lsk_number if role == 'Lawyer' else None,
             'practicing_cert': practicing_cert_number if role == 'Lawyer' else None,
             'year_of_admission': year_of_admission if role == 'Lawyer' else None,
+            'surveyor_license_number': surveyor_license_number if role == 'Surveyor' else None,
+            'surveyor_firm': surveyor_firm if role == 'Surveyor' else None,
             'earb_number': earb_number if role == 'Agent' else None,
             'good_conduct_number': good_conduct_number if role == 'Agent' else None,
             'invite_token': invite_token,
@@ -1739,6 +2425,9 @@ def admin_provision_professional(request):
                     'role': role,
                     'county': county,
                     'firm_or_agency': audit_meta['firm_or_agency'],
+                    'surveyor_license_number': user.surveyor_license_number,
+                    'surveyor_firm': user.surveyor_firm,
+                    'is_surveyor_verified': user.is_surveyor_verified,
                     'is_verified': user.is_identity_verified,
                     'is_active': user.is_active,
                     'date_joined': 'Just now',
@@ -1761,11 +2450,13 @@ def admin_verify_professional(request, user_id):
     """Admin endpoint to verify an existing professional."""
     from core.models import User as CoreUser, KYCProfile, AgentKYCApplication
     is_ajax = request.headers.get('accept') == 'application/json' or request.headers.get('x-requested-with') == 'XMLHttpRequest'
-    prof = get_object_or_404(CoreUser, id=user_id, role__in=['Lawyer', 'Agent'])
+    prof = get_object_or_404(CoreUser, id=user_id, role__in=['Lawyer', 'Surveyor', 'Agent', 'Staff', 'Admin'])
 
     prof.is_identity_verified = True
     prof.is_active = True
     prof.is_onboarded = True
+    if prof.role == 'Surveyor':
+        prof.is_surveyor_verified = True
     prof.save()
 
     KYCProfile.objects.filter(user=prof).update(status='APPROVED')
@@ -1785,7 +2476,7 @@ def admin_toggle_professional_status(request, user_id):
     """Admin endpoint to suspend or reactivate a professional."""
     from core.models import User as CoreUser
     is_ajax = request.headers.get('accept') == 'application/json' or request.headers.get('x-requested-with') == 'XMLHttpRequest'
-    prof = get_object_or_404(CoreUser, id=user_id, role__in=['Lawyer', 'Agent'])
+    prof = get_object_or_404(CoreUser, id=user_id, role__in=['Lawyer', 'Surveyor', 'Agent', 'Staff', 'Admin'])
 
     prof.is_active = not prof.is_active
     prof.save(update_fields=['is_active'])
@@ -1902,14 +2593,14 @@ def admin_update_user_role(request, user_id):
     try:
         data = json.loads(request.body) if request.body else {}
         new_role = data.get('role', '').strip()
-        if new_role not in ['Buyer', 'Seller', 'Agent', 'Lawyer', 'Staff', 'Admin']:
+        if new_role not in ['Buyer', 'Seller', 'Agent', 'Lawyer', 'Surveyor', 'Staff', 'Admin']:
             return JsonResponse({'error': f'Invalid role: {new_role}'}, status=400)
 
         target_user = get_object_or_404(CoreUser, id=user_id)
         prev_role = target_user.role
 
         target_user.role = new_role
-        target_user.is_staff = new_role in ['Admin', 'Staff', 'Lawyer', 'Agent']
+        target_user.is_staff = new_role in ['Admin', 'Staff', 'Lawyer', 'Surveyor', 'Agent']
         target_user.save(update_fields=['role', 'is_staff'])
 
         AuditService.log_event(

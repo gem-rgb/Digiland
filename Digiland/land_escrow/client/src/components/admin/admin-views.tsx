@@ -7,6 +7,7 @@ import {
   Briefcase,
   CheckCircle2,
   Clock,
+  Compass,
   Cpu,
   CreditCard,
   Database,
@@ -61,7 +62,7 @@ export function AdminPeopleHubView() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   // Provisioning Form States
-  const [roleToCreate, setRoleToCreate] = useState<'Lawyer' | 'Agent' | 'Staff' | 'Admin'>('Lawyer');
+  const [roleToCreate, setRoleToCreate] = useState<'Lawyer' | 'Surveyor' | 'Agent' | 'Staff' | 'Admin'>('Lawyer');
   const [provisionMode, setProvisionMode] = useState<'DIRECT_ACTIVE' | 'INVITATION'>('DIRECT_ACTIVE');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -79,6 +80,10 @@ export function AdminPeopleHubView() {
   const [agencyName, setAgencyName] = useState('');
   const [earbNumber, setEarbNumber] = useState('');
   const [goodConductNumber, setGoodConductNumber] = useState('');
+
+  // Surveyor specific fields
+  const [surveyorLicenseNumber, setSurveyorLicenseNumber] = useState('');
+  const [surveyorFirm, setSurveyorFirm] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -222,6 +227,8 @@ export function AdminPeopleHubView() {
       agency_name: agencyName,
       earb_number: earbNumber,
       good_conduct_number: goodConductNumber,
+      surveyor_license_number: surveyorLicenseNumber,
+      surveyor_firm: surveyorFirm,
     };
 
     try {
@@ -324,7 +331,7 @@ export function AdminPeopleHubView() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
             {/* Filter Pills */}
             <div className="flex flex-wrap items-center gap-1.5">
-              {['All', 'Buyer', 'Seller', 'Agent', 'Lawyer', 'Staff', 'Admin'].map((r) => (
+              {['All', 'Buyer', 'Seller', 'Agent', 'Lawyer', 'Surveyor', 'Staff', 'Admin'].map((r) => (
                 <button
                   key={r}
                   type="button"
@@ -378,6 +385,12 @@ export function AdminPeopleHubView() {
                         <div className="font-bold text-slate-900">{u.name}</div>
                         <div className="text-[11px] text-slate-500 font-medium">{u.email}</div>
                         <div className="text-[10px] text-slate-400">{u.phone || 'No phone'}</div>
+                        {(u.surveyor_license_number || u.surveyor_firm || u.firm_or_agency) && (
+                          <div className="mt-0.5 text-[10px] font-semibold text-teal-700">
+                            {u.surveyor_license_number ? `ISLK: ${u.surveyor_license_number}` : ''}
+                            {u.firm_or_agency && u.firm_or_agency !== 'Independent' ? ` • ${u.firm_or_agency}` : ''}
+                          </div>
+                        )}
                       </td>
                       <td className="py-3.5 px-3">
                         <span
@@ -386,6 +399,8 @@ export function AdminPeopleHubView() {
                               ? 'bg-purple-100 text-purple-800 border border-purple-200'
                               : u.role === 'Lawyer'
                               ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                              : u.role === 'Surveyor'
+                              ? 'bg-teal-100 text-teal-800 border border-teal-200'
                               : u.role === 'Agent'
                               ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                               : 'bg-slate-100 text-slate-700 border border-slate-200'
@@ -393,6 +408,8 @@ export function AdminPeopleHubView() {
                         >
                           {u.role === 'Lawyer' ? (
                             <Gavel className="h-3 w-3" />
+                          ) : u.role === 'Surveyor' ? (
+                            <Compass className="h-3 w-3" />
                           ) : u.role === 'Agent' ? (
                             <Briefcase className="h-3 w-3" />
                           ) : (
@@ -405,13 +422,13 @@ export function AdminPeopleHubView() {
                       <td className="py-3.5 px-3">
                         <span
                           className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                            u.is_verified
+                            u.is_verified || u.is_surveyor_verified
                               ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                               : 'bg-amber-100 text-amber-800 border border-amber-200'
                           }`}
                         >
                           <ShieldCheck className="h-3 w-3" />
-                          {u.is_verified ? 'Verified' : 'Unverified'}
+                          {u.is_verified || u.is_surveyor_verified ? 'Verified' : 'Unverified'}
                         </span>
                       </td>
                       <td className="py-3.5 px-3">
@@ -436,6 +453,7 @@ export function AdminPeopleHubView() {
                             <option value="Seller">Role: Seller</option>
                             <option value="Agent">Role: Agent</option>
                             <option value="Lawyer">Role: Lawyer</option>
+                            <option value="Surveyor">Role: Surveyor</option>
                             <option value="Staff">Role: Staff</option>
                             <option value="Admin">Role: Admin</option>
                           </select>
@@ -522,9 +540,10 @@ export function AdminPeopleHubView() {
             {/* Step 1: Role Selection */}
             <div>
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">1. Select Privileged Role</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                 {[
                   { r: 'Lawyer', title: 'Advocate / Lawyer', desc: 'Conveyancing & LSK verified' },
+                  { r: 'Surveyor', title: 'Land Surveyor', desc: 'Physical beacons & ISLK verified' },
                   { r: 'Agent', title: 'Real Estate Agent', desc: 'Site inspections & EARB license' },
                   { r: 'Staff', title: 'Compliance Staff', desc: 'Internal operations desk' },
                   { r: 'Admin', title: 'System Administrator', desc: 'Full platform authority' },
@@ -709,6 +728,35 @@ export function AdminPeopleHubView() {
                       onChange={(e) => setYearOfAdmission(e.target.value)}
                       placeholder="2018"
                       className="w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {roleToCreate === 'Surveyor' && (
+              <div className="space-y-3 rounded-2xl border border-teal-200 bg-teal-50/50 p-4">
+                <label className="text-xs font-black text-teal-900 uppercase tracking-wider block">Licensed Land Surveyor Verification Details (ISLK)</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] text-slate-600 block mb-1 font-bold">Survey Firm / Consultancy Name</label>
+                    <input
+                      type="text"
+                      value={surveyorFirm}
+                      onChange={(e) => setSurveyorFirm(e.target.value)}
+                      placeholder="e.g. Geospatial Surveys Kenya Ltd"
+                      className="w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-slate-600 block mb-1 font-bold">ISLK License / Registration Number *</label>
+                    <input
+                      type="text"
+                      value={surveyorLicenseNumber}
+                      onChange={(e) => setSurveyorLicenseNumber(e.target.value)}
+                      placeholder="e.g. ISLK-4092/2026"
+                      required
+                      className="w-full h-10 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 outline-none focus:border-teal-500"
                     />
                   </div>
                 </div>

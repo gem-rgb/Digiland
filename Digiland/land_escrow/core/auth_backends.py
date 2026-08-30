@@ -217,23 +217,42 @@ class EmailOrUsernameModelBackend(ModelBackend):
         except (User.DoesNotExist, Exception):
             return None
 
+    @classmethod
+    def is_locked_out_check(cls, identifier: str, ip_address: str) -> tuple[bool, str]:
+        """Return (is_locked, message) for lockout status."""
+        email_key = cls._cache_key("email", identifier.lower().strip() if identifier else "")
+        ip_key = cls._cache_key("ip", ip_address or "0.0.0.0")
+        email_count = cache.get(email_key, 0)
+        ip_count = cache.get(ip_key, 0)
+        if email_count >= cls.MAX_FAILED_ATTEMPTS:
+            return True, f"Account '{identifier}' is temporarily locked due to too many failed attempts. Try again in 15 minutes."
+        if ip_count >= cls.MAX_FAILED_ATTEMPTS * 2:
+            return True, "Too many failed attempts from your network. Try again in 15 minutes."
+        return False, ""
+
+    @classmethod
+    def reset_lockout(cls, identifier: str, ip_address: str = "0.0.0.0") -> None:
+        """Manually clear lockout counters for an identifier and IP."""
+        if identifier:
+            cache.delete(cls._cache_key("email", identifier.lower().strip()))
+        if ip_address:
+            cache.delete(cls._cache_key("ip", ip_address))
+
     def _is_locked_out(self, identifier: str, ip_address: str) -> bool:
         """Check if the account or IP is temporarily locked."""
-        email_count = cache.get(self._cache_key("email", identifier), 0)
-        ip_count = cache.get(self._cache_key("ip", ip_address), 0)
-        return email_count >= self.MAX_FAILED_ATTEMPTS or ip_count >= self.MAX_FAILED_ATTEMPTS * 2
+        is_locked, _ = self.is_locked_out_check(identifier, ip_address)
+        return is_locked
 
     def _record_failure(self, identifier: str, ip_address: str) -> None:
         """Increment failed-attempt counters."""
-        email_key = self._cache_key("email", identifier)
+        email_key = self._cache_key("email", identifier.lower().strip())
         ip_key = self._cache_key("ip", ip_address)
         cache.set(email_key, cache.get(email_key, 0) + 1, timeout=self.LOCKOUT_WINDOW_SECONDS)
         cache.set(ip_key, cache.get(ip_key, 0) + 1, timeout=self.LOCKOUT_WINDOW_SECONDS)
 
     def _clear_failures(self, identifier: str, ip_address: str) -> None:
         """Clear failed-attempt counters after a successful login."""
-        cache.delete(self._cache_key("email", identifier))
-        cache.delete(self._cache_key("ip", ip_address))
+        self.reset_lockout(identifier, ip_address)
 
     @staticmethod
     def _cache_key(prefix: str, value: str) -> str:

@@ -102,7 +102,7 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
             # Admin & Superusers -> admin.digiland.co.ke
             if user.role == 'Admin' or getattr(user, 'is_superuser', False) or getattr(user, 'is_staff', False):
                 admin_base = "" if is_local else "https://admin.digiland.co.ke"
-                return f"{admin_base}{reverse('frontend:agent_dashboard')}"
+                return f"{admin_base}{reverse('frontend:admin_dashboard')}"
 
             # Agents & Lawyers -> staff.digiland.co.ke
             if user.role in {'Lawyer', 'Agent', 'Land_Official'}:

@@ -2,6 +2,7 @@ from decimal import Decimal
 from django import forms as django_forms
 from django.contrib.messages import get_messages
 from django.urls import reverse
+from django.utils import timezone
 from core.legal import KENYAN_LAND_DOCUMENTS, JOINT_KENYAN_LAND_DOCUMENTS
 
 
@@ -52,8 +53,19 @@ def build_nav(user, active=None):
             {'label': 'Legal Library', 'href': reverse('frontend:escrow_acts'), 'icon': 'legal', 'active': active in {'legal', 'joint-laws'}},
         ]
 
+    if role == 'Surveyor':
+        return [
+            {'label': 'Command Centre', 'href': reverse('frontend:surveyor_dashboard'), 'icon': 'dashboard', 'active': active in {'dashboard', 'surveyor-dashboard'}},
+            {'label': 'My Assignments', 'href': f"{reverse('frontend:surveyor_dashboard')}?tab=assignments", 'icon': 'parcels', 'active': active == 'assignments'},
+            {'label': 'Site Visits', 'href': f"{reverse('frontend:surveyor_dashboard')}?tab=site-visits", 'icon': 'parcels', 'active': active == 'site-visits'},
+            {'label': 'Field Mode', 'href': f"{reverse('frontend:surveyor_dashboard')}?tab=field-mode", 'icon': 'security', 'active': active == 'field-mode'},
+            {'label': 'Discrepancies', 'href': f"{reverse('frontend:surveyor_dashboard')}?tab=issues", 'icon': 'legal', 'active': active == 'issues'},
+            {'label': 'Survey Reports', 'href': f"{reverse('frontend:surveyor_dashboard')}?tab=reports", 'icon': 'documents', 'active': active == 'reports'},
+            {'label': 'Messages', 'href': reverse('frontend:messages'), 'icon': 'documents', 'active': active == 'messages'},
+        ]
+
     nav = [
-        {'label': 'Command Centre', 'href': reverse('frontend:agent_dashboard'), 'icon': 'dashboard', 'active': active in {'dashboard', 'admin-dashboard', 'agent-dashboard', 'lawyer-dashboard'}},
+        {'label': 'Command Centre', 'href': reverse('frontend:agent_dashboard'), 'icon': 'dashboard', 'active': active in {'dashboard', 'admin-dashboard', 'agent-dashboard', 'lawyer-dashboard', 'surveyor-dashboard'}},
         {'label': 'Tasks', 'href': reverse('frontend:task_management'), 'icon': 'parcels', 'active': active == 'tasks'},
         {'label': 'Parcels', 'href': reverse('frontend:parcel_list'), 'icon': 'parcels', 'active': active == 'parcel-list'},
         {'label': 'Transactions', 'href': reverse('frontend:transactions'), 'icon': 'transactions', 'active': active == 'transactions'},
@@ -902,3 +914,235 @@ def serialize_formset(formset, *, action, submit_label, method='post', intro=Non
         'formsetRows': rows,
         'errors': [str(error) for error in formset.non_form_errors()],
     }
+
+
+def serialize_survey_beacon(beacon):
+    return {
+        'id': str(beacon.id),
+        'beacon_id': beacon.beacon_id,
+        'status': beacon.status,
+        'status_display': beacon.get_status_display(),
+        'condition': beacon.condition,
+        'condition_display': beacon.get_condition_display(),
+        'latitude': beacon.latitude,
+        'longitude': beacon.longitude,
+        'easting': float(beacon.easting) if beacon.easting else None,
+        'northing': float(beacon.northing) if beacon.northing else None,
+        'elevation_meters': float(beacon.elevation_meters) if beacon.elevation_meters else None,
+        'description': beacon.description,
+        'photo_url': beacon.photo.url if beacon.photo else None,
+        'notes': beacon.notes,
+        'created_at': beacon.created_at.strftime('%b %d, %Y %H:%M') if beacon.created_at else None,
+    }
+
+
+def serialize_survey_boundary(boundary):
+    return {
+        'id': str(boundary.id),
+        'segment': boundary.segment,
+        'segment_display': boundary.get_segment_display(),
+        'neighbouring_parcel_reference': boundary.neighbouring_parcel_reference,
+        'physical_feature': boundary.physical_feature,
+        'physical_feature_display': boundary.get_physical_feature_display(),
+        'condition_description': boundary.condition_description,
+        'consistency_status': boundary.consistency_status,
+        'consistency_status_display': boundary.get_consistency_status_display(),
+        'observation_notes': boundary.observation_notes,
+        'photo_url': boundary.photo.url if boundary.photo else None,
+        'created_at': boundary.created_at.strftime('%b %d, %Y %H:%M') if boundary.created_at else None,
+    }
+
+
+def serialize_survey_measurement(m):
+    return {
+        'id': str(m.id),
+        'point_id': m.point_id,
+        'eastings': float(m.eastings) if m.eastings else None,
+        'northings': float(m.northings) if m.northings else None,
+        'elevation': float(m.elevation) if m.elevation else None,
+        'distance_meters': float(m.distance_meters) if m.distance_meters else None,
+        'bearing_degrees': m.bearing_degrees,
+        'instrument_method': m.instrument_method,
+        'accuracy_quality_note': m.accuracy_quality_note,
+        'surveyor_notes': m.surveyor_notes,
+        'created_at': m.created_at.strftime('%b %d, %Y') if m.created_at else None,
+    }
+
+
+def serialize_survey_document(doc):
+    return {
+        'id': str(doc.id),
+        'title': doc.title,
+        'document_type': doc.document_type,
+        'document_type_display': doc.get_document_type_display(),
+        'source_type': doc.source_type,
+        'source_type_display': doc.get_source_type_display(),
+        'visibility': doc.visibility,
+        'visibility_display': doc.get_visibility_display(),
+        'file_url': doc.file.url if doc.file else None,
+        'file_format': doc.file_format,
+        'file_size_bytes': doc.file_size_bytes,
+        'version': doc.version,
+        'description': doc.description,
+        'uploaded_by_email': doc.uploaded_by.email if doc.uploaded_by else 'System',
+        'created_at': doc.created_at.strftime('%b %d, %Y') if doc.created_at else None,
+    }
+
+
+def serialize_survey_issue(issue):
+    return {
+        'id': str(issue.id),
+        'issue_number': issue.issue_number,
+        'issue_type': issue.issue_type,
+        'issue_type_display': issue.get_issue_type_display(),
+        'severity': issue.severity,
+        'severity_display': issue.get_severity_display(),
+        'status': issue.status,
+        'status_display': issue.get_status_display(),
+        'title': issue.title,
+        'description': issue.description,
+        'evidence_notes': issue.evidence_notes,
+        'photo_url': issue.photo.url if issue.photo else None,
+        'surveyor_recommendation': issue.surveyor_recommendation,
+        'assigned_to_email': issue.assigned_to.email if issue.assigned_to else None,
+        'resolution_notes': issue.resolution_notes,
+        'resolved_at': issue.resolved_at.strftime('%b %d, %Y') if issue.resolved_at else None,
+        'created_at': issue.created_at.strftime('%b %d, %Y') if issue.created_at else None,
+    }
+
+
+def serialize_survey_report(report):
+    return {
+        'id': str(report.id),
+        'version': report.version,
+        'surveyor_email': report.surveyor.email,
+        'surveyor_name': f"{report.surveyor.first_name} {report.surveyor.last_name}".strip() or report.surveyor.email,
+        'conclusion': report.conclusion,
+        'conclusion_display': report.get_conclusion_display(),
+        'summary_findings': report.summary_findings,
+        'boundary_findings': report.boundary_findings,
+        'area_comparison_notes': report.area_comparison_notes,
+        'site_observations': report.site_observations,
+        'discrepancies_summary': report.discrepancies_summary,
+        'professional_declaration_signed': report.professional_declaration_signed,
+        'signed_at': report.signed_at.strftime('%b %d, %Y %H:%M') if report.signed_at else None,
+        'submission_timestamp': report.submission_timestamp.strftime('%b %d, %Y %H:%M') if report.submission_timestamp else None,
+        'review_status': report.review_status,
+        'review_status_display': report.get_review_status_display(),
+        'reviewer_email': report.reviewer.email if report.reviewer else None,
+        'reviewer_feedback': report.reviewer_feedback,
+        'reviewed_at': report.reviewed_at.strftime('%b %d, %Y') if report.reviewed_at else None,
+        'created_at': report.created_at.strftime('%b %d, %Y') if report.created_at else None,
+    }
+
+
+def serialize_survey_audit_log(log):
+    return {
+        'id': str(log.id),
+        'action': log.action,
+        'user_email': log.user.email if log.user else 'System',
+        'details': log.details,
+        'timestamp': log.timestamp.strftime('%b %d, %Y %H:%M:%S'),
+    }
+
+
+def serialize_survey_assignment(assignment, user=None):
+    parcel = assignment.land_parcel
+    documented_area_acres = float(parcel.land_size) if parcel.land_size else None
+    documented_area_sqm = float(assignment.official_documented_area_sqm) if assignment.official_documented_area_sqm else (documented_area_acres * 4046.86 if documented_area_acres else None)
+    calculated_area_sqm = float(assignment.survey_calculated_area_sqm) if assignment.survey_calculated_area_sqm else None
+    
+    beacons_qs = assignment.beacons.all()
+    boundaries_qs = assignment.boundary_observations.all()
+    measurements_qs = assignment.measurements.all()
+    documents_qs = assignment.documents.all()
+    issues_qs = assignment.issues.all()
+    reports_qs = assignment.reports.all()
+    audit_logs_qs = assignment.audit_logs.all()[:20]
+
+    # Completeness calculation
+    checklist = assignment.pre_survey_checklist or {}
+    checks_total = 8
+    checks_done = 0
+    if checklist.get('parcel_ref'): checks_done += 1
+    if checklist.get('seller_docs'): checks_done += 1
+    if checklist.get('cadastral_rim'): checks_done += 1
+    if checklist.get('coords_reviewed'): checks_done += 1
+    if assignment.site_visit_status == 'COMPLETED': checks_done += 1
+    if beacons_qs.exists(): checks_done += 1
+    if boundaries_qs.exists(): checks_done += 1
+    if reports_qs.exists(): checks_done += 1
+    completeness_pct = int((checks_done / checks_total) * 100)
+
+    return {
+        'id': str(assignment.id),
+        'assignment_number': assignment.assignment_number,
+        'parcel_number': parcel.parcel_number,
+        'parcel_id': str(parcel.id),
+        'county': parcel.county,
+        'constituency': parcel.constituency,
+        'ward': parcel.ward,
+        'land_use': parcel.land_use_type,
+        'seller_email': parcel.listed_by.email if parcel.listed_by else 'Unknown Seller',
+        'surveyor_email': assignment.surveyor.email if assignment.surveyor else 'Unassigned',
+        'surveyor_name': f"{assignment.surveyor.first_name} {assignment.surveyor.last_name}".strip() if assignment.surveyor else 'Unassigned',
+        'surveyor_license': getattr(assignment.surveyor, 'surveyor_license_number', '') if assignment.surveyor else '',
+        'assignment_type': assignment.assignment_type,
+        'assignment_type_display': assignment.get_assignment_type_display(),
+        'status': assignment.status,
+        'status_display': assignment.get_status_display(),
+        'priority': assignment.priority,
+        'priority_display': assignment.get_priority_display(),
+        'instructions': assignment.instructions,
+        'assigned_at': assignment.assigned_at.strftime('%b %d, %Y') if assignment.assigned_at else None,
+        'due_date': assignment.due_date.strftime('%b %d, %Y') if assignment.due_date else None,
+        'due_date_iso': assignment.due_date.isoformat() if assignment.due_date else None,
+        'accepted_at': assignment.accepted_at.strftime('%b %d, %Y') if assignment.accepted_at else None,
+        'completed_at': assignment.completed_at.strftime('%b %d, %Y') if assignment.completed_at else None,
+        'is_overdue': bool(assignment.due_date and assignment.due_date < timezone.now().date() and assignment.status not in ('VERIFIED', 'CANCELLED', 'VERIFIED_WITH_OBSERVATIONS')),
+        
+        # Site visit
+        'site_visit_date': assignment.site_visit_date.strftime('%b %d, %Y') if assignment.site_visit_date else None,
+        'site_visit_time': assignment.site_visit_time.strftime('%H:%M') if assignment.site_visit_time else None,
+        'site_visit_status': assignment.site_visit_status,
+        'site_visit_status_display': assignment.get_site_visit_status_display(),
+        'site_visit_contact_name': assignment.site_visit_contact_name,
+        'site_visit_contact_phone': assignment.site_visit_contact_phone,
+        'site_visit_assistant_names': assignment.site_visit_assistant_names,
+        'site_visit_notes': assignment.site_visit_notes,
+        'device_gps_lat': assignment.device_gps_lat,
+        'device_gps_lng': assignment.device_gps_lng,
+        'device_gps_accuracy_meters': assignment.device_gps_accuracy_meters,
+        
+        # Pre-survey checklist
+        'pre_survey_checklist': checklist,
+        'completeness_pct': completeness_pct,
+
+        # Area reconciliation
+        'documented_area_acres': documented_area_acres,
+        'documented_area_sqm': documented_area_sqm,
+        'calculated_area_sqm': calculated_area_sqm,
+        'area_discrepancy_detected': assignment.area_discrepancy_detected,
+        'area_discrepancy_percentage': assignment.area_discrepancy_percentage,
+        'internal_notes': assignment.internal_notes,
+
+        # Related collections
+        'beacons': [serialize_survey_beacon(b) for b in beacons_qs],
+        'boundary_observations': [serialize_survey_boundary(bo) for bo in boundaries_qs],
+        'measurements': [serialize_survey_measurement(m) for m in measurements_qs],
+        'documents': [serialize_survey_document(d) for d in documents_qs],
+        'issues': [serialize_survey_issue(i) for i in issues_qs],
+        'reports': [serialize_survey_report(r) for r in reports_qs],
+        'audit_logs': [serialize_survey_audit_log(a) for a in audit_logs_qs],
+        
+        # Action URLs
+        'accept_url': reverse('frontend:surveyor_accept_assignment', kwargs={'assignment_id': assignment.id}),
+        'schedule_visit_url': reverse('frontend:surveyor_schedule_visit', kwargs={'assignment_id': assignment.id}),
+        'add_beacon_url': reverse('frontend:surveyor_add_beacon', kwargs={'assignment_id': assignment.id}),
+        'add_boundary_url': reverse('frontend:surveyor_add_boundary_observation', kwargs={'assignment_id': assignment.id}),
+        'add_measurement_url': reverse('frontend:surveyor_add_measurement', kwargs={'assignment_id': assignment.id}),
+        'upload_document_url': reverse('frontend:surveyor_upload_document', kwargs={'assignment_id': assignment.id}),
+        'add_issue_url': reverse('frontend:surveyor_create_issue', kwargs={'assignment_id': assignment.id}),
+        'submit_report_url': reverse('frontend:surveyor_submit_report', kwargs={'assignment_id': assignment.id}),
+    }
+

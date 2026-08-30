@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 # Partition definitions & role permissions
 PORTAL_ROLE_MAP = {
     'app': {'Buyer', 'Seller'},
-    'staff': {'Agent', 'Lawyer', 'Land_Official'},
+    'staff': {'Agent', 'Lawyer', 'Surveyor', 'Land_Official'},
     'admin': {'Admin'},
-    'marketing': {'Buyer', 'Seller', 'Agent', 'Lawyer', 'Land_Official', 'Admin'},
+    'marketing': {'Buyer', 'Seller', 'Agent', 'Lawyer', 'Surveyor', 'Land_Official', 'Admin'},
 }
 
 PORTAL_URLS = {
@@ -50,6 +50,9 @@ STAFF_ONLY_PREFIXES = (
     '/agent/approvals/',
     '/agent/commission/',
     '/lawyer/',
+    '/surveyor/',
+    '/survey/',
+    '/survey-assignments/',
 )
 
 ADMIN_ONLY_PREFIXES = (
@@ -86,6 +89,10 @@ class PartitionIsolationMiddleware:
         '/api/',
         '/admin/api/',
         '/admin/staff/',
+        '/admin/dashboard/',
+        '/staff/dashboard/',
+        '/agent/dashboard/',
+        '/surveyor/dashboard/',
         '/staff/login/',
         '/staff-login/',
         '/admin/login/',
@@ -110,7 +117,13 @@ class PartitionIsolationMiddleware:
         portal = resolve_request_partition(request)
         request.digiland_portal = portal
         host = request.get_host().split(':')[0].lower()
-        is_local = host in {'localhost', '127.0.0.1'}
+        is_local = (
+            host in {'localhost', '127.0.0.1', 'testserver', '0.0.0.0'}
+            or host.startswith('192.168.')
+            or host.startswith('10.')
+            or host.startswith('172.')
+            or getattr(settings, 'DEBUG', False)
+        )
 
         # In production, redirect routes hitting the wrong portal domain
         if not is_local:
@@ -176,11 +189,20 @@ class PartitionIsolationMiddleware:
                 is_allowed = True
 
             if not is_allowed:
-                correct_portal = 'staff' if user_role in {'Agent', 'Lawyer', 'Land_Official'} else ('admin' if (user_role == 'Admin' or user.is_superuser) else 'app')
+                correct_portal = 'staff' if user_role in {'Agent', 'Lawyer', 'Surveyor', 'Land_Official'} else ('admin' if (user_role == 'Admin' or user.is_superuser) else 'app')
                 target_base = PORTAL_URLS.get(correct_portal, PORTAL_URLS['app'])
                 
+                target_path = path
+                if path in ('/admin/dashboard/', '/staff/dashboard/', '/agent/dashboard/', '/surveyor/dashboard/'):
+                    if correct_portal == 'admin':
+                        target_path = '/admin/dashboard/'
+                    elif correct_portal == 'staff':
+                        target_path = '/staff/dashboard/'
+                    else:
+                        target_path = '/dashboard/'
+
                 logger.warning(
-                    f"[Partition Redirect] User {user.email} (role: {user_role}) on {portal} portal redirected to {correct_portal}"
+                    f"[Partition Redirect] User {user.email} (role: {user_role}) on {portal} portal redirected to {correct_portal} at {target_path}"
                 )
 
                 if request.path.startswith('/api/'):
@@ -191,7 +213,7 @@ class PartitionIsolationMiddleware:
                             'user_role': user_role,
                             'current_portal': portal,
                             'required_portal': correct_portal,
-                            'target_url': f"{target_base}{path}",
+                            'target_url': f"{target_base}{target_path}",
                         },
                         status=403,
                     )
@@ -199,7 +221,7 @@ class PartitionIsolationMiddleware:
                 if not is_local:
                     query_string = request.META.get('QUERY_STRING', '')
                     qs_suffix = f"?{query_string}" if query_string else ""
-                    return HttpResponseRedirect(f"{target_base}{path}{qs_suffix}")
+                    return HttpResponseRedirect(f"{target_base}{target_path}{qs_suffix}")
 
         response = self.get_response(request)
 

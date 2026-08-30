@@ -61,7 +61,11 @@ def database_config_from_url(database_url, conn_max_age=60, ssl_require=False):
                 "ENGINE": "django.db.backends.sqlite3",
                 "NAME": ":memory:",
             }
-        if raw_path.startswith("/") or os.path.isabs(raw_path):
+        if raw_path.startswith("//"):
+            db_name = raw_path[1:]
+        elif len(raw_path) > 2 and raw_path[0] == "/" and raw_path[2] == ":":
+            db_name = raw_path[1:]
+        elif os.path.isabs(raw_path) and not raw_path.startswith("/"):
             db_name = raw_path
         else:
             db_name = str(BASE_DIR / raw_path.lstrip("/"))

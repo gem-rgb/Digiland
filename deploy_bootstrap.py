@@ -106,41 +106,162 @@ def init_django_app() -> None:
             admin_user.save()
             EmailAddress.objects.update_or_create(user=admin_user, email=admin_email, defaults={"verified": True, "primary": True})
 
-        # Provision Seller account if not present
-        seller_email = "seller_demo@example.com"
-        seller_user, seller_created = User.objects.get_or_create(
-            email=seller_email,
-            defaults={
-                "first_name": "Demo",
-                "last_name": "Seller",
-                "role": "Seller",
-                "is_email_verified": True,
-                "is_identity_verified": True,
-                "is_onboarded": True,
-            }
-        )
-        if seller_created:
-            seller_user.set_password("SellerDigiland2026!")
+        # Provision Seller accounts
+        for seller_email, first, last, pwd in [
+            ("seller_demo@example.com", "Demo", "Seller", "SellerDigiland2026!"),
+            ("legalhusla@gmail.com", "Legal", "Husla", "LegalHusla2026!"),
+        ]:
+            seller_user, _ = User.objects.get_or_create(
+                email=seller_email,
+                defaults={
+                    "first_name": first,
+                    "last_name": last,
+                    "role": "Seller",
+                    "is_staff": False,
+                    "is_superuser": False,
+                    "is_active": True,
+                    "is_email_verified": True,
+                    "is_identity_verified": True,
+                    "is_onboarded": True,
+                }
+            )
+            seller_user.role = "Seller"
+            seller_user.is_staff = False
+            seller_user.is_superuser = False
+            seller_user.is_active = True
+            seller_user.is_email_verified = True
+            seller_user.is_identity_verified = True
+            seller_user.is_onboarded = True
+            seller_user.set_password(pwd)
             seller_user.save()
             EmailAddress.objects.update_or_create(user=seller_user, email=seller_email, defaults={"verified": True, "primary": True})
 
-        # Provision legalhusla Seller account if not present
-        legal_email = "legalhusla@gmail.com"
-        legal_user, legal_created = User.objects.get_or_create(
-            email=legal_email,
+        # Provision Buyer account
+        buyer_email = "buyer_demo@example.com"
+        buyer_user, _ = User.objects.get_or_create(
+            email=buyer_email,
             defaults={
-                "first_name": "Legal",
-                "last_name": "Husla",
-                "role": "Seller",
+                "first_name": "Demo",
+                "last_name": "Buyer",
+                "role": "Buyer",
+                "is_staff": False,
+                "is_superuser": False,
+                "is_active": True,
                 "is_email_verified": True,
                 "is_identity_verified": True,
                 "is_onboarded": True,
             }
         )
-        if legal_created:
-            legal_user.set_password("LegalHusla2026!")
-            legal_user.save()
-            EmailAddress.objects.update_or_create(user=legal_user, email=legal_email, defaults={"verified": True, "primary": True})
+        buyer_user.role = "Buyer"
+        buyer_user.is_staff = False
+        buyer_user.is_superuser = False
+        buyer_user.is_active = True
+        buyer_user.is_email_verified = True
+        buyer_user.is_identity_verified = True
+        buyer_user.is_onboarded = True
+        buyer_user.set_password("BuyerDigiland2026!")
+        buyer_user.save()
+        EmailAddress.objects.update_or_create(user=buyer_user, email=buyer_email, defaults={"verified": True, "primary": True})
+
+        # Provision EARB Agent accounts
+        for agent_email, first, last in [
+            ("agent_demo@example.com", "David", "Agent"),
+            ("agent@digiland.co.ke", "Field", "Agent"),
+        ]:
+            agent_user, _ = User.objects.get_or_create(
+                email=agent_email,
+                defaults={
+                    "first_name": first,
+                    "last_name": last,
+                    "role": "Agent",
+                    "is_staff": False,
+                    "is_superuser": False,
+                    "is_active": True,
+                    "is_email_verified": True,
+                    "is_identity_verified": True,
+                    "is_onboarded": True,
+                    "agent_county": "Nairobi",
+                    "agent_constituency": "Dagoretti North",
+                }
+            )
+            agent_user.role = "Agent"
+            agent_user.is_staff = False
+            agent_user.is_superuser = False
+            agent_user.is_active = True
+            agent_user.is_email_verified = True
+            agent_user.is_identity_verified = True
+            agent_user.is_onboarded = True
+            agent_user.set_password("AgentDigiland2026!")
+            agent_user.save()
+            EmailAddress.objects.update_or_create(user=agent_user, email=agent_email, defaults={"verified": True, "primary": True})
+
+        # Provision LSK Advocate/Lawyer accounts
+        for lawyer_email, first, last in [
+            ("lawyer_demo@example.com", "Sarah", "Lawyer"),
+            ("lawyer@digiland.co.ke", "LSK", "Advocate"),
+        ]:
+            lawyer_user, _ = User.objects.get_or_create(
+                email=lawyer_email,
+                defaults={
+                    "first_name": first,
+                    "last_name": last,
+                    "role": "Lawyer",
+                    "is_staff": False,
+                    "is_superuser": False,
+                    "is_active": True,
+                    "is_email_verified": True,
+                    "is_identity_verified": True,
+                    "is_onboarded": True,
+                }
+            )
+            lawyer_user.role = "Lawyer"
+            lawyer_user.is_staff = False
+            lawyer_user.is_superuser = False
+            lawyer_user.is_active = True
+            lawyer_user.is_email_verified = True
+            lawyer_user.is_identity_verified = True
+            lawyer_user.is_onboarded = True
+            lawyer_user.set_password("LawyerDigiland2026!")
+            lawyer_user.save()
+            EmailAddress.objects.update_or_create(user=lawyer_user, email=lawyer_email, defaults={"verified": True, "primary": True})
+
+        # Provision Licensed Surveyor accounts
+        for surveyor_email, first, last in [
+            ("surveyor_demo@example.com", "Jane", "Surveyor"),
+            ("surveyor@digiland.co.ke", "Licensed", "Surveyor"),
+        ]:
+            surveyor_user, _ = User.objects.get_or_create(
+                email=surveyor_email,
+                defaults={
+                    "first_name": first,
+                    "last_name": last,
+                    "role": "Surveyor",
+                    "is_staff": False,
+                    "is_superuser": False,
+                    "is_active": True,
+                    "is_email_verified": True,
+                    "is_identity_verified": True,
+                    "is_onboarded": True,
+                    "surveyor_license_number": "ISLK-4092/2026",
+                    "surveyor_firm": "Geospatial Surveys Kenya Ltd",
+                    "surveyor_county": "Nairobi & Kiambu",
+                    "is_surveyor_verified": True,
+                }
+            )
+            surveyor_user.role = "Surveyor"
+            surveyor_user.is_staff = False
+            surveyor_user.is_superuser = False
+            surveyor_user.is_active = True
+            surveyor_user.is_email_verified = True
+            surveyor_user.is_identity_verified = True
+            surveyor_user.is_onboarded = True
+            surveyor_user.surveyor_license_number = "ISLK-4092/2026"
+            surveyor_user.surveyor_firm = "Geospatial Surveys Kenya Ltd"
+            surveyor_user.surveyor_county = "Nairobi & Kiambu"
+            surveyor_user.is_surveyor_verified = True
+            surveyor_user.set_password("SurveyorDigiland2026!")
+            surveyor_user.save()
+            EmailAddress.objects.update_or_create(user=surveyor_user, email=surveyor_email, defaults={"verified": True, "primary": True})
 
         _BOOTSTRAP_DONE = True
         if _MARKER_FILE:

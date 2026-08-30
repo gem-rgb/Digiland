@@ -715,8 +715,16 @@ class MultiDomainRoutingMiddleware:
 
     def __call__(self, request):
         host = request.get_host().lower().split(':')[0]
+        path = request.path
+        is_local = (
+            host in {'localhost', '127.0.0.1', 'testserver', '0.0.0.0'}
+            or host.startswith('192.168.')
+            or host.startswith('10.')
+            or host.startswith('172.')
+            or getattr(settings, 'DEBUG', False)
+        )
 
-        # Determine domain mode
+        # Determine domain mode from host or path
         if 'staff.digiland.co.ke' in host:
             domain_mode = 'staff'
         elif 'admin.digiland.co.ke' in host:
@@ -726,67 +734,89 @@ class MultiDomainRoutingMiddleware:
         elif 'digiland.co.ke' in host:
             domain_mode = 'public'
         else:
-            # Localhost or Vercel preview deployment
-            override = request.GET.get('domain') or request.session.get('domain_mode')
-            if override in {'public', 'app', 'staff', 'admin'}:
-                domain_mode = override
-                request.session['domain_mode'] = override
-            elif request.path.startswith('/staff'):
-                domain_mode = 'staff'
-            elif request.path.startswith('/admin'):
+            # Localhost, development, or single-domain deployment
+            # Derive domain mode directly from path to avoid sticky session collisions
+            if path.startswith('/admin') or path.startswith('/auth/admin-login'):
                 domain_mode = 'admin'
-            elif request.user.is_authenticated and request.path in {'/dashboard/', '/agent/dashboard/', '/buyer/dashboard/', '/seller/dashboard/'}:
+            elif path.startswith('/staff') or path.startswith('/agent') or path.startswith('/lawyer'):
+                domain_mode = 'staff'
+            elif (
+                path.startswith('/buyer')
+                or path.startswith('/seller')
+                or path.startswith('/parcels')
+                or path.startswith('/transactions')
+                or path.startswith('/messages')
+            ):
                 domain_mode = 'app'
             else:
-                domain_mode = 'public' if not request.user.is_authenticated else 'app'
+                override = request.GET.get('domain')
+                if override in {'public', 'app', 'staff', 'admin'}:
+                    domain_mode = override
+                else:
+                    domain_mode = 'public' if not request.user.is_authenticated else 'app'
 
         request.domain_mode = domain_mode
 
-        # Security gate for staff domain
+        # On local / dev / single-domain environments, do not perform cross-domain bouncing
+        if is_local:
+            return self.get_response(request)
+
+        # Production security gate for staff domain
         if domain_mode == 'staff':
-            if request.path.startswith('/admin/login/') or request.path.startswith('/auth/admin-login/') or request.path.startswith('/admin/'):
+            if path.startswith('/admin/login/') or path.startswith('/auth/admin-login/') or path.startswith('/admin/'):
                 admin_base = getattr(settings, 'ADMIN_DOMAIN', 'https://admin.digiland.co.ke').rstrip('/')
                 return redirect(f"{admin_base}/admin/login/")
-            if request.path.startswith('/accounts/login/'):
+            if path.startswith('/accounts/login/'):
                 return redirect('frontend:staff_login')
-            if request.path in {'/', '/staff/', '/staff'}:
+            if path in {'/', '/staff/', '/staff'}:
                 if not request.user.is_authenticated or getattr(request.user, 'role', None) not in {'Agent', 'Lawyer', 'Land_Official'}:
                     return redirect('frontend:staff_login')
                 return redirect('frontend:agent_dashboard')
-            # Allow login page, static assets, API routes, and all operational paths through
+            # Allow login page, static assets, API routes, and operational paths through
             exempt = (
-                request.path.startswith('/staff/login/')
-                or request.path.startswith('/staff-login/')
-                or request.path.startswith('/static/')
-                or request.path.startswith('/api/')
-                or request.path.startswith('/agent/')
-                or request.path.startswith('/lawyer/')
-                or request.path.startswith('/parcels/')
-                or request.path.startswith('/transactions/')
-                or request.path.startswith('/messages/')
-                or request.path.startswith('/commissions/')
-                or request.path.startswith('/support/')
-                or request.path.startswith('/media/')
-                or request.path.startswith('/dashboard/')
+                path.startswith('/staff/login/')
+                or path.startswith('/staff-login/')
+                or path.startswith('/static/')
+                or path.startswith('/api/')
+                or path.startswith('/agent/')
+                or path.startswith('/lawyer/')
+                or path.startswith('/parcels/')
+                or path.startswith('/transactions/')
+                or path.startswith('/messages/')
+                or path.startswith('/commissions/')
+                or path.startswith('/support/')
+                or path.startswith('/media/')
+                or path.startswith('/dashboard/')
             )
             if not exempt:
                 if not request.user.is_authenticated or getattr(request.user, 'role', None) not in {'Agent', 'Lawyer', 'Land_Official'}:
                     return redirect('frontend:staff_login')
 
-        # Security gate for admin domain
+        # Production security gate for admin domain
         elif domain_mode == 'admin':
-            if request.path.startswith('/staff/login/') or request.path.startswith('/staff-login/') or request.path.startswith('/agent/') or request.path.startswith('/lawyer/'):
+            if path.startswith('/staff/login/') or path.startswith('/staff-login/') or path.startswith('/agent/') or path.startswith('/lawyer/'):
                 staff_base = getattr(settings, 'STAFF_DOMAIN', 'https://staff.digiland.co.ke').rstrip('/')
                 return redirect(f"{staff_base}/staff/login/")
-            if request.path.startswith('/accounts/login/'):
+            if path.startswith('/accounts/login/'):
                 return redirect('frontend:admin_login')
-            if request.path in {'/', '/admin', '/admin/'}:
+            if path in {'/', '/admin', '/admin/'}:
                 if not request.user.is_authenticated:
                     return redirect('frontend:admin_login')
                 if getattr(request.user, 'role', None) != 'Admin' and not getattr(request.user, 'is_superuser', False):
                     return redirect('frontend:admin_login')
-                return redirect('frontend:agent_dashboard')
-            if not request.path.startswith('/admin/login/') and not request.path.startswith('/auth/admin-login/') and not request.path.startswith('/static/') and not request.path.startswith('/api/') and not request.path.startswith('/admin/api/') and not request.path.startswith('/admin/staff/'):
+                return redirect('frontend:admin_dashboard')
+            if not (
+                path.startswith('/admin/login/')
+                or path.startswith('/auth/admin-login/')
+                or path.startswith('/admin/dashboard/')
+                or path.startswith('/static/')
+                or path.startswith('/api/')
+                or path.startswith('/admin/api/')
+                or path.startswith('/admin/staff/')
+                or path.startswith('/admin/analytics/')
+                or path.startswith('/admin/parcel/')
+                or path.startswith('/admin/transaction/')
+            ):
                 if not request.user.is_authenticated:
                     return redirect('frontend:admin_login')
                 if getattr(request.user, 'role', None) != 'Admin' and not getattr(request.user, 'is_superuser', False):

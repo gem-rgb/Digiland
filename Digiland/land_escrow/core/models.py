@@ -29,6 +29,7 @@ class User(AbstractUser):
         ('Seller', 'Seller'),
         ('Agent', 'Agent'),
         ('Lawyer', 'Lawyer'),
+        ('Surveyor', 'Surveyor'),
         ('Land_Official', 'Land Official'),
         ('Admin', 'Admin'),
     ]
@@ -76,6 +77,28 @@ class User(AbstractUser):
         blank=True,
         null=True,
         help_text='Agent operating constituency used for commission routing.',
+    )
+    surveyor_license_number = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text='ISLK / Board of Surveyors Kenya registration number e.g. ISLK-4092/2026',
+    )
+    surveyor_firm = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True,
+        help_text='Survey firm or consultancy practice name',
+    )
+    surveyor_county = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text='Primary operating county for surveyor assignments',
+    )
+    is_surveyor_verified = models.BooleanField(
+        default=False,
+        help_text='Whether the surveyor license has been vetted and verified by Digiland Operations',
     )
     is_identity_verified = models.BooleanField(default=False)
     is_email_verified = models.BooleanField(default=False, help_text='Whether the user has verified their email address (distinct from identity verification via KRA PIN/ID)')
@@ -230,6 +253,10 @@ class LandParcel(models.Model):
         ('PURCHASE_FINALIZED', 'Purchase Finalized'),
         ('AGENT_RELEASED', 'Agent Released'),
 
+        # Verification Engine statuses
+        ('PRE_SCREENED', 'Digiland Pre-Screened'),
+        ('VERIFIED_FOR_TRANSACTION', 'Verified for Transaction'),
+
         # Legacy backward-compatibility choices
         ('Awaiting_Documents', 'Awaiting Documents'),
         ('Pending', 'Pending'),
@@ -283,6 +310,25 @@ class LandParcel(models.Model):
     dist_to_transport_hub = models.FloatField(default=3.0, help_text="Distance to closest transport hub in km")
 
     updated_at = models.DateTimeField(auto_now=True)
+
+    # Verification engine tracking fields
+    verification_phase = models.CharField(
+        max_length=10, blank=True, null=True,
+        choices=[('PHASE_1', 'Pre-Interest Screening'), ('PHASE_2', 'Interest-Triggered Due Diligence')],
+        help_text='Current verification phase for this parcel'
+    )
+    verification_level = models.CharField(
+        max_length=30, blank=True, null=True,
+        choices=[
+            ('NONE', 'No Verification'),
+            ('PRE_SCREENED', 'Digiland Pre-Screened'),
+            ('VERIFIED', 'Digiland Verified'),
+            ('VERIFIED_WITH_CONDITIONS', 'Verified with Conditions'),
+        ],
+        help_text='Current verification level from the verification engine'
+    )
+    pre_screened_at = models.DateTimeField(null=True, blank=True, help_text='When parcel passed Phase 1 pre-screening')
+    verified_for_transaction_at = models.DateTimeField(null=True, blank=True, help_text='When parcel passed Phase 2 full verification')
 
     deleted_at = models.DateTimeField(null=True, blank=True, help_text='Soft delete timestamp — null means active record')
     updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='%(class)s_updates', help_text='Last user who modified this record')
@@ -2152,3 +2198,486 @@ class PricePredictionLog(models.Model):
     
     def __str__(self):
         return f"Prediction {self.prediction_id[:8]}... {self.county} {self.land_use} KES {self.predicted_price_per_acre:,}/acre"
+
+
+# ==============================================================================
+# LAND SURVEY VERIFICATION & SPATIAL WORKFLOW MODELS
+# ==============================================================================
+
+class SurveyAssignment(models.Model):
+    """
+    Formal Land Survey Assignment for Licensed Kenyan Surveyors.
+    Bridges property onboarding, beacon re-establishment, cadastral searches,
+    and transaction readiness.
+    """
+    ASSIGNMENT_TYPES = [
+        ('BOUNDARY_VERIFICATION', 'Boundary Verification & Beacon Audit'),
+        ('BEACON_REESTABLISHMENT', 'Beacon Verification / Re-establishment'),
+        ('PARCEL_MEASUREMENT', 'Cadastral Parcel Measurement & Area Computation'),
+        ('SURVEY_SEARCH', 'Survey Search / RIM Record Review'),
+        ('SUBDIVISION_VERIFICATION', 'Subdivision Verification & Mutation Scheme'),
+        ('AMALGAMATION_VERIFICATION', 'Amalgamation / Consolidation Verification'),
+        ('GEO_REFERENCING', 'Geo-referencing & Spatial Coordinate Fixation'),
+        ('SITE_SURVEY', 'Comprehensive Topographical & Physical Site Survey'),
+        ('RESURVEY', 'Re-survey & Dispute Re-measurement'),
+        ('BOUNDARY_DISPUTE', 'Boundary Dispute & Encroachment Investigation'),
+        ('OTHER', 'Special Survey Assignment'),
+    ]
+
+    STATUS_CHOICES = [
+        ('PENDING_ACCEPTANCE', 'Pending Surveyor Acceptance'),
+        ('PRE_SURVEY_REVIEW', 'Pre-Survey Documentation Review'),
+        ('SITE_VISIT_SCHEDULED', 'Site Visit Scheduled'),
+        ('FIELDWORK_IN_PROGRESS', 'Fieldwork in Progress'),
+        ('DATA_UPLOADED', 'Survey Data & Measurements Uploaded'),
+        ('REPORT_DRAFTING', 'Report Drafting in Progress'),
+        ('AWAITING_REVIEW', 'Awaiting Internal Ops Review'),
+        ('VERIFIED', 'Survey Fully Verified'),
+        ('VERIFIED_WITH_OBSERVATIONS', 'Verified with Observations'),
+        ('REQUIRES_FURTHER_SURVEY', 'Requires Further Survey / Investigation'),
+        ('DISCREPANCY_FOUND', 'Discrepancy / Boundary Issue Found'),
+        ('UNABLE_TO_VERIFY', 'Unable to Complete Verification'),
+        ('CANCELLED', 'Assignment Cancelled'),
+    ]
+
+    PRIORITY_CHOICES = [
+        ('LOW', 'Low'),
+        ('NORMAL', 'Normal'),
+        ('HIGH', 'High'),
+        ('URGENT', 'Urgent / Priority Escrow'),
+    ]
+
+    SITE_VISIT_STATUS_CHOICES = [
+        ('NOT_SCHEDULED', 'Not Scheduled'),
+        ('SCHEDULED', 'Scheduled'),
+        ('IN_PROGRESS', 'In Progress (Field Active)'),
+        ('PAUSED', 'Paused (Adverse Weather/Access)'),
+        ('COMPLETED', 'Site Visit Completed'),
+        ('CANCELLED', 'Site Visit Cancelled'),
+    ]
+
+    tenant_id = models.UUIDField(db_index=True, null=True, blank=True, help_text='Organization tenant ID')
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    assignment_number = models.CharField(max_length=50, unique=True, db_index=True, help_text='e.g. SV-000284')
+    
+    land_parcel = models.ForeignKey(
+        LandParcel,
+        on_delete=models.CASCADE,
+        related_name='survey_assignments',
+        help_text='Subject property undergoing survey verification'
+    )
+    surveyor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_surveys',
+        limit_choices_to={'role': 'Surveyor'},
+        help_text='Licensed Surveyor assigned to execute the fieldwork'
+    )
+    requested_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='requested_surveys',
+        help_text='Staff/Admin or Agent initiating the survey request'
+    )
+
+    assignment_type = models.CharField(max_length=40, choices=ASSIGNMENT_TYPES, default='BOUNDARY_VERIFICATION')
+    status = models.CharField(max_length=40, choices=STATUS_CHOICES, default='PENDING_ACCEPTANCE', db_index=True)
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='NORMAL')
+    
+    instructions = models.TextField(blank=True, default='', help_text='Operational brief and specific requirements')
+    
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    due_date = models.DateField(null=True, blank=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    # Site visit logistics
+    site_visit_date = models.DateField(null=True, blank=True)
+    site_visit_time = models.TimeField(null=True, blank=True)
+    site_visit_status = models.CharField(max_length=30, choices=SITE_VISIT_STATUS_CHOICES, default='NOT_SCHEDULED')
+    site_visit_contact_name = models.CharField(max_length=150, blank=True, default='')
+    site_visit_contact_phone = models.CharField(max_length=30, blank=True, default='')
+    site_visit_assistant_names = models.CharField(max_length=255, blank=True, default='', help_text='Chainmen / survey assistants')
+    site_visit_notes = models.TextField(blank=True, default='')
+    
+    # Device GPS Capture (clearly distinct from official survey coordinates)
+    device_gps_lat = models.FloatField(null=True, blank=True, help_text='Device GPS latitude fix at property')
+    device_gps_lng = models.FloatField(null=True, blank=True, help_text='Device GPS longitude fix at property')
+    device_gps_accuracy_meters = models.FloatField(null=True, blank=True)
+    device_gps_timestamp = models.DateTimeField(null=True, blank=True)
+
+    # Pre-survey checklist JSON store
+    pre_survey_checklist = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text='Pre-survey verification steps (parcel_id, seller_docs, cadastral_rim, previous_surveys)'
+    )
+
+    # Quantitative Area comparison (Official vs Calculated)
+    official_documented_area_sqm = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    survey_calculated_area_sqm = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    area_discrepancy_detected = models.BooleanField(default=False)
+    area_discrepancy_percentage = models.FloatField(default=0.0)
+
+    internal_notes = models.TextField(blank=True, default='')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-assigned_at']
+        indexes = [
+            models.Index(fields=['status', 'due_date'], name='idx_survey_status_due'),
+            models.Index(fields=['surveyor', 'status'], name='idx_survey_user_status'),
+        ]
+
+    def __str__(self):
+        return f"{self.assignment_number} - {self.land_parcel.parcel_number} ({self.get_status_display()})"
+
+
+class SurveyBeacon(models.Model):
+    """
+    Physical Boundary Beacons & Corner Markers for land parcels.
+    Captures status, physical condition, spatial coordinates, and evidence.
+    """
+    STATUS_CHOICES = [
+        ('OBSERVED', 'Observed & Verified'),
+        ('RE_ESTABLISHED', 'Re-established on Site'),
+        ('MISSING', 'Missing / Uprooted'),
+        ('DAMAGED', 'Damaged / Disturbed'),
+        ('INACCESSIBLE', 'Not Accessible / Obstructed'),
+        ('DISPUTED', 'Disputed Beacon Location'),
+    ]
+
+    CONDITION_CHOICES = [
+        ('GOOD', 'Good / Intact Concrete Monument'),
+        ('FAIR', 'Fair / Weathered Surface'),
+        ('DISTURBED', 'Disturbed / Shifted Position'),
+        ('BURIED', 'Buried / Required Excavation'),
+        ('DESTROYED', 'Destroyed / Fragmented'),
+        ('UNKNOWN', 'Unknown / Unverified'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    assignment = models.ForeignKey(SurveyAssignment, on_delete=models.CASCADE, related_name='beacons')
+    
+    beacon_id = models.CharField(max_length=50, help_text='e.g. B01, B02, Corner-NE, Pin-4')
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='OBSERVED')
+    condition = models.CharField(max_length=30, choices=CONDITION_CHOICES, default='GOOD')
+    
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    easting = models.DecimalField(max_digits=14, decimal_places=4, null=True, blank=True, help_text='UTM Arc 1960 or Kenya National Grid Easting')
+    northing = models.DecimalField(max_digits=14, decimal_places=4, null=True, blank=True, help_text='UTM Arc 1960 or Kenya National Grid Northing')
+    elevation_meters = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    
+    description = models.CharField(max_length=255, blank=True, default='', help_text='e.g. Concrete beacon pillar near corner fence')
+    photo = models.FileField(upload_to='surveys/beacons/', blank=True, null=True)
+    notes = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['beacon_id']
+        unique_together = ('assignment', 'beacon_id')
+
+    def __str__(self):
+        return f"Beacon {self.beacon_id} [{self.get_status_display()}] ({self.assignment.assignment_number})"
+
+
+class SurveyBoundaryObservation(models.Model):
+    """
+    Physical Boundary Segment Inspection Record.
+    Records physical fence/wall/hedge/river features against documented survey lines.
+    """
+    SEGMENT_CHOICES = [
+        ('NORTH', 'North Boundary'),
+        ('SOUTH', 'South Boundary'),
+        ('EAST', 'East Boundary'),
+        ('WEST', 'West Boundary'),
+        ('NORTHEAST', 'North-East Segment'),
+        ('NORTHWEST', 'North-West Segment'),
+        ('SOUTHEAST', 'South-East Segment'),
+        ('SOUTHWEST', 'South-West Segment'),
+        ('ROAD_FRONTAGE', 'Road Frontage / Access Boundary'),
+        ('RIVER_EDGE', 'Riparian / River Edge'),
+        ('INTERNAL', 'Internal / Subdivision Boundary'),
+    ]
+
+    FEATURE_CHOICES = [
+        ('LIVE_HEDGE', 'Live Hedge (Kei Apple / Euphorbia)'),
+        ('STONE_WALL', 'Perimeter Stone / Masonry Wall'),
+        ('BARBED_WIRE', 'Chainlink / Barbed Wire Post Fence'),
+        ('CONCRETE_POSTS', 'Reinforced Concrete Post Fence'),
+        ('ROAD_RESERVE', 'Public Road / Access Corridor Reserve'),
+        ('RIVER_STREAM', 'Natural River / Drainage Stream'),
+        ('OPEN_GROUND', 'Open Ground / Demarcated Line'),
+        ('OTHER', 'Other Physical Feature'),
+    ]
+
+    CONSISTENCY_CHOICES = [
+        ('CONSISTENT', 'Boundary Consistent with Survey Information'),
+        ('OCCUPATION_DIFFERS', 'Physical Occupation Differs from Records'),
+        ('POTENTIAL_ENCROACHMENT', 'Potential Encroachment Detected'),
+        ('UNCLEAR_DISPUTED', 'Unclear / Requires Further Investigation'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    assignment = models.ForeignKey(SurveyAssignment, on_delete=models.CASCADE, related_name='boundary_observations')
+    
+    segment = models.CharField(max_length=40, choices=SEGMENT_CHOICES)
+    neighbouring_parcel_reference = models.CharField(max_length=100, blank=True, default='', help_text='Abutting parcel number e.g. LR 209/1423')
+    physical_feature = models.CharField(max_length=40, choices=FEATURE_CHOICES, default='LIVE_HEDGE')
+    condition_description = models.CharField(max_length=255, blank=True, default='')
+    
+    consistency_status = models.CharField(max_length=40, choices=CONSISTENCY_CHOICES, default='CONSISTENT')
+    observation_notes = models.TextField(blank=True, default='')
+    photo = models.FileField(upload_to='surveys/boundaries/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['segment']
+
+    def __str__(self):
+        return f"{self.get_segment_display()} - {self.get_consistency_status_display()} ({self.assignment.assignment_number})"
+
+
+class SurveyMeasurement(models.Model):
+    """
+    Technical Survey Measurements & Traversing Data.
+    Preserves raw instrument observations, bearings, distances, and coordinate fixes.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    assignment = models.ForeignKey(SurveyAssignment, on_delete=models.CASCADE, related_name='measurements')
+    
+    point_id = models.CharField(max_length=50, help_text='Station / Point ID e.g. STN-1, P102')
+    eastings = models.DecimalField(max_digits=14, decimal_places=4, null=True, blank=True)
+    northings = models.DecimalField(max_digits=14, decimal_places=4, null=True, blank=True)
+    elevation = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    
+    distance_meters = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)
+    bearing_degrees = models.CharField(max_length=50, blank=True, default='', help_text='Bearing e.g. 142° 32\' 15"')
+    
+    instrument_method = models.CharField(
+        max_length=150,
+        blank=True,
+        default='RTK GNSS / Total Station',
+        help_text='e.g. Leica GNSS RTK, Total Station TS06, Handheld GPS'
+    )
+    accuracy_quality_note = models.CharField(max_length=150, blank=True, default='±0.015m (Fixed solution)')
+    surveyor_notes = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['point_id']
+
+    def __str__(self):
+        return f"Point {self.point_id} ({self.assignment.assignment_number})"
+
+
+class SurveyDocument(models.Model):
+    """
+    Structured Survey Documents, Cadastral Maps, and Technical Drawings.
+    Classified by source authority and strict internal/legal/public visibility.
+    """
+    DOCUMENT_TYPES = [
+        ('SURVEY_PLAN', 'Approved Survey Plan (F/R)'),
+        ('PARCEL_PLAN', 'Deed Plan / Parcel Plan (Title Plan)'),
+        ('MUTATION_FORM', 'Mutation Form & Scheme of Subdivision'),
+        ('CADASTRAL_EXTRACT', 'Cadastral Map Extract / Registry Index Map (RIM)'),
+        ('COMPUTATION_SHEET', 'Field Computation & Area Calculation Sheet'),
+        ('FIELD_NOTES', 'Surveyor Field Notes & Sketches'),
+        ('COORDINATE_LIST', 'Official Survey Coordinate List (Control Points)'),
+        ('GEO_REFERENCING_OUTPUT', 'Geo-referencing & Spatial Orthophoto Overlay'),
+        ('SURVEY_REPORT_PDF', 'Formal Digiland Survey Report (Signed PDF)'),
+        ('SITE_PHOTOGRAPH', 'High-Resolution Site Observation Photo'),
+        ('OTHER', 'Supporting Spatial / Survey Document'),
+    ]
+
+    SOURCE_TYPES = [
+        ('OFFICIAL_GOVERNMENT', 'Official Government Document (Ministry/Survey of Kenya)'),
+        ('UPLOADED_BY_SELLER', 'Uploaded by Seller / Property Owner'),
+        ('SURVEYOR_UPLOAD', 'Uploaded by Digiland Assigned Surveyor'),
+        ('INTERNAL_RECORD', 'Digiland Internal Archive / Operations Record'),
+        ('SYSTEM_GENERATED', 'System Generated GIS / Spatial Computation'),
+    ]
+
+    VISIBILITY_CHOICES = [
+        ('INTERNAL_STAFF', 'Internal Staff Only (Agents, Lawyers, Surveyors, Ops)'),
+        ('SURVEY_LEGAL_ONLY', 'Surveyor & Lawyer Confidential Workspace'),
+        ('SURVEYOR_ONLY', 'Surveyor Raw Working Document'),
+        ('CUSTOMER_FACING', 'Customer Facing (Verified Buyer/Seller Summary)'),
+        ('PUBLIC', 'Public Marketplace Document'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    assignment = models.ForeignKey(SurveyAssignment, on_delete=models.CASCADE, related_name='documents', null=True, blank=True)
+    land_parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='survey_documents')
+    
+    title = models.CharField(max_length=200)
+    document_type = models.CharField(max_length=40, choices=DOCUMENT_TYPES, default='SURVEY_PLAN')
+    source_type = models.CharField(max_length=40, choices=SOURCE_TYPES, default='SURVEYOR_UPLOAD')
+    visibility = models.CharField(max_length=30, choices=VISIBILITY_CHOICES, default='INTERNAL_STAFF')
+    
+    file = models.FileField(upload_to='surveys/documents/')
+    file_size_bytes = models.BigIntegerField(default=0)
+    file_format = models.CharField(max_length=20, blank=True, default='pdf')
+    
+    version = models.PositiveIntegerField(default=1)
+    description = models.TextField(blank=True, default='')
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} ({self.get_document_type_display()}) - {self.land_parcel.parcel_number}"
+
+
+class SurveyIssue(models.Model):
+    """
+    Survey Discrepancy & Issue Tracking Engine.
+    Captures potential boundary shifts, missing beacons, document inconsistencies,
+    and encroaching occupations without premature fraud labelling.
+    """
+    ISSUE_TYPES = [
+        ('BOUNDARY_DISCREPANCY', 'Boundary Line Discrepancy / Offset'),
+        ('AREA_DISCREPANCY', 'Area Discrepancy (Calculated vs Documented)'),
+        ('MISSING_BEACONS', 'Missing / Unlocated Boundary Beacons'),
+        ('DAMAGED_BEACONS', 'Damaged / Shifted Boundary Beacons'),
+        ('DOCUMENT_INCONSISTENCY', 'Document Inconsistency (RIM vs Deed Plan)'),
+        ('COORDINATE_INCONSISTENCY', 'Coordinate Mismatch / Datum Offset'),
+        ('OCCUPATION_DISCREPANCY', 'Physical Occupation Differs from Cadastral Plan'),
+        ('ACCESS_ROAD_ISSUE', 'Access Road / Wayleave Corridor Obstruction'),
+        ('NEIGHBOURING_CONFLICT', 'Abutting Parcel Conflict / Shared Boundary Issue'),
+        ('POTENTIAL_ENCROACHMENT', 'Potential Encroachment Detected on Site'),
+        ('SITE_INACCESSIBLE', 'Unable to Access Parcel / Hostile Terrain'),
+        ('OTHER', 'Other Technical Survey Observation'),
+    ]
+
+    SEVERITY_CHOICES = [
+        ('LOW', 'Low (Minor observation / informational)'),
+        ('MEDIUM', 'Medium (Investigation recommended)'),
+        ('HIGH', 'High (Substantial discrepancy - halts automated verification)'),
+        ('CRITICAL', 'Critical (Major conflict / transaction hold required)'),
+    ]
+
+    STATUS_CHOICES = [
+        ('OPEN', 'Open Discrepancy'),
+        ('UNDER_INVESTIGATION', 'Under Investigation'),
+        ('RESOLVED', 'Resolved / Clarified by Records'),
+        ('ESCALATED_TO_LAWYER', 'Escalated to Conveyancing Lawyer'),
+        ('ESCALATED_TO_ADMIN', 'Escalated to Operations / Executive Admin'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    assignment = models.ForeignKey(SurveyAssignment, on_delete=models.CASCADE, related_name='issues')
+    issue_number = models.CharField(max_length=50, help_text='e.g. ISS-0021')
+    
+    issue_type = models.CharField(max_length=40, choices=ISSUE_TYPES, default='BOUNDARY_DISCREPANCY')
+    severity = models.CharField(max_length=20, choices=SEVERITY_CHOICES, default='MEDIUM', db_index=True)
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='OPEN', db_index=True)
+    
+    title = models.CharField(max_length=200)
+    description = models.TextField(help_text='Factual professional observation of discrepancy')
+    evidence_notes = models.TextField(blank=True, default='')
+    photo = models.FileField(upload_to='surveys/issues/', blank=True, null=True)
+    
+    surveyor_recommendation = models.TextField(help_text='Surveyor recommended corrective action or verification path')
+    
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_survey_issues')
+    resolution_notes = models.TextField(blank=True, default='')
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.issue_number}: {self.title} [{self.get_severity_display()}] ({self.assignment.assignment_number})"
+
+
+class SurveyReport(models.Model):
+    """
+    Formal Versioned Survey Report & Professional Sign-off.
+    Auditable multi-version report containing boundary findings, area verification,
+    discrepancy summaries, and controlled conclusions.
+    """
+    CONCLUSION_CHOICES = [
+        ('SURVEY_VERIFIED', 'Survey Verified (Boundaries and Beacons fully reconciled)'),
+        ('SURVEY_VERIFIED_WITH_OBSERVATIONS', 'Survey Verified with Observations (Minor notes noted)'),
+        ('FURTHER_SURVEY_REQUIRED', 'Requires Further Survey / Additional Control Points'),
+        ('DISCREPANCY_IDENTIFIED', 'Discrepancy Identified (Action required before settlement)'),
+        ('UNABLE_TO_COMPLETE', 'Unable to Complete Verification on Site'),
+    ]
+
+    REVIEW_STATUS_CHOICES = [
+        ('DRAFT', 'Draft (Work in Progress)'),
+        ('SUBMITTED', 'Submitted for Internal Review'),
+        ('CHANGES_REQUESTED', 'Clarifications / Changes Requested'),
+        ('APPROVED', 'Approved by Operations Review'),
+        ('REJECTED', 'Report Rejected / Re-survey Required'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    assignment = models.ForeignKey(SurveyAssignment, on_delete=models.CASCADE, related_name='reports')
+    version = models.PositiveIntegerField(default=1)
+    
+    surveyor = models.ForeignKey(User, on_delete=models.PROTECT, related_name='authored_survey_reports')
+    conclusion = models.CharField(max_length=40, choices=CONCLUSION_CHOICES, default='SURVEY_VERIFIED')
+    
+    summary_findings = models.TextField(help_text='Executive summary of the survey verification')
+    boundary_findings = models.TextField(help_text='Detailed observations on north/south/east/west boundary alignments')
+    area_comparison_notes = models.TextField(blank=True, default='', help_text='Comparison of documented vs measured area')
+    site_observations = models.TextField(blank=True, default='', help_text='Ground conditions, access roads, structures')
+    discrepancies_summary = models.TextField(blank=True, default='', help_text='Summary of resolved and unresolved issues')
+    
+    professional_declaration_signed = models.BooleanField(
+        default=False,
+        help_text='Confirms the recorded survey report accurately reflects the work entered into Digiland'
+    )
+    signed_at = models.DateTimeField(null=True, blank=True)
+    submission_timestamp = models.DateTimeField(null=True, blank=True)
+    
+    review_status = models.CharField(max_length=30, choices=REVIEW_STATUS_CHOICES, default='DRAFT', db_index=True)
+    reviewer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_survey_reports')
+    reviewer_feedback = models.TextField(blank=True, default='')
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-version', '-created_at']
+        unique_together = ('assignment', 'version')
+
+    def __str__(self):
+        return f"Survey Report v{self.version} [{self.get_conclusion_display()}] - {self.assignment.assignment_number}"
+
+
+class SurveyAuditLog(models.Model):
+    """
+    Append-Only Audit Trail for Land Survey Actions.
+    Records every coordinate added, beacon observed, document uploaded,
+    and report generated for regulatory and escrow compliance.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    assignment = models.ForeignKey(SurveyAssignment, on_delete=models.CASCADE, related_name='audit_logs')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    action = models.CharField(max_length=100, help_text='e.g. BEACON_ADDED, MEASUREMENT_RECORDED, REPORT_SUBMITTED')
+    details = models.JSONField(default=dict, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.action} on {self.assignment.assignment_number} at {self.timestamp}"
+

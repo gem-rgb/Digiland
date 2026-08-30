@@ -26,7 +26,7 @@ def resolve_agent_region(agent):
 
     recent_parcel = (
         LandParcel.objects.filter(assigned_agent=agent)
-        .order_by('-updated_at', '-created_at')
+        .order_by('-updated_at')
         .only('county', 'constituency')
         .first()
     )
