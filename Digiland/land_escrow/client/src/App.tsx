@@ -29,8 +29,13 @@ import { SellerOnboardingWizard } from './components/verification/seller-onboard
 import { PartitionProvider, usePartition, isRoleAllowedOnPartition, type Partition } from './lib/partition-context.js';
 import { PartitionGuard } from './components/layout/partition-guard.js';
 import { StaffLoginPage } from './pages/staff-login-page.js';
+import { OnboardingFlowWizard } from './components/onboarding/onboarding-flow-wizard.js';
+import { JointTeamHub } from './components/dashboard/joint-team-hub.js';
+import { OrganizationHub } from './components/dashboard/organization-hub.js';
+import { DigitalCrownAvatar } from './components/ui/digital-crown-avatar.js';
 
 function PortalBar() {
+
   const { activePartition, setActivePartition } = usePartition();
 
   if (typeof window !== 'undefined') {
@@ -1436,7 +1441,24 @@ function DashboardPage() {
     ],
   };
 
-  const channels = channelsByRole[role] || channelsByRole.Buyer;
+  const isJointAccount = Boolean(
+    bootstrap.user?.primary_account_type === 'JOINT' ||
+    bootstrap.user?.buyer_account_type === 'Joint' ||
+    bootstrap.account?.account_type === 'JOINT'
+  );
+  const isOrgAccount = Boolean(
+    bootstrap.user?.primary_account_type === 'ORGANIZATION' ||
+    bootstrap.account?.account_type === 'ORGANIZATION'
+  );
+
+  const baseChannels = [...(channelsByRole[role] || channelsByRole.Buyer)];
+  if (isJointAccount) {
+    baseChannels.splice(1, 0, { id: 'joint-hub', name: 'joint-team-hub', icon: Users, badge: '👑 Chama' });
+  } else if (isOrgAccount) {
+    baseChannels.splice(1, 0, { id: 'organization-hub', name: 'organization-hub', icon: Building2, badge: '🏢 Org' });
+  }
+
+  const channels = baseChannels;
   const [activeTab, setActiveTab] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       const searchTab = new URLSearchParams(window.location.search).get('tab');
@@ -1445,6 +1467,7 @@ function DashboardPage() {
     }
     return 'overview';
   });
+
 
   useEffect(() => {
     const syncTab = () => {
@@ -1740,11 +1763,30 @@ function DashboardPage() {
 
         {/* Main Body Content Scrollable Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* TAB: JOINT HUB (HUMAN CHAMA / FAMILY / INVESTMENT GROUP) */}
+          {activeTab === 'joint-hub' && (
+            <JointTeamHub
+              initialAccount={bootstrap.account || null}
+              currentUser={bootstrap.user}
+              csrfToken={bootstrap.csrf_token}
+            />
+          )}
+
+          {/* TAB: ORGANIZATION HUB (COMPANY / GOVERNMENT / SACCO / NGO) */}
+          {activeTab === 'organization-hub' && (
+            <OrganizationHub
+              initialAccount={bootstrap.account || null}
+              currentUser={bootstrap.user}
+              csrfToken={bootstrap.csrf_token}
+            />
+          )}
+
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* Hero Banner Card */}
               <div className="rounded-3xl border border-emerald-200/80 bg-gradient-to-r from-emerald-50 via-teal-50/50 to-white p-6 text-slate-900 shadow-sm relative overflow-hidden">
+
                 <div className="absolute right-0 top-0 h-48 w-48 bg-emerald-200/40 rounded-full blur-3xl pointer-events-none" />
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="space-y-1 text-left">
@@ -4701,7 +4743,7 @@ function GenericFormPage() {
     };
   }, [form, memberFormset]);
 
-  const isWizardView = bootstrap.view_id === 'seller-onboarding-wizard';
+  const isWizardView = bootstrap.view_id === 'seller-onboarding-wizard' || bootstrap.page === 'seller-onboarding-wizard';
 
   const pageBody = (
     <div className="space-y-6">
@@ -8900,15 +8942,7 @@ function AIKYCPage() {
 }
 
 
-interface RoleSelectionPageProps {
-  shellProps: any;
-}
-
-function RoleSelectionPage({ shellProps }: RoleSelectionPageProps) {
-  const [selectedRole, setSelectedRole] = useState<'buyer' | 'seller' | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
+function RoleSelectionPage({ shellProps }: any) {
   useEffect(() => {
     if (bootstrap.user?.role && bootstrap.user?.is_onboarded) {
       const targetUrl = bootstrap.user.role === 'Buyer' ? '/buyer/dashboard/' : '/seller/dashboard/';
@@ -8916,154 +8950,19 @@ function RoleSelectionPage({ shellProps }: RoleSelectionPageProps) {
     }
   }, []);
 
-  const handleContinue = async () => {
-    if (!selectedRole) return;
-    setLoading(true);
-    setError('');
-    try {
-      const response = await fetch('/api/onboarding/select-role/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': bootstrap.csrf_token || '',
-        },
-        body: JSON.stringify({ role: selectedRole }),
-      });
-      let data: any = {};
-      const contentType = response.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        if (response.ok) {
-          data = { redirect_url: selectedRole === 'buyer' ? '/buyer/dashboard/' : '/seller/dashboard/' };
-        } else {
-          throw new Error('Failed to select role. Please try again.');
-        }
-      }
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to select role. Please try again.');
-      }
-      // Success: redirect based on selected role
-      const redirectUrl = data.redirect_url || (selectedRole === 'buyer' ? '/buyer/dashboard/' : '/seller/dashboard/');
-      window.location.href = redirectUrl;
-    } catch (err: any) {
-      setError(err.message || 'An error occurred. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
-    <PublicShell title="Welcome to Digiland" subtitle="Choose how you'd like to get started" nav={[]} user={bootstrap.user}>
-      <div className="flex min-h-[70vh] items-center justify-center px-4 py-12">
-        <div className="w-full max-w-4xl space-y-8 text-center">
-          {/* Header */}
-          <div className="space-y-3">
-            <h1 className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">
-              What brings you here?
-            </h1>
-            <p className="mx-auto max-w-2xl text-base text-slate-500">
-              Choose how you'd like to use the platform. You can change this later if your account supports multiple roles.
-            </p>
-          </div>
-
-          {/* Cards Grid */}
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
-            {/* Buyer Card */}
-            <div
-              onClick={() => setSelectedRole('buyer')}
-              className={`group relative cursor-pointer overflow-hidden rounded-[2rem] border-2 bg-white/80 p-8 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-xl ${
-                selectedRole === 'buyer'
-                  ? 'border-emerald-500 ring-2 ring-emerald-500/25 bg-emerald-50/10'
-                  : 'border-border/70 hover:border-emerald-300'
-              }`}
-            >
-              <div className="flex flex-col h-full justify-between gap-6">
-                <div className="flex items-center justify-between">
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-300 ${
-                    selectedRole === 'buyer' ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100'
-                  }`}>
-                    <ShoppingCart className="h-6 w-6" />
-                  </div>
-                  {selectedRole === 'buyer' && (
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white">
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900">Buy Land & Secure Escrow</h3>
-                  <p className="mt-2 text-sm text-slate-500 leading-relaxed font-normal">
-                    Browse verified parcels of land, connect with sellers, and complete secure escrow-protected transactions.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Seller Card */}
-            <div
-              onClick={() => setSelectedRole('seller')}
-              className={`group relative cursor-pointer overflow-hidden rounded-[2rem] border-2 bg-white/80 p-8 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-xl ${
-                selectedRole === 'seller'
-                  ? 'border-emerald-500 ring-2 ring-emerald-500/25 bg-emerald-50/10'
-                  : 'border-border/70 hover:border-emerald-300'
-              }`}
-            >
-              <div className="flex flex-col h-full justify-between gap-6">
-                <div className="flex items-center justify-between">
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-300 ${
-                    selectedRole === 'seller' ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100'
-                  }`}>
-                    <Briefcase className="h-6 w-6" />
-                  </div>
-                  {selectedRole === 'seller' && (
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white">
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900">List Parcels & Sell Safely</h3>
-                  <p className="mt-2 text-sm text-slate-500 leading-relaxed font-normal">
-                    List your land parcels, manage offers, track verified buyer activity, and finalize transactions securely.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Footer */}
-          {error && (
-            <div className="mx-auto max-w-md rounded-2xl border border-rose-100 bg-rose-50/50 p-4 text-sm text-rose-600">
-              {error}
-            </div>
-          )}
-
-          <div className="pt-4 flex flex-col items-center gap-3">
-            <Button
-              onClick={handleContinue}
-              disabled={!selectedRole || loading}
-              className="w-full max-w-sm rounded-full py-6 text-base font-semibold shadow-md transition-all duration-200"
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Saving choice...
-                </span>
-              ) : selectedRole ? (
-                `Continue as ${selectedRole === 'buyer' ? 'Buyer' : 'Seller'}`
-              ) : (
-                'Select a role to continue'
-              )}
-            </Button>
-          </div>
+    <PublicShell title="Digiland Entity & Account Onboarding" subtitle="Setup your individual, joint, or organizational account" nav={[]} user={bootstrap.user}>
+      <div className="min-h-[75vh] flex items-center justify-center py-10 px-4">
+        <div className="w-full max-w-4xl">
+          <OnboardingFlowWizard
+            user={bootstrap.user}
+            csrfToken={bootstrap.csrf_token}
+            onComplete={(data) => {
+              const redirectUrl = data.redirect_url || (data.role === 'buyer' ? '/buyer/dashboard/' : '/seller/dashboard/');
+              window.location.href = redirectUrl;
+            }}
+          />
         </div>
       </div>
     </PublicShell>
@@ -9248,7 +9147,7 @@ function ReactAppInner() {
   else if (page === 'content') pageContent = <ContentPage />;
   else if (page === 'status') pageContent = <StatusPage />;
   else if (page === 'staff-login') pageContent = <StaffLoginPage onNavigateToApp={() => setActivePartition('app')} />;
-  else if (page === 'form' || page === 'agent-kyc' || page === 'payment-onboarding') pageContent = <GenericFormPage />;
+  else if (page === 'form' || page === 'agent-kyc' || page === 'payment-onboarding' || page === 'seller-onboarding-wizard') pageContent = <GenericFormPage />;
   else if (page === 'ai-kyc') pageContent = <AIKYCPage />;
   else if (page === 'buyer-choice') pageContent = <AppShell {...shellProps}><BuyerChoicePage /></AppShell>;
   else if (page === 'legal' || page === 'joint-laws') pageContent = <AppShell {...shellProps} activeNav="legal"><LegalPage /></AppShell>;

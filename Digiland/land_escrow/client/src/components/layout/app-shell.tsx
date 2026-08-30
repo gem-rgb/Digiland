@@ -29,10 +29,12 @@ import type { ReactNode } from 'react';
 import { Badge } from '../ui/badge.js';
 import { Button } from '../ui/button.js';
 import { LocationPermissionModal } from '../ui/location-permission-modal.js';
+import { DigitalCrownAvatar } from '../ui/digital-crown-avatar.js';
 import type { ActionLink, NavItem, UserSummary } from '../../types.js';
 import { cn } from '../../lib/utils.js';
 
 interface AppShellProps {
+
   title: string;
   subtitle?: string;
   user?: UserSummary | null;
@@ -195,16 +197,19 @@ export function AppShell({
             </form>
           ) : null}
 
-          {/* User Avatar Circle */}
-          <div
-            title={`${displayName} (${currentRole})`}
-            className="relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl bg-emerald-600 font-black text-sm text-white shadow-sm transition hover:scale-105"
-          >
-            {userInitial}
-            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-400 shadow-xs" />
+          {/* User Avatar with subtle Digital Crown for Managers or Org Icon */}
+          <div className="py-1">
+            <DigitalCrownAvatar
+              name={displayName}
+              isManager={Boolean(user?.is_account_manager || user?.role === 'Buyer Team Manager' || user?.role === 'Seller Team Manager')}
+              isOrganization={Boolean(user?.primary_account_type === 'ORGANIZATION')}
+              roleTitle={`${displayName} (${currentRole})`}
+              size="md"
+            />
           </div>
         </div>
       </aside>
+
 
       {/* 2. Main Workspace Layout */}
       <div className="flex min-w-0 flex-1 flex-col">

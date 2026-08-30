@@ -12,7 +12,9 @@ from .models import (
     BuyerInterestProfile, BuyerEngagementSignal, SearchQueryLog,
     FraudScore, VerificationBadge,
     ServiceFee, AnalyticsEvent, RecommendationLog,
+    Account, AccountMember, AccountInvitation, PropertyOwner, AccountDecision, DecisionVote, AccountAuditEvent,
 )
+
 
 
 # ==================== USER & AUTH SERIALIZERS ====================
@@ -735,3 +737,139 @@ class JointBuyerGroupSerializer(serializers.ModelSerializer):
 
     def get_members_count(self, obj):
         return obj.members.count()
+
+
+# ==================== UNIFIED ACCOUNT & MULTI-MEMBER SERIALIZERS ====================
+
+class AccountMemberSerializer(serializers.ModelSerializer):
+    """Serializer for AccountMember model."""
+    account_name = serializers.CharField(source='account.display_name', read_only=True)
+    role_display = serializers.CharField(source='get_role_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+
+    class Meta:
+        model = AccountMember
+        fields = [
+            'id', 'account', 'account_name', 'user', 'role', 'role_display',
+            'status', 'status_display', 'full_name', 'email', 'phone_number',
+            'id_number', 'kra_pin', 'share_percentage', 'is_account_leader',
+            'custom_permissions', 'joined_at', 'created_at',
+        ]
+        read_only_fields = ['created_at']
+
+
+class AccountInvitationSerializer(serializers.ModelSerializer):
+    """Serializer for AccountInvitation model."""
+    account_name = serializers.CharField(source='account.display_name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    invited_by_email = serializers.CharField(source='invited_by.email', read_only=True)
+
+    class Meta:
+        model = AccountInvitation
+        fields = [
+            'id', 'account', 'account_name', 'invite_token', 'invitee_email',
+            'invitee_phone', 'invitee_name', 'proposed_role', 'status',
+            'status_display', 'invited_by', 'invited_by_email', 'expires_at', 'created_at',
+        ]
+        read_only_fields = ['invite_token', 'invited_by', 'created_at']
+
+
+class PropertyOwnerSerializer(serializers.ModelSerializer):
+    """Serializer for statutory PropertyOwner model."""
+    parcel_number = serializers.CharField(source='land_parcel.parcel_number', read_only=True)
+    ownership_structure_display = serializers.CharField(source='get_ownership_structure_display', read_only=True)
+    legal_verification_status_display = serializers.CharField(source='get_legal_verification_status_display', read_only=True)
+    verified_by_lawyer_name = serializers.CharField(source='verified_by_lawyer.email', read_only=True, default=None)
+
+    class Meta:
+        model = PropertyOwner
+        fields = [
+            'id', 'land_parcel', 'parcel_number', 'user', 'account',
+            'full_legal_name', 'id_number_or_reg', 'kra_pin',
+            'ownership_structure', 'ownership_structure_display',
+            'ownership_percentage', 'is_mandatory_signatory',
+            'legal_verification_status', 'legal_verification_status_display',
+            'verified_by_lawyer', 'verified_by_lawyer_name', 'verification_notes',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+
+class DecisionVoteSerializer(serializers.ModelSerializer):
+    """Serializer for DecisionVote model."""
+    voter_name = serializers.CharField(source='voter.email', read_only=True)
+    member_name = serializers.CharField(source='account_member.full_name', read_only=True)
+    vote_display = serializers.CharField(source='get_vote_display', read_only=True)
+
+    class Meta:
+        model = DecisionVote
+        fields = [
+            'id', 'decision', 'voter', 'voter_name', 'account_member',
+            'member_name', 'vote', 'vote_display', 'comment', 'voted_at',
+        ]
+        read_only_fields = ['voted_at']
+
+
+class AccountDecisionSerializer(serializers.ModelSerializer):
+    """Serializer for AccountDecision with nested votes."""
+    account_name = serializers.CharField(source='account.display_name', read_only=True)
+    decision_type_display = serializers.CharField(source='get_decision_type_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    created_by_email = serializers.CharField(source='created_by.email', read_only=True)
+    target_member_name = serializers.CharField(source='target_member.full_name', read_only=True, default=None)
+    votes = DecisionVoteSerializer(many=True, read_only=True)
+    total_eligible_voters = serializers.ReadOnlyField()
+    approved_votes_count = serializers.ReadOnlyField()
+    rejected_votes_count = serializers.ReadOnlyField()
+    discussion_requests_count = serializers.ReadOnlyField()
+
+    class Meta:
+        model = AccountDecision
+        fields = [
+            'id', 'account', 'account_name', 'land_parcel', 'transaction',
+            'decision_type', 'decision_type_display', 'title', 'proposal_text',
+            'proposed_amount', 'target_member', 'target_member_name',
+            'approval_rule', 'required_vote_count', 'status', 'status_display',
+            'created_by', 'created_by_email', 'opened_at', 'deadline', 'closed_at',
+            'execution_result', 'votes', 'total_eligible_voters',
+            'approved_votes_count', 'rejected_votes_count', 'discussion_requests_count',
+            'created_at',
+        ]
+        read_only_fields = ['created_by', 'opened_at', 'created_at']
+
+
+class AccountAuditEventSerializer(serializers.ModelSerializer):
+    """Serializer for AccountAuditEvent model."""
+    actor_email = serializers.CharField(source='actor.email', read_only=True, default=None)
+
+    class Meta:
+        model = AccountAuditEvent
+        fields = [
+            'id', 'account', 'actor', 'actor_email', 'action', 'resource_type',
+            'resource_id', 'previous_state', 'new_state', 'metadata', 'ip_address',
+            'timestamp',
+        ]
+        read_only_fields = ['timestamp']
+
+
+class AccountSerializer(serializers.ModelSerializer):
+    """Full serializer for Account model with members and pending decisions."""
+    account_type_display = serializers.CharField(source='get_account_type_display', read_only=True)
+    purpose_display = serializers.CharField(source='get_purpose_display', read_only=True)
+    entity_type_display = serializers.CharField(source='get_entity_type_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    members = AccountMemberSerializer(many=True, read_only=True)
+    active_members_count = serializers.ReadOnlyField()
+    decisions = AccountDecisionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Account
+        fields = [
+            'id', 'account_type', 'account_type_display', 'purpose',
+            'purpose_display', 'entity_type', 'entity_type_display',
+            'display_name', 'legal_name', 'registration_number', 'tax_id_or_kra_pin',
+            'status', 'status_display', 'governance_rule',
+            'created_by', 'members', 'active_members_count', 'decisions',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['created_by', 'created_at', 'updated_at']

@@ -30,9 +30,13 @@ from .models import (
     ServiceFee, AnalyticsEvent, RecommendationLog,
     JointBuyerGroup, JointBuyerMember, JointPaymentContribution,
     KYCProfile,
+    Account, AccountMember, AccountInvitation, PropertyOwner, AccountDecision, DecisionVote, AccountAuditEvent,
 )
 from .services.identity import GavaConnectAPI, verify_user_kra_pin
 from .services.payment import DarajaAPI
+from .services.account_authorization import can, Action, verify_legal_ownership_signoffs, get_account_membership
+from .services.decision_engine import DecisionEngine
+
 from .serializers import (
     LandPromotionSerializer, PromotionTierSerializer, PromotionPlanSerializer,
     PopupAdCampaignSerializer, PopupAdCampaignListSerializer, PopupAdEventSerializer,
@@ -43,11 +47,15 @@ from .serializers import (
     ServiceFeeSerializer, AnalyticsEventSerializer, RecommendationLogSerializer,
     AgentKYCApplicationSerializer, KYCProfileSerializer,
     JointBuyerGroupSerializer, JointBuyerMemberSerializer, JointPaymentContributionSerializer,
+    AccountSerializer, AccountMemberSerializer, AccountInvitationSerializer,
+    PropertyOwnerSerializer, AccountDecisionSerializer, DecisionVoteSerializer,
+    AccountAuditEventSerializer,
     AuditLogSerializer,
     LandParcelListSerializer, TransactionListSerializer,
 )
 
 logger = logging.getLogger(__name__)
+
 
 
 # ==================== CUSTOM PAGINATION ====================
@@ -2564,17 +2572,122 @@ def auth_me_api(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def onboarding_select_role_api(request):
-    """POST /api/onboarding/select-role/
-    Saves user role and marks onboarding as completed.
+    """POST /api/onboarding/select-role/ or /api/onboarding/complete/
+    Redesigned Onboarding endpoint supporting:
+    - Purpose: BUY, SELL, BOTH
+    - Account Structure: INDIVIDUAL, JOINT, ORGANIZATION
+    - Entity Type: PERSON, FAMILY, CHAMA, COMPANY, GOVERNMENT, NGO, SACCO, etc.
+    - Full backward-compatibility with legacy { role: 'buyer' | 'seller' }
     """
-    role = request.data.get('role', '').lower().strip()
-    if role not in ['buyer', 'seller']:
-        return Response({'error': 'Invalid role. Choose buyer or seller.'}, status=status.HTTP_400_BAD_REQUEST)
-
+    data = request.data
     user = request.user
-    user.role = 'Buyer' if role == 'buyer' else 'Seller'
+
+    # Check for legacy simple payload
+    purpose_raw = data.get('purpose') or data.get('role', '')
+    purpose_clean = purpose_raw.upper().strip()
+    if purpose_clean in ['BUYER', 'BUY']:
+        purpose = 'BUY'
+        primary_role = 'Buyer'
+    elif purpose_clean in ['SELLER', 'SELL']:
+        purpose = 'SELL'
+        primary_role = 'Seller'
+    elif purpose_clean in ['BOTH']:
+        purpose = 'BOTH'
+        primary_role = 'Buyer'
+    else:
+        return Response({'error': 'Invalid purpose/role. Choose BUY, SELL, or BOTH.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    account_type = data.get('account_type', 'INDIVIDUAL').upper().strip()
+    if account_type not in ['INDIVIDUAL', 'JOINT', 'ORGANIZATION']:
+        account_type = 'INDIVIDUAL'
+
+    entity_type = data.get('entity_type', 'PERSON').upper().strip()
+    valid_entities = [c[0] for c in Account.ENTITY_TYPE_CHOICES]
+    if entity_type not in valid_entities:
+        entity_type = 'PERSON' if account_type == 'INDIVIDUAL' else ('CHAMA' if account_type == 'JOINT' else 'COMPANY')
+
+    display_name = data.get('display_name', '').strip()
+    if not display_name:
+        user_full_name = f"{user.first_name} {user.last_name}".strip() or user.email.split('@')[0]
+        if account_type == 'INDIVIDUAL':
+            display_name = f"{user_full_name} Personal Account"
+        elif account_type == 'JOINT':
+            display_name = f"{user_full_name} Group / Chama"
+        else:
+            display_name = f"{user_full_name} Organization"
+
+    legal_name = data.get('legal_name', '').strip() or display_name
+    registration_number = data.get('registration_number', '').strip()
+    tax_id_or_kra_pin = data.get('tax_id_or_kra_pin', '').strip() or getattr(user, 'kra_pin', '')
+    governance_rule = data.get('governance_rule', 'SIMPLE_MAJORITY')
+
+    # Assign user role and onboarding status
+    user.role = primary_role
     user.is_onboarded = True
-    user.save(update_fields=['role', 'is_onboarded'])
+    if account_type == 'JOINT':
+        user.buyer_account_type = 'Joint'
+    elif account_type == 'INDIVIDUAL':
+        user.buyer_account_type = 'Individual'
+    user.save(update_fields=['role', 'is_onboarded', 'buyer_account_type'])
+
+    # Determine Member Role
+    if account_type == 'JOINT':
+        member_role = 'BUYER_TEAM_MANAGER' if purpose in ['BUY', 'BOTH'] else 'SELLER_TEAM_MANAGER'
+        is_leader = True
+    elif account_type == 'ORGANIZATION':
+        member_role = 'PRIMARY_REPRESENTATIVE'
+        is_leader = False
+    else:
+        member_role = 'BUYER_TEAM_MANAGER' if purpose in ['BUY', 'BOTH'] else 'SELLER_TEAM_MANAGER'
+        is_leader = True
+
+    # Create or update Account
+    account = Account.objects.create(
+        tenant_id=getattr(user, 'tenant_id', None),
+        account_type=account_type,
+        purpose=purpose,
+        entity_type=entity_type,
+        display_name=display_name,
+        legal_name=legal_name,
+        registration_number=registration_number,
+        tax_id_or_kra_pin=tax_id_or_kra_pin,
+        status='ACTIVE',
+        governance_rule=governance_rule,
+        created_by=user,
+    )
+
+    # Create AccountMember for the creator
+    AccountMember.objects.create(
+        tenant_id=getattr(user, 'tenant_id', None),
+        account=account,
+        user=user,
+        role=member_role,
+        status='ACTIVE',
+        full_name=f"{user.first_name} {user.last_name}".strip() or user.email,
+        email=user.email,
+        phone_number=getattr(user, 'phone_number', None),
+        id_number=getattr(user, 'id_number', None),
+        kra_pin=tax_id_or_kra_pin,
+        share_percentage=Decimal('100.00') if account_type == 'INDIVIDUAL' else Decimal('100.00'),
+        is_account_leader=is_leader,
+        joined_at=timezone.now(),
+    )
+
+    # Audit event
+    AccountAuditEvent.objects.create(
+        account=account,
+        actor=user,
+        action='ACCOUNT_CREATED_ONBOARDING',
+        resource_type='Account',
+        resource_id=str(account.id),
+        new_state={
+            'account_type': account_type,
+            'purpose': purpose,
+            'entity_type': entity_type,
+            'display_name': display_name,
+            'member_role': member_role,
+        }
+    )
 
     redirect_url = reverse('frontend:buyer_dashboard') if user.role == 'Buyer' else reverse('frontend:seller_dashboard')
 
@@ -2582,5 +2695,218 @@ def onboarding_select_role_api(request):
         "authenticated": True,
         "role": user.role.lower(),
         "is_onboarded": user.is_onboarded,
+        "account_id": str(account.id),
+        "account_type": account_type,
+        "entity_type": entity_type,
+        "display_name": display_name,
+        "is_account_leader": is_leader,
+        "member_role": member_role,
         "redirect_url": redirect_url,
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def current_user_accounts_api(request):
+    """GET /api/v1/accounts/current/
+    Returns all active accounts the authenticated user belongs to.
+    """
+    memberships = AccountMember.objects.filter(
+        user=request.user,
+        status='ACTIVE'
+    ).select_related('account')
+
+    accounts_data = []
+    for m in memberships:
+        acc = m.account
+        pending_decisions_count = acc.decisions.filter(status='ACTIVE').count()
+        accounts_data.append({
+            'id': str(acc.id),
+            'display_name': acc.display_name,
+            'account_type': acc.account_type,
+            'account_type_display': acc.get_account_type_display(),
+            'purpose': acc.purpose,
+            'entity_type': acc.entity_type,
+            'entity_type_display': acc.get_entity_type_display(),
+            'role': m.role,
+            'role_display': m.get_role_display(),
+            'is_account_leader': m.is_account_leader,
+            'active_members_count': acc.active_members_count,
+            'pending_decisions_count': pending_decisions_count,
+        })
+
+    return Response({
+        "accounts": accounts_data,
+        "user_email": request.user.email,
+        "is_account_manager": request.user.is_account_manager,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def account_dashboard_feed_api(request, account_id):
+    """GET /api/v1/accounts/<account_id>/dashboard/
+    Complete dashboard feed for a Joint or Organizational account.
+    """
+    account = get_object_or_404(Account, id=account_id)
+    membership = get_account_membership(request.user, account)
+    if not membership and account.created_by != request.user and not request.user.is_superuser:
+        return Response({'error': 'Unauthorized access to account.'}, status=status.HTTP_403_FORBIDDEN)
+
+    members = account.members.filter(status='ACTIVE')
+    decisions = account.decisions.all()[:15]
+    audit_events = account.audit_events.all()[:20]
+
+    return Response({
+        "account": AccountSerializer(account).data,
+        "current_member": AccountMemberSerializer(membership).data if membership else None,
+        "members": AccountMemberSerializer(members, many=True).data,
+        "decisions": AccountDecisionSerializer(decisions, many=True).data,
+        "audit_events": AccountAuditEventSerializer(audit_events, many=True).data,
+        "pending_decisions_count": account.decisions.filter(status='ACTIVE').count(),
+    }, status=status.HTTP_200_OK)
+
+
+# ==================== VIEWSETS ====================
+
+class AccountViewSet(viewsets.ModelViewSet):
+    """CRUD viewset for Account instances."""
+    serializer_class = AccountSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Account.objects.filter(
+            Q(members__user=self.request.user, members__status='ACTIVE') |
+            Q(created_by=self.request.user)
+        ).distinct()
+
+    @action(detail=True, methods=['post'], url_path='invite-member')
+    def invite_member(self, request, pk=None):
+        account = self.get_object()
+        if not can(request.user, Action.INVITE_MEMBER, account=account):
+            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+
+        email = request.data.get('email', '').strip().lower()
+        phone = request.data.get('phone_number', '').strip()
+        full_name = request.data.get('full_name', '').strip() or (email.split('@')[0] if email else 'Member')
+        proposed_role = request.data.get('role', 'CO_BUYER' if account.purpose == 'BUY' else 'MEMBER')
+        share_percentage = Decimal(str(request.data.get('share_percentage', '0.00')))
+
+        if not email and not phone:
+            return Response({'error': 'Email or phone number is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if already a member
+        existing = account.members.filter(Q(email=email) | Q(phone_number=phone), status='ACTIVE').first()
+        if existing:
+            return Response({'error': 'User is already an active member of this account.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        invite_token = uuid.uuid4().hex
+        invitation = AccountInvitation.objects.create(
+            tenant_id=account.tenant_id,
+            account=account,
+            invite_token=invite_token,
+            invitee_email=email,
+            invitee_phone=phone,
+            invitee_name=full_name,
+            proposed_role=proposed_role,
+            status='PENDING',
+            invited_by=request.user,
+            expires_at=timezone.now() + timedelta(days=14),
+        )
+
+        # Also provision member record with INVITED status
+        target_user = User.objects.filter(email=email).first() if email else None
+        AccountMember.objects.create(
+            tenant_id=account.tenant_id,
+            account=account,
+            user=target_user,
+            role=proposed_role,
+            status='INVITED',
+            full_name=full_name,
+            email=email,
+            phone_number=phone,
+            share_percentage=share_percentage,
+            is_account_leader=False,
+            invited_by=request.user,
+        )
+
+        AccountAuditEvent.objects.create(
+            account=account,
+            actor=request.user,
+            action='MEMBER_INVITED',
+            resource_type='AccountInvitation',
+            resource_id=str(invitation.id),
+            metadata={'email': email, 'phone': phone, 'role': proposed_role}
+        )
+
+        return Response({
+            'status': 'success',
+            'message': f'Invitation sent to {email or phone}',
+            'invitation_id': str(invitation.id),
+            'invite_token': invite_token,
+        }, status=status.HTTP_201_CREATED)
+
+
+class AccountDecisionViewSet(viewsets.ModelViewSet):
+    """CRUD & Voting ViewSet for AccountDecision instances."""
+    serializer_class = AccountDecisionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return AccountDecision.objects.filter(
+            account__members__user=self.request.user,
+            account__members__status='ACTIVE'
+        ).distinct()
+
+    def perform_create(self, serializer):
+        account = serializer.validated_data['account']
+        if not can(self.request.user, Action.CREATE_DECISION, account=account):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You do not have permission to create proposals for this account.")
+        
+        decision = DecisionEngine.create_proposal(
+            account=account,
+            creator=self.request.user,
+            decision_type=serializer.validated_data['decision_type'],
+            title=serializer.validated_data['title'],
+            proposal_text=serializer.validated_data['proposal_text'],
+            proposed_amount=serializer.validated_data.get('proposed_amount'),
+            target_member=serializer.validated_data.get('target_member'),
+            land_parcel=serializer.validated_data.get('land_parcel'),
+            transaction_obj=serializer.validated_data.get('transaction'),
+            approval_rule=serializer.validated_data.get('approval_rule', 'SIMPLE_MAJORITY'),
+            deadline=serializer.validated_data.get('deadline'),
+        )
+        return decision
+
+    @action(detail=True, methods=['post'], url_path='vote')
+    def cast_vote(self, request, pk=None):
+        decision = self.get_object()
+        if not can(request.user, Action.CAST_VOTE, resource=decision, account=decision.account):
+            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+
+        vote_choice = request.data.get('vote', '').upper().strip()
+        if vote_choice not in ['APPROVE', 'REJECT', 'REQUEST_DISCUSSION']:
+            return Response({'error': 'Invalid vote choice. Choose APPROVE, REJECT, or REQUEST_DISCUSSION.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        comment = request.data.get('comment', '')
+        result = DecisionEngine.cast_vote(decision, request.user, vote_choice, comment)
+        return Response(result, status=status.HTTP_200_OK if result.get('success') else status.HTTP_400_BAD_REQUEST)
+
+
+class PropertyOwnerViewSet(viewsets.ModelViewSet):
+    """ViewSet for Statutory Property Ownership records."""
+    serializer_class = PropertyOwnerSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return PropertyOwner.objects.all()
+
+    @action(detail=False, methods=['get'], url_path='verify-signoffs')
+    def verify_signoffs(self, request):
+        parcel_id = request.query_params.get('parcel_id')
+        if not parcel_id:
+            return Response({'error': 'parcel_id query param is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        parcel = get_object_or_404(LandParcel, id=parcel_id)
+        result = verify_legal_ownership_signoffs(parcel)
+        return Response(result, status=status.HTTP_200_OK)

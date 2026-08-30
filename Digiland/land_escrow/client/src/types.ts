@@ -56,14 +56,101 @@ export interface NavItem {
 }
 
 export interface UserSummary {
+  id?: string;
   email: string;
   role: string;
   buyer_account_type?: string | null;
   is_identity_verified?: boolean;
+  is_onboarded?: boolean;
   is_superuser?: boolean;
   is_staff?: boolean;
   full_name?: string | null;
   phone_number?: string | null;
+  is_account_manager?: boolean;
+  primary_account_id?: string | null;
+  primary_account_name?: string | null;
+  primary_account_type?: 'INDIVIDUAL' | 'JOINT' | 'ORGANIZATION' | null;
+  primary_entity_type?: string | null;
+}
+
+export interface AccountMemberSummary {
+  id: string;
+  account: string;
+  account_name?: string;
+  user?: string | null;
+  role: string;
+  role_display: string;
+  status: string;
+  status_display: string;
+  full_name: string;
+  email?: string | null;
+  phone_number?: string | null;
+  id_number?: string | null;
+  kra_pin?: string | null;
+  share_percentage: number | string;
+  is_account_leader: boolean;
+  joined_at?: string | null;
+}
+
+export interface DecisionVoteSummary {
+  id: string;
+  decision: string;
+  voter: string;
+  voter_name: string;
+  account_member: string;
+  member_name: string;
+  vote: 'APPROVE' | 'REJECT' | 'REQUEST_DISCUSSION';
+  vote_display: string;
+  comment?: string | null;
+  voted_at: string;
+}
+
+export interface AccountDecisionSummary {
+  id: string;
+  account: string;
+  account_name?: string;
+  land_parcel?: string | null;
+  transaction?: string | null;
+  decision_type: string;
+  decision_type_display: string;
+  title: string;
+  proposal_text: string;
+  proposed_amount?: number | string | null;
+  target_member?: string | null;
+  target_member_name?: string | null;
+  approval_rule: string;
+  status: 'ACTIVE' | 'APPROVED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED' | 'EXECUTED' | 'LEGAL_HOLD';
+  status_display: string;
+  created_by_email?: string;
+  opened_at: string;
+  deadline?: string | null;
+  closed_at?: string | null;
+  votes: DecisionVoteSummary[];
+  total_eligible_voters: number;
+  approved_votes_count: number;
+  rejected_votes_count: number;
+  discussion_requests_count: number;
+}
+
+export interface AccountSummary {
+  id: string;
+  account_type: 'INDIVIDUAL' | 'JOINT' | 'ORGANIZATION';
+  account_type_display: string;
+  purpose: 'BUY' | 'SELL' | 'BOTH';
+  purpose_display: string;
+  entity_type: string;
+  entity_type_display: string;
+  display_name: string;
+  legal_name?: string | null;
+  registration_number?: string | null;
+  tax_id_or_kra_pin?: string | null;
+  status: string;
+  status_display: string;
+  governance_rule: string;
+  members: AccountMemberSummary[];
+  active_members_count: number;
+  decisions: AccountDecisionSummary[];
+  created_at: string;
 }
 
 export interface ReviewUserSummary extends UserSummary {
@@ -75,6 +162,7 @@ export interface ReviewUserSummary extends UserSummary {
   joined_at?: string | null;
   role_label?: string;
 }
+
 
 export interface ActionLink {
   label: string;

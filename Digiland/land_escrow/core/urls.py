@@ -18,8 +18,15 @@ router.register(r'kyc-profiles', api_views.KYCProfileViewSet, basename='kyc-prof
 router.register(r'joint-groups', api_views.JointBuyerGroupViewSet, basename='joint-group')
 router.register(r'joint-members', api_views.JointBuyerMemberViewSet, basename='joint-member')
 router.register(r'joint-contributions', api_views.JointPaymentContributionViewSet, basename='joint-contribution')
+router.register(r'accounts', api_views.AccountViewSet, basename='account')
+router.register(r'decisions', api_views.AccountDecisionViewSet, basename='account-decision')
+router.register(r'property-owners', api_views.PropertyOwnerViewSet, basename='property-owner')
 
 urlpatterns = [
+    # ==================== ACCOUNT & MULTI-MEMBER ====================
+    path('accounts/current/', api_views.current_user_accounts_api, name='accounts-current'),
+    path('accounts/<uuid:account_id>/dashboard/', api_views.account_dashboard_feed_api, name='account-dashboard-feed'),
+
     # ==================== AUTH ====================
     path('auth/register', views.register_user, name='register'),
     path('auth/login', views.login_user, name='login'),

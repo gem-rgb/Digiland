@@ -14,8 +14,6 @@ from core.models import (
     User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite,
     JointBuyerGroup, JointBuyerMember, JointPaymentContribution, JointMemberRemovalRequest,
     AuditLog, PopupAdCampaign, DocumentAccessGrant, LawyerPostTransactionTask,
-)
-from core.models_verification import (
     SurveyAssignment, SurveyBeacon, SurveyBoundaryObservation, SurveyMeasurement,
     SurveyDocument, SurveyIssue, SurveyReport, SurveyAuditLog,
 )
@@ -83,7 +81,12 @@ def is_seller_or_agent(user):
     # Strict Fencing: Agents must be KYC verified by Admin offline
     if user.role == 'Agent' and not user.is_identity_verified:
         return False
-    return user.role in ['Seller', 'Agent', 'Admin']
+    # Account purpose check
+    primary_acc = getattr(user, 'primary_account', None)
+    if primary_acc and primary_acc.purpose in ['SELL', 'BOTH']:
+        return True
+    return user.role in ['Seller', 'Agent', 'Admin', 'Seller Team Manager']
+
 
 def is_verified_agent_or_admin(user):
     if not user.is_authenticated:

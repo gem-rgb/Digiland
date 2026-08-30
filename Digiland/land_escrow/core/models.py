@@ -121,15 +121,19 @@ class User(AbstractUser):
         return None
 
     @property
-    def total_tasks_completed(self):
-        """Count completed tasks for this agent"""
-        if self.role != 'Agent':
-            return 0
-        from .models import LandParcel
-        return LandParcel.objects.filter(
-            assigned_agent=self, 
-            verification_status__in=['Verified', 'Fraudulent']
-        ).count()
+    def primary_account(self):
+        """Returns the primary active Account for this user if one exists."""
+        membership = self.account_memberships.filter(status='ACTIVE').select_related('account').first()
+        return membership.account if membership else None
+
+    @property
+    def is_account_manager(self):
+        """True if user is a Team Manager in an active Joint Account (entitled to Digital Crown)."""
+        return self.account_memberships.filter(
+            status='ACTIVE',
+            is_account_leader=True,
+            account__account_type='JOINT'
+        ).exists()
 
     def __str__(self):
         return self.email
@@ -1986,206 +1990,11 @@ class PricePredictionLog(models.Model):
     proximity_to_school_km = models.FloatField(null=True, blank=True)
     proximity_to_hospital_km = models.FloatField(null=True, blank=True)
     plot_grade = models.CharField(max_length=1, blank=True)
-    predicted_price_per_acre = models.DecimalField(max_digits=15, decimal_places=0)
     predicted_total_value = models.DecimalField(max_digits=18, decimal_places=0)
     confidence_low = models.DecimalField(max_digits=15, decimal_places=0)
     confidence_high = models.DecimalField(max_digits=15, decimal_places=0)
     confidence_label = models.CharField(max_length=50)
-    def __str__(self):
-        status = "enabled" if self.is_enabled else "disabled"
-        return f"MFA for {self.user.email} ({status})"
-
-
-class TrustedDevice(models.Model):
-    """Trusted device for MFA bypass."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='trusted_devices')
-    trust_token = models.CharField(max_length=128, db_index=True)
-    device_name = models.CharField(max_length=200, default='Unknown Device')
-    device_type = models.CharField(max_length=50, default='unknown')
-    user_agent = models.TextField(blank=True, default='')
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
-    expires_at = models.DateTimeField(db_index=True)
-    last_used_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        indexes = [
-            models.Index(fields=['user', 'trust_token'], name='idx_device_user_token'),
-            models.Index(fields=['user', 'expires_at'], name='idx_device_user_expires'),
-        ]
-    
-    def __str__(self):
-        return f"{self.device_name} - {self.user.email}"
-
-
-class UserSession(models.Model):
-    """Track user sessions for security and revocation."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sessions')
-    session_key = models.CharField(max_length=128, db_index=True)
-    refresh_token_jti = models.CharField(max_length=128, db_index=True, blank=True, default='')
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
-    user_agent = models.TextField(blank=True, default='')
-    device_type = models.CharField(max_length=50, blank=True, default='')
-    location = models.CharField(max_length=200, blank=True, default='')
-    is_active = models.BooleanField(default=True, db_index=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    last_activity = models.DateTimeField(auto_now=True)
-    expires_at = models.DateTimeField(db_index=True)
-    
-    class Meta:
-        ordering = ['-last_activity']
-        indexes = [
-            models.Index(fields=['user', 'is_active'], name='idx_session_user_active'),
-            models.Index(fields=['refresh_token_jti'], name='idx_session_jti'),
-            models.Index(fields=['user', 'is_active', 'last_activity'], name='idx_session_user_activity'),
-        ]
-    
-    def __str__(self):
-        return f"Session {self.session_key[:8]}... for {self.user.email}"
-
-
-class OAuthProvider(models.Model):
-    """OAuth/SSO provider configuration."""
-    PROVIDER_CHOICES = [
-        ('google', 'Google'),
-        ('github', 'GitHub'),
-        ('microsoft', 'Microsoft'),
-        ('oidc', 'OpenID Connect'),
-        ('saml', 'SAML'),
-    ]
-    
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=100)
-    provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES, db_index=True)
-    client_id = models.CharField(max_length=500)
-    client_secret = models.TextField()  # Encrypted at rest
-    authorization_url = models.URLField()
-    token_url = models.URLField()
-    userinfo_url = models.URLField(blank=True, default='')
-    scope = models.CharField(max_length=200, default='openid email profile')
-    is_active = models.BooleanField(default=True, db_index=True)
-    config = models.JSONField(default=dict, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        indexes = [
-            models.Index(fields=['provider', 'is_active'], name='idx_oauth_provider_active'),
-        ]
-    
-    def __str__(self):
-        return f"{self.name} ({self.provider})"
-
-
-class OAuthAccount(models.Model):
-    """Links OAuth provider accounts to local users."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='oauth_accounts')
-    provider = models.ForeignKey(OAuthProvider, on_delete=models.CASCADE, related_name='accounts')
-    provider_user_id = models.CharField(max_length=255, db_index=True)
-    email = models.EmailField(blank=True, default='')
-    access_token = models.TextField(blank=True, default='')  # Encrypted
-    refresh_token = models.TextField(blank=True, default='')  # Encrypted
-    token_expires_at = models.DateTimeField(null=True, blank=True)
-    profile_data = models.JSONField(default=dict, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        unique_together = ('provider', 'provider_user_id')
-        indexes = [
-            models.Index(fields=['user', 'provider'], name='idx_oauth_user_provider'),
-            models.Index(fields=['provider', 'provider_user_id'], name='idx_oauth_provider_uid'),
-        ]
-    
-    def __str__(self):
-        return f"{self.user.email} via {self.provider.name}"
-
-
-class Permission(models.Model):
-    """Granular permission for ABAC system."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    codename = models.CharField(max_length=100, unique=True, db_index=True)
-    name = models.CharField(max_length=255)
-    description = models.TextField(blank=True, default='')
-    resource_type = models.CharField(max_length=50, db_index=True)
-    action = models.CharField(max_length=50)  # create, read, update, delete, manage
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        ordering = ['resource_type', 'action']
-        indexes = [
-            models.Index(fields=['resource_type', 'action'], name='idx_perm_resource_action'),
-        ]
-    
-    def __str__(self):
-        return f"{self.codename}"
-
-
-class RolePermission(models.Model):
-    """Maps roles to permissions (RBAC + ABAC hybrid)."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    role = models.CharField(max_length=20, db_index=True)
-    permission = models.ForeignKey(Permission, on_delete=models.CASCADE, related_name='role_assignments')
-    conditions = models.JSONField(default=dict, blank=True, help_text='ABAC conditions for this role-permission mapping')
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        unique_together = ('role', 'permission')
-        indexes = [
-            models.Index(fields=['role'], name='idx_roleperm_role'),
-        ]
-    
-    def __str__(self):
-        return f"{self.role} -> {self.permission.codename}"
-
-
-class LoginAttempt(models.Model):
-    """Track login attempts for brute-force protection."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    email = models.EmailField(db_index=True)
-    ip_address = models.GenericIPAddressField(db_index=True)
-    user_agent = models.TextField(blank=True, default='')
-    success = models.BooleanField(default=False)
-    failure_reason = models.CharField(max_length=100, blank=True, default='')
-    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
-    
-    class Meta:
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['email', 'success', 'created_at'], name='idx_login_email_success'),
-            models.Index(fields=['ip_address', 'success', 'created_at'], name='idx_login_ip_success'),
-        ]
-    
-    def __str__(self):
-        status = "success" if self.success else "failed"
-        return f"{self.email} ({status}) at {self.created_at}"
-
-
-class PricePredictionLog(models.Model):
-    """Logs every price prediction for monitoring and model improvement."""
-    prediction_id = models.CharField(max_length=100, unique=True, editable=False)
-    county = models.CharField(max_length=100)
-    constituency = models.CharField(max_length=100, blank=True)
-    town = models.CharField(max_length=100, blank=True)
-    land_use = models.CharField(max_length=50)
-    size_acres = models.DecimalField(max_digits=10, decimal_places=2)
-    has_road_access = models.BooleanField(default=True)
-    has_water = models.BooleanField(default=True)
-    has_electricity = models.BooleanField(default=True)
-    proximity_to_tarmac_km = models.FloatField(null=True, blank=True)
-    proximity_to_school_km = models.FloatField(null=True, blank=True)
-    proximity_to_hospital_km = models.FloatField(null=True, blank=True)
-    plot_grade = models.CharField(max_length=1, blank=True)
-    predicted_price_per_acre = models.DecimalField(max_digits=15, decimal_places=0)
-    predicted_total_value = models.DecimalField(max_digits=18, decimal_places=0)
-    confidence_low = models.DecimalField(max_digits=15, decimal_places=0)
-    confidence_high = models.DecimalField(max_digits=15, decimal_places=0)
-    confidence_label = models.CharField(max_length=50)
-    model_version = models.CharField(max_length=50)
+    model_version = models.CharField(max_length=50, default='v1.0')
     created_at = models.DateTimeField(auto_now_add=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     
@@ -2198,6 +2007,7 @@ class PricePredictionLog(models.Model):
     
     def __str__(self):
         return f"Prediction {self.prediction_id[:8]}... {self.county} {self.land_use} KES {self.predicted_price_per_acre:,}/acre"
+
 
 
 # ==============================================================================
@@ -2680,4 +2490,376 @@ class SurveyAuditLog(models.Model):
 
     def __str__(self):
         return f"{self.action} on {self.assignment.assignment_number} at {self.timestamp}"
+
+
+# ==============================================================================
+# UNIFIED ACCOUNT, ENTITY, MULTI-MEMBER & LEGAL OWNERSHIP ARCHITECTURE
+# ==============================================================================
+
+class Account(models.Model):
+    """
+    Core account entity separating Digiland user identity from legal entities
+    and group ownership structures.
+    """
+    ACCOUNT_TYPE_CHOICES = [
+        ('INDIVIDUAL', 'Individual Account'),
+        ('JOINT', 'Human Joint Account'),
+        ('ORGANIZATION', 'Organizational Account'),
+    ]
+    PURPOSE_CHOICES = [
+        ('BUY', 'Buyer'),
+        ('SELL', 'Seller'),
+        ('BOTH', 'Buyer & Seller'),
+    ]
+    ENTITY_TYPE_CHOICES = [
+        # Individual & Human Groups
+        ('PERSON', 'Individual Person'),
+        ('FAMILY', 'Family / Relatives'),
+        ('CHAMA', 'Chama / Investment Group'),
+        ('FRIENDS', 'Friends / Private Group'),
+        ('BUSINESS_PARTNERS', 'Business Partners'),
+        ('JOINT_INVESTMENT', 'Joint Investment Group'),
+        
+        # Organizations & Institutions
+        ('COMPANY', 'Company / Corporate Entity'),
+        ('GOVERNMENT', 'Government Entity / Ministry / Agency'),
+        ('INSTITUTION', 'Institution / Educational / Religious'),
+        ('NGO', 'NGO / Non-Profit Organization'),
+        ('SACCO', 'SACCO / Cooperative Society'),
+        ('COOPERATIVE', 'Cooperative Society'),
+        ('BANK', 'Bank / Financial Institution'),
+        ('ESTATE', 'Estate / Succession / Legal Representative'),
+        ('OTHER', 'Other Legal Entity'),
+    ]
+    STATUS_CHOICES = [
+        ('ACTIVE', 'Active'),
+        ('PENDING_VERIFICATION', 'Pending Verification'),
+        ('SUSPENDED', 'Suspended'),
+        ('CLOSED', 'Closed'),
+    ]
+    GOVERNANCE_RULE_CHOICES = [
+        ('SIMPLE_MAJORITY', 'Simple Majority (>50%)'),
+        ('TWO_THIRDS', 'Two-Thirds (≥66.7%)'),
+        ('UNANIMOUS', 'Unanimous (100%)'),
+        ('MANAGER_ONLY', 'Manager / Primary Rep Sole Authority'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, null=True, blank=True, help_text='Tenant isolation ID')
+    account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE_CHOICES, default='INDIVIDUAL', db_index=True)
+    purpose = models.CharField(max_length=10, choices=PURPOSE_CHOICES, default='BUY', db_index=True)
+    entity_type = models.CharField(max_length=30, choices=ENTITY_TYPE_CHOICES, default='PERSON', db_index=True)
+    display_name = models.CharField(max_length=255, help_text="Public or group name (e.g. 'Umoja Investment Chama')")
+    legal_name = models.CharField(max_length=255, blank=True, null=True, help_text="Registered legal company or group name")
+    registration_number = models.CharField(max_length=100, blank=True, null=True, help_text="Official registration number (e.g. CPR/2026/01)")
+    tax_id_or_kra_pin = models.CharField(max_length=50, blank=True, null=True, help_text="KRA PIN for corporate/group tax filing")
+    status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='ACTIVE', db_index=True)
+    governance_rule = models.CharField(max_length=30, choices=GOVERNANCE_RULE_CHOICES, default='SIMPLE_MAJORITY')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_accounts')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    deleted_at = models.DateTimeField(null=True, blank=True, help_text='Soft delete timestamp')
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='%(class)s_updates')
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['account_type', 'purpose'], name='idx_acc_type_purpose'),
+            models.Index(fields=['entity_type', 'status'], name='idx_acc_entity_status'),
+        ]
+
+    def __str__(self):
+        return f"{self.display_name} ({self.get_account_type_display()} · {self.get_entity_type_display()})"
+
+    @property
+    def active_members_count(self):
+        return self.members.filter(status='ACTIVE').count()
+
+    @property
+    def manager(self):
+        """Returns the primary team manager or primary representative for this account."""
+        leader_member = self.members.filter(status='ACTIVE', is_account_leader=True).first()
+        return leader_member.user if leader_member else self.created_by
+
+
+class AccountMember(models.Model):
+    """
+    Represents an individual user's membership and operational role in an Account.
+    Separates Digiland account membership from statutory land ownership.
+    """
+    ROLE_CHOICES = [
+        # Joint buyer / seller roles
+        ('BUYER_TEAM_MANAGER', 'Buyer Team Manager'),
+        ('SELLER_TEAM_MANAGER', 'Seller Team Manager'),
+        ('CO_BUYER', 'Co-Buyer / Member'),
+        ('MEMBER', 'Member'),
+        ('VIEWER', 'Viewer'),
+        ('FINANCIAL_CONTRIBUTOR', 'Financial Contributor'),
+        
+        # Organizational account roles
+        ('PRIMARY_REPRESENTATIVE', 'Primary Representative'),
+        ('AUTHORIZED_REPRESENTATIVE', 'Authorized Representative'),
+        ('TRANSACTION_OFFICER', 'Transaction Officer'),
+        ('FINANCE_OFFICER', 'Finance Officer'),
+        ('LEGAL_REPRESENTATIVE', 'Legal Representative'),
+    ]
+    STATUS_CHOICES = [
+        ('ACTIVE', 'Active'),
+        ('INVITED', 'Invited / Pending Acceptance'),
+        ('SUSPENDED', 'Suspended'),
+        ('REMOVED', 'Removed'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, null=True, blank=True)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='members')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='account_memberships', null=True, blank=True)
+    role = models.CharField(max_length=35, choices=ROLE_CHOICES, default='MEMBER', db_index=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACTIVE', db_index=True)
+    full_name = models.CharField(max_length=200)
+    email = models.EmailField(blank=True, null=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    id_number = models.CharField(max_length=50, blank=True, null=True)
+    kra_pin = models.CharField(max_length=20, blank=True, null=True)
+    share_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, help_text="Agreed internal contribution/share percentage (0-100)")
+    is_account_leader = models.BooleanField(default=False, help_text="True for Buyer Team Manager or Seller Team Manager (renders Digital Crown)")
+    custom_permissions = models.JSONField(default=list, blank=True, help_text="Explicit granted permission codes")
+    invited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='sent_member_invitations')
+    joined_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='%(class)s_updates')
+
+    class Meta:
+        ordering = ['-is_account_leader', 'created_at']
+        indexes = [
+            models.Index(fields=['account', 'status'], name='idx_accmem_acc_status'),
+            models.Index(fields=['user', 'status'], name='idx_accmem_user_status'),
+        ]
+
+    def __str__(self):
+        return f"{self.full_name} [{self.get_role_display()}] in {self.account.display_name}"
+
+
+class AccountInvitation(models.Model):
+    """
+    Secure invitation workflow for onboarding co-buyers or organization representatives.
+    """
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('ACCEPTED', 'Accepted'),
+        ('DECLINED', 'Declined'),
+        ('EXPIRED', 'Expired'),
+        ('REVOKED', 'Revoked'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, null=True, blank=True)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='invitations')
+    invite_token = models.CharField(max_length=64, unique=True, db_index=True)
+    invitee_email = models.EmailField(blank=True, null=True)
+    invitee_phone = models.CharField(max_length=20, blank=True, null=True)
+    invitee_name = models.CharField(max_length=200, blank=True, null=True)
+    proposed_role = models.CharField(max_length=35, default='MEMBER')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING', db_index=True)
+    invited_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='issued_account_invites')
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Invite for {self.invitee_email or self.invitee_phone} to {self.account.display_name} [{self.status}]"
+
+
+class PropertyOwner(models.Model):
+    """
+    Independent Statutory Land Ownership Structure.
+    Records legal title ownership as determined by title documents and LSK lawyer review.
+    Does NOT infer legal ownership from Digiland account membership.
+    """
+    OWNERSHIP_STRUCTURE_CHOICES = [
+        ('SOLE_OWNERSHIP', 'Sole Ownership'),
+        ('JOINT_TENANCY', 'Joint Tenancy (Spouses / Equal Right of Survivorship)'),
+        ('TENANCY_IN_COMMON', 'Tenancy in Common (Defined Distinct Percentage Shares)'),
+        ('CORPORATE_ENTITY', 'Corporate / Company Title Ownership'),
+        ('TRUST_OWNERSHIP', 'Trust Ownership / Family Trust'),
+        ('ESTATE_SUCCESSION', 'Estate / Succession (Letters of Administration)'),
+        ('GOVERNMENT_PUBLIC', 'Public / Government Custody'),
+        ('CUSTOMARY_COMMUNITY', 'Community / Customary Title'),
+    ]
+    LEGAL_VERIFICATION_STATUS_CHOICES = [
+        ('UNVERIFIED', 'Unverified / Draft'),
+        ('DOCS_SUBMITTED', 'Documents Submitted for Verification'),
+        ('LAWYER_VERIFIED', 'Verified by LSK Advocate / Lawyer'),
+        ('DISPUTED', 'Disputed / Encumbrance / Caveat Found'),
+        ('REJECTED', 'Legal Verification Failed'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, null=True, blank=True)
+    land_parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='legal_owners')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='legal_property_holdings')
+    account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='registered_property_holdings')
+    full_legal_name = models.CharField(max_length=255, help_text="Full legal name as recorded on Title Deed / Certificate of Lease")
+    id_number_or_reg = models.CharField(max_length=100, help_text="National ID, Alien ID, or Company Reg No.")
+    kra_pin = models.CharField(max_length=50, blank=True, null=True, help_text="KRA PIN of the legal owner")
+    ownership_structure = models.CharField(max_length=30, choices=OWNERSHIP_STRUCTURE_CHOICES, default='SOLE_OWNERSHIP')
+    ownership_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=100.00, help_text="Legal title ownership percentage (1-100)")
+    is_mandatory_signatory = models.BooleanField(default=True, help_text="Whether this owner's explicit signature/consent is required for transactions")
+    legal_verification_status = models.CharField(max_length=25, choices=LEGAL_VERIFICATION_STATUS_CHOICES, default='UNVERIFIED', db_index=True)
+    verified_by_lawyer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='lawyer_verified_owners')
+    verification_notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='%(class)s_updates')
+
+    class Meta:
+        ordering = ['-ownership_percentage', 'full_legal_name']
+        indexes = [
+            models.Index(fields=['land_parcel', 'legal_verification_status'], name='idx_propown_prop_status'),
+        ]
+
+    def __str__(self):
+        return f"{self.full_legal_name} ({self.ownership_percentage}% {self.get_ownership_structure_display()}) - {self.land_parcel.parcel_number}"
+
+
+class AccountDecision(models.Model):
+    """
+    Reusable Group Decision, Proposal & Voting Engine.
+    Handles purchase proposals, member removal, manager succession, and transaction authorizations.
+    """
+    DECISION_TYPE_CHOICES = [
+        ('PURCHASE_PROPOSAL', 'Purchase Proposal / Offer Authorization'),
+        ('DUE_DILIGENCE_INITIATION', 'Initiate Due Diligence Request'),
+        ('MEMBER_REMOVAL', 'Propose Member Removal'),
+        ('CHANGE_MANAGER', 'Change Team Manager / Leadership Succession'),
+        ('CLOSE_ACCOUNT', 'Close Account / Liquidation'),
+        ('SALE_AUTHORIZATION', 'Authorize Property Listing / Sale'),
+        ('EXPENSE_PAYMENT', 'Authorize Payment / Escrow Release'),
+        ('CUSTOM_PROPOSAL', 'Custom Group Proposal'),
+    ]
+    STATUS_CHOICES = [
+        ('ACTIVE', 'Active / Voting Open'),
+        ('APPROVED', 'Approved (Threshold Met)'),
+        ('REJECTED', 'Rejected'),
+        ('EXPIRED', 'Voting Window Expired'),
+        ('CANCELLED', 'Cancelled by Proposer'),
+        ('EXECUTED', 'Executed / Completed'),
+        ('LEGAL_HOLD', 'Legal Authorization Incomplete / Statutory Consent Missing'),
+    ]
+    APPROVAL_RULE_CHOICES = [
+        ('SIMPLE_MAJORITY', 'Simple Majority (>50%)'),
+        ('TWO_THIRDS', 'Two-Thirds Majority (≥66.7%)'),
+        ('UNANIMOUS', 'Unanimous (100%)'),
+        ('ALL_LEGAL_OWNERS', 'All Registered Legal Owners Must Approve'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True, null=True, blank=True)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='decisions')
+    land_parcel = models.ForeignKey(LandParcel, on_delete=models.SET_NULL, null=True, blank=True, related_name='account_decisions')
+    transaction = models.ForeignKey(Transaction, on_delete=models.SET_NULL, null=True, blank=True, related_name='account_decisions')
+    decision_type = models.CharField(max_length=35, choices=DECISION_TYPE_CHOICES, db_index=True)
+    title = models.CharField(max_length=255)
+    proposal_text = models.TextField()
+    proposed_amount = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    target_member = models.ForeignKey(AccountMember, on_delete=models.SET_NULL, null=True, blank=True, related_name='targeted_decisions', help_text="Target of member removal or role change")
+    approval_rule = models.CharField(max_length=25, choices=APPROVAL_RULE_CHOICES, default='SIMPLE_MAJORITY')
+    required_vote_count = models.IntegerField(default=1)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACTIVE', db_index=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_decisions')
+
+    opened_at = models.DateTimeField(auto_now_add=True)
+    deadline = models.DateTimeField(null=True, blank=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+    execution_result = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-opened_at']
+        indexes = [
+            models.Index(fields=['account', 'status'], name='idx_dec_acc_status'),
+            models.Index(fields=['decision_type', 'status'], name='idx_dec_type_status'),
+        ]
+
+    def __str__(self):
+        return f"{self.title} [{self.get_status_display()}] - {self.account.display_name}"
+
+    @property
+    def total_eligible_voters(self):
+        return self.account.members.filter(status='ACTIVE').count()
+
+    @property
+    def approved_votes_count(self):
+        return self.votes.filter(vote='APPROVE').count()
+
+    @property
+    def rejected_votes_count(self):
+        return self.votes.filter(vote='REJECT').count()
+
+    @property
+    def discussion_requests_count(self):
+        return self.votes.filter(vote='REQUEST_DISCUSSION').count()
+
+
+class DecisionVote(models.Model):
+    """
+    Individual vote cast on an AccountDecision.
+    Strictly enforces 1 eligible member = 1 vote.
+    """
+    VOTE_CHOICES = [
+        ('APPROVE', 'Approve / Yes'),
+        ('REJECT', 'Reject / No'),
+        ('REQUEST_DISCUSSION', 'Request Discussion / Hold'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    decision = models.ForeignKey(AccountDecision, on_delete=models.CASCADE, related_name='votes')
+    voter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cast_votes')
+    account_member = models.ForeignKey(AccountMember, on_delete=models.CASCADE, related_name='member_votes')
+    vote = models.CharField(max_length=20, choices=VOTE_CHOICES)
+    comment = models.TextField(blank=True, null=True)
+    voted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('decision', 'voter')
+        ordering = ['-voted_at']
+
+    def __str__(self):
+        return f"{self.voter.email}: {self.vote} on {self.decision.title}"
+
+
+class AccountAuditEvent(models.Model):
+    """
+    Immutable Audit Log for all Account, Membership, Voting, and Permission events.
+    Historical records are permanently preserved even if a member is later removed.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='audit_events')
+    actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='account_audit_actions')
+    action = models.CharField(max_length=100, db_index=True)
+    resource_type = models.CharField(max_length=50)
+    resource_id = models.CharField(max_length=100, blank=True, null=True)
+    previous_state = models.JSONField(default=dict, blank=True)
+    new_state = models.JSONField(default=dict, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['account', 'timestamp'], name='idx_acclog_acc_time'),
+            models.Index(fields=['action', 'timestamp'], name='idx_acclog_act_time'),
+        ]
+
+    def __str__(self):
+        actor_email = self.actor.email if self.actor else 'System'
+        return f"[{self.timestamp}] {actor_email} -> {self.action} on {self.resource_type}:{self.resource_id or ''}"
 

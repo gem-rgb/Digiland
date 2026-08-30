@@ -82,14 +82,24 @@ def serialize_user(user):
         return None
 
     full_name = (f"{getattr(user, 'first_name', '')} {getattr(user, 'last_name', '')}").strip() or getattr(user, 'email', '')
+    primary_acc = getattr(user, 'primary_account', None)
+
     return {
+        'id': str(user.id),
         'email': user.email,
         'role': getattr(user, 'role', ''),
         'buyer_account_type': getattr(user, 'buyer_account_type', None),
         'is_identity_verified': getattr(user, 'is_identity_verified', False),
+        'is_onboarded': getattr(user, 'is_onboarded', False),
         'full_name': full_name,
         'phone_number': getattr(user, 'phone_number', None),
+        'is_account_manager': getattr(user, 'is_account_manager', False),
+        'primary_account_id': str(primary_acc.id) if primary_acc else None,
+        'primary_account_name': primary_acc.display_name if primary_acc else None,
+        'primary_account_type': primary_acc.account_type if primary_acc else None,
+        'primary_entity_type': primary_acc.entity_type if primary_acc else None,
     }
+
 
 
 def serialize_review_user(user):
