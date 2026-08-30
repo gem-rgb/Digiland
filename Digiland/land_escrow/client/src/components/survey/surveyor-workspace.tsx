@@ -82,7 +82,15 @@ export function SurveyorWorkspaceView({
       const urlParams = new URLSearchParams(window.location.search);
       const tabParam = urlParams.get('tab');
       const selParam = urlParams.get('selected');
-      if (tabParam) setActiveTab(tabParam);
+      if (tabParam) {
+        const tabMap: Record<string, string> = {
+          'site-visits': 'sitevisits',
+          'field-mode': 'fieldmode',
+          'boundaries': 'beacons',
+          'documents': 'presurvey',
+        };
+        setActiveTab(tabMap[tabParam] || tabParam);
+      }
       if (selParam && assignments.some((a) => a.id === selParam)) {
         setSelectedAssignmentId(selParam);
       }

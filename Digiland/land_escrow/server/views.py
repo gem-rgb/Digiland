@@ -4098,27 +4098,21 @@ def escrow_release(request):
 @login_required
 @user_passes_test(is_seller_or_agent, login_url='/accounts/login/', redirect_field_name=None)
 def parcel_upload(request):
-    if request.method == 'POST':
-        form = LandParcelUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            parcel = form.save(commit=False)
-            parcel.verification_status = 'Awaiting_Documents' # Compliance Lock
-            parcel.listed_by = request.user
-            parcel.save()
-            return redirect('frontend:parcel_detail', parcel_number=parcel.parcel_number)
-    else:
-        form = LandParcelUploadForm()
+    """Guided 5-step Property Onboarding & Due-Diligence Intake Wizard."""
+    user_profile = {
+        'email': request.user.email,
+        'first_name': request.user.first_name,
+        'last_name': request.user.last_name,
+        'national_id': getattr(request.user, 'id_number', ''),
+        'kra_pin': getattr(request.user, 'kra_pin', ''),
+        'phone_number': getattr(request.user, 'phone_number', ''),
+    }
     return render_react_shell(
         request,
-        'form',
-        'Register a land parcel',
-        'Provide parcel details for compliance checks and listing verification.',
-        form=serialize_form(
-            form,
-            action=reverse('frontend:parcel_upload'),
-            submit_label='Submit for verification',
-            intro='Our system cross-references submitted details against registry records during review.',
-        ),
+        'seller-onboarding-wizard',
+        'Property Onboarding & Verification Intake',
+        'Guided 5-step property due-diligence intake workflow.',
+        user_profile=user_profile,
         actions=[{'label': 'Back to marketplace', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'}],
     )
 

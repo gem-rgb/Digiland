@@ -503,6 +503,14 @@ def verification_document_upload(request, case_id):
         customer_display=f'{doc.get_document_type_display()} uploaded',
     )
 
+    # Trigger Instant AI Document Screening
+    try:
+        from core.services.ai_document_screener import screen_document
+        screening_result = screen_document(doc)
+    except Exception as e:
+        logger.warning(f"AI screening failed for doc {doc.id}: {e}")
+        screening_result = None
+
     return JsonResponse({
         'document': {
             'id': str(doc.id),
@@ -511,8 +519,14 @@ def verification_document_upload(request, case_id):
             'file_size': doc.file_size,
             'version': doc.version,
             'verification_status': doc.verification_status,
+            'ai_status': doc.ai_status,
+            'ai_confidence': float(doc.ai_confidence) if doc.ai_confidence else None,
+            'ai_confidence_level': doc.ai_confidence_level,
+            'ai_flags': doc.ai_flags,
+            'ai_recommendation': doc.ai_recommendation,
             'uploaded_at': doc.uploaded_at.isoformat() if doc.uploaded_at else None,
         },
+        'screening': screening_result,
     }, status=201)
 
 

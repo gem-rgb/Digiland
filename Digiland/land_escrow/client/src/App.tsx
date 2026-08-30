@@ -25,6 +25,7 @@ import { AnimatedWalkthrough } from './components/landing/animated-walkthrough.j
 import { PremiumFooter } from './components/landing/premium-footer.js';
 import { AdminPeopleHubView, AdminKycDeskView, AdminAIEvaluationLabView, AdminTransactionsManagementView, AdminAnalyticsSuiteView } from './components/admin/admin-views.js';
 import { SurveyorWorkspaceView } from './components/survey/surveyor-workspace.js';
+import { SellerOnboardingWizard } from './components/verification/seller-onboarding-wizard.js';
 import { PartitionProvider, usePartition, isRoleAllowedOnPartition, type Partition } from './lib/partition-context.js';
 import { PartitionGuard } from './components/layout/partition-guard.js';
 import { StaffLoginPage } from './pages/staff-login-page.js';
@@ -4700,10 +4701,21 @@ function GenericFormPage() {
     };
   }, [form, memberFormset]);
 
+  const isWizardView = bootstrap.view_id === 'seller-onboarding-wizard';
+
   const pageBody = (
     <div className="space-y-6">
-      <PageHeader kicker="Digiland" title={bootstrap.title} subtitle={bootstrap.subtitle} badge={bootstrap.notice} actions={bootstrap.actions} />
-      {combinedForm ? <FormRenderer form={combinedForm} csrfToken={bootstrap.csrf_token || undefined} /> : null}
+      {isWizardView ? (
+        <SellerOnboardingWizard
+          userProfile={bootstrap.user_profile}
+          csrfToken={bootstrap.csrf_token || undefined}
+        />
+      ) : (
+        <>
+          <PageHeader kicker="Digiland" title={bootstrap.title} subtitle={bootstrap.subtitle} badge={bootstrap.notice} actions={bootstrap.actions} />
+          {combinedForm ? <FormRenderer form={combinedForm} csrfToken={bootstrap.csrf_token || undefined} /> : null}
+        </>
+      )}
     </div>
   );
 

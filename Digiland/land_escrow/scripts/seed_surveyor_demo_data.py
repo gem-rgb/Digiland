@@ -36,6 +36,8 @@ def seed_surveyor():
             "phone_number": "+254799334455",
         }
     )
+    user.first_name = "Peter"
+    user.last_name = "Maina Kamau"
     user.role = "Surveyor"
     user.is_staff = True
     user.is_active = True
@@ -43,6 +45,7 @@ def seed_surveyor():
     user.surveyor_license_number = "ISLK-9941/2026"
     user.surveyor_firm = "Maina & Associates Geospatial Surveys Ltd"
     user.surveyor_county = "Kiambu & Nairobi"
+    user.phone_number = "+254799334455"
     user.set_password("SurveyorPass@2026!")
     user.save()
 
