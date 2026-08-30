@@ -14,6 +14,8 @@ from core.models import (
     User as CoreUser, AgentKYCApplication, AgentRating, ParcelView, UserFavorite,
     JointBuyerGroup, JointBuyerMember, JointPaymentContribution, JointMemberRemovalRequest,
     AuditLog, PopupAdCampaign, DocumentAccessGrant, LawyerPostTransactionTask,
+)
+from core.models_verification import (
     SurveyAssignment, SurveyBeacon, SurveyBoundaryObservation, SurveyMeasurement,
     SurveyDocument, SurveyIssue, SurveyReport, SurveyAuditLog,
 )
