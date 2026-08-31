@@ -817,7 +817,7 @@ class MultiDomainRoutingMiddleware:
             if path.startswith('/accounts/login/'):
                 return redirect('frontend:staff_login')
             if path in {'/', '/staff/', '/staff'}:
-                if not request.user.is_authenticated or getattr(request.user, 'role', None) not in {'Agent', 'Lawyer', 'Land_Official'}:
+                if not request.user.is_authenticated or getattr(request.user, 'role', None) not in {'Agent', 'Lawyer', 'Land_Official', 'Surveyor'}:
                     return redirect('frontend:staff_login')
                 return redirect('frontend:agent_dashboard')
             # Allow login page, static assets, API routes, and operational paths through
@@ -828,6 +828,9 @@ class MultiDomainRoutingMiddleware:
                 or path.startswith('/api/')
                 or path.startswith('/agent/')
                 or path.startswith('/lawyer/')
+                or path.startswith('/surveyor/')
+                or path.startswith('/survey/')
+                or path.startswith('/survey-assignments/')
                 or path.startswith('/parcels/')
                 or path.startswith('/transactions/')
                 or path.startswith('/messages/')
@@ -837,7 +840,7 @@ class MultiDomainRoutingMiddleware:
                 or path.startswith('/dashboard/')
             )
             if not exempt:
-                if not request.user.is_authenticated or getattr(request.user, 'role', None) not in {'Agent', 'Lawyer', 'Land_Official'}:
+                if not request.user.is_authenticated or getattr(request.user, 'role', None) not in {'Agent', 'Lawyer', 'Land_Official', 'Surveyor'}:
                     return redirect('frontend:staff_login')
 
         # Production security gate for admin domain
