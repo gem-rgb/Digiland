@@ -681,11 +681,18 @@ def staff_login(request):
             elif getattr(user, 'role', None) not in {'Agent', 'Lawyer', 'Surveyor', 'Land_Official'}:
                 error = f"Access restricted to licensed Agents, Advocates, Land Surveyors, and Field Staff. Account '{user.email}' has role '{user.role}'."
             else:
-                backend = getattr(user, 'backend', 'django.contrib.auth.backends.ModelBackend')
-                auth_login(request, user, backend=backend)
-                request.session['domain_mode'] = 'staff'
-                request.session.save()  # Force session persistence before redirect
-                target = next_url if (next_url and next_url != reverse('frontend:staff_login')) else reverse('frontend:staff_dashboard')
+                # Determine role-specific destination
+                role = getattr(user, 'role', '')
+                if role == 'Surveyor':
+                    default_target = reverse('frontend:surveyor_dashboard')
+                elif role == 'Lawyer':
+                    default_target = reverse('frontend:lawyer_dashboard')
+                elif role == 'Land_Official':
+                    default_target = reverse('frontend:official_dashboard')
+                else:  # Agent / Field Staff
+                    default_target = reverse('frontend:agent_dashboard')
+
+                target = next_url if (next_url and next_url not in (reverse('frontend:staff_login'), reverse('frontend:staff_dashboard'), '/staff/dashboard/', '/staff/login/')) else default_target
                 return redirect(target)
 
     # Consume the "just signed up" session flag set by agent_signup_complete
@@ -711,7 +718,8 @@ def admin_login(request):
     if request.user.is_authenticated:
         role = getattr(request.user, 'role', '')
         if role == 'Admin' or request.user.is_superuser:
-            return redirect(next_url if next_url and next_url != reverse('frontend:admin_login') else reverse('frontend:admin_dashboard'))
+            target = next_url if (next_url and next_url not in (reverse('frontend:admin_login'), '/admin/login/', '/admin/agent/dashboard/')) else reverse('frontend:admin_dashboard')
+            return redirect(target)
         else:
             info_message = f"Currently signed in as {request.user.email} ({role or 'Standard'}). Sign in below with an Administrator account to access the Command Centre."
 
@@ -744,7 +752,7 @@ def admin_login(request):
             )
 
             if user is None:
-                error = 'Invalid administrative credentials. Please verify your root administrator email and password.'
+                error = 'Invalid administrative credentials.'
             elif not user.is_active:
                 error = 'This administrative account is disabled. Contact system governance.'
             elif getattr(user, 'role', None) != 'Admin' and not user.is_superuser:
@@ -754,7 +762,7 @@ def admin_login(request):
                 auth_login(request, user, backend=backend)
                 request.session['domain_mode'] = 'admin'
                 request.session.save()
-                target = next_url if (next_url and next_url != reverse('frontend:admin_login')) else reverse('frontend:admin_dashboard')
+                target = next_url if (next_url and next_url not in (reverse('frontend:admin_login'), '/admin/login/', '/admin/agent/dashboard/')) else reverse('frontend:admin_dashboard')
                 return redirect(target)
 
     return render(request, 'frontend/admin_login.html', {
@@ -796,10 +804,22 @@ def social_auth_confirm(request):
         }
 
     # Determine destination URL based on role
-    if role in {'Agent', 'Lawyer', 'Surveyor', 'Land_Official'}:
-        target_url = "https://staff.digiland.co.ke/staff/dashboard/" if not is_local else reverse('frontend:agent_dashboard')
-        portal_name = "Staff Workspace"
-        portal_icon = "shield-check"
+    if role == 'Surveyor':
+        target_url = "https://staff.digiland.co.ke/surveyor/dashboard/" if not is_local else reverse('frontend:surveyor_dashboard')
+        portal_name = "Surveyor Command Centre"
+        portal_icon = "compass"
+    elif role == 'Lawyer':
+        target_url = "https://staff.digiland.co.ke/lawyer/dashboard/" if not is_local else reverse('frontend:lawyer_dashboard')
+        portal_name = "Lawyer Legal Workspace"
+        portal_icon = "scale"
+    elif role == 'Land_Official':
+        target_url = "https://staff.digiland.co.ke/official/dashboard/" if not is_local else reverse('frontend:official_dashboard')
+        portal_name = "Ministry Lands Desk"
+        portal_icon = "landmark"
+    elif role == 'Agent':
+        target_url = "https://staff.digiland.co.ke/agent/dashboard/" if not is_local else reverse('frontend:agent_dashboard')
+        portal_name = "EARB Agent Command Centre"
+        portal_icon = "briefcase"
     elif role == 'Admin' or user.is_superuser:
         target_url = "https://admin.digiland.co.ke/admin/dashboard/" if not is_local else reverse('frontend:admin_dashboard')
         portal_name = "Admin Command Centre"
@@ -808,10 +828,10 @@ def social_auth_confirm(request):
         target_url = "https://app.digiland.co.ke/seller/dashboard/" if not is_local else reverse('frontend:seller_dashboard')
         portal_name = "Seller Dashboard & Listings"
         portal_icon = "layout-grid"
-    else:
-        target_url = "https://app.digiland.co.ke/parcels/" if not is_local else reverse('frontend:parcel_list')
+    else:  # Buyer
+        target_url = "https://app.digiland.co.ke/buyer/dashboard/" if not is_local else reverse('frontend:buyer_dashboard')
         portal_name = "Buyer Marketplace & Escrow"
-        portal_icon = "compass"
+        portal_icon = "home"
 
     # Immediate confirmation via button submit
     if request.method == 'POST' or request.GET.get('confirmed') == '1':

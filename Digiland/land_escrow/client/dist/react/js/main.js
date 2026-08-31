@@ -27562,9 +27562,9 @@ function detectPartitionFromLocation() {
 }
 function requiredPartitionForRole(role) {
   if (!role) return "app";
-  const norm = role.toLowerCase();
-  if (norm.includes("admin")) return "admin";
-  if (norm.includes("agent") || norm.includes("lawyer") || norm.includes("surveyor") || norm.includes("official") || norm.includes("staff")) {
+  const norm = role.toLowerCase().replace(/[\s_-]+/g, "");
+  if (norm.includes("admin") || norm.includes("superuser")) return "admin";
+  if (norm.includes("agent") || norm.includes("lawyer") || norm.includes("advocate") || norm.includes("surveyor") || norm.includes("official") || norm.includes("staff")) {
     return "staff";
   }
   return "app";
