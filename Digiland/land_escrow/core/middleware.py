@@ -772,21 +772,21 @@ class MultiDomainRoutingMiddleware:
             or getattr(settings, 'DEBUG', False)
         )
 
-        # Determine domain mode from host or path
-        if 'staff.digiland.co.ke' in host:
+        # Exact canonical domain mode determination
+        if host == 'staff.digiland.co.ke':
             domain_mode = 'staff'
-        elif 'admin.digiland.co.ke' in host:
+        elif host == 'admin.digiland.co.ke':
             domain_mode = 'admin'
-        elif 'app.digiland.co.ke' in host:
+        elif host == 'app.digiland.co.ke':
             domain_mode = 'app'
-        elif 'digiland.co.ke' in host:
+        elif host in {'digiland.co.ke', 'www.digiland.co.ke'}:
             domain_mode = 'public'
-        else:
-            # Localhost, development, or single-domain deployment
-            # Derive domain mode directly from path to avoid sticky session collisions
+        elif is_local or host.endswith('.vercel.app'):
+            # Localhost, development, or Vercel preview deployment
+            # Derive domain mode directly from path
             if path.startswith('/admin') or path.startswith('/auth/admin-login'):
                 domain_mode = 'admin'
-            elif path.startswith('/staff') or path.startswith('/agent') or path.startswith('/lawyer'):
+            elif path.startswith('/staff') or path.startswith('/agent') or path.startswith('/lawyer') or path.startswith('/surveyor'):
                 domain_mode = 'staff'
             elif (
                 path.startswith('/buyer')
@@ -794,26 +794,26 @@ class MultiDomainRoutingMiddleware:
                 or path.startswith('/parcels')
                 or path.startswith('/transactions')
                 or path.startswith('/messages')
+                or path.startswith('/accounts')
             ):
                 domain_mode = 'app'
             else:
-                override = request.GET.get('domain')
-                if override in {'public', 'app', 'staff', 'admin'}:
-                    domain_mode = override
-                else:
-                    domain_mode = 'public' if not request.user.is_authenticated else 'app'
+                domain_mode = 'public'
+        else:
+            from django.http import HttpResponseBadRequest
+            return HttpResponseBadRequest("Invalid host header.")
 
         request.domain_mode = domain_mode
 
-        # On local / dev / single-domain environments, do not perform cross-domain bouncing
-        if is_local:
+        # On local / dev / vercel environments, do not perform cross-domain bouncing
+        if is_local or host.endswith('.vercel.app'):
             return self.get_response(request)
 
         # Production security gate for staff domain
         if domain_mode == 'staff':
             if path.startswith('/admin/login/') or path.startswith('/auth/admin-login/') or path.startswith('/admin/'):
-                admin_base = getattr(settings, 'ADMIN_DOMAIN', 'https://admin.digiland.co.ke').rstrip('/')
-                return redirect(f"{admin_base}/admin/login/")
+                from django.http import HttpResponseForbidden
+                return HttpResponseForbidden("<h1>403 Forbidden</h1><p>Administrative interfaces are only accessible via the dedicated admin portal.</p>")
             if path.startswith('/accounts/login/'):
                 return redirect('frontend:staff_login')
             if path in {'/', '/staff/', '/staff'}:

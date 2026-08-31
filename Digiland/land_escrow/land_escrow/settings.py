@@ -125,19 +125,39 @@ if IS_VERCEL and os.getenv("VERCEL_ENV") == "production":
 
 TESTING = "test" in sys.argv
 
-ALLOWED_HOSTS = list(set([
+# Strict Canonical Host Configuration
+CANONICAL_PORTAL_HOSTS = [
+    'digiland.co.ke',
+    'www.digiland.co.ke',
+    'app.digiland.co.ke',
+    'staff.digiland.co.ke',
+    'admin.digiland.co.ke',
+]
+
+DEV_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'testserver',
+    '0.0.0.0',
+]
+
+VERCEL_HOSTS = ['.vercel.app'] if (os.environ.get('VERCEL') or os.environ.get('VERCEL_ENV') or not DEBUG) else []
+
+_env_hosts = [
     h.strip()
-    for h in config('ALLOWED_HOSTS', default='localhost,127.0.0.1,.vercel.app').split(',')
-    if h.strip()
-] + ['localhost', '127.0.0.1', 'testserver', '.digiland.co.ke', 'digiland.co.ke', 'app.digiland.co.ke', 'staff.digiland.co.ke', 'admin.digiland.co.ke']))
+    for h in config('ALLOWED_HOSTS', default='').split(',')
+    if h.strip() and h.strip() != '*' and not h.strip().startswith('.')
+]
+
+ALLOWED_HOSTS = list(set(_env_hosts + CANONICAL_PORTAL_HOSTS + DEV_HOSTS + VERCEL_HOSTS))
 
 CSRF_TRUSTED_ORIGINS = [
     o.strip()
     for o in config(
         'CSRF_TRUSTED_ORIGINS',
-        default='http://localhost:8000,http://127.0.0.1:8000,https://*.vercel.app,https://*.digiland.co.ke,https://digiland.co.ke,https://app.digiland.co.ke,https://staff.digiland.co.ke,https://admin.digiland.co.ke',
+        default='http://localhost:8000,http://127.0.0.1:8000,https://*.vercel.app,https://digiland.co.ke,https://www.digiland.co.ke,https://app.digiland.co.ke,https://staff.digiland.co.ke,https://admin.digiland.co.ke',
     ).split(',')
-    if o.strip()
+    if o.strip() and o.strip() != '*'
 ]
 
 CSRF_COOKIE_DOMAIN = None

@@ -733,15 +733,14 @@ def admin_login(request):
 def csrf_failure(request, reason=""):
     """Graceful CSRF handler that redirects login attempts or displays a clean recovery view."""
     from django.shortcuts import redirect
-    host = request.get_host().lower()
+    host = request.get_host().split(':')[0].lower().strip()
     path = request.path.lower()
-    referer = request.META.get('HTTP_REFERER', '').lower()
 
-    if 'staff' in host or 'staff' in path or 'staff' in referer:
-        return redirect('/staff/login/')
-    elif 'admin' in host or 'admin' in path or 'admin' in referer:
-        return redirect('/admin/login/')
-    elif 'accounts/login' in path or 'accounts/login' in referer:
+    if host == 'staff.digiland.co.ke' or path.startswith('/staff/'):
+        return redirect('frontend:staff_login')
+    elif host == 'admin.digiland.co.ke' or path.startswith('/admin/'):
+        return redirect('frontend:admin_login')
+    elif path.startswith('/accounts/login'):
         return redirect('/accounts/login/')
 
     return render(request, '403_csrf.html', {'reason': reason}, status=403)
