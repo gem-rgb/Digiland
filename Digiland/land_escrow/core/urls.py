@@ -94,6 +94,7 @@ urlpatterns = [
 
     # ==================== ADMIN ====================
     path('admin/dashboard/', api_views.admin_dashboard, name='admin-dashboard'),
+    path('admin/search/', api_views.admin_global_search_api, name='admin-global-search'),
     path('admin/revenue/', api_views.admin_revenue, name='admin-revenue'),
     path('admin/revenue/monthly/', api_views.admin_revenue_monthly, name='admin-revenue-monthly'),
     path('admin/fraud/high-risk/', api_views.high_risk_users, name='high-risk-users'),

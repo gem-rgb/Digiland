@@ -1854,6 +1854,237 @@ def admin_dashboard(request):
     })
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_global_search_api(request):
+    """GET /api/v1/admin/search/
+    Universal database search across Users, Staff, Land Parcels, and Transactions.
+    Supports server-side filtering, pagination, and multi-field queries.
+    """
+    user = request.user
+    if getattr(user, 'role', None) != 'Admin' and not getattr(user, 'is_staff', False) and not getattr(user, 'is_superuser', False):
+        return Response({'error': 'Administrative authorization required.'}, status=status.HTTP_403_FORBIDDEN)
+
+    query = request.query_params.get('q', '').strip()
+    category = request.query_params.get('category', 'all').lower().strip()
+    role_filter = request.query_params.get('role', '').strip()
+    status_filter = request.query_params.get('status', '').strip()
+    county_filter = request.query_params.get('county', '').strip()
+    
+    try:
+        page = max(1, int(request.query_params.get('page', 1)))
+        limit = min(50, max(5, int(request.query_params.get('limit', 20))))
+    except (ValueError, TypeError):
+        page = 1
+        limit = 20
+
+    offset = (page - 1) * limit
+
+    results = {
+        'query': query,
+        'category': category,
+        'total_matches': 0,
+        'users': [],
+        'staff': [],
+        'parcels': [],
+        'transactions': [],
+        'page': page,
+        'limit': limit,
+    }
+
+    # 1. Search Users / People (Buyers & Sellers)
+    if category in ['all', 'users', 'buyers', 'sellers', 'people']:
+        user_qs = User.objects.all()
+        if category == 'buyers':
+            user_qs = user_qs.filter(role='Buyer')
+        elif category == 'sellers':
+            user_qs = user_qs.filter(role='Seller')
+        elif category == 'users':
+            user_qs = user_qs.filter(role__in=['Buyer', 'Seller'])
+
+        if role_filter:
+            user_qs = user_qs.filter(role__iexact=role_filter)
+
+        if status_filter:
+            if status_filter.lower() == 'active':
+                user_qs = user_qs.filter(is_active=True)
+            elif status_filter.lower() == 'suspended':
+                user_qs = user_qs.filter(is_active=False)
+            elif status_filter.lower() == 'verified':
+                user_qs = user_qs.filter(is_identity_verified=True)
+            elif status_filter.lower() == 'unverified':
+                user_qs = user_qs.filter(is_identity_verified=False)
+
+        if query:
+            user_qs = user_qs.filter(
+                Q(email__icontains=query) |
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query) |
+                Q(phone_number__icontains=query) |
+                Q(id_number__icontains=query) |
+                Q(kra_pin__icontains=query)
+            )
+
+        total_users = user_qs.count()
+        user_items = user_qs.order_by('-date_joined')[offset:offset + limit]
+
+        results['users_count'] = total_users
+        results['total_matches'] += total_users
+        results['users'] = [
+            {
+                'id': str(u.id),
+                'name': u.get_full_name() or u.email.split('@')[0],
+                'email': u.email,
+                'phone': u.phone_number or 'N/A',
+                'role': u.role,
+                'buyer_account_type': getattr(u, 'buyer_account_type', 'Individual'),
+                'is_verified': u.is_identity_verified,
+                'is_active': u.is_active,
+                'date_joined': u.date_joined.strftime('%b %d, %Y') if u.date_joined else 'N/A',
+            }
+            for u in user_items
+        ]
+
+    # 2. Search Staff / Licensed Professionals
+    if category in ['all', 'staff', 'professionals']:
+        staff_qs = User.objects.filter(role__in=['Lawyer', 'Surveyor', 'Agent', 'Staff'])
+        if role_filter:
+            staff_qs = staff_qs.filter(role__iexact=role_filter)
+
+        if county_filter:
+            staff_qs = staff_qs.filter(
+                Q(surveyor_county__icontains=county_filter) |
+                Q(agent_county__icontains=county_filter)
+            )
+
+        if status_filter:
+            if status_filter.lower() == 'active':
+                staff_qs = staff_qs.filter(is_active=True)
+            elif status_filter.lower() == 'suspended':
+                staff_qs = staff_qs.filter(is_active=False)
+            elif status_filter.lower() == 'verified':
+                staff_qs = staff_qs.filter(Q(is_identity_verified=True) | Q(is_surveyor_verified=True))
+            elif status_filter.lower() == 'under_review':
+                staff_qs = staff_qs.filter(is_identity_verified=False, is_active=True)
+
+        if query:
+            staff_qs = staff_qs.filter(
+                Q(email__icontains=query) |
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query) |
+                Q(phone_number__icontains=query) |
+                Q(surveyor_license_number__icontains=query) |
+                Q(surveyor_firm__icontains=query) |
+                Q(surveyor_county__icontains=query) |
+                Q(agent_county__icontains=query) |
+                Q(id_number__icontains=query) |
+                Q(kra_pin__icontains=query)
+            )
+
+        total_staff = staff_qs.count()
+        staff_items = staff_qs.order_by('-date_joined')[offset:offset + limit]
+
+        results['staff_count'] = total_staff
+        results['total_matches'] += total_staff
+        results['staff'] = [
+            {
+                'id': str(s.id),
+                'name': s.get_full_name() or s.email.split('@')[0],
+                'email': s.email,
+                'phone': s.phone_number or 'N/A',
+                'role': s.role,
+                'county': s.surveyor_county or s.agent_county or 'National',
+                'firm_or_agency': s.surveyor_firm or ('Geospatial Practice' if s.role == 'Surveyor' else 'Independent'),
+                'surveyor_license_number': s.surveyor_license_number or 'N/A',
+                'is_verified': s.is_identity_verified or getattr(s, 'is_surveyor_verified', False),
+                'is_active': s.is_active,
+                'date_joined': s.date_joined.strftime('%b %d, %Y') if s.date_joined else 'N/A',
+            }
+            for s in staff_items
+        ]
+
+    # 3. Search Land Parcels
+    if category in ['all', 'parcels', 'properties']:
+        parcel_qs = LandParcel.objects.all()
+        if county_filter:
+            parcel_qs = parcel_qs.filter(county__icontains=county_filter)
+
+        if status_filter:
+            parcel_qs = parcel_qs.filter(verification_status__iexact=status_filter)
+
+        if query:
+            parcel_qs = parcel_qs.filter(
+                Q(title_number__icontains=query) |
+                Q(county__icontains=query) |
+                Q(sub_county__icontains=query) |
+                Q(locality__icontains=query) |
+                Q(owner__first_name__icontains=query) |
+                Q(owner__last_name__icontains=query) |
+                Q(owner__email__icontains=query)
+            )
+
+        total_parcels = parcel_qs.count()
+        parcel_items = parcel_qs.order_by('-created_at')[offset:offset + limit]
+
+        results['parcels_count'] = total_parcels
+        results['total_matches'] += total_parcels
+        results['parcels'] = [
+            {
+                'id': str(p.id),
+                'title_number': p.title_number,
+                'county': p.county,
+                'sub_county': p.sub_county or 'N/A',
+                'locality': p.locality or 'N/A',
+                'size_acres': float(p.size_acres) if p.size_acres else 0.0,
+                'price_kes': float(p.price) if p.price else 0.0,
+                'verification_status': p.verification_status,
+                'ardhisasa_verified': getattr(p, 'ardhisasa_verified', False),
+                'owner_name': p.owner.get_full_name() if p.owner else 'Unknown Owner',
+            }
+            for p in parcel_items
+        ]
+
+    # 4. Search Escrow Transactions
+    if category in ['all', 'transactions', 'escrow']:
+        tx_qs = Transaction.objects.all()
+        if status_filter:
+            tx_qs = tx_qs.filter(status__iexact=status_filter)
+
+        if query:
+            tx_qs = tx_qs.filter(
+                Q(id__icontains=query if '-' in query else '') |
+                Q(parcel__title_number__icontains=query) |
+                Q(buyer__email__icontains=query) |
+                Q(buyer__first_name__icontains=query) |
+                Q(seller__email__icontains=query) |
+                Q(seller__first_name__icontains=query)
+            )
+
+        total_tx = tx_qs.count()
+        tx_items = tx_qs.order_by('-created_at')[offset:offset + limit]
+
+        results['transactions_count'] = total_tx
+        results['total_matches'] += total_tx
+        results['transactions'] = [
+            {
+                'id': str(t.id),
+                'parcel_title': t.parcel.title_number if t.parcel else 'N/A',
+                'buyer_name': t.buyer.get_full_name() if t.buyer else 'N/A',
+                'buyer_email': t.buyer.email if t.buyer else 'N/A',
+                'seller_name': t.seller.get_full_name() if t.seller else 'N/A',
+                'seller_email': t.seller.email if t.seller else 'N/A',
+                'agreed_price': float(t.agreed_price) if t.agreed_price else 0.0,
+                'status': t.status,
+                'contract_agreed': t.contract_agreed,
+                'created_at': t.created_at.strftime('%b %d, %Y') if t.created_at else 'N/A',
+            }
+            for t in tx_items
+        ]
+
+    return Response(results, status=status.HTTP_200_OK)
+
+
+
 # ==================== FRAUD ENDPOINTS ====================
 
 @api_view(['GET'])

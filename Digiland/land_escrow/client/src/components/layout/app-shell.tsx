@@ -30,6 +30,7 @@ import { Badge } from '../ui/badge.js';
 import { Button } from '../ui/button.js';
 import { LocationPermissionModal } from '../ui/location-permission-modal.js';
 import { DigitalCrownAvatar } from '../ui/digital-crown-avatar.js';
+import { GlobalAdminSearch } from '../admin/global-admin-search.js';
 import type { ActionLink, NavItem, UserSummary } from '../../types.js';
 import { cn } from '../../lib/utils.js';
 
@@ -235,6 +236,13 @@ export function AppShell({
               )}
             </div>
           </div>
+
+          {/* Central Admin Global Search Bar (Only for Staff / Admins / Command Centre) */}
+          {(currentRole === 'Admin' || user?.is_superuser || currentRole === 'Staff' || safeTitle.includes('command') || safeTitle.includes('admin')) && (
+            <div className="flex-1 max-w-md mx-4 hidden md:flex justify-center">
+              <GlobalAdminSearch />
+            </div>
+          )}
 
           {/* Right Header Controls */}
           <div className="flex items-center gap-3">
