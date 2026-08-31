@@ -1997,59 +1997,52 @@ function DashboardPage() {
             </div>
           )}
 
-          {/* TAB 2: COMMISSIONS & CONVEYANCING / KYC APPROVALS DESK */}
-          {activeTab === 'commissions' && (
-            isAdmin ? (
-              <AdminKycDeskView />
-            ) : (
-              <div className="space-y-6 text-left">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-black text-slate-900">Active Commissions & Conveyancing</h4>
-                  <span className="text-xs text-slate-500">{activeCommissions.length} active records</span>
-                </div>
-                {activeCommissions.length === 0 ? (
-                  <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-500 space-y-3 shadow-sm">
-                    <ShieldCheck className="mx-auto h-8 w-8 text-slate-400" />
-                    <div className="text-sm font-bold text-slate-900">No active commissions currently in progress.</div>
-                    <a href="/parcels/" className="inline-block font-bold text-xs text-emerald-700 hover:underline">
-                      Explore available land parcels →
-                    </a>
-                  </div>
-                ) : (
-                  <div className="grid gap-3 lg:grid-cols-2">
-                    {activeCommissions.map((comm: any) => (
-                      <div key={comm.id} className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 shadow-sm">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-emerald-700">Parcel {comm.parcel?.parcel_number || comm.parcel_number}</span>
-                          <Badge tone="accent" className="text-[9px]">{comm.status_label || comm.status}</Badge>
-                        </div>
-                        <div className="text-xs text-slate-600">
-                          County: <strong>{comm.parcel?.county || comm.county || 'Kenya'}</strong> · Price: {money(comm.parcel?.displayed_price || comm.parcel?.asking_price || '0')}
-                        </div>
-                        <div className="pt-1 flex items-center justify-between">
-                          <span className="text-[10px] text-slate-500">Dual-escrow verified</span>
-                          <a href={comm.detail_url || '/buyer/dashboard/'} className="text-xs font-bold text-emerald-700 hover:underline">
-                            View details →
-                          </a>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+          {/* TAB 2: COMMISSIONS & CONVEYANCING (AGENT / LAWYER / BUYER) */}
+          {activeTab === 'commissions' && !isAdmin && (
+            <div className="space-y-6 text-left">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-black text-slate-900">Active Commissions & Conveyancing</h4>
+                <span className="text-xs text-slate-500">{activeCommissions.length} active records</span>
               </div>
-            )
+              {activeCommissions.length === 0 ? (
+                <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-500 space-y-3 shadow-sm">
+                  <ShieldCheck className="mx-auto h-8 w-8 text-slate-400" />
+                  <div className="text-sm font-bold text-slate-900">No active commissions currently in progress.</div>
+                  <a href="/parcels/" className="inline-block font-bold text-xs text-emerald-700 hover:underline">
+                    Explore available land parcels →
+                  </a>
+                </div>
+              ) : (
+                <div className="grid gap-3 lg:grid-cols-2">
+                  {activeCommissions.map((comm: any) => (
+                    <div key={comm.id} className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-emerald-700">Parcel {comm.parcel?.parcel_number || comm.parcel_number}</span>
+                        <Badge tone="accent" className="text-[9px]">{comm.status_label || comm.status}</Badge>
+                      </div>
+                      <div className="text-xs text-slate-600">
+                        County: <strong>{comm.parcel?.county || comm.county || 'Kenya'}</strong> · Price: {money(comm.parcel?.displayed_price || comm.parcel?.asking_price || '0')}
+                      </div>
+                      <div className="pt-1 flex items-center justify-between">
+                        <span className="text-[10px] text-slate-500">Dual-escrow verified</span>
+                        <a href={comm.detail_url || '/buyer/dashboard/'} className="text-xs font-bold text-emerald-700 hover:underline">
+                          View details →
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
-          {/* TAB 3: TRANSACTIONS & ESCROW SETTLEMENTS */}
-          {activeTab === 'transactions' && (
-            isAdmin ? (
-              <AdminTransactionsManagementView />
-            ) : (
-              <div className="space-y-6 text-left">
-                {/* Funds Withdrawal Desk for Seller, Agent, and Lawyer */}
-                {(isSeller || isAgent || isLawyer) && (
-                  <WithdrawalDeskView role={role} withdrawData={bootstrap.withdraw_data} />
-                )}
+          {/* TAB 3: TRANSACTIONS & ESCROW SETTLEMENTS (NON-ADMIN USERS) */}
+          {activeTab === 'transactions' && !isAdmin && (
+            <div className="space-y-6 text-left">
+              {/* Funds Withdrawal Desk for Seller, Agent, and Lawyer */}
+              {(isSeller || isAgent || isLawyer) && (
+                <WithdrawalDeskView role={role} withdrawData={bootstrap.withdraw_data} />
+              )}
 
                 {/* Post-Transaction Rating Component for Completed Transactions */}
                 {transactions.some((t: any) => t.status === 'Completed' || t.status === 'Under_Verification') && (
@@ -2084,8 +2077,7 @@ function DashboardPage() {
                   )}
                 </div>
               </div>
-            )
-          )}
+            )}
 
           {/* TAB 4: PARCELS & MARKETPLACE */}
           {activeTab === 'parcels' && (
@@ -2977,358 +2969,7 @@ function AdminAnalyticsView() {
 }
 
 
-function LegacyAdminTransactionsManagementView() {
-  const initialTxs = bootstrap.transactions || [];
-  const [txList, setTxList] = useState<any[]>(initialTxs);
-  const [statusFilter, setStatusFilter] = useState<string>('All');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [actionInProgress, setActionInProgress] = useState<string | null>(null);
-  const [feedbackMsg, setFeedbackMsg] = useState<{ text: string; type: 'success' | 'error' | 'warning' } | null>(null);
 
-  const handleAction = async (txId: string, url: string, confirmPrompt: string) => {
-    if (!confirm(confirmPrompt)) return;
-    setActionInProgress(txId);
-    setFeedbackMsg(null);
-
-    try {
-      const resp = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'X-CSRFToken': bootstrap.csrf_token,
-        },
-      });
-      const data = await resp.json();
-      if (resp.ok) {
-        setFeedbackMsg({ text: data.message || 'Transaction updated successfully.', type: 'success' });
-        if (data.transaction_status) {
-          setTxList((prev) =>
-            prev.map((t) => (t.id === txId ? { ...t, status: data.transaction_status, raw_status: data.transaction_status } : t))
-          );
-        }
-      } else {
-        setFeedbackMsg({ text: data.error || 'Failed to update transaction.', type: 'error' });
-      }
-    } catch {
-      setFeedbackMsg({ text: 'Network error while executing action.', type: 'error' });
-    } finally {
-      setActionInProgress(null);
-    }
-  };
-
-  const filtered = useMemo(() => {
-    return txList.filter((tx) => {
-      if (statusFilter !== 'All') {
-        if (statusFilter === 'In-Escrow') {
-          if (!['Deposit_Paid', 'Under_Verification', 'Initiated'].includes(tx.raw_status || tx.status)) return false;
-        } else if (tx.raw_status !== statusFilter && tx.status !== statusFilter) {
-          return false;
-        }
-      }
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        return (
-          (tx.parcel_number && tx.parcel_number.toLowerCase().includes(q)) ||
-          (tx.buyer_email && tx.buyer_email.toLowerCase().includes(q)) ||
-          (tx.seller_email && tx.seller_email.toLowerCase().includes(q)) ||
-          (tx.id && tx.id.toLowerCase().includes(q))
-        );
-      }
-      return true;
-    });
-  }, [txList, statusFilter, searchQuery]);
-
-  return (
-    <div className="space-y-6 text-left">
-      {/* Header Banner */}
-      <div className="rounded-3xl border border-white/10 bg-[#080c16] p-6 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="rounded-full bg-blue-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-blue-300 border border-blue-500/30">
-                Settlement Desk
-              </span>
-              <span className="text-xs text-slate-400 font-semibold">Dual-Signature Payment & Escrow Controls</span>
-            </div>
-            <h3 className="text-xl font-black text-white">Escrow Transactions & Payment Management</h3>
-            <p className="text-xs text-slate-300 max-w-2xl">
-              Authorize payouts to land sellers, disburse advocate & agent fees, trigger refunds to buyers, or freeze disputed accounts.
-            </p>
-          </div>
-
-          <a
-            href="/transactions/"
-            className="inline-flex h-9 items-center justify-center rounded-xl bg-white/[0.06] hover:bg-white/10 px-4 text-xs font-bold text-slate-200 border border-white/10 transition"
-          >
-            Full Ledger View →
-          </a>
-        </div>
-
-        {/* Status Filters & Search Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-          <div className="flex flex-wrap gap-1.5 rounded-2xl border border-white/10 bg-white/[0.03] p-1">
-            {[
-              { id: 'All', label: 'All Transactions' },
-              { id: 'In-Escrow', label: 'In Active Escrow' },
-              { id: 'Completed', label: 'Completed Transfers' },
-              { id: 'Disputed', label: 'Disputes & Holds' },
-              { id: 'Refunded', label: 'Refunded' },
-            ].map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => setStatusFilter(f.id)}
-                className={`rounded-xl px-3 py-1 text-xs font-bold transition ${
-                  statusFilter === f.id
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-500" />
-            <input
-              type="text"
-              placeholder="Search parcel, buyer, seller..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9 w-64 rounded-xl border border-white/15 bg-white/[0.04] pl-9 pr-3 text-xs text-white placeholder:text-slate-500 outline-none focus:border-emerald-500"
-            />
-          </div>
-        </div>
-      </div>
-
-      {feedbackMsg && (
-        <div
-          className={`rounded-2xl p-4 text-xs font-bold flex items-center gap-2 ${
-            feedbackMsg.type === 'success'
-              ? 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-              : feedbackMsg.type === 'warning'
-              ? 'border border-amber-500/40 bg-amber-500/10 text-amber-300'
-              : 'border border-rose-500/40 bg-rose-500/10 text-rose-300'
-          }`}
-        >
-          <Info className="h-4 w-4 shrink-0" />
-          {feedbackMsg.text}
-        </div>
-      )}
-
-      {/* Transactions List */}
-      {filtered.length === 0 ? (
-        <div className="rounded-3xl border border-white/[0.08] bg-[#080b14] p-12 text-center text-slate-400 space-y-3">
-          <ReceiptText className="mx-auto h-8 w-8 text-slate-600" />
-          <div className="text-sm font-bold text-slate-200">No transactions found.</div>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            No escrow transactions matching the selected filter or search term.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filtered.map((tx: any) => {
-            const rawStatus = tx.raw_status || tx.status;
-            const isCompleted = rawStatus === 'Completed';
-            const isDisputed = rawStatus === 'Disputed' || rawStatus === 'Verification_Hiatus';
-            const isRefunded = rawStatus === 'Refunded';
-            const isInEscrow = ['Deposit_Paid', 'Under_Verification', 'Initiated'].includes(rawStatus);
-
-            return (
-              <div
-                key={tx.id}
-                className="rounded-3xl border border-white/10 bg-[#080c16] p-6 space-y-4 shadow-md transition hover:border-white/20"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 font-black border border-emerald-500/20">
-                      <ReceiptText className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <div className="font-black text-sm text-white">Parcel {tx.parcel_number}</div>
-                      <div className="text-[10px] text-slate-400">
-                        Ref: <span className="font-mono">{tx.id}</span> · Created: {tx.created_at}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black uppercase ${
-                        isCompleted
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                          : isDisputed
-                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                          : isRefunded
-                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                          : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                      }`}
-                    >
-                      {tx.status}
-                    </span>
-                    {tx.is_joint_purchase && (
-                      <span className="rounded-full bg-purple-500/20 px-2.5 py-1 text-[9px] font-bold text-purple-300 border border-purple-500/30">
-                        Joint Purchase
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Financial Breakdown Row */}
-                <div className="grid gap-3 sm:grid-cols-4 rounded-2xl bg-white/[0.02] p-3.5 border border-white/[0.04] text-xs">
-                  <div>
-                    <div className="text-[10px] text-slate-400 uppercase font-bold">Agreed Land Price</div>
-                    <div className="text-sm font-black text-white">{money(tx.amount)}</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-emerald-400 uppercase font-bold">Platform Escrow Fee (2%)</div>
-                    <div className="text-sm font-black text-emerald-400">
-                      {money(tx.escrow_fee || Number(tx.amount || 0) * 0.02)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-blue-400 uppercase font-bold">Seller Net Payout</div>
-                    <div className="text-sm font-black text-blue-300">
-                      {money(tx.seller_payout || Number(tx.amount || 0) * 0.98)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-slate-400 uppercase font-bold">Parties</div>
-                    <div className="text-[11px] text-slate-300 truncate">
-                      Buyer: <strong>{tx.buyer_email}</strong>
-                    </div>
-                    <div className="text-[11px] text-slate-300 truncate">
-                      Seller: <strong>{tx.seller_email}</strong>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Administrative Action Controls */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                  <div className="flex items-center gap-2">
-                    <a
-                      href={tx.action_url || `/transactions/`}
-                      className="inline-flex h-8 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] px-3.5 text-[11px] font-bold text-slate-200 hover:bg-white/10 transition gap-1"
-                    >
-                      <FileSignature className="h-3.5 w-3.5" />
-                      View Contract
-                    </a>
-                    <a
-                      href={`/messages/?partner=${encodeURIComponent(tx.buyer_email || '')}`}
-                      className="inline-flex h-8 items-center justify-center rounded-xl border border-white/15 bg-white/[0.04] px-3 text-[11px] font-bold text-slate-300 hover:bg-white/10 transition gap-1"
-                    >
-                      <MessageSquare className="h-3.5 w-3.5" />
-                      Message Buyer
-                    </a>
-                  </div>
-
-                  {/* Actions depending on transaction status */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    {/* If In Escrow: Can Release Payout, Refund, or Freeze */}
-                    {isInEscrow && (
-                      <>
-                        <button
-                          type="button"
-                          disabled={actionInProgress === tx.id}
-                          onClick={() =>
-                            handleAction(
-                              tx.id,
-                              tx.release_url,
-                              `Release escrow payout of KES ${tx.amount} to seller and finalize land transfer for Parcel ${tx.parcel_number}?`
-                            )
-                          }
-                          className="h-8 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 px-4 text-[11px] font-black text-slate-950 shadow-md shadow-emerald-500/20 hover:scale-[1.02] transition flex items-center gap-1.5 disabled:opacity-50"
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          Release Escrow Payout
-                        </button>
-
-                        <button
-                          type="button"
-                          disabled={actionInProgress === tx.id}
-                          onClick={() =>
-                            handleAction(
-                              tx.id,
-                              tx.freeze_url,
-                              `Place transaction for Parcel ${tx.parcel_number} into Dispute / Investigation Hiatus?`
-                            )
-                          }
-                          className="h-8 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 text-[11px] font-bold text-amber-300 hover:bg-amber-500/20 transition disabled:opacity-50"
-                        >
-                          Freeze / Dispute Hold
-                        </button>
-
-                        <button
-                          type="button"
-                          disabled={actionInProgress === tx.id}
-                          onClick={() =>
-                            handleAction(
-                              tx.id,
-                              tx.refund_url,
-                              `Refund escrow deposit for Parcel ${tx.parcel_number} back to buyer ${tx.buyer_email}?`
-                            )
-                          }
-                          className="h-8 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 text-[11px] font-bold text-rose-300 hover:bg-rose-500/20 transition disabled:opacity-50"
-                        >
-                          Refund Buyer
-                        </button>
-                      </>
-                    )}
-
-                    {/* If Disputed: Can Unfreeze or Refund */}
-                    {isDisputed && (
-                      <>
-                        <button
-                          type="button"
-                          disabled={actionInProgress === tx.id}
-                          onClick={() =>
-                            handleAction(
-                              tx.id,
-                              tx.unfreeze_url,
-                              `Lift dispute hold and resume escrow for Parcel ${tx.parcel_number}?`
-                            )
-                          }
-                          className="h-8 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 text-[11px] font-bold text-white shadow-md hover:scale-[1.02] transition disabled:opacity-50"
-                        >
-                          Lift Dispute Hold
-                        </button>
-                        <button
-                          type="button"
-                          disabled={actionInProgress === tx.id}
-                          onClick={() =>
-                            handleAction(
-                              tx.id,
-                              tx.refund_url,
-                              `Refund disputed deposit for Parcel ${tx.parcel_number} back to buyer?`
-                            )
-                          }
-                          className="h-8 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 text-[11px] font-bold text-rose-300 hover:bg-rose-500/20 transition disabled:opacity-50"
-                        >
-                          Refund Buyer
-                        </button>
-                      </>
-                    )}
-
-                    {isCompleted && (
-                      <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Payout Fully Disbursed
-                      </span>
-                    )}
-
-                    {isRefunded && (
-                      <span className="text-[11px] font-bold text-slate-400">Refund Processed & Archived</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function ParcelListPage() {
   return (
