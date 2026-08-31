@@ -32209,6 +32209,49 @@ function SellerOnboardingWizard({
     }
     return list;
   }, [propertyType, tenureType, ownershipType, intendedUse, isSubdivided, hasSpousalInterest]);
+  const getActiveCsrfToken = () => {
+    if (csrfToken && csrfToken.trim()) return csrfToken;
+    if (typeof document !== "undefined") {
+      const cookieMatch = document.cookie.match(/csrftoken=([^;]+)/);
+      if (cookieMatch) return cookieMatch[1];
+      const meta = document.querySelector('meta[name="csrf-token"]');
+      if (meta?.content) return meta.content;
+      const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+      if (input?.value) return input.value;
+    }
+    return "";
+  };
+  const safeFetch = async (url, options) => {
+    const activeToken = getActiveCsrfToken();
+    const headers = new Headers(options.headers || {});
+    if (activeToken && !headers.has("X-CSRFToken")) {
+      headers.set("X-CSRFToken", activeToken);
+    }
+    const response = await fetch(url, { ...options, headers });
+    const contentType = response.headers.get("content-type") || "";
+    let resData = null;
+    if (contentType.includes("application/json")) {
+      try {
+        resData = await response.json();
+      } catch {
+        resData = null;
+      }
+    } else {
+      const text = await response.text();
+      if (text.includes("<!DOCTYPE") || text.includes("<html")) {
+        if (response.status === 403) {
+          throw new Error("Security session expired. Please refresh the page and try again.");
+        }
+        throw new Error(`Server returned error (${response.status}). Please verify your input and try again.`);
+      }
+      resData = { error: text };
+    }
+    if (!response.ok) {
+      const msg = resData?.error || resData?.detail || resData?.message || `Request failed with status ${response.status}`;
+      throw new Error(msg);
+    }
+    return resData;
+  };
   const handleStep1Submit = async (e) => {
     e.preventDefault();
     if (!parcelNumber.trim()) {
@@ -32218,11 +32261,10 @@ function SellerOnboardingWizard({
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
-      const response = await fetch("/api/verification/wizard/save-step/", {
+      const resData = await safeFetch("/api/verification/wizard/save-step/", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           step: 1,
@@ -32243,10 +32285,6 @@ function SellerOnboardingWizard({
           longitude: pinnedCoordinates?.lng
         })
       });
-      const resData = await response.json();
-      if (!response.ok) {
-        throw new Error(resData.error || "Failed to save property basics.");
-      }
       if (resData.case) {
         setCaseId(resData.case.id);
         setCaseNumber(resData.case.case_number);
@@ -32267,11 +32305,10 @@ function SellerOnboardingWizard({
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
-      const response = await fetch(`/api/verification/wizard/${caseId}/step/2/`, {
+      await safeFetch(`/api/verification/wizard/${caseId}/step/2/`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           registered_owner_name: registeredOwnerName,
@@ -32284,10 +32321,6 @@ function SellerOnboardingWizard({
           ownership_type: ownershipType
         })
       });
-      const resData = await response.json();
-      if (!response.ok) {
-        throw new Error(resData.error || "Failed to save property details.");
-      }
       setCurrentStep(3);
     } catch (err) {
       setErrorMessage(err.message || "An error occurred saving property details.");
@@ -32303,17 +32336,10 @@ function SellerOnboardingWizard({
     formData.append("file", file);
     formData.append("document_type", docType);
     try {
-      const response = await fetch(`/api/verification/wizard/${caseId}/upload-document/`, {
+      const resData = await safeFetch(`/api/verification/wizard/${caseId}/upload-document/`, {
         method: "POST",
-        headers: {
-          "X-CSRFToken": csrfToken
-        },
         body: formData
       });
-      const resData = await response.json();
-      if (!response.ok) {
-        throw new Error(resData.error || "Failed to upload document.");
-      }
       setUploadedDocuments((prev) => ({
         ...prev,
         [docType]: {
@@ -32336,20 +32362,15 @@ function SellerOnboardingWizard({
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
-      const response = await fetch(`/api/verification/wizard/${caseId}/step/5/`, {
+      const resData = await safeFetch(`/api/verification/wizard/${caseId}/step/5/`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           confirmed: true
         })
       });
-      const resData = await response.json();
-      if (!response.ok) {
-        throw new Error(resData.error || "Final submission failed.");
-      }
       setIsFinalSubmitted(true);
       if (onComplete) onComplete(resData.case);
     } catch (err) {

@@ -731,10 +731,14 @@ def admin_login(request):
 
 
 def csrf_failure(request, reason=""):
-    """Graceful CSRF handler that redirects login attempts or displays a clean recovery view."""
+    """Graceful CSRF handler that returns JSON for API requests or redirects/renders for browser."""
     from django.shortcuts import redirect
     host = request.get_host().split(':')[0].lower().strip()
     path = request.path.lower()
+
+    # Always return JSON for API and AJAX requests
+    if path.startswith('/api/') or request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'application/json' in request.headers.get('accept', ''):
+        return JsonResponse({'error': 'CSRF verification failed. Please refresh the page and try again.', 'reason': reason}, status=403)
 
     if host == 'staff.digiland.co.ke' or path.startswith('/staff/'):
         return redirect('frontend:staff_login')
