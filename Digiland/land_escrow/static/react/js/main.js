@@ -27440,16 +27440,16 @@ function AppShell({
       /* @__PURE__ */ import_react5.default.createElement("span", { className: "text-[9px] font-semibold tracking-tight mt-0.5" }, item.label),
       /* @__PURE__ */ import_react5.default.createElement("span", { className: "absolute left-full ml-3 hidden whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold text-white shadow-xl group-hover:block z-50" }, item.label)
     );
-  }))), /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex flex-col items-center gap-3" }, logoutUrl ? /* @__PURE__ */ import_react5.default.createElement("form", { method: "post", action: logoutUrl }, /* @__PURE__ */ import_react5.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: csrfToken || "" }), /* @__PURE__ */ import_react5.default.createElement(
-    "button",
+  }))), /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex flex-col items-center gap-3" }, /* @__PURE__ */ import_react5.default.createElement(
+    "a",
     {
-      type: "submit",
+      href: logoutUrl || "/accounts/logout/",
       title: "Sign out",
       className: "group relative flex h-10 w-10 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
     },
     /* @__PURE__ */ import_react5.default.createElement(LogOut, { className: "h-4 w-4" }),
     /* @__PURE__ */ import_react5.default.createElement("span", { className: "absolute left-full ml-3 hidden whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold text-white shadow-xl group-hover:block z-50" }, "Sign out")
-  )) : null, /* @__PURE__ */ import_react5.default.createElement("div", { className: "py-1" }, /* @__PURE__ */ import_react5.default.createElement(
+  ), /* @__PURE__ */ import_react5.default.createElement("div", { className: "py-1" }, /* @__PURE__ */ import_react5.default.createElement(
     DigitalCrownAvatar,
     {
       name: displayName,
@@ -27473,14 +27473,15 @@ function AppShell({
       className: "hidden sm:inline-flex h-8 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-200/80 px-3 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100"
     },
     action.label
-  )), /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 text-xs" }, /* @__PURE__ */ import_react5.default.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-500 shadow-xs" }), /* @__PURE__ */ import_react5.default.createElement("span", { className: "font-bold text-slate-900" }, displayName), /* @__PURE__ */ import_react5.default.createElement("span", { className: "rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800" }, currentRole)), logoutUrl && /* @__PURE__ */ import_react5.default.createElement("form", { method: "post", action: logoutUrl, className: "md:hidden" }, /* @__PURE__ */ import_react5.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: csrfToken || "" }), /* @__PURE__ */ import_react5.default.createElement(
-    "button",
+  )), /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 text-xs" }, /* @__PURE__ */ import_react5.default.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-500 shadow-xs" }), /* @__PURE__ */ import_react5.default.createElement("span", { className: "font-bold text-slate-900" }, displayName), /* @__PURE__ */ import_react5.default.createElement("span", { className: "rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800" }, currentRole)), /* @__PURE__ */ import_react5.default.createElement(
+    "a",
     {
-      type: "submit",
-      className: "flex h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600"
+      href: logoutUrl || "/accounts/logout/",
+      title: "Sign out",
+      className: "flex md:hidden h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100"
     },
     /* @__PURE__ */ import_react5.default.createElement(LogOut, { className: "h-4 w-4" })
-  )))), mobileMenuOpen && /* @__PURE__ */ import_react5.default.createElement("div", { className: "fixed inset-0 z-50 flex flex-col bg-white/98 p-6 backdrop-blur-xl md:hidden text-slate-900" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex items-center justify-between pb-4 border-b border-slate-200" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react5.default.createElement(ShieldCheck, { className: "h-6 w-6 text-emerald-600" }), /* @__PURE__ */ import_react5.default.createElement("span", { className: "font-black text-slate-950 text-base" }, "Digiland Protocol")), /* @__PURE__ */ import_react5.default.createElement(
+  ))), mobileMenuOpen && /* @__PURE__ */ import_react5.default.createElement("div", { className: "fixed inset-0 z-50 flex flex-col bg-white/98 p-6 backdrop-blur-xl md:hidden text-slate-900" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex items-center justify-between pb-4 border-b border-slate-200" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react5.default.createElement(ShieldCheck, { className: "h-6 w-6 text-emerald-600" }), /* @__PURE__ */ import_react5.default.createElement("span", { className: "font-black text-slate-950 text-base" }, "Digiland Protocol")), /* @__PURE__ */ import_react5.default.createElement(
     "button",
     {
       onClick: () => setMobileMenuOpen(false),
@@ -27500,7 +27501,16 @@ function AppShell({
     },
     /* @__PURE__ */ import_react5.default.createElement(item.icon, { className: "h-5 w-5" }),
     /* @__PURE__ */ import_react5.default.createElement("span", null, item.label)
-  )))), /* @__PURE__ */ import_react5.default.createElement("main", { className: "flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8" }, children), /* @__PURE__ */ import_react5.default.createElement(LocationPermissionModal, null)));
+  )), /* @__PURE__ */ import_react5.default.createElement(
+    "a",
+    {
+      href: logoutUrl || "/accounts/logout/",
+      onClick: () => setMobileMenuOpen(false),
+      className: "mt-4 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition"
+    },
+    /* @__PURE__ */ import_react5.default.createElement(LogOut, { className: "h-5 w-5" }),
+    /* @__PURE__ */ import_react5.default.createElement("span", null, "Sign Out")
+  ))), /* @__PURE__ */ import_react5.default.createElement("main", { className: "flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8" }, children), /* @__PURE__ */ import_react5.default.createElement(LocationPermissionModal, null)));
 }
 
 // src/components/layout/public-shell.tsx
@@ -27646,7 +27656,15 @@ function PublicShell({
       )
     },
     item.label
-  ))), /* @__PURE__ */ import_react7.default.createElement("div", { className: "ml-auto flex items-center gap-2.5 sm:gap-3 lg:ml-0" }, user ? /* @__PURE__ */ import_react7.default.createElement(import_react7.default.Fragment, null, /* @__PURE__ */ import_react7.default.createElement(Badge, { tone: "outline", className: "hidden sm:inline-flex border-emerald-300 bg-emerald-50 text-emerald-800 font-bold" }, user.role), /* @__PURE__ */ import_react7.default.createElement("div", { className: "hidden items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 shadow-sm md:flex" }, /* @__PURE__ */ import_react7.default.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white font-black text-xs shadow-xs" }, (displayName || "U").slice(0, 1).toUpperCase()), /* @__PURE__ */ import_react7.default.createElement("div", { className: "leading-tight text-left" }, /* @__PURE__ */ import_react7.default.createElement("div", { className: "text-xs font-bold text-slate-900" }, displayName), /* @__PURE__ */ import_react7.default.createElement("div", { className: "text-[10px] text-slate-500" }, user.buyer_account_type ? `${user.buyer_account_type} buyer` : "Authenticated"))), logoutUrl ? /* @__PURE__ */ import_react7.default.createElement("form", { method: "post", action: logoutUrl, className: "hidden md:block" }, /* @__PURE__ */ import_react7.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: csrfToken || "" }), /* @__PURE__ */ import_react7.default.createElement(Button, { variant: "outline", className: "h-9 rounded-xl border-slate-200 bg-white text-slate-700 hover:bg-slate-100 text-xs font-bold", type: "submit" }, /* @__PURE__ */ import_react7.default.createElement(LogOut, { className: "h-3.5 w-3.5 mr-1" }), "Sign out")) : null) : /* @__PURE__ */ import_react7.default.createElement("div", { className: "flex items-center gap-2 sm:gap-3" }, actions && actions.length > 0 ? actions.map((action) => /* @__PURE__ */ import_react7.default.createElement(
+  ))), /* @__PURE__ */ import_react7.default.createElement("div", { className: "ml-auto flex items-center gap-2.5 sm:gap-3 lg:ml-0" }, user ? /* @__PURE__ */ import_react7.default.createElement(import_react7.default.Fragment, null, /* @__PURE__ */ import_react7.default.createElement(Badge, { tone: "outline", className: "hidden sm:inline-flex border-emerald-300 bg-emerald-50 text-emerald-800 font-bold" }, user.role), /* @__PURE__ */ import_react7.default.createElement("div", { className: "hidden items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 shadow-sm md:flex" }, /* @__PURE__ */ import_react7.default.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white font-black text-xs shadow-xs" }, (displayName || "U").slice(0, 1).toUpperCase()), /* @__PURE__ */ import_react7.default.createElement("div", { className: "leading-tight text-left" }, /* @__PURE__ */ import_react7.default.createElement("div", { className: "text-xs font-bold text-slate-900" }, displayName), /* @__PURE__ */ import_react7.default.createElement("div", { className: "text-[10px] text-slate-500" }, user.buyer_account_type ? `${user.buyer_account_type} buyer` : "Authenticated"))), /* @__PURE__ */ import_react7.default.createElement(
+    "a",
+    {
+      href: logoutUrl || "/accounts/logout/",
+      className: "hidden md:inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:bg-slate-100 transition gap-1.5"
+    },
+    /* @__PURE__ */ import_react7.default.createElement(LogOut, { className: "h-3.5 w-3.5" }),
+    /* @__PURE__ */ import_react7.default.createElement("span", null, "Sign out")
+  )) : /* @__PURE__ */ import_react7.default.createElement("div", { className: "flex items-center gap-2 sm:gap-3" }, actions && actions.length > 0 ? actions.map((action) => /* @__PURE__ */ import_react7.default.createElement(
     "a",
     {
       key: `${action.label}-${action.href}`,

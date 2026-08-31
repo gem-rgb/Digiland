@@ -181,21 +181,16 @@ export function AppShell({
 
         {/* Bottom Rail: User Avatar & Logout */}
         <div className="flex flex-col items-center gap-3">
-          {logoutUrl ? (
-            <form method="post" action={logoutUrl}>
-              <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken || ''} />
-              <button
-                type="submit"
-                title="Sign out"
-                className="group relative flex h-10 w-10 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="absolute left-full ml-3 hidden whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold text-white shadow-xl group-hover:block z-50">
-                  Sign out
-                </span>
-              </button>
-            </form>
-          ) : null}
+          <a
+            href={logoutUrl || '/accounts/logout/'}
+            title="Sign out"
+            className="group relative flex h-10 w-10 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="absolute left-full ml-3 hidden whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold text-white shadow-xl group-hover:block z-50">
+              Sign out
+            </span>
+          </a>
 
           {/* User Avatar with subtle Digital Crown for Managers or Org Icon */}
           <div className="py-1">
@@ -261,17 +256,13 @@ export function AppShell({
               </span>
             </div>
 
-            {logoutUrl && (
-              <form method="post" action={logoutUrl} className="md:hidden">
-                <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken || ''} />
-                <button
-                  type="submit"
-                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600"
-                >
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </form>
-            )}
+            <a
+              href={logoutUrl || '/accounts/logout/'}
+              title="Sign out"
+              className="flex md:hidden h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100"
+            >
+              <LogOut className="h-4 w-4" />
+            </a>
           </div>
         </header>
 
@@ -306,6 +297,15 @@ export function AppShell({
                   <span>{item.label}</span>
                 </a>
               ))}
+
+              <a
+                href={logoutUrl || '/accounts/logout/'}
+                onClick={() => setMobileMenuOpen(false)}
+                className="mt-4 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition"
+              >
+                <LogOut className="h-5 w-5" />
+                <span>Sign Out</span>
+              </a>
             </nav>
           </div>
         )}

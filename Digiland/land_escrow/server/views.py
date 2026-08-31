@@ -1,8 +1,10 @@
 from django.http import Http404
 from django.core.exceptions import ValidationError
+from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.views.decorators.csrf import csrf_exempt
 from django.middleware.csrf import get_token
 from django.db import models
 from django.db.models import Q
@@ -584,13 +586,45 @@ def joint_legal_requirements(request):
     )
 
 
+@csrf_exempt
+def direct_logout(request):
+    """
+    Universal, foolproof logout handler supporting both GET and POST.
+    Flushes the session, clears cross-subdomain cookies, and redirects to the appropriate login portal.
+    """
+    from django.contrib.auth import logout as auth_logout
+    host = request.get_host().split(':')[0].lower().strip()
+    is_local = host in {'localhost', '127.0.0.1', 'testserver', '0.0.0.0'} or getattr(settings, 'DEBUG', False)
+    
+    auth_logout(request)
+    try:
+        request.session.flush()
+    except Exception:
+        pass
+
+    if host == 'staff.digiland.co.ke' or request.path.startswith('/staff/'):
+        target_url = "https://staff.digiland.co.ke/staff/login/" if not is_local else reverse('frontend:staff_login')
+    elif host == 'admin.digiland.co.ke' or request.path.startswith('/admin/'):
+        target_url = "https://admin.digiland.co.ke/admin/login/" if not is_local else reverse('frontend:admin_login')
+    else:
+        target_url = "https://app.digiland.co.ke/accounts/login/" if not is_local else '/accounts/login/'
+
+    response = redirect(target_url)
+    session_cookie = getattr(settings, 'SESSION_COOKIE_NAME', 'sessionid')
+    csrf_cookie = getattr(settings, 'CSRF_COOKIE_NAME', 'csrftoken')
+    cookie_domain = getattr(settings, 'SESSION_COOKIE_DOMAIN', None)
+
+    if cookie_domain:
+        response.delete_cookie(session_cookie, domain=cookie_domain)
+        response.delete_cookie(csrf_cookie, domain=cookie_domain)
+    response.delete_cookie(session_cookie)
+    response.delete_cookie(csrf_cookie)
+    return response
+
+
 def logout_to_staff_login(request):
     """Log the current user out and redirect straight to the staff login portal."""
-    from django.contrib.auth import logout
-    if request.method == 'POST':
-        logout(request)
-        return redirect(reverse('frontend:staff_login'))
-    return redirect(reverse('frontend:staff_login'))
+    return direct_logout(request)
 
 def staff_login(request):
     """Staff login portal exclusively for EARB Agents, LSK Advocates/Lawyers, and ISLK Licensed Surveyors."""

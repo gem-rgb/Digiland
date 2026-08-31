@@ -99,15 +99,13 @@ export function PublicShell({
                     <div className="text-[10px] text-slate-500">{user.buyer_account_type ? `${user.buyer_account_type} buyer` : 'Authenticated'}</div>
                   </div>
                 </div>
-                {logoutUrl ? (
-                  <form method="post" action={logoutUrl} className="hidden md:block">
-                    <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken || ''} />
-                    <Button variant="outline" className="h-9 rounded-xl border-slate-200 bg-white text-slate-700 hover:bg-slate-100 text-xs font-bold" type="submit">
-                      <LogOut className="h-3.5 w-3.5 mr-1" />
-                      Sign out
-                    </Button>
-                  </form>
-                ) : null}
+                <a
+                  href={logoutUrl || '/accounts/logout/'}
+                  className="hidden md:inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:bg-slate-100 transition gap-1.5"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span>Sign out</span>
+                </a>
               </>
             ) : (
               <div className="flex items-center gap-2 sm:gap-3">

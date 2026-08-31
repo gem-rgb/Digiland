@@ -38,6 +38,8 @@ urlpatterns = [
     path('api/v1/auth/', include('core.auth_urls')),
     path('api/auth/me/', api_views.auth_me_api, name='auth_me_api'),
     path('api/onboarding/select-role/', api_views.onboarding_select_role_api, name='onboarding_select_role_api'),
+    path('accounts/logout/', server_views.direct_logout, name='account_logout'),
+    path('auth/logout/', server_views.direct_logout, name='auth_logout'),
     path('accounts/', include('allauth.urls')),
     path('api/v1/', include('core.urls')),
     path('api/v1/admin/control-plane/', include('admin_control_plane.urls')),
