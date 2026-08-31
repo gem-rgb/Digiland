@@ -2330,14 +2330,41 @@ def render_admin_dashboard(request, context):
 
 @login_required
 @user_passes_test(lambda u: u.is_authenticated and (getattr(u, 'role', None) == 'Admin' or u.is_superuser or u.is_staff), login_url='/')
-def admin_analytics_view(request):
-    """Dedicated view for full Admin Executive Analytics Suite."""
+def admin_analytics_view(request, chapter=None):
+    """Dedicated view for full Admin Executive Analytics Suite with chapter sub-pages."""
     from django.http import HttpResponseRedirect
     host = request.get_host().split(':')[0].lower()
     is_local = host in {'localhost', '127.0.0.1'}
 
     if not is_local and not host.startswith('admin.'):
         return HttpResponseRedirect(f"https://admin.digiland.co.ke{request.get_full_path()}")
+
+    # Normalize chapter slug if provided
+    chapter_map = {
+        'overview': 'overview',
+        'marketplace': 'marketplace',
+        'listings': 'marketplace',
+        'parcels': 'marketplace',
+        'revenue-taxes': 'revenue_taxes',
+        'revenue_taxes': 'revenue_taxes',
+        'revenue': 'revenue_taxes',
+        'taxes': 'revenue_taxes',
+        'transactions': 'transactions',
+        'velocity': 'transactions',
+        'escrow': 'escrow',
+        'dual-vault': 'escrow',
+        'vault': 'escrow',
+        'regional': 'regional',
+        'density': 'regional',
+        'properties': 'regional',
+        'users': 'users',
+        'demographics': 'users',
+        'financial-reports': 'expenses_reports',
+        'expenses-reports': 'expenses_reports',
+        'expenses': 'expenses_reports',
+        'reports': 'expenses_reports',
+    }
+    active_chapter = chapter_map.get((chapter or '').lower(), chapter or 'overview')
 
     analytics_data = build_admin_system_analytics()
     return render_react_shell(
@@ -2346,6 +2373,7 @@ def admin_analytics_view(request):
         'Executive Analytics Suite',
         'Full operational oversight of users, escrow finances, professional hires, statutory taxes, and system reliability.',
         analytics=analytics_data,
+        active_chapter=active_chapter,
         stats=[
             {'label': 'Escrow GMV', 'value': f"KES {analytics_data['financial']['total_gmv_kes']:,.0f}", 'tone': 'accent'},
             {'label': 'Gross Revenue', 'value': f"KES {analytics_data['financial']['total_gross_revenue_kes']:,.0f}", 'tone': 'success'},
