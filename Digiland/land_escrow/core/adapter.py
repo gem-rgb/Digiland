@@ -89,6 +89,11 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
         is_local = host in {'localhost', '127.0.0.1'}
 
         if user and user.is_authenticated:
+            # Check if this login was via social login and requires the Google confirmation interstitial
+            if request and (request.session.pop('social_login_confirm_pending', False) or getattr(request, '_social_login_active', False)):
+                app_base = "" if is_local else "https://app.digiland.co.ke"
+                return f"{app_base}{reverse('frontend:social_auth_confirm')}"
+
             if not getattr(user, "is_email_verified", False):
                 self._maybe_start_pending_session(request, user, flow="allauth-login")
                 self._maybe_send_login_verification_email(request, user, flow="allauth-login")
@@ -277,6 +282,13 @@ class RoleBasedSocialAccountAdapter(DefaultSocialAccountAdapter):
         user.is_email_verified = True
         user.save(update_fields=['is_email_verified'])
         return user
+
+    def pre_social_login(self, request, sociallogin):
+        """Flag session so returning OAuth users are directed to the Google confirmation interstitial."""
+        if request:
+            request.session['social_login_confirm_pending'] = True
+            setattr(request, '_social_login_active', True)
+        return super().pre_social_login(request, sociallogin)
 
     def get_login_redirect_url(self, request):
         """Direct returning social login users to the OAuth confirmation gate before entering workspace."""

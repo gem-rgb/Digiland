@@ -33,9 +33,8 @@ class OAuthConfirmationGateTestCase(TestCase):
         self.client.force_login(self.seller_user)
         response = self.client.get(reverse('frontend:social_auth_confirm'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Sign In Confirmed')
+        self.assertContains(response, 'Make sure that you want to sign in to Digiland')
         self.assertContains(response, 'seller_oauth_test@example.com')
-        self.assertContains(response, 'Seller')
         self.assertContains(response, 'Seller Dashboard')
 
     def test_02_social_confirm_submission_redirects_to_target_workspace(self):
