@@ -1,14 +1,16 @@
 # =============================================================================
-# Render Blueprint Configuration for Digiland (Auto-Scaling / Pay-per-use)
+# Render Blueprint Configuration for Digiland Centralized Backend (api.digiland.co.ke)
 # =============================================================================
 services:
+  # ── 1. Central Backend API Web Service ─────────────────────────────────────
   - type: web
-    name: digiland-web
-    runtime: docker
-    dockerfilePath: land_escrow/config/Dockerfile
-    dockerContext: land_escrow
-    plan: free # or starter
+    name: digiland-api
+    runtime: python
+    buildCommand: "./build_files.sh"
+    startCommand: "gunicorn wsgi:application --bind 0.0.0.0:$PORT --workers 3 --threads 2 --timeout 120"
+    plan: starter
     region: frankfurt # Low latency to East Africa
+    healthCheckPath: /health/
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: land_escrow.settings_production
@@ -20,7 +22,41 @@ services:
         sync: false
       - key: SECRET_KEY
         generateValue: true
+      - key: PUBLIC_BACKEND_URL
+        value: "https://api.digiland.co.ke"
+      - key: MAIN_DOMAIN
+        value: "https://www.digiland.co.ke"
+      - key: APP_DOMAIN
+        value: "https://app.digiland.co.ke"
+      - key: STAFF_DOMAIN
+        value: "https://staff.digiland.co.ke"
+      - key: ADMIN_DOMAIN
+        value: "https://admin.digiland.co.ke"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://www.digiland.co.ke,https://digiland.co.ke,https://app.digiland.co.ke,https://staff.digiland.co.ke,https://admin.digiland.co.ke"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://www.digiland.co.ke,https://digiland.co.ke,https://app.digiland.co.ke,https://staff.digiland.co.ke,https://admin.digiland.co.ke,https://api.digiland.co.ke"
       - key: USE_REDIS_CACHE
         value: "True"
       - key: DB_DISABLE_SERVER_SIDE_CURSORS
         value: "True"
+
+  # ── 2. AI Document Verification & Background Processing Worker ─────────────
+  - type: worker
+    name: digiland-worker
+    runtime: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python manage.py run_ai_worker"
+    plan: starter
+    region: frankfurt
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: land_escrow.settings_production
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: DEBUG
+        value: "False"

@@ -25,7 +25,10 @@ SERVERLESS = bool(
 
 ALLOWED_HOSTS = [
     h.strip()
-    for h in config("ALLOWED_HOSTS", default=".vercel.app,localhost,127.0.0.1").split(",")
+    for h in config(
+        "ALLOWED_HOSTS",
+        default="api.digiland.co.ke,app.digiland.co.ke,staff.digiland.co.ke,admin.digiland.co.ke,www.digiland.co.ke,digiland.co.ke,.vercel.app,.onrender.com,localhost,127.0.0.1",
+    ).split(",")
     if h.strip()
 ]
 
@@ -33,14 +36,14 @@ CSRF_TRUSTED_ORIGINS = [
     o.strip()
     for o in config(
         "CSRF_TRUSTED_ORIGINS",
-        default="http://localhost:8000,http://127.0.0.1:8000,https://*.vercel.app",
+        default="https://www.digiland.co.ke,https://digiland.co.ke,https://app.digiland.co.ke,https://staff.digiland.co.ke,https://admin.digiland.co.ke,https://api.digiland.co.ke,https://*.vercel.app,https://*.onrender.com,http://localhost:8000,http://127.0.0.1:8000,http://localhost:5173",
     ).split(",")
     if o.strip()
 ]
 
 # ── SSL / TLS / Cloudflare Proxy ─────────────────────────────────────────────
 # Canonical browser-visible backend origin used by OAuth callbacks and auth links.
-PUBLIC_BACKEND_URL = config("PUBLIC_BACKEND_URL", default="").strip()
+PUBLIC_BACKEND_URL = config("PUBLIC_BACKEND_URL", default="https://api.digiland.co.ke").strip()
 
 # Cloudflare / Reverse Proxy SSL Termination
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -196,10 +199,19 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 # ── CORS — restricted origins in production ───────────────────────────────────
 CORS_ALLOW_ALL_ORIGINS = False
+_DEFAULT_CORS_ORIGINS = (
+    "https://www.digiland.co.ke,https://digiland.co.ke,"
+    "https://app.digiland.co.ke,https://staff.digiland.co.ke,https://admin.digiland.co.ke,"
+    "http://localhost:5173,http://localhost:3000,http://localhost:8000"
+)
 CORS_ALLOWED_ORIGINS = [
     o.strip()
-    for o in config("CORS_ALLOWED_ORIGINS", default="").split(",")
+    for o in config("CORS_ALLOWED_ORIGINS", default=_DEFAULT_CORS_ORIGINS).split(",")
     if o.strip()
+]
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+    r"^https://.*\.digiland\.co\.ke$",
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [

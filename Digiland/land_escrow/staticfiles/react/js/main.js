@@ -27440,16 +27440,16 @@ function AppShell({
       /* @__PURE__ */ import_react5.default.createElement("span", { className: "text-[9px] font-semibold tracking-tight mt-0.5" }, item.label),
       /* @__PURE__ */ import_react5.default.createElement("span", { className: "absolute left-full ml-3 hidden whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold text-white shadow-xl group-hover:block z-50" }, item.label)
     );
-  }))), /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex flex-col items-center gap-3" }, logoutUrl ? /* @__PURE__ */ import_react5.default.createElement("form", { method: "post", action: logoutUrl }, /* @__PURE__ */ import_react5.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: csrfToken || "" }), /* @__PURE__ */ import_react5.default.createElement(
-    "button",
+  }))), /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex flex-col items-center gap-3" }, /* @__PURE__ */ import_react5.default.createElement(
+    "a",
     {
-      type: "submit",
+      href: logoutUrl || "/accounts/logout/",
       title: "Sign out",
       className: "group relative flex h-10 w-10 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
     },
     /* @__PURE__ */ import_react5.default.createElement(LogOut, { className: "h-4 w-4" }),
     /* @__PURE__ */ import_react5.default.createElement("span", { className: "absolute left-full ml-3 hidden whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-bold text-white shadow-xl group-hover:block z-50" }, "Sign out")
-  )) : null, /* @__PURE__ */ import_react5.default.createElement("div", { className: "py-1" }, /* @__PURE__ */ import_react5.default.createElement(
+  ), /* @__PURE__ */ import_react5.default.createElement("div", { className: "py-1" }, /* @__PURE__ */ import_react5.default.createElement(
     DigitalCrownAvatar,
     {
       name: displayName,
@@ -27473,14 +27473,15 @@ function AppShell({
       className: "hidden sm:inline-flex h-8 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-200/80 px-3 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100"
     },
     action.label
-  )), /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 text-xs" }, /* @__PURE__ */ import_react5.default.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-500 shadow-xs" }), /* @__PURE__ */ import_react5.default.createElement("span", { className: "font-bold text-slate-900" }, displayName), /* @__PURE__ */ import_react5.default.createElement("span", { className: "rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800" }, currentRole)), logoutUrl && /* @__PURE__ */ import_react5.default.createElement("form", { method: "post", action: logoutUrl, className: "md:hidden" }, /* @__PURE__ */ import_react5.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: csrfToken || "" }), /* @__PURE__ */ import_react5.default.createElement(
-    "button",
+  )), /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 text-xs" }, /* @__PURE__ */ import_react5.default.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-500 shadow-xs" }), /* @__PURE__ */ import_react5.default.createElement("span", { className: "font-bold text-slate-900" }, displayName), /* @__PURE__ */ import_react5.default.createElement("span", { className: "rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800" }, currentRole)), /* @__PURE__ */ import_react5.default.createElement(
+    "a",
     {
-      type: "submit",
-      className: "flex h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600"
+      href: logoutUrl || "/accounts/logout/",
+      title: "Sign out",
+      className: "flex md:hidden h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100"
     },
     /* @__PURE__ */ import_react5.default.createElement(LogOut, { className: "h-4 w-4" })
-  )))), mobileMenuOpen && /* @__PURE__ */ import_react5.default.createElement("div", { className: "fixed inset-0 z-50 flex flex-col bg-white/98 p-6 backdrop-blur-xl md:hidden text-slate-900" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex items-center justify-between pb-4 border-b border-slate-200" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react5.default.createElement(ShieldCheck, { className: "h-6 w-6 text-emerald-600" }), /* @__PURE__ */ import_react5.default.createElement("span", { className: "font-black text-slate-950 text-base" }, "Digiland Protocol")), /* @__PURE__ */ import_react5.default.createElement(
+  ))), mobileMenuOpen && /* @__PURE__ */ import_react5.default.createElement("div", { className: "fixed inset-0 z-50 flex flex-col bg-white/98 p-6 backdrop-blur-xl md:hidden text-slate-900" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex items-center justify-between pb-4 border-b border-slate-200" }, /* @__PURE__ */ import_react5.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react5.default.createElement(ShieldCheck, { className: "h-6 w-6 text-emerald-600" }), /* @__PURE__ */ import_react5.default.createElement("span", { className: "font-black text-slate-950 text-base" }, "Digiland Protocol")), /* @__PURE__ */ import_react5.default.createElement(
     "button",
     {
       onClick: () => setMobileMenuOpen(false),
@@ -27500,7 +27501,16 @@ function AppShell({
     },
     /* @__PURE__ */ import_react5.default.createElement(item.icon, { className: "h-5 w-5" }),
     /* @__PURE__ */ import_react5.default.createElement("span", null, item.label)
-  )))), /* @__PURE__ */ import_react5.default.createElement("main", { className: "flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8" }, children), /* @__PURE__ */ import_react5.default.createElement(LocationPermissionModal, null)));
+  )), /* @__PURE__ */ import_react5.default.createElement(
+    "a",
+    {
+      href: logoutUrl || "/accounts/logout/",
+      onClick: () => setMobileMenuOpen(false),
+      className: "mt-4 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition"
+    },
+    /* @__PURE__ */ import_react5.default.createElement(LogOut, { className: "h-5 w-5" }),
+    /* @__PURE__ */ import_react5.default.createElement("span", null, "Sign Out")
+  ))), /* @__PURE__ */ import_react5.default.createElement("main", { className: "flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8" }, children), /* @__PURE__ */ import_react5.default.createElement(LocationPermissionModal, null)));
 }
 
 // src/components/layout/public-shell.tsx
@@ -27552,9 +27562,11 @@ function detectPartitionFromLocation() {
 }
 function requiredPartitionForRole(role) {
   if (!role) return "app";
-  const norm = role.toLowerCase();
-  if (norm.includes("admin")) return "admin";
-  if (norm.includes("agent") || norm.includes("lawyer") || norm.includes("official")) return "staff";
+  const norm = role.toLowerCase().replace(/[\s_-]+/g, "");
+  if (norm.includes("admin") || norm.includes("superuser")) return "admin";
+  if (norm.includes("agent") || norm.includes("lawyer") || norm.includes("advocate") || norm.includes("surveyor") || norm.includes("official") || norm.includes("staff")) {
+    return "staff";
+  }
   return "app";
 }
 function isRoleAllowedOnPartition(role, partition) {
@@ -27644,7 +27656,15 @@ function PublicShell({
       )
     },
     item.label
-  ))), /* @__PURE__ */ import_react7.default.createElement("div", { className: "ml-auto flex items-center gap-2.5 sm:gap-3 lg:ml-0" }, user ? /* @__PURE__ */ import_react7.default.createElement(import_react7.default.Fragment, null, /* @__PURE__ */ import_react7.default.createElement(Badge, { tone: "outline", className: "hidden sm:inline-flex border-emerald-300 bg-emerald-50 text-emerald-800 font-bold" }, user.role), /* @__PURE__ */ import_react7.default.createElement("div", { className: "hidden items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 shadow-sm md:flex" }, /* @__PURE__ */ import_react7.default.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white font-black text-xs shadow-xs" }, (displayName || "U").slice(0, 1).toUpperCase()), /* @__PURE__ */ import_react7.default.createElement("div", { className: "leading-tight text-left" }, /* @__PURE__ */ import_react7.default.createElement("div", { className: "text-xs font-bold text-slate-900" }, displayName), /* @__PURE__ */ import_react7.default.createElement("div", { className: "text-[10px] text-slate-500" }, user.buyer_account_type ? `${user.buyer_account_type} buyer` : "Authenticated"))), logoutUrl ? /* @__PURE__ */ import_react7.default.createElement("form", { method: "post", action: logoutUrl, className: "hidden md:block" }, /* @__PURE__ */ import_react7.default.createElement("input", { type: "hidden", name: "csrfmiddlewaretoken", value: csrfToken || "" }), /* @__PURE__ */ import_react7.default.createElement(Button, { variant: "outline", className: "h-9 rounded-xl border-slate-200 bg-white text-slate-700 hover:bg-slate-100 text-xs font-bold", type: "submit" }, /* @__PURE__ */ import_react7.default.createElement(LogOut, { className: "h-3.5 w-3.5 mr-1" }), "Sign out")) : null) : /* @__PURE__ */ import_react7.default.createElement("div", { className: "flex items-center gap-2 sm:gap-3" }, actions && actions.length > 0 ? actions.map((action) => /* @__PURE__ */ import_react7.default.createElement(
+  ))), /* @__PURE__ */ import_react7.default.createElement("div", { className: "ml-auto flex items-center gap-2.5 sm:gap-3 lg:ml-0" }, user ? /* @__PURE__ */ import_react7.default.createElement(import_react7.default.Fragment, null, /* @__PURE__ */ import_react7.default.createElement(Badge, { tone: "outline", className: "hidden sm:inline-flex border-emerald-300 bg-emerald-50 text-emerald-800 font-bold" }, user.role), /* @__PURE__ */ import_react7.default.createElement("div", { className: "hidden items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 shadow-sm md:flex" }, /* @__PURE__ */ import_react7.default.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white font-black text-xs shadow-xs" }, (displayName || "U").slice(0, 1).toUpperCase()), /* @__PURE__ */ import_react7.default.createElement("div", { className: "leading-tight text-left" }, /* @__PURE__ */ import_react7.default.createElement("div", { className: "text-xs font-bold text-slate-900" }, displayName), /* @__PURE__ */ import_react7.default.createElement("div", { className: "text-[10px] text-slate-500" }, user.buyer_account_type ? `${user.buyer_account_type} buyer` : "Authenticated"))), /* @__PURE__ */ import_react7.default.createElement(
+    "a",
+    {
+      href: logoutUrl || "/accounts/logout/",
+      className: "hidden md:inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 hover:bg-slate-100 transition gap-1.5"
+    },
+    /* @__PURE__ */ import_react7.default.createElement(LogOut, { className: "h-3.5 w-3.5" }),
+    /* @__PURE__ */ import_react7.default.createElement("span", null, "Sign out")
+  )) : /* @__PURE__ */ import_react7.default.createElement("div", { className: "flex items-center gap-2 sm:gap-3" }, actions && actions.length > 0 ? actions.map((action) => /* @__PURE__ */ import_react7.default.createElement(
     "a",
     {
       key: `${action.label}-${action.href}`,
@@ -32207,6 +32227,49 @@ function SellerOnboardingWizard({
     }
     return list;
   }, [propertyType, tenureType, ownershipType, intendedUse, isSubdivided, hasSpousalInterest]);
+  const getActiveCsrfToken = () => {
+    if (csrfToken && csrfToken.trim()) return csrfToken;
+    if (typeof document !== "undefined") {
+      const cookieMatch = document.cookie.match(/csrftoken=([^;]+)/);
+      if (cookieMatch) return cookieMatch[1];
+      const meta = document.querySelector('meta[name="csrf-token"]');
+      if (meta?.content) return meta.content;
+      const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+      if (input?.value) return input.value;
+    }
+    return "";
+  };
+  const safeFetch = async (url, options) => {
+    const activeToken = getActiveCsrfToken();
+    const headers = new Headers(options.headers || {});
+    if (activeToken && !headers.has("X-CSRFToken")) {
+      headers.set("X-CSRFToken", activeToken);
+    }
+    const response = await fetch(url, { ...options, headers });
+    const contentType = response.headers.get("content-type") || "";
+    let resData = null;
+    if (contentType.includes("application/json")) {
+      try {
+        resData = await response.json();
+      } catch {
+        resData = null;
+      }
+    } else {
+      const text = await response.text();
+      if (text.includes("<!DOCTYPE") || text.includes("<html")) {
+        if (response.status === 403) {
+          throw new Error("Security session expired. Please refresh the page and try again.");
+        }
+        throw new Error(`Server returned error (${response.status}). Please verify your input and try again.`);
+      }
+      resData = { error: text };
+    }
+    if (!response.ok) {
+      const msg = resData?.error || resData?.detail || resData?.message || `Request failed with status ${response.status}`;
+      throw new Error(msg);
+    }
+    return resData;
+  };
   const handleStep1Submit = async (e) => {
     e.preventDefault();
     if (!parcelNumber.trim()) {
@@ -32216,11 +32279,10 @@ function SellerOnboardingWizard({
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
-      const response = await fetch("/api/verification/wizard/save-step/", {
+      const resData = await safeFetch("/api/verification/wizard/save-step/", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           step: 1,
@@ -32241,10 +32303,6 @@ function SellerOnboardingWizard({
           longitude: pinnedCoordinates?.lng
         })
       });
-      const resData = await response.json();
-      if (!response.ok) {
-        throw new Error(resData.error || "Failed to save property basics.");
-      }
       if (resData.case) {
         setCaseId(resData.case.id);
         setCaseNumber(resData.case.case_number);
@@ -32265,11 +32323,10 @@ function SellerOnboardingWizard({
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
-      const response = await fetch(`/api/verification/wizard/${caseId}/step/2/`, {
+      await safeFetch(`/api/verification/wizard/${caseId}/step/2/`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           registered_owner_name: registeredOwnerName,
@@ -32282,10 +32339,6 @@ function SellerOnboardingWizard({
           ownership_type: ownershipType
         })
       });
-      const resData = await response.json();
-      if (!response.ok) {
-        throw new Error(resData.error || "Failed to save property details.");
-      }
       setCurrentStep(3);
     } catch (err) {
       setErrorMessage(err.message || "An error occurred saving property details.");
@@ -32301,17 +32354,10 @@ function SellerOnboardingWizard({
     formData.append("file", file);
     formData.append("document_type", docType);
     try {
-      const response = await fetch(`/api/verification/wizard/${caseId}/upload-document/`, {
+      const resData = await safeFetch(`/api/verification/wizard/${caseId}/upload-document/`, {
         method: "POST",
-        headers: {
-          "X-CSRFToken": csrfToken
-        },
         body: formData
       });
-      const resData = await response.json();
-      if (!response.ok) {
-        throw new Error(resData.error || "Failed to upload document.");
-      }
       setUploadedDocuments((prev) => ({
         ...prev,
         [docType]: {
@@ -32334,20 +32380,15 @@ function SellerOnboardingWizard({
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
-      const response = await fetch(`/api/verification/wizard/${caseId}/step/5/`, {
+      const resData = await safeFetch(`/api/verification/wizard/${caseId}/step/5/`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           confirmed: true
         })
       });
-      const resData = await response.json();
-      if (!response.ok) {
-        throw new Error(resData.error || "Final submission failed.");
-      }
       setIsFinalSubmitted(true);
       if (onComplete) onComplete(resData.case);
     } catch (err) {
@@ -32681,7 +32722,7 @@ var PartitionGuard = ({
       window.location.href = targetUrl;
     }
   };
-  return /* @__PURE__ */ import_react22.default.createElement("div", { className: "min-h-[70vh] flex items-center justify-center p-6 bg-slate-900/90 text-white" }, /* @__PURE__ */ import_react22.default.createElement(Card, { className: "max-w-lg w-full bg-slate-950 border-emerald-500/30 shadow-2xl shadow-emerald-950/50 text-slate-100" }, /* @__PURE__ */ import_react22.default.createElement(CardHeader, { className: "text-center pb-4" }, /* @__PURE__ */ import_react22.default.createElement("div", { className: "mx-auto w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mb-3" }, /* @__PURE__ */ import_react22.default.createElement(ShieldAlert, { className: "w-8 h-8 text-amber-400" })), /* @__PURE__ */ import_react22.default.createElement(CardTitle, { className: "text-2xl font-extrabold text-white tracking-tight" }, "Partition Access Restricted"), /* @__PURE__ */ import_react22.default.createElement(CardDescription, { className: "text-slate-400 mt-2 text-sm" }, "Your account role ", /* @__PURE__ */ import_react22.default.createElement("span", { className: "font-semibold text-emerald-400" }, '"', userRole, '"'), " is not authorized to access the", " ", /* @__PURE__ */ import_react22.default.createElement("span", { className: "font-semibold text-amber-300" }, partitionNames[currentPartition]), ".")), /* @__PURE__ */ import_react22.default.createElement(CardContent, { className: "space-y-6 pt-2" }, /* @__PURE__ */ import_react22.default.createElement("div", { className: "rounded-xl bg-slate-900/80 border border-slate-800 p-4 space-y-3 text-sm text-slate-300" }, /* @__PURE__ */ import_react22.default.createElement("div", { className: "flex items-center gap-2 text-emerald-400 font-semibold" }, /* @__PURE__ */ import_react22.default.createElement(Lock, { className: "w-4 h-4" }), " Digiland Partition Security Policy"), /* @__PURE__ */ import_react22.default.createElement("p", { className: "text-xs leading-relaxed text-slate-400" }, "Digiland separates user roles into dedicated security partitions. Agents and Lawyers must use the Staff Portal, while Buyers and Sellers access the App Portal."), /* @__PURE__ */ import_react22.default.createElement("div", { className: "pt-2 border-t border-slate-800 flex justify-between items-center text-xs" }, /* @__PURE__ */ import_react22.default.createElement("span", { className: "text-slate-500" }, "Your Target Portal:"), /* @__PURE__ */ import_react22.default.createElement("span", { className: "font-mono text-purple-400 font-bold" }, partitionNames[targetPartition]))), /* @__PURE__ */ import_react22.default.createElement(
+  return /* @__PURE__ */ import_react22.default.createElement("div", { className: "min-h-[70vh] flex items-center justify-center p-6 bg-slate-900/90 text-white" }, /* @__PURE__ */ import_react22.default.createElement(Card, { className: "max-w-lg w-full bg-slate-950 border-emerald-500/30 shadow-2xl shadow-emerald-950/50 text-slate-100" }, /* @__PURE__ */ import_react22.default.createElement(CardHeader, { className: "text-center pb-4" }, /* @__PURE__ */ import_react22.default.createElement("div", { className: "mx-auto w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mb-3" }, /* @__PURE__ */ import_react22.default.createElement(ShieldAlert, { className: "w-8 h-8 text-amber-400" })), /* @__PURE__ */ import_react22.default.createElement(CardTitle, { className: "text-2xl font-extrabold text-white tracking-tight" }, "Partition Access Restricted"), /* @__PURE__ */ import_react22.default.createElement(CardDescription, { className: "text-slate-400 mt-2 text-sm" }, "Your account role ", /* @__PURE__ */ import_react22.default.createElement("span", { className: "font-semibold text-emerald-400" }, '"', userRole, '"'), " is not authorized to access the", " ", /* @__PURE__ */ import_react22.default.createElement("span", { className: "font-semibold text-amber-300" }, partitionNames[currentPartition]), ".")), /* @__PURE__ */ import_react22.default.createElement(CardContent, { className: "space-y-6 pt-2" }, /* @__PURE__ */ import_react22.default.createElement("div", { className: "rounded-xl bg-slate-900/80 border border-slate-800 p-4 space-y-3 text-sm text-slate-300" }, /* @__PURE__ */ import_react22.default.createElement("div", { className: "flex items-center gap-2 text-emerald-400 font-semibold" }, /* @__PURE__ */ import_react22.default.createElement(Lock, { className: "w-4 h-4" }), " Digiland Partition Security Policy"), /* @__PURE__ */ import_react22.default.createElement("p", { className: "text-xs leading-relaxed text-slate-400" }, "Digiland separates user roles into dedicated security partitions. Agents, Lawyers, and Surveyors must use the Staff Portal, while Buyers and Sellers access the App Portal."), /* @__PURE__ */ import_react22.default.createElement("div", { className: "pt-2 border-t border-slate-800 flex justify-between items-center text-xs" }, /* @__PURE__ */ import_react22.default.createElement("span", { className: "text-slate-500" }, "Your Target Portal:"), /* @__PURE__ */ import_react22.default.createElement("span", { className: "font-mono text-purple-400 font-bold" }, partitionNames[targetPartition]))), /* @__PURE__ */ import_react22.default.createElement(
     Button,
     {
       onClick: handleRedirect,

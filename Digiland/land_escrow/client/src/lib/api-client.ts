@@ -136,6 +136,27 @@ async function parseResponseBody(response: Response): Promise<unknown> {
   return text.length ? text : undefined;
 }
 
+export function getApiBaseUrl(): string {
+  if (typeof window === 'undefined') return '';
+  const configured = (window as any).__DIGILAND_API_URL__ || (import.meta as any).env?.VITE_API_BASE_URL;
+  if (configured) return String(configured).replace(/\/$/, '');
+  const host = window.location.hostname.toLowerCase();
+  if (host.endsWith('digiland.co.ke') && !host.startsWith('api.')) {
+    return 'https://api.digiland.co.ke';
+  }
+  return '';
+}
+
+export function resolveApiUrl(path: string): string {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  const base = getApiBaseUrl();
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return base ? `${base}${cleanPath}` : cleanPath;
+}
+
 async function request<T>(
   method: string,
   url: string,
@@ -145,7 +166,8 @@ async function request<T>(
   const hasBody = method !== 'GET' && method !== 'HEAD';
   const config = (hasBody ? maybeConfig : (bodyOrConfig as RequestConfig | undefined)) ?? {};
   const body = hasBody ? bodyOrConfig : undefined;
-  const finalUrl = appendSearchParams(url, config.searchParams);
+  const targetUrl = resolveApiUrl(url);
+  const finalUrl = appendSearchParams(targetUrl, config.searchParams);
 
   const headers = mergeHeaders(
     {
