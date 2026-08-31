@@ -18,7 +18,7 @@ from .verification import (
 )
 
 # Roles that are BANNED from the public /accounts/login/ route
-STAFF_ROLES = {'Admin', 'Agent', 'Lawyer'}
+STAFF_ROLES = {'Admin', 'Agent', 'Lawyer', 'Surveyor', 'Land_Official'}
 
 logger = logging.getLogger(__name__)
 
@@ -104,9 +104,11 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
                 admin_base = "" if is_local else "https://admin.digiland.co.ke"
                 return f"{admin_base}{reverse('frontend:admin_dashboard')}"
 
-            # Agents & Lawyers -> staff.digiland.co.ke
-            if user.role in {'Lawyer', 'Agent', 'Land_Official'}:
+            # Agents, Lawyers, Surveyors -> staff.digiland.co.ke
+            if user.role in {'Lawyer', 'Agent', 'Land_Official', 'Surveyor'}:
                 staff_base = "" if is_local else "https://staff.digiland.co.ke"
+                if user.role == 'Surveyor':
+                    return f"{staff_base}{reverse('frontend:surveyor_dashboard')}"
                 return f"{staff_base}{reverse('frontend:agent_dashboard')}"
 
             # Buyers -> app.digiland.co.ke
@@ -185,15 +187,42 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
 
     def pre_login(self, request, user, **kwargs):
         """
-        Pre-login checks for role and email verification.
+        Pre-login checks for role, email verification, and partition enforcement.
+        Staff/admin users attempting to login via the public /accounts/login/
+        route are redirected to the correct staff/admin login portal with a
+        user-friendly message instead of crashing.
         """
-        if '/accounts/login' in request.path and getattr(user, "is_authenticated", False):
-            if not getattr(user, "is_email_verified", False):
-                self._maybe_start_pending_session(request, user, flow="allauth-login")
+        # Block staff/admin roles from the public buyer/seller login page
+        if '/accounts/login' in request.path:
+            user_role = getattr(user, 'role', '') or ''
+            if user_role in STAFF_ROLES:
                 from allauth.exceptions import ImmediateHttpResponse
-                raise ImmediateHttpResponse(
-                    redirect(reverse("account_verification_pending"))
+                from django.contrib import messages
+                host = request.get_host().split(':')[0].lower()
+                is_local = host in {'localhost', '127.0.0.1'}
+
+                if user_role in {'Agent', 'Lawyer', 'Surveyor', 'Land_Official'}:
+                    portal_name = 'Staff'
+                    login_url = '/staff/login/' if is_local else 'https://staff.digiland.co.ke/staff/login/'
+                else:
+                    portal_name = 'Admin'
+                    login_url = '/admin/login/' if is_local else 'https://admin.digiland.co.ke/admin/login/'
+
+                messages.error(
+                    request,
+                    f"This login page is for buyers and sellers only. "
+                    f"{portal_name} accounts ({user_role}) must use the "
+                    f"{portal_name} Portal login.",
                 )
+                raise ImmediateHttpResponse(redirect(login_url))
+
+            if getattr(user, "is_authenticated", False):
+                if not getattr(user, "is_email_verified", False):
+                    self._maybe_start_pending_session(request, user, flow="allauth-login")
+                    from allauth.exceptions import ImmediateHttpResponse
+                    raise ImmediateHttpResponse(
+                        redirect(reverse("account_verification_pending"))
+                    )
 
         return super().pre_login(request, user, **kwargs)
 

@@ -11,7 +11,12 @@ from django.http import JsonResponse
 
 
 class ExceptionLoggerMiddleware:
-    """Catch unhandled view/middleware exceptions and output the traceback."""
+    """Catch unhandled view/middleware exceptions and return a friendly error page.
+
+    In DEBUG mode, the full traceback is rendered for developer convenience.
+    In production, a polished user-facing error page is shown and the
+    traceback is logged server-side only.
+    """
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -22,7 +27,50 @@ class ExceptionLoggerMiddleware:
         import traceback
         from django.http import HttpResponse
         tb = traceback.format_exc()
-        return HttpResponse(f"<h1>Application Exception</h1><pre style='background:#111;color:#ff6b6b;padding:1.5rem;border-radius:8px;font-size:13px;line-height:1.5;overflow:auto;'>{tb}</pre>", status=500, content_type="text/html")
+        logger = logging.getLogger(__name__)
+        logger.error("Unhandled exception on %s: %s\n%s", request.path, exception, tb)
+
+        if getattr(settings, 'DEBUG', False):
+            return HttpResponse(
+                f"<h1>Application Exception</h1>"
+                f"<pre style='background:#111;color:#ff6b6b;padding:1.5rem;"
+                f"border-radius:8px;font-size:13px;line-height:1.5;overflow:auto;'>{tb}</pre>",
+                status=500, content_type="text/html",
+            )
+
+        # Production: user-friendly error page
+        return HttpResponse(
+            """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Something went wrong - Digiland</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Manrope',sans-serif;background:#f8fafc;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+.card{background:#fff;border-radius:1.5rem;padding:3rem 2.5rem;max-width:480px;width:100%;text-align:center;
+  box-shadow:0 20px 40px -15px rgba(15,23,42,.08);border:1px solid rgba(226,232,240,.9)}
+.icon{font-size:3.5rem;margin-bottom:1rem}
+h1{font-size:1.5rem;font-weight:700;color:#0f172a;margin-bottom:.75rem}
+p{color:#64748b;line-height:1.6;margin-bottom:1.5rem}
+a{display:inline-block;padding:.75rem 2rem;background:#0f172a;color:#fff;border-radius:.75rem;
+  text-decoration:none;font-weight:600;transition:background .2s}
+a:hover{background:#1e293b}
+</style>
+</head>
+<body>
+<div class="card">
+<div class="icon">⚠️</div>
+<h1>Something went wrong</h1>
+<p>We encountered an unexpected error processing your request. Our team has been notified. Please try again or return to the home page.</p>
+<a href="/">Go to Home Page</a>
+</div>
+</body>
+</html>""",
+            status=500, content_type="text/html",
+        )
 
 
 class LegacyBrowseRedirectMiddleware:
