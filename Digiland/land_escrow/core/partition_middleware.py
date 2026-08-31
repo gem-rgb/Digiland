@@ -113,6 +113,26 @@ def resolve_request_partition(request) -> str:
     return 'invalid'
 
 
+AUTH_GATE_EXEMPT_PATHS = (
+    '/staff/login/',
+    '/staff-login/',
+    '/staff/logout/',
+    '/staff/logout-to-login/',
+    '/admin/login/',
+    '/auth/admin-login/',
+    '/admin/logout/',
+    '/admin/logout-to-login/',
+    '/accounts/login/',
+    '/accounts/logout/',
+    '/auth/logout/',
+    '/accounts/signup/',
+    '/onboarding/select-role/',
+    '/auth/social/confirm/',
+    '/account/verification-pending/',
+    '/accounts/confirm-email/',
+)
+
+
 class PartitionIsolationMiddleware:
     """Middleware enforcing strict host validation, subdomain boundary defense, and role isolation."""
 
@@ -207,6 +227,10 @@ class PartitionIsolationMiddleware:
                         return HttpResponseRedirect(f"{PORTAL_URLS['marketing']}/")
 
         # ── 3. Authenticated Role-to-Portal Compatibility Enforcement ──
+        # All login/logout/auth gate pages must NEVER be cross-redirected or bounced
+        if any(path.startswith(prefix) for prefix in AUTH_GATE_EXEMPT_PATHS):
+            return self.get_response(request)
+
         user = getattr(request, 'user', None)
         if user and user.is_authenticated:
             user_role = getattr(user, 'role', '') or ('Admin' if user.is_superuser else '')
@@ -236,14 +260,18 @@ class PartitionIsolationMiddleware:
 
                 target_base = PORTAL_URLS.get(correct_portal, PORTAL_URLS['app'])
 
-                target_path = path
-                if path in ('/admin/dashboard/', '/staff/dashboard/', '/agent/dashboard/', '/surveyor/dashboard/'):
-                    if correct_portal == 'admin':
-                        target_path = '/admin/dashboard/'
-                    elif correct_portal == 'staff':
-                        target_path = '/staff/dashboard/'
+                # Always redirect to the canonical dashboard on the correct portal, never mirroring an invalid foreign path
+                if correct_portal == 'admin':
+                    target_path = '/admin/dashboard/'
+                elif correct_portal == 'staff':
+                    if user_role == 'Surveyor':
+                        target_path = '/surveyor/dashboard/'
+                    elif user_role == 'Lawyer':
+                        target_path = '/lawyer/dashboard/'
                     else:
-                        target_path = '/buyer/dashboard/'
+                        target_path = '/staff/dashboard/'
+                else:
+                    target_path = '/seller/dashboard/' if user_role == 'Seller' else '/buyer/dashboard/'
 
                 logger.warning(
                     f"[Partition Boundary Enforcement] User {user.email} ({user_role}) on '{portal}' portal redirected to '{correct_portal}' at {target_path}"

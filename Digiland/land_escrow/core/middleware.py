@@ -816,7 +816,10 @@ class MultiDomainRoutingMiddleware:
 
         # Production security gate for staff domain
         if domain_mode == 'staff':
-            if path.startswith('/admin/login/') or path.startswith('/auth/admin-login/') or path.startswith('/admin/'):
+            if path.startswith('/admin/login/') or path.startswith('/auth/admin-login/'):
+                admin_base = getattr(settings, 'ADMIN_DOMAIN', 'https://admin.digiland.co.ke').rstrip('/')
+                return redirect(f"{admin_base}/admin/login/")
+            if path.startswith('/admin/'):
                 from django.http import HttpResponseForbidden
                 return HttpResponseForbidden("<h1>403 Forbidden</h1><p>Administrative interfaces are only accessible via the dedicated admin portal.</p>")
             if path.startswith('/accounts/login/'):
@@ -824,11 +827,20 @@ class MultiDomainRoutingMiddleware:
             if path in {'/', '/staff/', '/staff'}:
                 if not request.user.is_authenticated or getattr(request.user, 'role', None) not in {'Agent', 'Lawyer', 'Land_Official', 'Surveyor'}:
                     return redirect('frontend:staff_login')
+                role = getattr(request.user, 'role', '')
+                if role == 'Surveyor':
+                    return redirect('frontend:surveyor_dashboard')
+                elif role == 'Lawyer':
+                    return redirect('frontend:lawyer_dashboard')
                 return redirect('frontend:agent_dashboard')
             # Allow login page, static assets, API routes, and operational paths through
             exempt = (
                 path.startswith('/staff/login/')
                 or path.startswith('/staff-login/')
+                or path.startswith('/staff/logout/')
+                or path.startswith('/staff/logout-to-login/')
+                or path.startswith('/accounts/logout/')
+                or path.startswith('/auth/logout/')
                 or path.startswith('/static/')
                 or path.startswith('/api/')
                 or path.startswith('/agent/')
@@ -864,6 +876,10 @@ class MultiDomainRoutingMiddleware:
             if not (
                 path.startswith('/admin/login/')
                 or path.startswith('/auth/admin-login/')
+                or path.startswith('/admin/logout/')
+                or path.startswith('/admin/logout-to-login/')
+                or path.startswith('/accounts/logout/')
+                or path.startswith('/auth/logout/')
                 or path.startswith('/admin/dashboard/')
                 or path.startswith('/static/')
                 or path.startswith('/api/')

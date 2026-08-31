@@ -626,6 +626,12 @@ def logout_to_staff_login(request):
     """Log the current user out and redirect straight to the staff login portal."""
     return direct_logout(request)
 
+
+def logout_to_admin_login(request):
+    """Log the current user out and redirect straight to the admin login portal."""
+    return direct_logout(request)
+
+
 def staff_login(request):
     """Staff login portal exclusively for EARB Agents, LSK Advocates/Lawyers, and ISLK Licensed Surveyors."""
     from django.contrib.auth import authenticate, login as auth_login
@@ -641,7 +647,23 @@ def staff_login(request):
     if request.user.is_authenticated:
         role = getattr(request.user, 'role', '')
         if role in {'Agent', 'Lawyer', 'Surveyor', 'Land_Official'}:
-            return redirect(next_url if next_url and next_url != reverse('frontend:staff_login') else reverse('frontend:staff_dashboard'))
+            if role == 'Surveyor':
+                default_target = reverse('frontend:surveyor_dashboard')
+            elif role == 'Lawyer':
+                default_target = reverse('frontend:lawyer_dashboard')
+            elif role == 'Land_Official':
+                default_target = reverse('frontend:official_dashboard')
+            else:
+                default_target = reverse('frontend:agent_dashboard')
+            target = next_url if (next_url and next_url not in (
+                reverse('frontend:staff_login'),
+                reverse('frontend:staff_dashboard'),
+                '/staff/dashboard/',
+                '/staff/login/',
+                '/staff-login/',
+                '/admin/login/',
+            )) else default_target
+            return redirect(target)
         else:
             info_message = f"Currently signed in as {request.user.email} ({role or 'Standard'}). Sign in below with a Staff account to access the workspace."
 
@@ -681,6 +703,11 @@ def staff_login(request):
             elif getattr(user, 'role', None) not in {'Agent', 'Lawyer', 'Surveyor', 'Land_Official'}:
                 error = f"Access restricted to licensed Agents, Advocates, Land Surveyors, and Field Staff. Account '{user.email}' has role '{user.role}'."
             else:
+                backend = getattr(user, 'backend', 'django.contrib.auth.backends.ModelBackend')
+                auth_login(request, user, backend=backend)
+                request.session['domain_mode'] = 'staff'
+                request.session.save()
+
                 # Determine role-specific destination
                 role = getattr(user, 'role', '')
                 if role == 'Surveyor':
@@ -692,7 +719,14 @@ def staff_login(request):
                 else:  # Agent / Field Staff
                     default_target = reverse('frontend:agent_dashboard')
 
-                target = next_url if (next_url and next_url not in (reverse('frontend:staff_login'), reverse('frontend:staff_dashboard'), '/staff/dashboard/', '/staff/login/')) else default_target
+                target = next_url if (next_url and next_url not in (
+                    reverse('frontend:staff_login'),
+                    reverse('frontend:staff_dashboard'),
+                    '/staff/dashboard/',
+                    '/staff/login/',
+                    '/staff-login/',
+                    '/admin/login/',
+                )) else default_target
                 return redirect(target)
 
     # Consume the "just signed up" session flag set by agent_signup_complete
@@ -718,7 +752,13 @@ def admin_login(request):
     if request.user.is_authenticated:
         role = getattr(request.user, 'role', '')
         if role == 'Admin' or request.user.is_superuser:
-            target = next_url if (next_url and next_url not in (reverse('frontend:admin_login'), '/admin/login/', '/admin/agent/dashboard/')) else reverse('frontend:admin_dashboard')
+            target = next_url if (next_url and next_url not in (
+                reverse('frontend:admin_login'),
+                '/admin/login/',
+                '/admin/dashboard/',
+                '/admin/agent/dashboard/',
+                '/staff/login/',
+            )) else reverse('frontend:admin_dashboard')
             return redirect(target)
         else:
             info_message = f"Currently signed in as {request.user.email} ({role or 'Standard'}). Sign in below with an Administrator account to access the Command Centre."
@@ -762,7 +802,13 @@ def admin_login(request):
                 auth_login(request, user, backend=backend)
                 request.session['domain_mode'] = 'admin'
                 request.session.save()
-                target = next_url if (next_url and next_url not in (reverse('frontend:admin_login'), '/admin/login/', '/admin/agent/dashboard/')) else reverse('frontend:admin_dashboard')
+                target = next_url if (next_url and next_url not in (
+                    reverse('frontend:admin_login'),
+                    '/admin/login/',
+                    '/admin/dashboard/',
+                    '/admin/agent/dashboard/',
+                    '/staff/login/',
+                )) else reverse('frontend:admin_dashboard')
                 return redirect(target)
 
     return render(request, 'frontend/admin_login.html', {

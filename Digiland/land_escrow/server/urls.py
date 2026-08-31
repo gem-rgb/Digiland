@@ -18,6 +18,7 @@ urlpatterns = [
     path('staff/login/', views.staff_login, name='staff_login'),
     path('staff/logout-to-login/', views.logout_to_staff_login, name='logout_to_staff_login'),
     path('admin/login/', views.admin_login, name='admin_login'),
+    path('admin/logout-to-login/', views.logout_to_admin_login, name='logout_to_admin_login'),
     path('auth/admin-login/', views.admin_login, name='admin_login_alias'),
     path('admin/dashboard/', views.admin_dashboard_view, name='admin_dashboard'),
     path('staff/dashboard/', views.agent_dashboard, name='staff_dashboard'),
