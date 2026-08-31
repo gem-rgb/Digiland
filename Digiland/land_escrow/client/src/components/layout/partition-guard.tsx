@@ -54,7 +54,7 @@ export const PartitionGuard: React.FC<PartitionGuardProps> = ({
               <Lock className="w-4 h-4" /> Digiland Partition Security Policy
             </div>
             <p className="text-xs leading-relaxed text-slate-400">
-              Digiland separates user roles into dedicated security partitions. Agents and Lawyers must use the Staff Portal, while Buyers and Sellers access the App Portal.
+              Digiland separates user roles into dedicated security partitions. Agents, Lawyers, and Surveyors must use the Staff Portal, while Buyers and Sellers access the App Portal.
             </p>
             <div className="pt-2 border-t border-slate-800 flex justify-between items-center text-xs">
               <span className="text-slate-500">Your Target Portal:</span>
