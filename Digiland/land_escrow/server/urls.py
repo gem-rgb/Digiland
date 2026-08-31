@@ -157,6 +157,7 @@ urlpatterns = [
     path('messages/thread/<uuid:partner_id>/', views.message_thread_detail, name='message_thread_detail'),
     path('messages/thread/<uuid:partner_id>/clear/', views.clear_message_thread, name='clear_message_thread'),
     path('onboarding/select-role/', views.onboarding_select_role, name='onboarding_select_role'),
+    path('auth/social/confirm/', views.social_auth_confirm, name='social_auth_confirm'),
     path('buyer/dashboard/', views.buyer_dashboard, name='buyer_dashboard'),
     path('seller/dashboard/', views.seller_dashboard, name='seller_dashboard'),
 

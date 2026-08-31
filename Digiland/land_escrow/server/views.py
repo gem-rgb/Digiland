@@ -730,6 +730,69 @@ def admin_login(request):
     })
 
 
+@login_required
+def social_auth_confirm(request):
+    """
+    OAuth Sign-In Confirmation Gate
+    Displays connected identity (Google / GitHub), role badge, and target workspace before redirecting.
+    """
+    user = request.user
+    role = getattr(user, 'role', '') or ('Admin' if user.is_superuser else 'Buyer')
+    is_local = (
+        request.get_host().split(':')[0].lower() in {'localhost', '127.0.0.1', 'testserver', '0.0.0.0'}
+        or getattr(settings, 'DEBUG', False)
+    )
+
+    # Determine social provider details
+    social_accounts = user.socialaccount_set.all() if hasattr(user, 'socialaccount_set') else []
+    social_info = {
+        'provider': 'Google',
+        'email': user.email,
+        'name': f"{user.first_name} {user.last_name}".strip() or user.email,
+        'avatar_url': '',
+    }
+    if social_accounts:
+        first_social = social_accounts[0]
+        extra = first_social.extra_data or {}
+        social_info = {
+            'provider': first_social.provider.title(),
+            'email': extra.get('email', user.email),
+            'name': extra.get('name') or f"{user.first_name} {user.last_name}".strip() or user.email,
+            'avatar_url': extra.get('picture') or extra.get('avatar_url') or '',
+        }
+
+    # Determine destination URL based on role
+    if role in {'Agent', 'Lawyer', 'Surveyor', 'Land_Official'}:
+        target_url = "https://staff.digiland.co.ke/staff/dashboard/" if not is_local else reverse('frontend:agent_dashboard')
+        portal_name = "Staff Workspace"
+        portal_icon = "shield-check"
+    elif role == 'Admin' or user.is_superuser:
+        target_url = "https://admin.digiland.co.ke/admin/dashboard/" if not is_local else reverse('frontend:admin_dashboard')
+        portal_name = "Admin Command Centre"
+        portal_icon = "lock"
+    elif role == 'Seller':
+        target_url = "https://app.digiland.co.ke/seller/dashboard/" if not is_local else reverse('frontend:seller_dashboard')
+        portal_name = "Seller Dashboard & Listings"
+        portal_icon = "layout-grid"
+    else:
+        target_url = "https://app.digiland.co.ke/parcels/" if not is_local else reverse('frontend:parcel_list')
+        portal_name = "Buyer Marketplace & Escrow"
+        portal_icon = "compass"
+
+    # Immediate confirmation via button submit
+    if request.method == 'POST' or request.GET.get('confirmed') == '1':
+        return redirect(target_url)
+
+    return render(request, 'frontend/social_auth_confirm.html', {
+        'user': user,
+        'social_info': social_info,
+        'role': role,
+        'target_url': target_url,
+        'portal_name': portal_name,
+        'portal_icon': portal_icon,
+    })
+
+
 def csrf_failure(request, reason=""):
     """Graceful CSRF handler that returns JSON for API requests or redirects/renders for browser."""
     from django.shortcuts import redirect

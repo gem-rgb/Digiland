@@ -277,3 +277,10 @@ class RoleBasedSocialAccountAdapter(DefaultSocialAccountAdapter):
         user.is_email_verified = True
         user.save(update_fields=['is_email_verified'])
         return user
+
+    def get_login_redirect_url(self, request):
+        """Direct returning social login users to the OAuth confirmation gate before entering workspace."""
+        user = request.user
+        if not getattr(user, 'is_onboarded', False) and not getattr(user, 'role', None):
+            return reverse('frontend:onboarding_select_role')
+        return reverse('frontend:social_auth_confirm')
