@@ -7500,15 +7500,25 @@ def sponsored_ads(request):
 
 @login_required
 def onboarding_select_role(request):
+    host = request.get_host().split(':')[0].lower().strip()
+    is_local = host in {'localhost', '127.0.0.1', 'testserver', '0.0.0.0'} or getattr(settings, 'DEBUG', False)
+    app_base = "" if is_local else "https://app.digiland.co.ke"
+    staff_base = "" if is_local else "https://staff.digiland.co.ke"
+    admin_base = "" if is_local else "https://admin.digiland.co.ke"
+
     if request.user.role and getattr(request.user, 'is_onboarded', False):
         if request.user.role == 'Buyer':
-            return redirect('frontend:buyer_dashboard')
+            return redirect(f"{app_base}{reverse('frontend:buyer_dashboard')}")
         elif request.user.role == 'Seller':
-            return redirect('frontend:seller_dashboard')
+            return redirect(f"{app_base}{reverse('frontend:seller_dashboard')}")
+        elif request.user.role == 'Surveyor':
+            return redirect(f"{staff_base}{reverse('frontend:surveyor_dashboard')}")
+        elif request.user.role == 'Lawyer':
+            return redirect(f"{staff_base}{reverse('frontend:lawyer_dashboard')}")
         elif request.user.role == 'Agent':
-            return redirect('frontend:agent_signup_complete')
-        elif request.user.role == 'Admin':
-            return redirect('/admin/')
+            return redirect(f"{staff_base}{reverse('frontend:agent_dashboard')}")
+        elif request.user.role == 'Admin' or request.user.is_superuser:
+            return redirect(f"{admin_base}{reverse('frontend:admin_dashboard')}")
 
     if request.method == 'POST':
         role = (request.POST.get('role') or '').strip().title()
@@ -7517,9 +7527,9 @@ def onboarding_select_role(request):
             request.user.is_onboarded = True
             request.user.save(update_fields=['role', 'is_onboarded'])
             if role == 'Buyer':
-                return redirect('frontend:buyer_dashboard')
+                return redirect(f"{app_base}{reverse('frontend:buyer_dashboard')}")
             else:
-                return redirect('frontend:seller_dashboard')
+                return redirect(f"{app_base}{reverse('frontend:seller_dashboard')}")
 
     return render_react_shell(
         request,

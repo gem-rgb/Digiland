@@ -53,6 +53,7 @@ APP_ONLY_PREFIXES = (
     '/accounts/register/',
     '/checkout/',
     '/joint-groups/',
+    '/onboarding/',
 )
 
 STAFF_ONLY_PREFIXES = (
@@ -209,12 +210,19 @@ class PartitionIsolationMiddleware:
         user = getattr(request, 'user', None)
         if user and user.is_authenticated:
             user_role = getattr(user, 'role', '') or ('Admin' if user.is_superuser else '')
+            is_onboarded = getattr(user, 'is_onboarded', False)
+
+            # Un-onboarded / new signups must always be permitted on app portal and auth/onboarding endpoints
+            if not user_role or not is_onboarded:
+                if portal == 'app' or path.startswith('/onboarding/') or path.startswith('/auth/') or path.startswith('/api/onboarding/') or path == '/accounts/logout/':
+                    return self.get_response(request)
+
             allowed_roles = PORTAL_ROLE_MAP.get(portal, set())
 
             if portal == 'admin':
                 is_allowed = user_role == 'Admin' or user.is_superuser
             elif portal in ('app', 'staff'):
-                is_allowed = user_role in allowed_roles
+                is_allowed = user_role in allowed_roles or (portal == 'app' and not user_role)
             else:
                 is_allowed = True
 
@@ -223,6 +231,9 @@ class PartitionIsolationMiddleware:
                     'staff' if user_role in {'Agent', 'Lawyer', 'Surveyor', 'Land_Official'}
                     else ('admin' if (user_role == 'Admin' or user.is_superuser) else 'app')
                 )
+                if portal == correct_portal:
+                    return self.get_response(request)
+
                 target_base = PORTAL_URLS.get(correct_portal, PORTAL_URLS['app'])
 
                 target_path = path
@@ -232,7 +243,7 @@ class PartitionIsolationMiddleware:
                     elif correct_portal == 'staff':
                         target_path = '/staff/dashboard/'
                     else:
-                        target_path = '/dashboard/'
+                        target_path = '/buyer/dashboard/'
 
                 logger.warning(
                     f"[Partition Boundary Enforcement] User {user.email} ({user_role}) on '{portal}' portal redirected to '{correct_portal}' at {target_path}"

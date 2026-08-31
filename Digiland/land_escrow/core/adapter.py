@@ -86,23 +86,27 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
         """
         user = request.user
         host = request.get_host().split(':')[0].lower() if request else ""
-        is_local = host in {'localhost', '127.0.0.1'}
+        is_local = (not host) or host in {'localhost', '127.0.0.1', 'testserver', '0.0.0.0'} or getattr(settings, 'DEBUG', False)
 
         if user and user.is_authenticated:
-            # Check if this login was via social login and requires the Google confirmation interstitial
-            if request and (request.session.pop('social_login_confirm_pending', False) or getattr(request, '_social_login_active', False)):
-                app_base = "" if is_local else "https://app.digiland.co.ke"
-                return f"{app_base}{reverse('frontend:social_auth_confirm')}"
-
             if not getattr(user, "is_email_verified", False):
                 self._maybe_start_pending_session(request, user, flow="allauth-login")
                 self._maybe_send_login_verification_email(request, user, flow="allauth-login")
                 return reverse("account_verification_pending")
-            
-            # Un-onboarded users
+
+            # Un-onboarded / new signups must always choose their role first
             if not user.role or not getattr(user, "is_onboarded", False):
+                if request:
+                    request.session.pop('social_login_confirm_pending', None)
+                    if hasattr(request, '_social_login_active'):
+                        delattr(request, '_social_login_active')
                 app_base = "" if is_local else "https://app.digiland.co.ke"
                 return f"{app_base}{reverse('frontend:onboarding_select_role')}"
+
+            # Check if this login was via social login and requires the Google confirmation interstitial
+            if request and (request.session.pop('social_login_confirm_pending', False) or getattr(request, '_social_login_active', False)):
+                app_base = "" if is_local else "https://app.digiland.co.ke"
+                return f"{app_base}{reverse('frontend:social_auth_confirm')}"
 
             # Admin & Superusers -> admin.digiland.co.ke
             if user.role == 'Admin' or getattr(user, 'is_superuser', False) or getattr(user, 'is_staff', False):
@@ -114,20 +118,24 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
                 staff_base = "" if is_local else "https://staff.digiland.co.ke"
                 if user.role == 'Surveyor':
                     return f"{staff_base}{reverse('frontend:surveyor_dashboard')}"
+                elif user.role == 'Lawyer':
+                    return f"{staff_base}{reverse('frontend:lawyer_dashboard')}"
+                elif user.role == 'Land_Official':
+                    return f"{staff_base}{reverse('frontend:official_dashboard')}"
                 return f"{staff_base}{reverse('frontend:agent_dashboard')}"
 
             # Buyers -> app.digiland.co.ke
             if user.role == 'Buyer':
                 app_base = "" if is_local else "https://app.digiland.co.ke"
-                return f"{app_base}{reverse('frontend:parcel_list')}"
+                return f"{app_base}{reverse('frontend:buyer_dashboard')}"
 
             # Sellers -> app.digiland.co.ke
             if user.role == 'Seller':
                 app_base = "" if is_local else "https://app.digiland.co.ke"
-                return f"{app_base}{reverse('frontend:parcel_list')}"
+                return f"{app_base}{reverse('frontend:seller_dashboard')}"
 
             app_base = "" if is_local else "https://app.digiland.co.ke"
-            return f"{app_base}{reverse('frontend:parcel_list')}"
+            return f"{app_base}{reverse('frontend:buyer_dashboard')}"
 
         return super().get_login_redirect_url(request)
 
@@ -137,7 +145,7 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
         """
         user = request.user
         host = request.get_host().split(':')[0].lower() if request else ""
-        is_local = host in {'localhost', '127.0.0.1'}
+        is_local = (not host) or host in {'localhost', '127.0.0.1', 'testserver', '0.0.0.0'} or getattr(settings, 'DEBUG', False)
 
         if user and user.is_authenticated and not getattr(user, "is_email_verified", False):
             self._maybe_start_pending_session(request, user, flow="allauth-signup")
@@ -151,8 +159,16 @@ class RoleBasedAccountAdapter(DefaultAccountAdapter):
             staff_base = "" if is_local else "https://staff.digiland.co.ke"
             return f"{staff_base}{reverse('frontend:agent_signup_complete')}"
 
+        if user and user.role == 'Buyer':
+            app_base = "" if is_local else "https://app.digiland.co.ke"
+            return f"{app_base}{reverse('frontend:buyer_dashboard')}"
+
+        if user and user.role == 'Seller':
+            app_base = "" if is_local else "https://app.digiland.co.ke"
+            return f"{app_base}{reverse('frontend:seller_dashboard')}"
+
         app_base = "" if is_local else "https://app.digiland.co.ke"
-        return f"{app_base}{reverse('frontend:parcel_list')}"
+        return f"{app_base}{reverse('frontend:buyer_dashboard')}"
 
     def get_email_confirmation_url(self, request, emailconfirmation):
         """
@@ -288,11 +304,27 @@ class RoleBasedSocialAccountAdapter(DefaultSocialAccountAdapter):
         if request:
             request.session['social_login_confirm_pending'] = True
             setattr(request, '_social_login_active', True)
+        if getattr(sociallogin, 'user', None) and not getattr(sociallogin.user, 'is_email_verified', False):
+            sociallogin.user.is_email_verified = True
+            try:
+                sociallogin.user.save(update_fields=['is_email_verified'])
+            except Exception:
+                pass
         return super().pre_social_login(request, sociallogin)
 
     def get_login_redirect_url(self, request):
-        """Direct returning social login users to the OAuth confirmation gate before entering workspace."""
+        """Direct returning social login users to their target workspace, or onboarding if role is missing."""
         user = request.user
-        if not getattr(user, 'is_onboarded', False) and not getattr(user, 'role', None):
-            return reverse('frontend:onboarding_select_role')
-        return reverse('frontend:social_auth_confirm')
+        host = request.get_host().split(':')[0].lower() if request else ""
+        is_local = (not host) or host in {'localhost', '127.0.0.1', 'testserver', '0.0.0.0'} or getattr(settings, 'DEBUG', False)
+        app_base = "" if is_local else "https://app.digiland.co.ke"
+
+        # Un-onboarded / new signups must always choose their role first
+        if not user or not getattr(user, 'is_onboarded', False) or not getattr(user, 'role', None):
+            if request:
+                request.session.pop('social_login_confirm_pending', None)
+                if hasattr(request, '_social_login_active'):
+                    delattr(request, '_social_login_active')
+            return f"{app_base}{reverse('frontend:onboarding_select_role')}"
+
+        return f"{app_base}{reverse('frontend:social_auth_confirm')}"

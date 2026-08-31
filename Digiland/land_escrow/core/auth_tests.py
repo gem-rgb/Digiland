@@ -1003,3 +1003,96 @@ class TestCanonicalBackendHostMiddleware(TestCase):
             response.url,
             "http://127.0.0.1:8000/accounts/google/login/?next=/parcels/",
         )
+
+    @override_settings(TESTING=False, PUBLIC_BACKEND_URL="https://app.digiland.co.ke")
+    def test_production_requests_do_not_redirect_canonical_host(self):
+        from django.http import HttpResponse
+        from django.test import RequestFactory
+        from core.middleware import CanonicalBackendHostMiddleware
+
+        request = RequestFactory().get("/onboarding/select-role/", HTTP_HOST="app.digiland.co.ke")
+        middleware = CanonicalBackendHostMiddleware(lambda _request: HttpResponse("ok"))
+        response = middleware(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"ok")
+
+
+class TestOAuthOnboardingRedirects(TestCase):
+    """Ensure Google OAuth users correctly route to onboarding select role."""
+
+    def test_social_adapter_unonboarded_user_routes_to_onboarding(self):
+        from django.test import RequestFactory
+        from core.adapter import RoleBasedSocialAccountAdapter
+
+        user = _make_user(email="oauth-new-user@digiland.co.ke")
+        user.role = None
+        user.is_onboarded = False
+        user.save()
+
+        request = RequestFactory().get("/accounts/google/login/callback/", HTTP_HOST="app.digiland.co.ke")
+        request.user = user
+        request.session = {"social_login_confirm_pending": True}
+
+        adapter = RoleBasedSocialAccountAdapter()
+        redirect_url = adapter.get_login_redirect_url(request)
+
+        self.assertIn("/onboarding/select-role/", redirect_url)
+        self.assertNotIn("social_login_confirm_pending", request.session)
+
+    def test_social_adapter_onboarded_user_routes_to_confirm(self):
+        from django.test import RequestFactory
+        from core.adapter import RoleBasedSocialAccountAdapter
+
+        user = _make_user(email="oauth-existing-user@digiland.co.ke", role="Buyer")
+        user.is_onboarded = True
+        user.save()
+
+        request = RequestFactory().get("/accounts/google/login/callback/", HTTP_HOST="app.digiland.co.ke")
+        request.user = user
+        request.session = {"social_login_confirm_pending": True}
+
+        adapter = RoleBasedSocialAccountAdapter()
+        redirect_url = adapter.get_login_redirect_url(request)
+
+        self.assertIn("/auth/social/confirm/", redirect_url)
+
+    @override_settings(TESTING=False)
+    def test_email_verification_gate_allows_onboarding(self):
+        from django.http import HttpResponse
+        from django.test import RequestFactory
+        from core.middleware import EmailVerificationGateMiddleware
+
+        user = _make_user(email="unverified-onboarder@digiland.co.ke")
+        user.is_email_verified = False
+        user.save()
+
+        request = RequestFactory().get("/onboarding/select-role/", HTTP_HOST="app.digiland.co.ke")
+        request.user = user
+
+        middleware = EmailVerificationGateMiddleware(lambda _request: HttpResponse("ok"))
+        response = middleware(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"ok")
+
+    @override_settings(TESTING=False)
+    def test_onboarding_gate_allows_onboarding(self):
+        from django.http import HttpResponse
+        from django.test import RequestFactory
+        from core.middleware import OnboardingGateMiddleware
+
+        user = _make_user(email="unonboarded-gate@digiland.co.ke")
+        user.role = None
+        user.is_onboarded = False
+        user.save()
+
+        request = RequestFactory().get("/onboarding/select-role/", HTTP_HOST="app.digiland.co.ke")
+        request.user = user
+
+        middleware = OnboardingGateMiddleware(lambda _request: HttpResponse("ok"))
+        response = middleware(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"ok")
+

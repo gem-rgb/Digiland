@@ -121,10 +121,11 @@ class CanonicalBackendHostMiddleware:
         canonical_host = self._split_host_port(parsed.netloc)
         current_scheme = "https" if request.is_secure() else "http"
 
-        if current_host == canonical_host and current_scheme == parsed.scheme:
+        # Canonical host normalization is strictly for local dev aliases (localhost vs 127.0.0.1)
+        if current_host not in self.LOCAL_HOST_ALIASES:
             return self.get_response(request)
 
-        if current_host not in self.LOCAL_HOST_ALIASES and current_host != canonical_host:
+        if current_host == canonical_host and current_scheme == parsed.scheme:
             return self.get_response(request)
 
         target = urlunsplit(
@@ -143,6 +144,9 @@ EMAIL_VERIFICATION_EXEMPT_PREFIXES = (
     '/media/',
     '/accounts/',
     '/api/v1/auth/',
+    '/onboarding/',
+    '/api/onboarding/',
+    '/auth/',
 )
 
 EMAIL_VERIFICATION_EXEMPT_PATHS = {
@@ -700,9 +704,10 @@ ONBOARDING_EXEMPT_PREFIXES = (
     '/media/',
     '/accounts/',
     '/api/v1/auth/',
-    '/onboarding/select-role/',
-    '/api/onboarding/select-role/',
+    '/onboarding/',
+    '/api/onboarding/',
     '/api/auth/me/',
+    '/auth/',
 )
 
 ONBOARDING_EXEMPT_PATHS = {
