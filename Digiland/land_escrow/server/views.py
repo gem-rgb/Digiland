@@ -4762,7 +4762,14 @@ def messages_list(request):
     from django.db.models import Q
     from django.middleware.csrf import get_token
     from core.models import User as CoreUser
+    from core.services.messaging import migrate_orphan_messages, ConversationService, MessageService
     current_user = request.user
+
+    # Auto-migrate legacy orphan messages into conversations
+    try:
+        migrate_orphan_messages(current_user)
+    except Exception:
+        pass
 
     is_admin = getattr(current_user, 'role', None) == 'Admin' or getattr(current_user, 'is_superuser', False) or getattr(current_user, 'is_staff', False)
 
@@ -4781,6 +4788,14 @@ def messages_list(request):
             ).select_related('sender', 'receiver').order_by('-timestamp')
     except Exception:
         all_msgs = []
+
+    # Mark sent messages received by current_user as DELIVERED
+    try:
+        sent_to_me_ids = [m.id for m in all_msgs if m.receiver_id == current_user.id and m.status == 'SENT']
+        if sent_to_me_ids:
+            MessageService.mark_delivered(current_user, sent_to_me_ids)
+    except Exception:
+        pass
 
     # Aggregate into threads keyed by counterparty
     threads = {}
@@ -4840,31 +4855,55 @@ def message_thread_detail(request, partner_id):
     from django.middleware.csrf import get_token
     from core.models import User as CoreUser
     from django.http import JsonResponse
+    from core.services.messaging import ConversationService, MessageService
 
     user = request.user
     partner = get_object_or_404(CoreUser, id=partner_id)
     is_admin = getattr(user, 'role', None) == 'Admin' or getattr(user, 'is_superuser', False) or getattr(user, 'is_staff', False)
 
+    # Pagination support
+    limit = int(request.GET.get('limit', 50))
+    before_id = request.GET.get('before_id')
+
+    conv, _ = ConversationService.get_or_create_direct_conversation(user, partner)
+
     if is_admin:
         admin_ids = list(CoreUser.objects.filter(Q(role='Admin') | Q(is_superuser=True)).values_list('id', flat=True))
         if user.id not in admin_ids:
             admin_ids.append(user.id)
-        messages = Message.objects.filter(
+        msg_qs = Message.objects.filter(
             (Q(sender=user) | Q(sender_id__in=admin_ids)) & Q(receiver=partner) |
-            (Q(receiver=user) | Q(receiver_id__in=admin_ids)) & Q(sender=partner)
+            (Q(receiver=user) | Q(receiver_id__in=admin_ids)) & Q(sender=partner) |
+            Q(conversation=conv)
         ).order_by('-timestamp')
     else:
-        messages = Message.objects.filter(
-            Q(sender=user, receiver=partner) | Q(sender=partner, receiver=user)
+        msg_qs = Message.objects.filter(
+            Q(conversation=conv) |
+            (Q(sender=user, receiver=partner) | Q(sender=partner, receiver=user))
         ).order_by('-timestamp')
 
-    # Mark as read
-    Message.objects.filter(sender=partner, receiver=user, is_read=False).update(is_read=True)
+    if before_id:
+        cursor_msg = Message.objects.filter(id=before_id).values('timestamp').first()
+        if cursor_msg:
+            msg_qs = msg_qs.filter(timestamp__lt=cursor_msg['timestamp'])
 
-    thread_data = serialize_message_thread(partner, messages, user) if messages else {
+    messages = list(msg_qs[:limit])
+
+    # Mark as read in database
+    try:
+        MessageService.mark_read(user, conv.id)
+    except Exception:
+        pass
+    Message.objects.filter(sender=partner, receiver=user, is_read=False).update(
+        is_read=True, status='READ', read_at=timezone.now()
+    )
+
+    thread_data = serialize_message_thread(partner, messages, user, conversation=conv) if messages else {
         'partner': serialize_user(partner),
+        'conversation_id': str(conv.id),
         'latest_timestamp': '',
         'count': 0,
+        'unread_count': 0,
         'url': reverse('frontend:message_thread_detail', args=[partner.id]),
         'messages': []
     }
@@ -4907,9 +4946,11 @@ def clear_message_thread(request, partner_id):
 
 @login_required
 def send_message(request):
+    import uuid as _uuid
     from core.models import User as CoreUser
     from django.http import JsonResponse
     from django.db.models import Q
+    from core.services.messaging import MessageService, ConversationService
 
     if request.method != 'POST':
         return redirect('frontend:messages')
@@ -4927,11 +4968,18 @@ def send_message(request):
         receiver_id = payload.get('receiver_id', '').strip()
         receiver_email = payload.get('receiver_email', '').strip()
         recipient_type = payload.get('recipient_type', 'single').strip()
+        client_message_id = payload.get('client_message_id', '').strip()
+        conversation_id = payload.get('conversation_id', '').strip()
     else:
         content = request.POST.get('content', '').strip()
         receiver_id = request.POST.get('receiver_id', '').strip()
         receiver_email = request.POST.get('receiver_email', '').strip()
         recipient_type = request.POST.get('recipient_type', 'single').strip()
+        client_message_id = request.POST.get('client_message_id', '').strip()
+        conversation_id = request.POST.get('conversation_id', '').strip()
+
+    if not client_message_id:
+        client_message_id = str(_uuid.uuid4())
 
     is_ajax = request.headers.get('accept') == 'application/json' or request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json'
 
@@ -4952,7 +5000,7 @@ def send_message(request):
             recipients = CoreUser.objects.filter(role='Agent').exclude(id=sender.id)
         
         for user in recipients:
-            Message.objects.create(sender=sender, receiver=user, content=content)
+            MessageService.send_legacy_message(sender, user, content)
         
         if is_ajax:
             return JsonResponse({'status': 'ok', 'count': len(recipients), 'type': recipient_type})
@@ -4976,27 +5024,57 @@ def send_message(request):
             except CoreUser.DoesNotExist:
                 receiver = CoreUser.objects.filter(email__icontains=clean_email).first()
 
-    if not receiver:
+    if not receiver and not conversation_id:
         if is_ajax:
             return JsonResponse({'error': f'Recipient not specified or not found ({receiver_email})'}, status=404)
         return redirect('frontend:messages')
 
-    msg = Message.objects.create(sender=sender, receiver=receiver, content=content)
+    if conversation_id:
+        msg = MessageService.send_message(
+            sender=sender,
+            conversation_id=conversation_id,
+            content=content,
+            client_message_id=client_message_id,
+        )
+        if not receiver:
+            receiver = msg.receiver
+    else:
+        msg = MessageService.send_legacy_message(
+            sender=sender,
+            receiver=receiver,
+            content=content,
+        )
     
+    # Schedule offline email alert if message is unread after 5 minutes
+    try:
+        from core.tasks import send_offline_message_email_task
+        send_offline_message_email_task.apply_async((str(msg.id),), countdown=300)
+    except Exception:
+        pass
+
     if is_ajax:
         return JsonResponse({
             'status': 'ok',
             'message': {
                 'id': str(msg.id),
+                'conversation_id': str(msg.conversation_id) if msg.conversation_id else '',
+                'sender_id': str(msg.sender_id),
                 'sender_email': msg.sender.email,
                 'content': msg.content,
                 'timestamp': msg.timestamp.strftime('%b %d, %Y %H:%M'),
                 'is_self': True,
+                'status': msg.status,
+                'client_message_id': msg.client_message_id,
             },
-            'partner': serialize_user(receiver),
+            'partner': serialize_user(receiver) if receiver else None,
         })
 
     return redirect('frontend:messages')
+
+
+# ── Real-Time Streaming View Imports ──────────────────────────────────────────
+from core.sse_views import message_stream, acknowledge_delivery
+
 
 @login_required
 def support_tickets(request):

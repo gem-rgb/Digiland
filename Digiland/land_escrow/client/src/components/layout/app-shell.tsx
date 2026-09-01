@@ -59,10 +59,36 @@ export function AppShell({
   activeNav,
 }: AppShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const currentRole = user?.role || 'Guest';
   const displayName = user?.full_name || (user?.email ? user.email.split('@')[0] : 'User');
   const userInitial = displayName.charAt(0).toUpperCase();
   const safeTitle = (title || 'Digiland').toLowerCase();
+
+  // Listen to SSE stream for live unread notification count
+  React.useEffect(() => {
+    if (!user) return;
+    let sse: EventSource | null = null;
+    try {
+      sse = new EventSource('/messages/stream/');
+      sse.addEventListener('connected', (evt: any) => {
+        try {
+          const d = JSON.parse(evt.data);
+          if (typeof d.unread_notifications === 'number') {
+            setUnreadNotifCount(d.unread_notifications);
+          }
+        } catch {}
+      });
+      sse.addEventListener('new_notification', () => {
+        setUnreadNotifCount((prev) => prev + 1);
+      });
+    } catch {}
+    return () => {
+      if (sse) sse.close();
+    };
+  }, [user]);
+
 
   // Core App Rail navigation icons tailored by role
   const allRailItems = [
@@ -256,6 +282,66 @@ export function AppShell({
               </a>
             ))}
 
+            {/* Quick Actions: Messages and Notifications */}
+            <div className="relative flex items-center gap-1">
+              <a
+                href="/messages/"
+                title="Messages"
+                className="relative flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
+              >
+                <MessageSquare className="h-4 w-4" />
+              </a>
+
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setNotifOpen(!notifOpen)}
+                  title="Notifications"
+                  className="relative flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
+                >
+                  <Bell className="h-4 w-4" />
+                  {unreadNotifCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-black text-white shadow-xs">
+                      {unreadNotifCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Notification Dropdown */}
+                {notifOpen && (
+                  <div className="absolute right-0 top-10 w-80 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl z-50 animate-in fade-in zoom-in-95">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                      <span className="text-xs font-bold text-slate-900">Notifications</span>
+                      <span className="text-[10px] font-semibold text-emerald-600">
+                        {unreadNotifCount} unread
+                      </span>
+                    </div>
+                    <div className="py-4 text-center text-xs text-slate-500">
+                      {unreadNotifCount === 0 ? (
+                        <div>
+                          <div className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 font-bold">
+                            ✓
+                          </div>
+                          You're all caught up!
+                        </div>
+                      ) : (
+                        <div className="text-left space-y-2">
+                          <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+                            <div className="text-xs font-bold text-slate-800">New notifications</div>
+                            <div className="text-[11px] text-slate-500">Check your messages and dashboard for real-time updates.</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                      <a href="/messages/" className="text-[11px] font-bold text-emerald-600 hover:underline">Open Messages</a>
+                      <button onClick={() => { setUnreadNotifCount(0); setNotifOpen(false); }} className="text-[11px] text-slate-400 hover:text-slate-600">Dismiss</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 text-xs">
               <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-xs" />
               <span className="font-bold text-slate-900">{displayName}</span>
@@ -263,6 +349,7 @@ export function AppShell({
                 {currentRole}
               </span>
             </div>
+
 
             <a
               href={logoutUrl || '/accounts/logout/'}

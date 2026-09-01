@@ -1,0 +1,16 @@
+{% extends "emails/base.html" %}
+{% block header_title %}<h1>Offer Accepted!</h1>{% endblock %}
+{% block content %}
+<h2>Great News — Your Offer Was Accepted!</h2>
+<p>Hello {{ buyer_name|default:"there" }},</p>
+<p>The seller has accepted your offer for <strong>{{ parcel_title|default:"the property" }}</strong>.</p>
+<table class="info-table">
+  <tr><td>Property</td><td>{{ parcel_title|default:"Listed Parcel" }}</td></tr>
+  <tr><td>Accepted Price</td><td><strong>KES {{ agreed_amount|default:"0.00" }}</strong></td></tr>
+  <tr><td>Next Step</td><td>Proceed to Escrow Deposit & Due Diligence</td></tr>
+</table>
+<p style="text-align: center;">
+  <a href="{{ action_url|default:'https://digiland.co.ke/buyer/dashboard/' }}" class="btn">Proceed to Escrow</a>
+</p>
+<p>Your funds will be held in Digiland's secure dual-signoff escrow until title verification and legal checks are complete.</p>
+{% endblock %}

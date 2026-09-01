@@ -795,21 +795,120 @@ class SupportTicket(models.Model):
     def __str__(self):
         return f"Ticket {self.subject} by {self.user.email}"
 
-class Message(models.Model):
+class Conversation(models.Model):
+    """Thread/conversation container for internal Digiland messaging."""
+    TYPE_CHOICES = [
+        ('DIRECT', 'Direct Message'),
+        ('TRANSACTION', 'Transaction Thread'),
+        ('ESCROW', 'Escrow Thread'),
+        ('VERIFICATION', 'Verification Thread'),
+        ('SUPPORT', 'Support Thread'),
+        ('STAFF', 'Staff Internal'),
+        ('GROUP', 'Group Conversation'),
+    ]
     tenant_id = models.UUIDField(db_index=True, null=True, blank=True, help_text='Organization tenant ID for row-level security isolation')
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    conversation_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='DIRECT', db_index=True)
+    title = models.CharField(max_length=255, blank=True, default='')
+    # Linkable business objects
+    transaction = models.ForeignKey('Transaction', on_delete=models.SET_NULL, null=True, blank=True, related_name='conversations')
+    parcel = models.ForeignKey('LandParcel', on_delete=models.SET_NULL, null=True, blank=True, related_name='conversations')
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    last_message_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    deleted_at = models.DateTimeField(null=True, blank=True, help_text='Soft delete timestamp — null means active record')
+
+    class Meta:
+        ordering = ['-last_message_at', '-created_at']
+        indexes = [
+            models.Index(fields=['tenant_id', 'conversation_type', 'is_active'], name='idx_conv_tenant_type_active'),
+            models.Index(fields=['transaction'], name='idx_conv_transaction'),
+            models.Index(fields=['parcel'], name='idx_conv_parcel'),
+        ]
+
+    def __str__(self):
+        return f"Conversation {self.id} ({self.conversation_type})"
+
+
+class ConversationParticipant(models.Model):
+    """Membership in a conversation."""
+    ROLE_CHOICES = [
+        ('MEMBER', 'Member'),
+        ('ADMIN', 'Admin'),
+        ('OBSERVER', 'Observer'),
+    ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='participants')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversation_memberships')
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='MEMBER')
+    joined_at = models.DateTimeField(auto_now_add=True)
+    last_read_message_id = models.UUIDField(null=True, blank=True, help_text='ID of the last message read by this participant')
+    last_read_at = models.DateTimeField(null=True, blank=True)
+    muted = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('conversation', 'user')
+        indexes = [
+            models.Index(fields=['user', 'is_active'], name='idx_convpart_user_active'),
+            models.Index(fields=['conversation', 'is_active'], name='idx_convpart_conv_active'),
+        ]
+
+    def __str__(self):
+        return f"{self.user.email} in {self.conversation_id} ({self.role})"
+
+
+class Message(models.Model):
+    MESSAGE_TYPE_CHOICES = [
+        ('TEXT', 'Text Message'),
+        ('SYSTEM', 'System Message'),
+        ('NOTIFICATION', 'Notification'),
+    ]
+    STATUS_CHOICES = [
+        ('SENDING', 'Sending'),
+        ('SENT', 'Sent'),
+        ('DELIVERED', 'Delivered'),
+        ('READ', 'Read'),
+        ('FAILED', 'Failed'),
+    ]
+    tenant_id = models.UUIDField(db_index=True, null=True, blank=True, help_text='Organization tenant ID for row-level security isolation')
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Conversation-based messaging (preferred)
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages_in_conversation', null=True, blank=True, db_index=True)
+    # Legacy direct sender/receiver (kept for backward compatibility)
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
-    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages', null=True, blank=True)
     transaction = models.ForeignKey(Transaction, on_delete=models.CASCADE, related_name='messages', null=True, blank=True)
     content = models.TextField()
+    message_type = models.CharField(max_length=15, choices=MESSAGE_TYPE_CHOICES, default='TEXT')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='SENT', db_index=True)
+    # Delivery tracking
     is_read = models.BooleanField(default=False)
+    delivered_at = models.DateTimeField(null=True, blank=True)
+    read_at = models.DateTimeField(null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+    edited_at = models.DateTimeField(null=True, blank=True)
+    # Idempotency & threading
+    client_message_id = models.CharField(max_length=64, blank=True, default='', db_index=True, help_text='Client-generated ID to prevent duplicate sends')
+    reply_to = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='replies')
+    metadata = models.JSONField(default=dict, blank=True)
 
     updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True, help_text='Soft delete timestamp — null means active record')
     updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='%(class)s_updates', help_text='Last user who modified this record')
+
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['conversation', 'timestamp'], name='idx_msg_conv_time'),
+            models.Index(fields=['sender', 'receiver', 'timestamp'], name='idx_msg_sender_recv_time'),
+            models.Index(fields=['client_message_id'], name='idx_msg_client_id'),
+        ]
+
     def __str__(self):
-        return f"From {self.sender.email} to {self.receiver.email}"
+        receiver_email = self.receiver.email if self.receiver else 'conversation'
+        return f"From {self.sender.email} to {receiver_email}"
 
 
 class ParcelView(models.Model):
@@ -2862,4 +2961,113 @@ class AccountAuditEvent(models.Model):
     def __str__(self):
         actor_email = self.actor.email if self.actor else 'System'
         return f"[{self.timestamp}] {actor_email} -> {self.action} on {self.resource_type}:{self.resource_id or ''}"
+
+
+class Notification(models.Model):
+    """Unified notification record for in-app, email, and future SMS delivery.
+
+    This model tracks every notification the platform sends, regardless of
+    channel. It stores the provider response (e.g. Resend message ID) and
+    delivery status so that administrators can audit notification health.
+    """
+    CHANNEL_CHOICES = [
+        ('IN_APP', 'In-App'),
+        ('EMAIL', 'Email'),
+        ('SMS', 'SMS'),
+    ]
+    STATUS_CHOICES = [
+        ('QUEUED', 'Queued'),
+        ('SENDING', 'Sending'),
+        ('SENT', 'Sent'),
+        ('DELIVERED', 'Delivered'),
+        ('BOUNCED', 'Bounced'),
+        ('FAILED', 'Failed'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    notification_type = models.CharField(max_length=60, db_index=True, help_text='E.g. ACCOUNT_ACTIVATION, PASSWORD_RESET, NEW_OFFER')
+    channel = models.CharField(max_length=6, choices=CHANNEL_CHOICES, db_index=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='QUEUED', db_index=True)
+
+    # Content
+    title = models.CharField(max_length=255, blank=True, default='')
+    body = models.TextField(blank=True, default='')
+    action_url = models.URLField(blank=True, default='', help_text='Deep-link URL for the notification action')
+
+    # Provider tracking
+    provider = models.CharField(max_length=30, blank=True, default='', help_text='E.g. resend, twilio')
+    provider_message_id = models.CharField(max_length=200, blank=True, default='', db_index=True)
+    idempotency_key = models.CharField(max_length=100, blank=True, default='', db_index=True, help_text='Prevents duplicate sends for the same event')
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    delivered_at = models.DateTimeField(null=True, blank=True)
+    failed_at = models.DateTimeField(null=True, blank=True)
+    read_at = models.DateTimeField(null=True, blank=True, help_text='When the in-app notification was read')
+
+    # Retry tracking
+    retry_count = models.PositiveSmallIntegerField(default=0)
+    last_error = models.TextField(blank=True, default='')
+    metadata = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'channel', 'status'], name='idx_notif_user_ch_status'),
+            models.Index(fields=['notification_type', 'created_at'], name='idx_notif_type_created'),
+            models.Index(fields=['provider_message_id'], name='idx_notif_provider_msg_id'),
+            models.Index(fields=['idempotency_key'], name='idx_notif_idemp_key'),
+            models.Index(fields=['user', 'read_at'], name='idx_notif_user_read'),
+        ]
+
+    def __str__(self):
+        return f"{self.notification_type} → {self.user.email} ({self.channel}/{self.status})"
+
+
+class SecurityEvent(models.Model):
+    """Immutable audit log for security-sensitive actions.
+
+    Records login attempts, account state changes, password operations,
+    MFA events, and suspicious activity for security monitoring.
+    """
+    EVENT_TYPE_CHOICES = [
+        ('LOGIN_SUCCESS', 'Login Success'),
+        ('LOGIN_FAILED', 'Login Failed'),
+        ('ACCOUNT_LOCKED', 'Account Locked'),
+        ('ACCOUNT_UNLOCKED', 'Account Unlocked'),
+        ('PASSWORD_RESET_REQUESTED', 'Password Reset Requested'),
+        ('PASSWORD_CHANGED', 'Password Changed'),
+        ('EMAIL_VERIFIED', 'Email Verified'),
+        ('ACTIVATION_REQUESTED', 'Activation Requested'),
+        ('SUSPICIOUS_LOGIN', 'Suspicious Login'),
+        ('2FA_ENABLED', '2FA Enabled'),
+        ('2FA_DISABLED', '2FA Disabled'),
+        ('2FA_FAILED', '2FA Failed'),
+        ('SESSION_REVOKED', 'Session Revoked'),
+        ('ACCOUNT_SUSPENDED', 'Account Suspended'),
+        ('ACCOUNT_RESTORED', 'Account Restored'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='security_events')
+    email = models.EmailField(blank=True, default='', db_index=True, help_text='Email used in the event (captured even if user is null)')
+    event_type = models.CharField(max_length=30, choices=EVENT_TYPE_CHOICES, db_index=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True, default='')
+    metadata = models.JSONField(default=dict, blank=True, help_text='Additional context such as failure reason, device info')
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'event_type', 'created_at'], name='idx_secev_user_type_time'),
+            models.Index(fields=['email', 'event_type', 'created_at'], name='idx_secev_email_type_time'),
+            models.Index(fields=['ip_address', 'created_at'], name='idx_secev_ip_time'),
+        ]
+
+    def __str__(self):
+        who = self.email or (self.user.email if self.user else 'unknown')
+        return f"[{self.created_at}] {self.event_type} — {who}"
 

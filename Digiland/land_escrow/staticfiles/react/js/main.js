@@ -23644,6 +23644,12 @@ var Banknote = createLucideIcon("Banknote", [
   ["path", { d: "M6 12h.01M18 12h.01", key: "113zkx" }]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/bell.js
+var Bell = createLucideIcon("Bell", [
+  ["path", { d: "M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9", key: "1qo2s2" }],
+  ["path", { d: "M10.3 21a1.94 1.94 0 0 0 3.4 0", key: "qgo35s" }]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/briefcase.js
 var Briefcase = createLucideIcon("Briefcase", [
   ["path", { d: "M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16", key: "jecpp" }],
@@ -23702,6 +23708,12 @@ var ChartColumn = createLucideIcon("ChartColumn", [
   ["path", { d: "M18 17V9", key: "2bz60n" }],
   ["path", { d: "M13 17V5", key: "1frdt8" }],
   ["path", { d: "M8 17v-3", key: "17ska0" }]
+]);
+
+// node_modules/lucide-react/dist/esm/icons/check-check.js
+var CheckCheck = createLucideIcon("CheckCheck", [
+  ["path", { d: "M18 6 7 17l-5-5", key: "116fxf" }],
+  ["path", { d: "m22 10-7.5 7.5L13 16", key: "ke71qq" }]
 ]);
 
 // node_modules/lucide-react/dist/esm/icons/check.js
@@ -27822,10 +27834,35 @@ function AppShell({
   activeNav
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = (0, import_react6.useState)(false);
+  const [notifOpen, setNotifOpen] = (0, import_react6.useState)(false);
+  const [unreadNotifCount, setUnreadNotifCount] = (0, import_react6.useState)(0);
   const currentRole = user?.role || "Guest";
   const displayName = user?.full_name || (user?.email ? user.email.split("@")[0] : "User");
   const userInitial = displayName.charAt(0).toUpperCase();
   const safeTitle = (title || "Digiland").toLowerCase();
+  import_react6.default.useEffect(() => {
+    if (!user) return;
+    let sse = null;
+    try {
+      sse = new EventSource("/messages/stream/");
+      sse.addEventListener("connected", (evt) => {
+        try {
+          const d = JSON.parse(evt.data);
+          if (typeof d.unread_notifications === "number") {
+            setUnreadNotifCount(d.unread_notifications);
+          }
+        } catch {
+        }
+      });
+      sse.addEventListener("new_notification", () => {
+        setUnreadNotifCount((prev) => prev + 1);
+      });
+    } catch {
+    }
+    return () => {
+      if (sse) sse.close();
+    };
+  }, [user]);
   const allRailItems = [
     {
       label: "Dashboard",
@@ -27938,7 +27975,28 @@ function AppShell({
       className: "hidden sm:inline-flex h-8 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-200/80 px-3 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100"
     },
     action.label
-  )), /* @__PURE__ */ import_react6.default.createElement("div", { className: "flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 text-xs" }, /* @__PURE__ */ import_react6.default.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-500 shadow-xs" }), /* @__PURE__ */ import_react6.default.createElement("span", { className: "font-bold text-slate-900" }, displayName), /* @__PURE__ */ import_react6.default.createElement("span", { className: "rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800" }, currentRole)), /* @__PURE__ */ import_react6.default.createElement(
+  )), /* @__PURE__ */ import_react6.default.createElement("div", { className: "relative flex items-center gap-1" }, /* @__PURE__ */ import_react6.default.createElement(
+    "a",
+    {
+      href: "/messages/",
+      title: "Messages",
+      className: "relative flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
+    },
+    /* @__PURE__ */ import_react6.default.createElement(MessageSquare, { className: "h-4 w-4" })
+  ), /* @__PURE__ */ import_react6.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react6.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => setNotifOpen(!notifOpen),
+      title: "Notifications",
+      className: "relative flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
+    },
+    /* @__PURE__ */ import_react6.default.createElement(Bell, { className: "h-4 w-4" }),
+    unreadNotifCount > 0 && /* @__PURE__ */ import_react6.default.createElement("span", { className: "absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-black text-white shadow-xs" }, unreadNotifCount)
+  ), notifOpen && /* @__PURE__ */ import_react6.default.createElement("div", { className: "absolute right-0 top-10 w-80 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl z-50 animate-in fade-in zoom-in-95" }, /* @__PURE__ */ import_react6.default.createElement("div", { className: "flex items-center justify-between pb-2 border-b border-slate-100" }, /* @__PURE__ */ import_react6.default.createElement("span", { className: "text-xs font-bold text-slate-900" }, "Notifications"), /* @__PURE__ */ import_react6.default.createElement("span", { className: "text-[10px] font-semibold text-emerald-600" }, unreadNotifCount, " unread")), /* @__PURE__ */ import_react6.default.createElement("div", { className: "py-4 text-center text-xs text-slate-500" }, unreadNotifCount === 0 ? /* @__PURE__ */ import_react6.default.createElement("div", null, /* @__PURE__ */ import_react6.default.createElement("div", { className: "mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 font-bold" }, "\u2713"), "You're all caught up!") : /* @__PURE__ */ import_react6.default.createElement("div", { className: "text-left space-y-2" }, /* @__PURE__ */ import_react6.default.createElement("div", { className: "p-2 rounded-xl bg-slate-50 border border-slate-100" }, /* @__PURE__ */ import_react6.default.createElement("div", { className: "text-xs font-bold text-slate-800" }, "New notifications"), /* @__PURE__ */ import_react6.default.createElement("div", { className: "text-[11px] text-slate-500" }, "Check your messages and dashboard for real-time updates.")))), /* @__PURE__ */ import_react6.default.createElement("div", { className: "pt-2 border-t border-slate-100 flex items-center justify-between" }, /* @__PURE__ */ import_react6.default.createElement("a", { href: "/messages/", className: "text-[11px] font-bold text-emerald-600 hover:underline" }, "Open Messages"), /* @__PURE__ */ import_react6.default.createElement("button", { onClick: () => {
+    setUnreadNotifCount(0);
+    setNotifOpen(false);
+  }, className: "text-[11px] text-slate-400 hover:text-slate-600" }, "Dismiss"))))), /* @__PURE__ */ import_react6.default.createElement("div", { className: "flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 text-xs" }, /* @__PURE__ */ import_react6.default.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-500 shadow-xs" }), /* @__PURE__ */ import_react6.default.createElement("span", { className: "font-bold text-slate-900" }, displayName), /* @__PURE__ */ import_react6.default.createElement("span", { className: "rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800" }, currentRole)), /* @__PURE__ */ import_react6.default.createElement(
     "a",
     {
       href: logoutUrl || "/accounts/logout/",
@@ -36809,6 +36867,9 @@ function MessagesPage() {
   const [newChatRole, setNewChatRole] = (0, import_react38.useState)("single");
   const [modalSearch, setModalSearch] = (0, import_react38.useState)("");
   const [modalRoleFilter, setModalRoleFilter] = (0, import_react38.useState)("All");
+  const [connectionState, setConnectionState] = (0, import_react38.useState)("connecting");
+  const [isLoadingEarlier, setIsLoadingEarlier] = (0, import_react38.useState)(false);
+  const [hasEarlierMessages, setHasEarlierMessages] = (0, import_react38.useState)(true);
   const chatBottomRef = (0, import_react38.useRef)(null);
   const activeThread = (0, import_react38.useMemo)(() => {
     return threads.find((t) => t.partner?.email && t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase());
@@ -36840,7 +36901,101 @@ function MessagesPage() {
     });
   }, [threads, searchQuery, roleFilter]);
   (0, import_react38.useEffect)(() => {
-    if (!selectedPartnerEmail || isChannelMode) return;
+    let sse = null;
+    let reconnectTimeout = null;
+    let isMounted = true;
+    function connect() {
+      try {
+        setConnectionState("connecting");
+        sse = new EventSource("/messages/stream/");
+        sse.addEventListener("connected", () => {
+          if (isMounted) setConnectionState("connected");
+        });
+        sse.addEventListener("ping", () => {
+          if (isMounted) setConnectionState("connected");
+        });
+        sse.addEventListener("new_message", (evt) => {
+          if (!isMounted) return;
+          try {
+            const parsed = JSON.parse(evt.data);
+            const incoming = parsed.message;
+            if (!incoming) return;
+            if (selectedPartnerEmail && incoming.sender_email && incoming.sender_email.toLowerCase() === selectedPartnerEmail.toLowerCase()) {
+              fetch("/messages/acknowledge/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-CSRFToken": page.csrf_token },
+                body: JSON.stringify({ message_ids: [incoming.id] })
+              }).catch(() => {
+              });
+            }
+            setThreads((prevThreads) => {
+              const partnerEmail = incoming.sender_email;
+              const isCurrent = partnerEmail && selectedPartnerEmail && partnerEmail.toLowerCase() === selectedPartnerEmail.toLowerCase();
+              const idx = prevThreads.findIndex(
+                (t) => t.partner?.email?.toLowerCase() === partnerEmail.toLowerCase()
+              );
+              if (idx >= 0) {
+                const thread = prevThreads[idx];
+                if (thread.messages.some((m) => m.id === incoming.id || m.client_message_id && m.client_message_id === incoming.client_message_id)) {
+                  return prevThreads;
+                }
+                const updated = {
+                  ...thread,
+                  count: thread.count + 1,
+                  unread_count: isCurrent ? 0 : (thread.unread_count || 0) + 1,
+                  latest_timestamp: incoming.timestamp,
+                  messages: [incoming, ...thread.messages]
+                };
+                const copy = [...prevThreads];
+                copy.splice(idx, 1);
+                return [updated, ...copy];
+              } else {
+                const newThread = {
+                  partner: {
+                    id: incoming.sender_id,
+                    email: incoming.sender_email,
+                    name: incoming.sender_email.split("@")[0],
+                    role: "User"
+                  },
+                  latest_timestamp: incoming.timestamp,
+                  count: 1,
+                  unread_count: isCurrent ? 0 : 1,
+                  url: `/messages/thread/${incoming.sender_id}/`,
+                  messages: [incoming]
+                };
+                return [newThread, ...prevThreads];
+              }
+            });
+          } catch (err) {
+            console.error("Error parsing SSE event:", err);
+          }
+        });
+        sse.onerror = () => {
+          if (isMounted) {
+            setConnectionState("connecting");
+            if (sse) {
+              sse.close();
+              sse = null;
+            }
+            reconnectTimeout = setTimeout(connect, 4e3);
+          }
+        };
+      } catch {
+        if (isMounted) {
+          setConnectionState("offline");
+          reconnectTimeout = setTimeout(connect, 8e3);
+        }
+      }
+    }
+    connect();
+    return () => {
+      isMounted = false;
+      if (sse) sse.close();
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+    };
+  }, [selectedPartnerEmail, page.csrf_token]);
+  (0, import_react38.useEffect)(() => {
+    if (!selectedPartnerEmail || isChannelMode || connectionState === "connected") return;
     const interval = setInterval(async () => {
       try {
         const partner = (page.allowed_recipients || []).find(
@@ -36875,24 +37030,62 @@ function MessagesPage() {
         }
       } catch {
       }
-    }, 6e3);
+    }, 1e4);
     return () => clearInterval(interval);
-  }, [selectedPartnerEmail, isChannelMode, page.allowed_recipients, activeThread?.partner?.id]);
+  }, [selectedPartnerEmail, isChannelMode, page.allowed_recipients, activeThread?.partner?.id, connectionState]);
+  const handleLoadEarlierMessages = async () => {
+    if (isLoadingEarlier || !activeThread?.messages?.length) return;
+    const oldest = activeThread.messages[activeThread.messages.length - 1];
+    if (!oldest?.id) return;
+    setIsLoadingEarlier(true);
+    try {
+      const partner = (page.allowed_recipients || []).find(
+        (r2) => r2.email && r2.email.toLowerCase() === selectedPartnerEmail.toLowerCase()
+      );
+      const partnerId = partner?.id || activeThread?.partner?.id;
+      if (!partnerId) return;
+      const resp = await fetch(`/messages/thread/${partnerId}/?before_id=${oldest.id}&limit=30`, {
+        headers: { "Accept": "application/json" }
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const older = data.thread?.messages || [];
+        if (older.length === 0) {
+          setHasEarlierMessages(false);
+        } else {
+          setThreads(
+            (prev) => prev.map(
+              (t) => t.partner?.email?.toLowerCase() === selectedPartnerEmail.toLowerCase() ? {
+                ...t,
+                messages: [...t.messages, ...older]
+              } : t
+            )
+          );
+        }
+      }
+    } catch {
+    } finally {
+      setIsLoadingEarlier(false);
+    }
+  };
   (0, import_react38.useEffect)(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activeThread?.messages, selectedPartnerEmail]);
+  }, [activeThread?.messages?.length, selectedPartnerEmail]);
   const handleSendMessage = async (contentToSend) => {
     const text = (contentToSend || inputMessage).trim();
     if (!text || !selectedPartnerEmail || isSending) return;
     setIsSending(true);
     setSendError(null);
+    const clientMsgId = `cmsg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const tempId = `temp-${Date.now()}`;
     const newMsg = {
       id: tempId,
       sender_email: bootstrap3.user?.email || "You",
       content: text,
       timestamp: "Just now",
-      is_self: true
+      is_self: true,
+      status: "SENDING",
+      client_message_id: clientMsgId
     };
     setThreads((prevThreads) => {
       const existing = prevThreads.find((t) => t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase());
@@ -36910,6 +37103,7 @@ function MessagesPage() {
           partner: selectedRecipient,
           latest_timestamp: "Just now",
           count: 1,
+          unread_count: 0,
           url: `/messages/`,
           messages: [newMsg]
         };
@@ -36928,7 +37122,8 @@ function MessagesPage() {
         body: JSON.stringify({
           receiver_email: selectedPartnerEmail,
           content: text,
-          recipient_type: "single"
+          recipient_type: "single",
+          client_message_id: clientMsgId
         })
       });
       if (!resp.ok) {
@@ -36942,7 +37137,9 @@ function MessagesPage() {
             if (t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase()) {
               return {
                 ...t,
-                messages: t.messages.map((m) => m.id === tempId ? data.message : m)
+                messages: t.messages.map(
+                  (m) => m.id === tempId || m.client_message_id && m.client_message_id === clientMsgId ? { ...data.message, status: data.message.status || "SENT" } : m
+                )
               };
             }
             return t;
@@ -36951,6 +37148,17 @@ function MessagesPage() {
       }
     } catch (err) {
       setSendError(err.message || "Could not send message. Please check connection.");
+      setThreads(
+        (prevThreads) => prevThreads.map((t) => {
+          if (t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase()) {
+            return {
+              ...t,
+              messages: t.messages.map((m) => m.id === tempId ? { ...m, status: "FAILED" } : m)
+            };
+          }
+          return t;
+        })
+      );
     } finally {
       setIsSending(false);
     }
@@ -37002,7 +37210,15 @@ function MessagesPage() {
       /* @__PURE__ */ import_react38.default.createElement("span", { className: cn("text-sm font-extrabold", isActive ? "text-emerald-400" : "text-slate-500") }, "#"),
       /* @__PURE__ */ import_react38.default.createElement("span", { className: "truncate" }, channel.name)
     );
-  }))), /* @__PURE__ */ import_react38.default.createElement("div", null, /* @__PURE__ */ import_react38.default.createElement("div", { className: "px-2 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center justify-between" }, /* @__PURE__ */ import_react38.default.createElement("span", null, "Direct Messages"), /* @__PURE__ */ import_react38.default.createElement("span", { className: "text-[9px] text-purple-400 font-bold" }, "Encrypted")), /* @__PURE__ */ import_react38.default.createElement("div", { className: "mt-1 space-y-1" }, filteredThreads.length === 0 ? /* @__PURE__ */ import_react38.default.createElement("div", { className: "px-3 py-4 text-center text-xs text-slate-500" }, "No active DMs yet.", /* @__PURE__ */ import_react38.default.createElement(
+  }))), /* @__PURE__ */ import_react38.default.createElement("div", null, /* @__PURE__ */ import_react38.default.createElement("div", { className: "px-2 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center justify-between" }, /* @__PURE__ */ import_react38.default.createElement("span", null, "Direct Messages"), /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-1.5" }, /* @__PURE__ */ import_react38.default.createElement("span", { className: "text-[9px] text-purple-400 font-bold" }, "Encrypted"), /* @__PURE__ */ import_react38.default.createElement(
+    "button",
+    {
+      onClick: () => setIsNewChatOpen(true),
+      title: "Start new conversation",
+      className: "flex h-5 w-5 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-slate-950 transition"
+    },
+    /* @__PURE__ */ import_react38.default.createElement(Plus, { className: "h-3.5 w-3.5" })
+  ))), /* @__PURE__ */ import_react38.default.createElement("div", { className: "mt-1 space-y-1" }, filteredThreads.length === 0 ? /* @__PURE__ */ import_react38.default.createElement("div", { className: "px-3 py-4 text-center text-xs text-slate-500" }, "No active DMs yet.", /* @__PURE__ */ import_react38.default.createElement(
     "button",
     {
       onClick: () => setIsNewChatOpen(true),
@@ -37030,9 +37246,15 @@ function MessagesPage() {
         )
       },
       /* @__PURE__ */ import_react38.default.createElement("div", { className: "relative shrink-0" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: cn("flex h-7 w-7 items-center justify-center rounded-lg text-xs font-black", avatar.bg) }, avatar.initial), /* @__PURE__ */ import_react38.default.createElement("span", { className: "absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-[#080b14] bg-emerald-500" })),
-      /* @__PURE__ */ import_react38.default.createElement("div", { className: "min-w-0 flex-1" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center justify-between gap-1" }, /* @__PURE__ */ import_react38.default.createElement("span", { className: cn("truncate text-xs font-bold", isSelected ? "text-white" : "text-slate-300") }, partnerName), /* @__PURE__ */ import_react38.default.createElement("span", { className: "text-[9px] text-slate-500 shrink-0" }, thread.latest_timestamp || "")), /* @__PURE__ */ import_react38.default.createElement("div", { className: "truncate text-[10px] text-slate-500" }, latestMsg?.content || "Direct conversation"))
+      /* @__PURE__ */ import_react38.default.createElement("div", { className: "min-w-0 flex-1" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center justify-between gap-1" }, /* @__PURE__ */ import_react38.default.createElement("span", { className: cn("truncate text-xs font-bold", isSelected ? "text-white" : "text-slate-300") }, partnerName), /* @__PURE__ */ import_react38.default.createElement("span", { className: "text-[9px] text-slate-500 shrink-0" }, thread.latest_timestamp || "")), /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center justify-between gap-1" }, /* @__PURE__ */ import_react38.default.createElement("span", { className: "truncate text-[10px] text-slate-500" }, latestMsg?.content || "Direct conversation"), Boolean(thread.unread_count && thread.unread_count > 0) && /* @__PURE__ */ import_react38.default.createElement("span", { className: "ml-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] font-black text-white shrink-0 shadow-xs" }, thread.unread_count)))
     );
-  })))), /* @__PURE__ */ import_react38.default.createElement("div", { className: "border-t border-white/[0.08] p-3 bg-[#06080e] flex items-center justify-between" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-2 min-w-0" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-xs font-black text-white shrink-0" }, bootstrap3.user?.email ? bootstrap3.user.email.charAt(0).toUpperCase() : "U"), /* @__PURE__ */ import_react38.default.createElement("div", { className: "min-w-0" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "truncate text-xs font-bold text-slate-200" }, bootstrap3.user?.email || "User"), /* @__PURE__ */ import_react38.default.createElement("div", { className: "text-[10px] text-emerald-400 font-medium capitalize" }, bootstrap3.user?.role || "Guest"))))), /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex flex-1 flex-col bg-[#0e1322]" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex h-14 items-center justify-between border-b border-white/[0.08] px-6 bg-[#0c101d]" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react38.default.createElement("span", { className: "text-xl font-extrabold text-emerald-400" }, isChannelMode ? "#" : "@"), /* @__PURE__ */ import_react38.default.createElement("div", null, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react38.default.createElement("h3", { className: "text-sm font-black text-white" }, isChannelMode ? currentChannel?.name : safeRecipientName), /* @__PURE__ */ import_react38.default.createElement(Badge, { tone: "outline", className: "bg-white/[0.04] text-[9px] uppercase font-bold py-0 text-slate-300" }, isChannelMode ? "Platform Channel" : safeRecipientRole)), /* @__PURE__ */ import_react38.default.createElement("div", { className: "text-[10px] text-slate-400 truncate max-w-xl" }, isChannelMode ? currentChannel?.topic : `Direct encrypted session \u2022 ${safeRecipientEmail}`))), /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-300" }, /* @__PURE__ */ import_react38.default.createElement(ShieldCheck, { className: "h-3.5 w-3.5" }), /* @__PURE__ */ import_react38.default.createElement("span", null, "Verified Protocol")))), /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex-1 overflow-y-auto p-6 space-y-6" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "relative flex items-center justify-center" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "absolute inset-0 flex items-center" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "w-full border-t border-white/[0.08]" })), /* @__PURE__ */ import_react38.default.createElement("span", { className: "relative rounded-full bg-[#13192a] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border border-white/[0.06]" }, "Official Escrow Session")), isChannelMode ? /* @__PURE__ */ import_react38.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-start gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-slate-950 font-black text-base shadow-lg shadow-emerald-500/20" }, "D"), /* @__PURE__ */ import_react38.default.createElement("div", { className: "min-w-0 flex-1 space-y-1.5" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react38.default.createElement("span", { className: "font-extrabold text-xs text-white" }, "Digiland Escrow Protocol"), /* @__PURE__ */ import_react38.default.createElement("span", { className: "rounded bg-emerald-500/20 px-1.5 py-0.2 text-[9px] font-black uppercase text-emerald-300" }, "TEAM"), /* @__PURE__ */ import_react38.default.createElement("span", { className: "text-[10px] text-slate-500" }, "Today at 10:00 AM")), /* @__PURE__ */ import_react38.default.createElement("div", { className: "text-xs text-slate-300 leading-relaxed" }, "Welcome to ", /* @__PURE__ */ import_react38.default.createElement("strong", { className: "text-white" }, "#", currentChannel?.name), ". This official channel hosts protocol announcements, land title deed registry updates, and escrow settlement notifications across Kenya."), /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-1.5 pt-1" }, /* @__PURE__ */ import_react38.default.createElement("button", { className: "flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]" }, /* @__PURE__ */ import_react38.default.createElement("span", null, "\u{1F44D}"), " ", /* @__PURE__ */ import_react38.default.createElement("span", null, "12")), /* @__PURE__ */ import_react38.default.createElement("button", { className: "flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]" }, /* @__PURE__ */ import_react38.default.createElement("span", null, "\u{1F6E1}\uFE0F"), " ", /* @__PURE__ */ import_react38.default.createElement("span", null, "8")), /* @__PURE__ */ import_react38.default.createElement("button", { className: "flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]" }, /* @__PURE__ */ import_react38.default.createElement("span", null, "\u{1F1F0}\u{1F1EA}"), " ", /* @__PURE__ */ import_react38.default.createElement("span", null, "15"))))), /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-start gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-purple-600 text-white font-black text-base shadow-lg shadow-purple-500/20" }, "A"), /* @__PURE__ */ import_react38.default.createElement("div", { className: "min-w-0 flex-1 space-y-1.5" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react38.default.createElement("span", { className: "font-extrabold text-xs text-white" }, "Chief Escrow Officer"), /* @__PURE__ */ import_react38.default.createElement("span", { className: "rounded bg-purple-500/20 px-1.5 py-0.2 text-[9px] font-black uppercase text-purple-300" }, "ADMIN"), /* @__PURE__ */ import_react38.default.createElement("span", { className: "text-[10px] text-slate-500" }, "Today at 10:45 AM")), /* @__PURE__ */ import_react38.default.createElement("div", { className: "text-xs text-slate-300 leading-relaxed" }, "Sellers with pending parcel submissions: Please make sure your Survey Deed Plans and Land Registry Search Certificates (Form RL 26) are uploaded. Verification SLAs are currently under 24 hours."), /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-1.5 pt-1" }, /* @__PURE__ */ import_react38.default.createElement("button", { className: "flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]" }, /* @__PURE__ */ import_react38.default.createElement("span", null, "\u2705"), " ", /* @__PURE__ */ import_react38.default.createElement("span", null, "6")), /* @__PURE__ */ import_react38.default.createElement("button", { className: "flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]" }, /* @__PURE__ */ import_react38.default.createElement("span", null, "\u{1F525}"), " ", /* @__PURE__ */ import_react38.default.createElement("span", null, "4")))))) : !activeThread || !activeThread.messages || activeThread.messages.length === 0 ? (
+  })))), /* @__PURE__ */ import_react38.default.createElement("div", { className: "border-t border-white/[0.08] p-3 bg-[#06080e] flex items-center justify-between" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-2 min-w-0" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-xs font-black text-white shrink-0" }, bootstrap3.user?.email ? bootstrap3.user.email.charAt(0).toUpperCase() : "U"), /* @__PURE__ */ import_react38.default.createElement("div", { className: "min-w-0" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "truncate text-xs font-bold text-slate-200" }, bootstrap3.user?.email || "User"), /* @__PURE__ */ import_react38.default.createElement("div", { className: "text-[10px] text-emerald-400 font-medium capitalize" }, bootstrap3.user?.role || "Guest"))))), /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex flex-1 flex-col bg-[#0e1322]" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex h-14 items-center justify-between border-b border-white/[0.08] px-6 bg-[#0c101d]" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react38.default.createElement("span", { className: "text-xl font-extrabold text-emerald-400" }, isChannelMode ? "#" : "@"), /* @__PURE__ */ import_react38.default.createElement("div", null, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react38.default.createElement("h3", { className: "text-sm font-black text-white" }, isChannelMode ? currentChannel?.name : safeRecipientName), /* @__PURE__ */ import_react38.default.createElement(Badge, { tone: "outline", className: "bg-white/[0.04] text-[9px] uppercase font-bold py-0 text-slate-300" }, isChannelMode ? "Platform Channel" : safeRecipientRole)), /* @__PURE__ */ import_react38.default.createElement("div", { className: "text-[10px] text-slate-400 truncate max-w-xl" }, isChannelMode ? currentChannel?.topic : `Direct encrypted session \u2022 ${safeRecipientEmail}`))), /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: cn(
+    "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors",
+    connectionState === "connected" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" : connectionState === "connecting" ? "border-amber-500/40 bg-amber-500/10 text-amber-300" : "border-rose-500/40 bg-rose-500/10 text-rose-300"
+  ) }, /* @__PURE__ */ import_react38.default.createElement("span", { className: cn(
+    "h-1.5 w-1.5 rounded-full",
+    connectionState === "connected" ? "bg-emerald-400 animate-pulse" : connectionState === "connecting" ? "bg-amber-400 animate-ping" : "bg-rose-400"
+  ) }), /* @__PURE__ */ import_react38.default.createElement("span", null, connectionState === "connected" ? "Live Stream" : connectionState === "connecting" ? "Reconnecting..." : "Offline")), /* @__PURE__ */ import_react38.default.createElement("div", { className: "hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-300" }, /* @__PURE__ */ import_react38.default.createElement(ShieldCheck, { className: "h-3.5 w-3.5" }), /* @__PURE__ */ import_react38.default.createElement("span", null, "Verified Protocol")))), /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex-1 overflow-y-auto p-6 space-y-6" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "relative flex items-center justify-center" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "absolute inset-0 flex items-center" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "w-full border-t border-white/[0.08]" })), /* @__PURE__ */ import_react38.default.createElement("span", { className: "relative rounded-full bg-[#13192a] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border border-white/[0.06]" }, "Official Escrow Session")), isChannelMode ? /* @__PURE__ */ import_react38.default.createElement("div", { className: "space-y-6" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-start gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-slate-950 font-black text-base shadow-lg shadow-emerald-500/20" }, "D"), /* @__PURE__ */ import_react38.default.createElement("div", { className: "min-w-0 flex-1 space-y-1.5" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react38.default.createElement("span", { className: "font-extrabold text-xs text-white" }, "Digiland Escrow Protocol"), /* @__PURE__ */ import_react38.default.createElement("span", { className: "rounded bg-emerald-500/20 px-1.5 py-0.2 text-[9px] font-black uppercase text-emerald-300" }, "TEAM"), /* @__PURE__ */ import_react38.default.createElement("span", { className: "text-[10px] text-slate-500" }, "Today at 10:00 AM")), /* @__PURE__ */ import_react38.default.createElement("div", { className: "text-xs text-slate-300 leading-relaxed" }, "Welcome to ", /* @__PURE__ */ import_react38.default.createElement("strong", { className: "text-white" }, "#", currentChannel?.name), ". This official channel hosts protocol announcements, land title deed registry updates, and escrow settlement notifications across Kenya."), /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-1.5 pt-1" }, /* @__PURE__ */ import_react38.default.createElement("button", { className: "flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]" }, /* @__PURE__ */ import_react38.default.createElement("span", null, "\u{1F44D}"), " ", /* @__PURE__ */ import_react38.default.createElement("span", null, "12")), /* @__PURE__ */ import_react38.default.createElement("button", { className: "flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]" }, /* @__PURE__ */ import_react38.default.createElement("span", null, "\u{1F6E1}\uFE0F"), " ", /* @__PURE__ */ import_react38.default.createElement("span", null, "8")), /* @__PURE__ */ import_react38.default.createElement("button", { className: "flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]" }, /* @__PURE__ */ import_react38.default.createElement("span", null, "\u{1F1F0}\u{1F1EA}"), " ", /* @__PURE__ */ import_react38.default.createElement("span", null, "15"))))), /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-start gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-purple-600 text-white font-black text-base shadow-lg shadow-purple-500/20" }, "A"), /* @__PURE__ */ import_react38.default.createElement("div", { className: "min-w-0 flex-1 space-y-1.5" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ import_react38.default.createElement("span", { className: "font-extrabold text-xs text-white" }, "Chief Escrow Officer"), /* @__PURE__ */ import_react38.default.createElement("span", { className: "rounded bg-purple-500/20 px-1.5 py-0.2 text-[9px] font-black uppercase text-purple-300" }, "ADMIN"), /* @__PURE__ */ import_react38.default.createElement("span", { className: "text-[10px] text-slate-500" }, "Today at 10:45 AM")), /* @__PURE__ */ import_react38.default.createElement("div", { className: "text-xs text-slate-300 leading-relaxed" }, "Sellers with pending parcel submissions: Please make sure your Survey Deed Plans and Land Registry Search Certificates (Form RL 26) are uploaded. Verification SLAs are currently under 24 hours."), /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-1.5 pt-1" }, /* @__PURE__ */ import_react38.default.createElement("button", { className: "flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]" }, /* @__PURE__ */ import_react38.default.createElement("span", null, "\u2705"), " ", /* @__PURE__ */ import_react38.default.createElement("span", null, "6")), /* @__PURE__ */ import_react38.default.createElement("button", { className: "flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-bold text-slate-300 hover:bg-white/[0.08]" }, /* @__PURE__ */ import_react38.default.createElement("span", null, "\u{1F525}"), " ", /* @__PURE__ */ import_react38.default.createElement("span", null, "4")))))) : !activeThread || !activeThread.messages || activeThread.messages.length === 0 ? (
     /* Empty DM State */
     /* @__PURE__ */ import_react38.default.createElement("div", { className: "mx-auto my-auto max-w-md p-8 text-center space-y-4 rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-xl" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400" }, /* @__PURE__ */ import_react38.default.createElement(MessageSquare, { className: "h-7 w-7" })), /* @__PURE__ */ import_react38.default.createElement("div", null, /* @__PURE__ */ import_react38.default.createElement("h4", { className: "text-base font-extrabold text-white" }, "Direct channel with ", safeRecipientName), /* @__PURE__ */ import_react38.default.createElement("p", { className: "mt-1 text-xs text-slate-400 leading-relaxed" }, "Messages sent here are private and protected by Digiland escrow dual-signature mediation.")), /* @__PURE__ */ import_react38.default.createElement("div", { className: "space-y-2 pt-2" }, /* @__PURE__ */ import_react38.default.createElement("div", { className: "text-[10px] font-black uppercase tracking-widest text-slate-500" }, "Quick Suggestions"), /* @__PURE__ */ import_react38.default.createElement("div", { className: "grid gap-2" }, quickPrompts.map((prompt) => /* @__PURE__ */ import_react38.default.createElement(
       "button",
@@ -37046,7 +37268,15 @@ function MessagesPage() {
     )))))
   ) : (
     /* Active DM Messages Feed (Discord / Slack style) */
-    /* @__PURE__ */ import_react38.default.createElement("div", { className: "space-y-4" }, [...activeThread.messages || []].reverse().map((msg, idx) => {
+    /* @__PURE__ */ import_react38.default.createElement("div", { className: "space-y-4" }, activeThread.messages && activeThread.messages.length >= 30 && hasEarlierMessages && /* @__PURE__ */ import_react38.default.createElement("div", { className: "text-center py-2" }, /* @__PURE__ */ import_react38.default.createElement(
+      "button",
+      {
+        onClick: handleLoadEarlierMessages,
+        disabled: isLoadingEarlier,
+        className: "rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-1 text-xs font-semibold text-slate-300 hover:bg-white/[0.08] hover:text-white transition disabled:opacity-50"
+      },
+      isLoadingEarlier ? "Loading earlier messages..." : "\u2191 Load earlier messages"
+    )), [...activeThread.messages || []].reverse().map((msg, idx) => {
       const isSelf = Boolean(msg?.is_self);
       const senderEmail = isSelf ? bootstrap3.user?.email || "You" : safeRecipientEmail;
       const senderRole = isSelf ? bootstrap3.user?.role || "User" : safeRecipientRole;
@@ -37079,7 +37309,7 @@ function MessagesPage() {
             )
           },
           senderRole
-        ), /* @__PURE__ */ import_react38.default.createElement("span", { className: "text-[10px] text-slate-500 font-medium" }, msg?.timestamp || "")), /* @__PURE__ */ import_react38.default.createElement("div", { className: "text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-wrap" }, msg?.content || ""))
+        ), /* @__PURE__ */ import_react38.default.createElement("span", { className: "text-[10px] text-slate-500 font-medium flex items-center gap-1" }, msg?.timestamp || "", isSelf && /* @__PURE__ */ import_react38.default.createElement("span", { className: "inline-flex items-center" }, msg?.status === "SENDING" ? /* @__PURE__ */ import_react38.default.createElement(Clock3, { className: "h-2.5 w-2.5 text-slate-400 animate-pulse", title: "Sending..." }) : msg?.status === "READ" || msg?.is_read ? /* @__PURE__ */ import_react38.default.createElement(CheckCheck, { className: "h-3.5 w-3.5 text-emerald-400", title: "Read" }) : msg?.status === "DELIVERED" ? /* @__PURE__ */ import_react38.default.createElement(CheckCheck, { className: "h-3.5 w-3.5 text-slate-400", title: "Delivered" }) : /* @__PURE__ */ import_react38.default.createElement(Check, { className: "h-3 w-3 text-slate-400", title: "Sent" })))), /* @__PURE__ */ import_react38.default.createElement("div", { className: "text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-wrap" }, msg?.content || ""))
       );
     }), /* @__PURE__ */ import_react38.default.createElement("div", { ref: chatBottomRef }))
   )), /* @__PURE__ */ import_react38.default.createElement("div", { className: "border-t border-white/[0.08] bg-[#0a0e1a] p-4 space-y-2 shrink-0 z-20" }, sendError && /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-300" }, /* @__PURE__ */ import_react38.default.createElement(TriangleAlert, { className: "h-4 w-4 shrink-0" }), /* @__PURE__ */ import_react38.default.createElement("span", null, sendError)), /* @__PURE__ */ import_react38.default.createElement("div", { className: "flex items-center gap-2 text-[11px] text-slate-400" }, /* @__PURE__ */ import_react38.default.createElement(ShieldCheck, { className: "h-4 w-4 text-emerald-400 shrink-0" }), /* @__PURE__ */ import_react38.default.createElement("span", null, "This channel is escrow-secured \u2014 all communications are archived for transaction mediation.")), /* @__PURE__ */ import_react38.default.createElement(
@@ -38751,6 +38981,14 @@ lucide-react/dist/esm/icons/banknote.js:
    * See the LICENSE file in the root directory of this source tree.
    *)
 
+lucide-react/dist/esm/icons/bell.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
 lucide-react/dist/esm/icons/briefcase.js:
   (**
    * @license lucide-react v0.453.0 - ISC
@@ -38792,6 +39030,14 @@ lucide-react/dist/esm/icons/camera.js:
    *)
 
 lucide-react/dist/esm/icons/chart-column.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
+lucide-react/dist/esm/icons/check-check.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *

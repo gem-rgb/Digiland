@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowRight, ArrowLeft, ArrowDown, Banknote, BarChart3, Calendar, Camera, CheckCircle2, CircleCheckBig, Clock3, Compass, ExternalLink, Eye, FileBadge, FileCheck, FileSignature, FileText, Gavel, Grid2X2, Heart, HelpCircle, Landmark, LayoutDashboard, Layers, Lock, Mail, MapPin, Maximize2, MessageSquare, Navigation, Printer, ReceiptText, Search, ShieldAlert, ShieldCheck, Scale, Sparkles, Star, Ticket, Upload, UserCheck, Users, WalletCards, ShoppingCart, Briefcase, Send, CheckCheck, Plus, X, Trash2, User, Phone, Info, CornerDownLeft, Filter, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, ArrowRight, ArrowLeft, ArrowDown, Banknote, BarChart3, Calendar, Camera, Check, CheckCircle2, CircleCheckBig, Clock3, Compass, ExternalLink, Eye, FileBadge, FileCheck, FileSignature, FileText, Gavel, Grid2X2, Heart, HelpCircle, Landmark, LayoutDashboard, Layers, Lock, Mail, MapPin, Maximize2, MessageSquare, Navigation, Printer, ReceiptText, Search, ShieldAlert, ShieldCheck, Scale, Sparkles, Star, Ticket, Upload, UserCheck, Users, WalletCards, ShoppingCart, Briefcase, Send, CheckCheck, Plus, X, Trash2, User, Phone, Info, CornerDownLeft, Filter, Bell, Wifi, WifiOff, type LucideIcon } from 'lucide-react';
+
 import type { FormEvent, ReactNode } from 'react';
 import { readBootstrap } from './lib/bootstrap.js';
 import { AppShell } from './components/layout/app-shell.js';
@@ -4461,6 +4462,9 @@ function MessagesPage() {
   const [newChatRole, setNewChatRole] = useState('single');
   const [modalSearch, setModalSearch] = useState('');
   const [modalRoleFilter, setModalRoleFilter] = useState<'All' | 'Lawyer' | 'Agent' | 'Seller' | 'Buyer' | 'Admin'>('All');
+  const [connectionState, setConnectionState] = useState<'connected' | 'connecting' | 'offline'>('connecting');
+  const [isLoadingEarlier, setIsLoadingEarlier] = useState(false);
+  const [hasEarlierMessages, setHasEarlierMessages] = useState(true);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
   // Active thread lookup
@@ -4503,9 +4507,121 @@ function MessagesPage() {
     });
   }, [threads, searchQuery, roleFilter]);
 
-  // Background polling for real-time back-and-forth messaging updates
+  // Real-time SSE Connection for zero-latency messaging
   useEffect(() => {
-    if (!selectedPartnerEmail || isChannelMode) return;
+    let sse: EventSource | null = null;
+    let reconnectTimeout: any = null;
+    let isMounted = true;
+
+    function connect() {
+      try {
+        setConnectionState('connecting');
+        sse = new EventSource('/messages/stream/');
+
+        sse.addEventListener('connected', () => {
+          if (isMounted) setConnectionState('connected');
+        });
+
+        sse.addEventListener('ping', () => {
+          if (isMounted) setConnectionState('connected');
+        });
+
+        sse.addEventListener('new_message', (evt) => {
+          if (!isMounted) return;
+          try {
+            const parsed = JSON.parse(evt.data);
+            const incoming = parsed.message;
+            if (!incoming) return;
+
+            // Acknowledge receipt if from current active partner
+            if (
+              selectedPartnerEmail &&
+              incoming.sender_email &&
+              incoming.sender_email.toLowerCase() === selectedPartnerEmail.toLowerCase()
+            ) {
+              fetch('/messages/acknowledge/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': page.csrf_token },
+                body: JSON.stringify({ message_ids: [incoming.id] }),
+              }).catch(() => {});
+            }
+
+            setThreads((prevThreads) => {
+              const partnerEmail = incoming.sender_email;
+              const isCurrent = partnerEmail && selectedPartnerEmail && partnerEmail.toLowerCase() === selectedPartnerEmail.toLowerCase();
+
+              const idx = prevThreads.findIndex(
+                (t) => t.partner?.email?.toLowerCase() === partnerEmail.toLowerCase()
+              );
+
+              if (idx >= 0) {
+                const thread = prevThreads[idx];
+                // Prevent duplicate message entries
+                if (thread.messages.some((m) => m.id === incoming.id || (m.client_message_id && m.client_message_id === incoming.client_message_id))) {
+                  return prevThreads;
+                }
+                const updated = {
+                  ...thread,
+                  count: thread.count + 1,
+                  unread_count: isCurrent ? 0 : (thread.unread_count || 0) + 1,
+                  latest_timestamp: incoming.timestamp,
+                  messages: [incoming, ...thread.messages],
+                };
+                const copy = [...prevThreads];
+                copy.splice(idx, 1);
+                return [updated, ...copy];
+              } else {
+                const newThread = {
+                  partner: {
+                    id: incoming.sender_id,
+                    email: incoming.sender_email,
+                    name: incoming.sender_email.split('@')[0],
+                    role: 'User',
+                  },
+                  latest_timestamp: incoming.timestamp,
+                  count: 1,
+                  unread_count: isCurrent ? 0 : 1,
+                  url: `/messages/thread/${incoming.sender_id}/`,
+                  messages: [incoming],
+                };
+                return [newThread, ...prevThreads];
+              }
+            });
+          } catch (err) {
+            console.error('Error parsing SSE event:', err);
+          }
+        });
+
+        sse.onerror = () => {
+          if (isMounted) {
+            setConnectionState('connecting');
+            if (sse) {
+              sse.close();
+              sse = null;
+            }
+            reconnectTimeout = setTimeout(connect, 4000);
+          }
+        };
+      } catch {
+        if (isMounted) {
+          setConnectionState('offline');
+          reconnectTimeout = setTimeout(connect, 8000);
+        }
+      }
+    }
+
+    connect();
+
+    return () => {
+      isMounted = false;
+      if (sse) sse.close();
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+    };
+  }, [selectedPartnerEmail, page.csrf_token]);
+
+  // Fallback background polling (only runs when SSE is disconnected)
+  useEffect(() => {
+    if (!selectedPartnerEmail || isChannelMode || connectionState === 'connected') return;
     const interval = setInterval(async () => {
       try {
         const partner = (page.allowed_recipients || []).find(
@@ -4542,19 +4658,61 @@ function MessagesPage() {
           }
         }
       } catch {
-        // silent background poll
+        // silent
       }
-    }, 6000);
+    }, 10000);
 
     return () => clearInterval(interval);
-  }, [selectedPartnerEmail, isChannelMode, page.allowed_recipients, activeThread?.partner?.id]);
+  }, [selectedPartnerEmail, isChannelMode, page.allowed_recipients, activeThread?.partner?.id, connectionState]);
+
+  // Load earlier messages (pagination / infinite scroll)
+  const handleLoadEarlierMessages = async () => {
+    if (isLoadingEarlier || !activeThread?.messages?.length) return;
+    const oldest = activeThread.messages[activeThread.messages.length - 1];
+    if (!oldest?.id) return;
+
+    setIsLoadingEarlier(true);
+    try {
+      const partner = (page.allowed_recipients || []).find(
+        (r) => r.email && r.email.toLowerCase() === selectedPartnerEmail.toLowerCase()
+      );
+      const partnerId = partner?.id || activeThread?.partner?.id;
+      if (!partnerId) return;
+
+      const resp = await fetch(`/messages/thread/${partnerId}/?before_id=${oldest.id}&limit=30`, {
+        headers: { 'Accept': 'application/json' },
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const older = data.thread?.messages || [];
+        if (older.length === 0) {
+          setHasEarlierMessages(false);
+        } else {
+          setThreads((prev) =>
+            prev.map((t) =>
+              t.partner?.email?.toLowerCase() === selectedPartnerEmail.toLowerCase()
+                ? {
+                    ...t,
+                    messages: [...t.messages, ...older],
+                  }
+                : t
+            )
+          );
+        }
+      }
+    } catch {
+      // silent
+    } finally {
+      setIsLoadingEarlier(false);
+    }
+  };
 
   // Auto-scroll on active thread change or new messages
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeThread?.messages, selectedPartnerEmail]);
+  }, [activeThread?.messages?.length, selectedPartnerEmail]);
 
-  // Send message handler
+  // Send message handler with idempotency and optimistic UI
   const handleSendMessage = async (contentToSend?: string) => {
     const text = (contentToSend || inputMessage).trim();
     if (!text || !selectedPartnerEmail || isSending) return;
@@ -4562,6 +4720,7 @@ function MessagesPage() {
     setIsSending(true);
     setSendError(null);
 
+    const clientMsgId = `cmsg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const tempId = `temp-${Date.now()}`;
     const newMsg = {
       id: tempId,
@@ -4569,6 +4728,8 @@ function MessagesPage() {
       content: text,
       timestamp: 'Just now',
       is_self: true,
+      status: 'SENDING',
+      client_message_id: clientMsgId,
     };
 
     // Optimistic UI update
@@ -4590,6 +4751,7 @@ function MessagesPage() {
           partner: selectedRecipient,
           latest_timestamp: 'Just now',
           count: 1,
+          unread_count: 0,
           url: `/messages/`,
           messages: [newMsg],
         };
@@ -4611,6 +4773,7 @@ function MessagesPage() {
           receiver_email: selectedPartnerEmail,
           content: text,
           recipient_type: 'single',
+          client_message_id: clientMsgId,
         }),
       });
 
@@ -4621,13 +4784,17 @@ function MessagesPage() {
 
       const data = await resp.json();
       if (data.message) {
-        // Update temp message with server message id and timestamp
+        // Update temp message with server message id, status, and timestamp
         setThreads((prevThreads) =>
           prevThreads.map((t) => {
             if (t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase()) {
               return {
                 ...t,
-                messages: t.messages.map((m) => (m.id === tempId ? data.message : m)),
+                messages: t.messages.map((m) =>
+                  m.id === tempId || (m.client_message_id && m.client_message_id === clientMsgId)
+                    ? { ...data.message, status: data.message.status || 'SENT' }
+                    : m
+                ),
               };
             }
             return t;
@@ -4636,10 +4803,23 @@ function MessagesPage() {
       }
     } catch (err: any) {
       setSendError(err.message || 'Could not send message. Please check connection.');
+      // Mark as failed in UI
+      setThreads((prevThreads) =>
+        prevThreads.map((t) => {
+          if (t.partner.email.toLowerCase() === selectedPartnerEmail.toLowerCase()) {
+            return {
+              ...t,
+              messages: t.messages.map((m) => (m.id === tempId ? { ...m, status: 'FAILED' } : m)),
+            };
+          }
+          return t;
+        })
+      );
     } finally {
       setIsSending(false);
     }
   };
+
 
   // Helper avatar initials & color
   const getAvatarInfo = (email: string, role?: string) => {
@@ -4726,8 +4906,18 @@ function MessagesPage() {
             <div>
               <div className="px-2 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center justify-between">
                 <span>Direct Messages</span>
-                <span className="text-[9px] text-purple-400 font-bold">Encrypted</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] text-purple-400 font-bold">Encrypted</span>
+                  <button
+                    onClick={() => setIsNewChatOpen(true)}
+                    title="Start new conversation"
+                    className="flex h-5 w-5 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-slate-950 transition"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
+
               <div className="mt-1 space-y-1">
                 {filteredThreads.length === 0 ? (
                   <div className="px-3 py-4 text-center text-xs text-slate-500">
@@ -4776,10 +4966,18 @@ function MessagesPage() {
                             </span>
                             <span className="text-[9px] text-slate-500 shrink-0">{thread.latest_timestamp || ''}</span>
                           </div>
-                          <div className="truncate text-[10px] text-slate-500">
-                            {latestMsg?.content || 'Direct conversation'}
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="truncate text-[10px] text-slate-500">
+                              {latestMsg?.content || 'Direct conversation'}
+                            </span>
+                            {Boolean(thread.unread_count && thread.unread_count > 0) && (
+                              <span className="ml-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] font-black text-white shrink-0 shadow-xs">
+                                {thread.unread_count}
+                              </span>
+                            )}
                           </div>
                         </div>
+
                       </button>
                     );
                   })
@@ -4826,11 +5024,25 @@ function MessagesPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-300">
+              <div className={cn(
+                "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold border transition-colors",
+                connectionState === 'connected' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' :
+                connectionState === 'connecting' ? 'border-amber-500/40 bg-amber-500/10 text-amber-300' :
+                'border-rose-500/40 bg-rose-500/10 text-rose-300'
+              )}>
+                <span className={cn(
+                  'h-1.5 w-1.5 rounded-full',
+                  connectionState === 'connected' ? 'bg-emerald-400 animate-pulse' :
+                  connectionState === 'connecting' ? 'bg-amber-400 animate-ping' : 'bg-rose-400'
+                )} />
+                <span>{connectionState === 'connected' ? 'Live Stream' : connectionState === 'connecting' ? 'Reconnecting...' : 'Offline'}</span>
+              </div>
+              <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-300">
                 <ShieldCheck className="h-3.5 w-3.5" />
                 <span>Verified Protocol</span>
               </div>
             </div>
+
           </div>
 
           {/* Chat Stream Body */}
@@ -4936,6 +5148,19 @@ function MessagesPage() {
             ) : (
               /* Active DM Messages Feed (Discord / Slack style) */
               <div className="space-y-4">
+                {/* Pagination / Load earlier messages button */}
+                {activeThread.messages && activeThread.messages.length >= 30 && hasEarlierMessages && (
+                  <div className="text-center py-2">
+                    <button
+                      onClick={handleLoadEarlierMessages}
+                      disabled={isLoadingEarlier}
+                      className="rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-1 text-xs font-semibold text-slate-300 hover:bg-white/[0.08] hover:text-white transition disabled:opacity-50"
+                    >
+                      {isLoadingEarlier ? 'Loading earlier messages...' : '↑ Load earlier messages'}
+                    </button>
+                  </div>
+                )}
+
                 {[...(activeThread.messages || [])].reverse().map((msg, idx) => {
                   const isSelf = Boolean(msg?.is_self);
                   const senderEmail = isSelf ? (bootstrap.user?.email || 'You') : safeRecipientEmail;
@@ -4976,7 +5201,22 @@ function MessagesPage() {
                           >
                             {senderRole}
                           </span>
-                          <span className="text-[10px] text-slate-500 font-medium">{msg?.timestamp || ''}</span>
+                          <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
+                            {msg?.timestamp || ''}
+                            {isSelf && (
+                              <span className="inline-flex items-center">
+                                {msg?.status === 'SENDING' ? (
+                                  <Clock3 className="h-2.5 w-2.5 text-slate-400 animate-pulse" title="Sending..." />
+                                ) : msg?.status === 'READ' || msg?.is_read ? (
+                                  <CheckCheck className="h-3.5 w-3.5 text-emerald-400" title="Read" />
+                                ) : msg?.status === 'DELIVERED' ? (
+                                  <CheckCheck className="h-3.5 w-3.5 text-slate-400" title="Delivered" />
+                                ) : (
+                                  <Check className="h-3 w-3 text-slate-400" title="Sent" />
+                                )}
+                              </span>
+                            )}
+                          </span>
                         </div>
 
                         <div className="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
@@ -4989,6 +5229,7 @@ function MessagesPage() {
                 <div ref={chatBottomRef} />
               </div>
             )}
+
           </div>
 
           {/* Bottom Docked Input Box & Notice Banner */}

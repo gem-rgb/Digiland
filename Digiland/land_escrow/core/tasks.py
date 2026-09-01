@@ -354,3 +354,132 @@ def process_popup_ad_billing(self):
     except Exception as exc:
         logger.exception("process_popup_ad_billing failed")
         raise self.retry(exc=exc)
+
+
+# ── Notification & Communication Tasks ───────────────────────────────────────
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=30)
+def send_notification_task(
+    self,
+    user_id: str,
+    notification_type: str,
+    subject: str,
+    html_body: str,
+    text_body: str = '',
+    action_url: str = '',
+    idempotency_key: str = None,
+    metadata: dict = None,
+):
+    """
+    Celery background task to send an email notification via NotificationService.
+    Safely retries up to 3 times on transient delivery failures.
+    """
+    try:
+        from core.models import User
+        from core.services.notifications import NotificationService
+
+        user = User.objects.get(id=user_id)
+        notification = NotificationService.send_email(
+            user=user,
+            notification_type=notification_type,
+            subject=subject,
+            html_body=html_body,
+            text_body=text_body,
+            action_url=action_url,
+            idempotency_key=idempotency_key,
+            metadata=metadata or {},
+        )
+        if notification.status == 'FAILED':
+            logger.warning(
+                "send_notification_task: notification %s status is FAILED, retrying...",
+                notification.id,
+            )
+            raise RuntimeError(f"Email send failed: {notification.last_error}")
+        return str(notification.id)
+    except Exception as exc:
+        logger.exception("send_notification_task failed for user %s", user_id)
+        raise self.retry(exc=exc)
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=10)
+def process_resend_webhook_task(self, event_type: str, event_data: dict):
+    """
+    Process incoming Resend webhook events asynchronously.
+    Updates Notification records based on delivery, bounce, or complaint events.
+    """
+    try:
+        from core.services.notifications import NotificationService
+
+        email_id = event_data.get("email_id") or event_data.get("id")
+        if not email_id:
+            logger.warning("process_resend_webhook_task: missing email_id in event_data")
+            return None
+
+        status_map = {
+            "email.sent": "SENT",
+            "email.delivered": "DELIVERED",
+            "email.bounced": "BOUNCED",
+            "email.complained": "BOUNCED",
+            "email.delivery_delayed": "SENDING",
+        }
+        mapped_status = status_map.get(event_type)
+        if mapped_status:
+            NotificationService.update_from_webhook(
+                provider_message_id=email_id,
+                status=mapped_status,
+                metadata={"webhook_event": event_type, "webhook_payload": event_data},
+            )
+            logger.info("Resend webhook processed: %s -> %s for email %s", event_type, mapped_status, email_id)
+        return True
+    except Exception as exc:
+        logger.exception("process_resend_webhook_task failed")
+        raise self.retry(exc=exc)
+
+
+@shared_task(bind=True, max_retries=2, default_retry_delay=60)
+def send_offline_message_email_task(self, message_id: str):
+    """
+    Check if a message remains unread after a delay (e.g. 5 minutes).
+    If the recipient has not read it, send an email notification alerting them.
+    """
+    try:
+        from django.template.loader import render_to_string
+        from core.models import Message
+        from core.services.notifications import NotificationService
+
+        message = Message.objects.select_related('sender', 'receiver', 'conversation').filter(id=message_id).first()
+        if not message or not message.receiver:
+            return None
+
+        # If already read or deleted, do not email
+        if message.is_read or message.read_at or message.deleted_at:
+            return None
+
+        recipient = message.receiver
+        sender_name = message.sender.get_full_name() or message.sender.email
+        preview = message.content[:150] + ('...' if len(message.content) > 150 else '')
+        message_url = f"https://digiland.co.ke/messages/thread/{message.sender.id}/"
+
+        html_body = render_to_string("emails/new_message.html", {
+            "recipient_email": recipient.email,
+            "sender_name": sender_name,
+            "message_preview": preview,
+            "message_url": message_url,
+            "year": timezone.now().year,
+        })
+
+        NotificationService.send_email(
+            user=recipient,
+            notification_type="OFFLINE_MESSAGE_ALERT",
+            subject=f"New message from {sender_name} on Digiland",
+            html_body=html_body,
+            text_body=f"You have a new message from {sender_name} on Digiland:\n\n\"{preview}\"\n\nView it at: {message_url}",
+            action_url=message_url,
+            idempotency_key=f"offline_msg_{message.id}_{recipient.id}",
+            metadata={"message_id": str(message.id), "sender_id": str(message.sender.id)},
+        )
+        return True
+    except Exception as exc:
+        logger.exception("send_offline_message_email_task failed for message %s", message_id)
+        raise self.retry(exc=exc)
+

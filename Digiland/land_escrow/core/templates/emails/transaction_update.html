@@ -1,0 +1,19 @@
+{% extends "emails/base.html" %}
+{% block header_title %}<h1>{{ header_title|default:"Transaction Update" }}</h1>{% endblock %}
+{% block content %}
+<h2>{{ title|default:"Your Transaction Has Been Updated" }}</h2>
+<p>{{ message|default:"There is an update on your Digiland transaction." }}</p>
+{% if transaction_details %}
+<table class="info-table">
+  {% if transaction_details.parcel %}<tr><td>Property</td><td>{{ transaction_details.parcel }}</td></tr>{% endif %}
+  {% if transaction_details.status %}<tr><td>Status</td><td>{{ transaction_details.status }}</td></tr>{% endif %}
+  {% if transaction_details.amount %}<tr><td>Amount</td><td>KES {{ transaction_details.amount }}</td></tr>{% endif %}
+  {% if transaction_details.date %}<tr><td>Date</td><td>{{ transaction_details.date }}</td></tr>{% endif %}
+</table>
+{% endif %}
+{% if action_url %}
+<p style="text-align: center;">
+  <a href="{{ action_url }}" class="btn">View Transaction</a>
+</p>
+{% endif %}
+{% endblock %}

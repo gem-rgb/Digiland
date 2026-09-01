@@ -445,12 +445,14 @@ class SupportTicketAdmin(admin.ModelAdmin):
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
     list_display = (
-        'sender', 'receiver', 'transaction', 'is_read', 'timestamp'
+        'id', 'conversation', 'sender', 'receiver', 'status', 'message_type', 'is_read', 'timestamp'
     )
-    list_filter = ('is_read', 'timestamp')
+    list_filter = ('status', 'message_type', 'is_read', 'timestamp')
     search_fields = (
-        'sender__email', 'receiver__email', 'content'
+        'sender__email', 'receiver__email', 'content', 'client_message_id'
     )
+    readonly_fields = ('id', 'timestamp', 'delivered_at', 'read_at')
+
 
 # Register the models to the secure Offline Admin Vault
 admin.site.register(User, CustomUserAdmin)
@@ -538,4 +540,53 @@ class BuyerInterestCaseAdmin(admin.ModelAdmin):
     list_filter = ('status', 'payment_status')
     search_fields = ('interest_number', 'buyer__email', 'property__parcel_number')
     readonly_fields = ('interest_number', 'created_at', 'updated_at')
+
+
+# ── Internal Messaging & Communications Admin ────────────────────────────────
+
+from .models import Conversation, ConversationParticipant, Notification, SecurityEvent
+
+
+class ConversationParticipantInline(admin.TabularInline):
+    model = ConversationParticipant
+    extra = 0
+    fields = ('user', 'role', 'last_read_at', 'muted', 'is_active')
+    readonly_fields = ('joined_at',)
+
+
+@admin.register(Conversation)
+class ConversationAdmin(admin.ModelAdmin):
+    list_display = ('id', 'conversation_type', 'title', 'transaction', 'parcel', 'is_active', 'last_message_at', 'created_at')
+    list_filter = ('conversation_type', 'is_active', 'created_at')
+    search_fields = ('id', 'title', 'transaction__id', 'parcel__parcel_number')
+    readonly_fields = ('id', 'created_at', 'updated_at', 'last_message_at')
+    inlines = [ConversationParticipantInline]
+
+
+@admin.register(ConversationParticipant)
+class ConversationParticipantAdmin(admin.ModelAdmin):
+    list_display = ('id', 'conversation', 'user', 'role', 'joined_at', 'last_read_at', 'muted', 'is_active')
+    list_filter = ('role', 'is_active', 'muted')
+    search_fields = ('user__email', 'conversation__id')
+    readonly_fields = ('joined_at',)
+
+
+@admin.register(Notification)
+
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ('notification_type', 'user', 'channel', 'status', 'provider', 'created_at', 'sent_at', 'delivered_at')
+    list_filter = ('channel', 'status', 'provider', 'notification_type', 'created_at')
+    search_fields = ('user__email', 'notification_type', 'title', 'provider_message_id', 'idempotency_key')
+    readonly_fields = ('id', 'created_at', 'sent_at', 'delivered_at', 'failed_at', 'read_at')
+    ordering = ('-created_at',)
+
+
+@admin.register(SecurityEvent)
+class SecurityEventAdmin(admin.ModelAdmin):
+    list_display = ('event_type', 'email', 'user', 'ip_address', 'created_at')
+    list_filter = ('event_type', 'created_at')
+    search_fields = ('email', 'user__email', 'ip_address', 'user_agent')
+    readonly_fields = ('id', 'created_at', 'ip_address', 'user_agent', 'metadata')
+    ordering = ('-created_at',)
+
 

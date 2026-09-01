@@ -1,0 +1,15 @@
+{% extends "emails/base.html" %}
+{% block header_title %}<h1>Verify Your Email</h1>{% endblock %}
+{% block content %}
+<h2>Welcome to Digiland, {{ user_name|default:"there" }}!</h2>
+<p>Thank you for creating your Digiland account. To get started with secure land transactions, please verify your email address by clicking the button below.</p>
+<p style="text-align: center;">
+  <a href="{{ activation_url }}" class="btn">Verify Email Address</a>
+</p>
+<p>This verification link will expire in <strong>{{ expiry_hours|default:"24" }} hours</strong>.</p>
+<p>If the button above doesn't work, copy and paste this URL into your browser:</p>
+<p style="word-break: break-all; font-size: 13px; color: #6B7280; background: #F9FAFB; padding: 12px; border-radius: 6px;">{{ activation_url }}</p>
+<div class="alert-box">
+  <p>If you did not create an account on Digiland, please ignore this email. No account will be created.</p>
+</div>
+{% endblock %}

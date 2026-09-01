@@ -674,6 +674,22 @@ if ADMIN_USER_NAME and ADMIN_USER_EMAIL:
     ADMINS += [(f'{ADMIN_USER_NAME}', f'{ADMIN_USER_EMAIL}')]
     MANAGERS = ADMINS
 
+# ── Resend & Notification System Configuration ───────────────────────────────
+RESEND_API_KEY = config("RESEND_API_KEY", default="").strip()
+RESEND_FROM_EMAIL = config("RESEND_FROM_EMAIL", default="onboarding@resend.dev").strip()
+RESEND_FROM_NAME = config("RESEND_FROM_NAME", default="Digiland").strip()
+RESEND_WEBHOOK_SECRET = config("RESEND_WEBHOOK_SECRET", default="").strip()
+NOTIFICATION_EMAIL_PROVIDER = config("NOTIFICATION_EMAIL_PROVIDER", default="resend").strip()
+
+# Security Alert Thresholds
+FAILED_LOGIN_ALERT_THRESHOLD = config("FAILED_LOGIN_ALERT_THRESHOLD", cast=int, default=5)
+FAILED_LOGIN_ALERT_WINDOW_MINUTES = config("FAILED_LOGIN_ALERT_WINDOW_MINUTES", cast=int, default=15)
+
+import sys
+TESTING = 'test' in sys.argv
+
+
+
 # Paystack Configuration
 PAYSTACK_PUBLIC_KEY = config('PAYSTACK_PUBLIC_KEY', default='')
 PAYSTACK_SECRET_KEY = config('PAYSTACK_SECRET_KEY', default='')

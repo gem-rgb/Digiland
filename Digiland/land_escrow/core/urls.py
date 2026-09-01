@@ -3,6 +3,8 @@ from rest_framework.routers import DefaultRouter
 
 from . import views
 from . import api_views
+from . import sse_views
+from . import webhook_views
 
 router = DefaultRouter()
 router.register(r'land-parcels', views.LandParcelViewSet)
@@ -113,4 +115,10 @@ urlpatterns = [
 
     # ==================== PRICE PREDICTION ====================
     path('price-prediction/', api_views.price_prediction_api, name='price-prediction-api'),
+
+    # ==================== REALTIME MESSAGING & NOTIFICATIONS ====================
+    path('messages/stream/', sse_views.message_stream, name='messages-stream-api'),
+    path('messages/acknowledge/', sse_views.acknowledge_delivery, name='messages-acknowledge-api'),
+    path('webhooks/resend/', webhook_views.resend_webhook, name='resend-webhook'),
 ]
+

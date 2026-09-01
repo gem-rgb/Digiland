@@ -1,0 +1,16 @@
+{% extends "emails/base.html" %}
+{% block header_title %}<h1>Offer Status Update</h1>{% endblock %}
+{% block content %}
+<h2>Offer Update</h2>
+<p>Hello {{ buyer_name|default:"there" }},</p>
+<p>Your offer for <strong>{{ parcel_title|default:"the property" }}</strong> was not accepted by the seller at this time.</p>
+{% if reason %}
+<div class="alert-box">
+  <p><strong>Seller's note:</strong> {{ reason }}</p>
+</div>
+{% endif %}
+<p>Don't worry — there are many other verified parcels available on Digiland marketplace.</p>
+<p style="text-align: center;">
+  <a href="{{ action_url|default:'https://digiland.co.ke/parcels/' }}" class="btn">Explore Properties</a>
+</p>
+{% endblock %}

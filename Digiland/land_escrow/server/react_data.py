@@ -755,23 +755,39 @@ def serialize_messages(request):
     return [{'level': message.level_tag, 'text': str(message)} for message in get_messages(request)]
 
 
-def serialize_message_thread(partner, messages, user):
+def serialize_message_thread(partner, messages, user, conversation=None):
+    unread_count = 0
+    for m in messages:
+        if getattr(m, 'is_read', False) is False and getattr(m.sender, 'id', None) != getattr(user, 'id', None):
+            unread_count += 1
+
     return {
         'partner': serialize_user(partner),
+        'conversation_id': str(conversation.id) if conversation else (str(messages[0].conversation_id) if messages and getattr(messages[0], 'conversation_id', None) else ''),
         'latest_timestamp': messages[0].timestamp.strftime('%b %d, %Y') if messages else '',
         'count': len(messages),
+        'unread_count': unread_count,
         'url': reverse('frontend:message_thread_detail', args=[partner.id]),
         'messages': [
             {
                 'id': str(message.id),
+                'conversation_id': str(message.conversation_id) if getattr(message, 'conversation_id', None) else '',
+                'sender_id': str(message.sender_id),
                 'sender_email': message.sender.email,
                 'content': message.content,
                 'timestamp': message.timestamp.strftime('%b %d, %Y %H:%M'),
                 'is_self': getattr(message.sender, 'id', None) == getattr(user, 'id', None),
+                'status': getattr(message, 'status', 'READ' if getattr(message, 'is_read', False) else 'SENT'),
+                'is_read': getattr(message, 'is_read', False),
+                'read_at': message.read_at.strftime('%b %d, %Y %H:%M') if getattr(message, 'read_at', None) else None,
+                'delivered_at': message.delivered_at.strftime('%b %d, %Y %H:%M') if getattr(message, 'delivered_at', None) else None,
+                'client_message_id': getattr(message, 'client_message_id', '') or '',
+                'message_type': getattr(message, 'message_type', 'TEXT') or 'TEXT',
             }
             for message in messages
         ],
     }
+
 
 
 def serialize_support_ticket(ticket):

@@ -25,6 +25,19 @@ def send_agent_approval_email(agent):
     plain_message = strip_tags(html_message)
     
     try:
+        from core.services.notifications import NotificationService
+        NotificationService.send_email(
+            user=agent,
+            notification_type="AGENT_APPLICATION_APPROVED",
+            subject=subject,
+            html_body=html_message,
+            text_body=plain_message,
+            action_url=context.get('login_url', ''),
+        )
+    except Exception:
+        pass
+
+    try:
         send_mail(
             subject=subject,
             message=plain_message,
@@ -49,6 +62,18 @@ def send_agent_rejection_email(agent):
     html_message = render_to_string('emails/agent_rejection.html', context)
     plain_message = strip_tags(html_message)
     
+    try:
+        from core.services.notifications import NotificationService
+        NotificationService.send_email(
+            user=agent,
+            notification_type="AGENT_APPLICATION_REJECTED",
+            subject=subject,
+            html_body=html_message,
+            text_body=plain_message,
+        )
+    except Exception:
+        pass
+
     try:
         send_mail(
             subject=subject,
@@ -77,6 +102,19 @@ def send_task_assignment_email(agent, parcel):
     plain_message = strip_tags(html_message)
     
     try:
+        from core.services.notifications import NotificationService
+        NotificationService.send_email(
+            user=agent,
+            notification_type="TASK_ASSIGNED",
+            subject=subject,
+            html_body=html_message,
+            text_body=plain_message,
+            action_url=context.get('dashboard_url', ''),
+        )
+    except Exception:
+        pass
+
+    try:
         send_mail(
             subject=subject,
             message=plain_message,
@@ -103,11 +141,25 @@ def send_user_approval_email(user):
     plain_message = strip_tags(html_message)
     
     try:
+        from core.services.notifications import NotificationService
+        NotificationService.send_email(
+            user=user,
+            notification_type="USER_KYC_VERIFIED",
+            subject=subject,
+            html_body=html_message,
+            text_body=plain_message,
+            action_url=context.get('login_url', ''),
+        )
+    except Exception:
+        pass
+
+    try:
         send_mail(
             subject=subject,
             message=plain_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
+
             html_message=html_message,
             fail_silently=False,
         )

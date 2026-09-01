@@ -1,0 +1,17 @@
+{% extends "emails/base.html" %}
+{% block header_title %}<h1>New Offer Received</h1>{% endblock %}
+{% block content %}
+<h2>You Received an Offer!</h2>
+<p>Hello {{ seller_name|default:"there" }},</p>
+<p>A buyer has submitted a purchase offer for your property <strong>{{ parcel_title|default:"your property" }}</strong>.</p>
+<table class="info-table">
+  <tr><td>Property</td><td>{{ parcel_title|default:"Listed Parcel" }}</td></tr>
+  <tr><td>Offer Amount</td><td><strong>KES {{ offer_amount|default:"0.00" }}</strong></td></tr>
+  {% if buyer_name %}<tr><td>Buyer</td><td>{{ buyer_name }}</td></tr>{% endif %}
+  <tr><td>Date Submitted</td><td>{{ offer_date|default:"Today" }}</td></tr>
+</table>
+<p style="text-align: center;">
+  <a href="{{ action_url|default:'https://digiland.co.ke/seller/dashboard/' }}" class="btn">Review Offer</a>
+</p>
+<p>You can accept, reject, or counter this offer directly from your seller dashboard.</p>
+{% endblock %}
