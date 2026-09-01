@@ -367,6 +367,7 @@ class Transaction(models.Model):
     STATUS_CHOICES = [
         ('Initiated', 'Initiated'),
         ('Deposit_Paid', 'Deposit Paid'),
+        ('Payment_Confirmed', 'Payment Confirmed'),
         ('Under_Verification', 'Under Verification'),
         ('Verification_Hiatus', 'Verification Hiatus'),
         ('Completed', 'Completed'),
@@ -382,16 +383,38 @@ class Transaction(models.Model):
     agent = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='agent_transactions')
     land_parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='transactions')
     agreed_price = models.DecimalField(max_digits=14, decimal_places=2)
+    transaction_reference = models.CharField(
+        max_length=50,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Primary DigiLand transaction reference (e.g. DL-TXN-2026-000182)"
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Initiated')
-    escrow_reference = models.CharField(max_length=100, blank=True, null=True)
+    payment_reference = models.CharField(max_length=100, blank=True, null=True, help_text="Confirmed payment reference from provider (e.g. M-Pesa receipt, bank ref)")
+    escrow_reference = models.CharField(max_length=100, blank=True, null=True, help_text="Legacy reference column preserved for historical records")
     platform_service_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
-    escrow_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    coordination_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, help_text="Platform transaction & verification coordination fee")
+    escrow_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, help_text="Legacy fee column preserved for historical records")
     processing_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     legal_verification_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     due_diligence_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     include_legal_verification = models.BooleanField(default=False)
     include_due_diligence = models.BooleanField(default=False)
     total_payable = models.DecimalField(max_digits=14, decimal_places=2, default=0.00)
+
+    @property
+    def payment_reference_safe(self):
+        """Returns provider payment reference with fallback to historical escrow reference."""
+        return self.payment_reference or self.escrow_reference or ''
+
+    @property
+    def coordination_fee_safe(self):
+        """Returns platform coordination fee with fallback to historical fee."""
+        return self.coordination_fee or self.escrow_fee or 0.00
+
+
     
     buyer_signature = models.TextField(null=True, blank=True, help_text="Base64 encoded cryptographic signature graphic of the buyer")
     seller_signature = models.TextField(null=True, blank=True, help_text="Base64 encoded cryptographic signature graphic of the seller")
@@ -432,11 +455,24 @@ class Transaction(models.Model):
             models.Index(fields=['tenant_id', 'buyer', 'status'], name='idx_txn_tenant_buyer_sts'),
             models.Index(fields=['tenant_id', 'seller', 'status'], name='idx_txn_tenant_seller_sts'),
             models.Index(fields=['tenant_id', 'status'], name='idx_txn_tenant_status'),
-            models.Index(fields=['tenant_id', 'created_at'], name='idx_txn_tenant_crt_at'),
+            models.Index(fields=['transaction_reference'], name='idx_txn_reference'),
         ]
 
+    def save(self, *args, **kwargs):
+        if not self.transaction_reference:
+            from django.utils import timezone
+            import random
+            year = timezone.now().year
+            for _ in range(25):
+                candidate = f"DL-TXN-{year}-{random.randint(100000, 999999)}"
+                if not Transaction.objects.filter(transaction_reference=candidate).exists():
+                    self.transaction_reference = candidate
+                    break
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.id} - {self.status}"
+        ref = self.transaction_reference or str(self.id)[:8]
+        return f"{ref} - {self.status}"
     
     @property
     def is_in_verification_hiatus(self):
@@ -484,12 +520,15 @@ class Transaction(models.Model):
     
     def reverse_payment(self, admin_user, reason=""):
         """Initiate payment reversal by admin"""
-        from .services.payment import reverse_escrow_payment
+        try:
+            from .services.payment import reverse_payment as do_reverse
+        except ImportError:
+            from .services.payment import reverse_escrow_payment as do_reverse
         from django.utils import timezone
         import uuid
         
-        # Only allow reversal for transactions with paid deposits
-        if self.status not in ['Deposit_Paid', 'Under_Verification', 'Verification_Hiatus']:
+        # Only allow reversal for transactions with confirmed payments
+        if self.status not in ['Deposit_Paid', 'Payment_Confirmed', 'Under_Verification', 'Verification_Hiatus']:
             raise ValueError("Cannot reverse payment for transaction in status: {}".format(self.status))
         
         # Generate reversal reference
@@ -499,7 +538,8 @@ class Transaction(models.Model):
         self.reversal_initiated_at = timezone.now()
         
         # Initiate actual reversal via payment service
-        reversal_result = reverse_escrow_payment(self, reason)
+        reversal_result = do_reverse(self, reason)
+
         
         if reversal_result.get("status") == "success":
             self.status = 'Reversed'
@@ -800,7 +840,8 @@ class Conversation(models.Model):
     TYPE_CHOICES = [
         ('DIRECT', 'Direct Message'),
         ('TRANSACTION', 'Transaction Thread'),
-        ('ESCROW', 'Escrow Thread'),
+        ('TRANSACTION_PAYMENT', 'Payment & Transaction Thread'),
+        ('ESCROW', 'Payment & Transaction Thread (Legacy)'),
         ('VERIFICATION', 'Verification Thread'),
         ('SUPPORT', 'Support Thread'),
         ('STAFF', 'Staff Internal'),
@@ -1843,8 +1884,11 @@ class ServiceFee(models.Model):
 
     platform_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0,
                                        help_text='4% platform service fee')
+    coordination_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0,
+                                           help_text='2% transaction & verification coordination fee')
     escrow_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0,
-                                     help_text='2% escrow holding fee')
+                                     help_text='Legacy fee column preserved for historical records')
+
     processing_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0,
                                          help_text='Flat payment processing fee')
     verification_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0,
@@ -2153,7 +2197,7 @@ class SurveyAssignment(models.Model):
         ('LOW', 'Low'),
         ('NORMAL', 'Normal'),
         ('HIGH', 'High'),
-        ('URGENT', 'Urgent / Priority Escrow'),
+        ('URGENT', 'Urgent Priority'),
     ]
 
     SITE_VISIT_STATUS_CHOICES = [
@@ -2839,7 +2883,7 @@ class AccountDecision(models.Model):
         ('CHANGE_MANAGER', 'Change Team Manager / Leadership Succession'),
         ('CLOSE_ACCOUNT', 'Close Account / Liquidation'),
         ('SALE_AUTHORIZATION', 'Authorize Property Listing / Sale'),
-        ('EXPENSE_PAYMENT', 'Authorize Payment / Escrow Release'),
+        ('EXPENSE_PAYMENT', 'Authorize Professional Service Payment'),
         ('CUSTOM_PROPOSAL', 'Custom Group Proposal'),
     ]
     STATUS_CHOICES = [
@@ -3070,4 +3114,524 @@ class SecurityEvent(models.Model):
     def __str__(self):
         who = self.email or (self.user.email if self.user else 'unknown')
         return f"[{self.created_at}] {self.event_type} — {who}"
+
+
+# =============================================================================
+# TRUST & VERIFICATION INFRASTRUCTURE (NON-CUSTODIAL / NO ESCROW)
+# =============================================================================
+
+class PaymentRecord(models.Model):
+    """Immutable record of payment evidence from supported payment providers.
+    
+    DigiLand does NOT hold funds, maintain an internal wallet, or act as an escrow custodian.
+    This table stores provider-confirmed evidence (e.g. M-Pesa STK receipt, bank transfer ref)
+    and transaction status updates between transacting parties.
+    """
+    TYPE_CHOICES = [
+        ('DIRECT_SETTLEMENT', 'Direct Settlement (Buyer to Seller)'),
+        ('PLATFORM_COLLECTION', 'DigiLand Platform Collection'),
+        ('PROFESSIONAL_PAYMENT', 'Professional Direct Payment'),
+    ]
+
+    PURPOSE_CHOICES = [
+        ('LAND_PURCHASE', 'Land Purchase Consideration'),
+        ('DIGILAND_SERVICE_FEE', 'DigiLand Platform / Coordination Fee'),
+        ('SURVEY_FEE', 'Surveyor Verification Fee'),
+        ('LEGAL_FEE', 'Legal Conveyance Fee'),
+        ('INSPECTION_FEE', 'Physical Site Inspection Fee'),
+        ('ADDITIONAL_DUE_DILIGENCE_FEE', 'Additional Due Diligence Fee'),
+        ('OTHER', 'Other Service Fee'),
+    ]
+
+    BENEFICIARY_CHOICES = [
+        ('SELLER', 'Land Seller'),
+        ('DIGILAND', 'DigiLand Platform'),
+        ('SURVEYOR', 'Licensed Surveyor'),
+        ('ADVOCATE', 'Conveyancing Advocate'),
+        ('FIELD_AGENT', 'Field Inspection Agent'),
+        ('OTHER', 'Other Service Provider'),
+    ]
+
+    PROVIDER_CHOICES = [
+        ('MPESA', 'M-Pesa Daraja'),
+        ('BANK_TRANSFER', 'Bank Wire / RTGS'),
+        ('STRIPE', 'Card / Stripe'),
+        ('DIRECT_SETTLEMENT', 'Direct Party Settlement'),
+    ]
+
+    STATUS_CHOICES = [
+        ('CREATED', 'Created'),
+        ('PAYMENT_PENDING', 'Payment Pending'),
+        ('PAYMENT_INITIATED', 'Payment Initiated'),
+        ('CUSTOMER_ACTION_REQUIRED', 'Customer Action Required (STK Prompted)'),
+        ('PAYMENT_PROCESSING', 'Payment Processing'),
+        ('PAYMENT_CONFIRMED', 'Payment Confirmed by Provider'),
+        ('PAYMENT_FAILED', 'Payment Failed'),
+        ('PAYMENT_CANCELLED', 'Payment Cancelled'),
+        ('PAYMENT_EXPIRED', 'Payment Expired / Timed Out'),
+        ('PAYMENT_REVERSED', 'Payment Reversed'),
+        ('PAYMENT_DISPUTED', 'Payment Disputed'),
+        ('LEGACY_PAYMENT_RECORD', 'Preserved Legacy Payment Record'),
+        # Backward-compatibility aliases
+        ('INITIATED', 'Payment Initiated (Legacy)'),
+        ('PENDING_CONFIRMATION', 'Pending Provider Confirmation (Legacy)'),
+        ('CONFIRMED', 'Payment Confirmed by Provider (Legacy)'),
+        ('FAILED', 'Payment Failed (Legacy)'),
+        ('REVERSED', 'Payment Reversal Recorded (Legacy)'),
+        ('CANCELLED', 'Payment Cancelled (Legacy)'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    transaction = models.ForeignKey(Transaction, on_delete=models.CASCADE, related_name='payment_records')
+    parcel = models.ForeignKey(LandParcel, on_delete=models.SET_NULL, null=True, blank=True, related_name='payment_records')
+    payer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments_made')
+    recipient = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='payments_received')
+    
+    # Financial Separation & Routing
+    payment_type = models.CharField(max_length=40, choices=TYPE_CHOICES, default='DIRECT_SETTLEMENT', db_index=True)
+    payment_purpose = models.CharField(max_length=50, choices=PURPOSE_CHOICES, default='LAND_PURCHASE', db_index=True)
+    purpose = models.CharField(max_length=50, choices=PURPOSE_CHOICES, default='LAND_PURCHASE', db_index=True)
+    
+    # Beneficiary Specification
+    beneficiary_type = models.CharField(max_length=30, choices=BENEFICIARY_CHOICES, default='SELLER', db_index=True)
+    beneficiary_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='payments_as_beneficiary')
+    beneficiary_name = models.CharField(max_length=150, blank=True, default='')
+    service_type = models.CharField(max_length=50, blank=True, null=True, help_text="Specific service type e.g. LAND_SURVEY, TITLE_SEARCH, SITE_INSPECTION")
+    is_legacy_record = models.BooleanField(default=False, help_text="True if record is a preserved legacy entry")
+
+    payment_provider = models.CharField(max_length=50, choices=PROVIDER_CHOICES, default='MPESA')
+    provider_reference = models.CharField(max_length=100, blank=True, null=True, db_index=True, help_text="M-Pesa receipt, bank reference, or provider confirmation ID")
+    digiland_reference = models.CharField(max_length=100, unique=True, db_index=True, help_text="Unique DigiLand transaction reference")
+    
+    # Provider Request References
+    checkout_request_reference = models.CharField(max_length=100, blank=True, null=True, db_index=True, help_text="M-Pesa Daraja CheckoutRequestID")
+    merchant_request_reference = models.CharField(max_length=100, blank=True, null=True, help_text="M-Pesa Daraja MerchantRequestID")
+    account_reference = models.CharField(max_length=100, blank=True, null=True, help_text="Account reference sent to provider")
+
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    currency = models.CharField(max_length=10, default='KES')
+    
+    # Status Machine
+    status = models.CharField(max_length=40, choices=STATUS_CHOICES, default='CREATED', db_index=True)
+    payment_status = models.CharField(max_length=40, choices=STATUS_CHOICES, default='CREATED', db_index=True)
+    
+    initiated_at = models.DateTimeField(null=True, blank=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    failed_at = models.DateTimeField(null=True, blank=True)
+    failure_reason = models.TextField(blank=True, null=True)
+
+    evidence_metadata = models.JSONField(default=dict, blank=True, help_text="Raw provider callback evidence, IPN headers, receipt tokens (no wallet balance)")
+    notes = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['digiland_reference'], name='idx_pmt_dgl_ref'),
+            models.Index(fields=['provider_reference'], name='idx_pmt_prov_ref'),
+            models.Index(fields=['checkout_request_reference'], name='idx_pmt_chk_ref'),
+            models.Index(fields=['transaction', 'status'], name='idx_pmt_txn_status_v2'),
+            models.Index(fields=['payer', 'status'], name='idx_pmt_pyr_status_v2'),
+            models.Index(fields=['purpose', 'status'], name='idx_pmt_purp_status'),
+            models.Index(fields=['payment_type', 'status'], name='idx_pmt_type_status'),
+            models.Index(fields=['beneficiary_type', 'status'], name='idx_pmt_ben_status'),
+        ]
+
+    def save(self, *args, **kwargs):
+        # Synchronize payment_status and status
+        if self.status:
+            self.payment_status = self.status
+        elif self.payment_status:
+            self.status = self.payment_status
+
+        # Synchronize purpose and payment_purpose
+        if self.payment_purpose and not self.purpose:
+            self.purpose = self.payment_purpose
+        elif self.purpose and not self.payment_purpose:
+            self.payment_purpose = self.purpose
+        elif self.payment_purpose:
+            self.purpose = self.payment_purpose
+
+        # Synchronize recipient and beneficiary_user
+        if self.beneficiary_user and not self.recipient:
+            self.recipient = self.beneficiary_user
+        elif self.recipient and not self.beneficiary_user:
+            self.beneficiary_user = self.recipient
+
+        # Infer beneficiary_type if not set
+        if not self.beneficiary_type or self.beneficiary_type == 'SELLER':
+            if self.purpose == 'DIGILAND_SERVICE_FEE':
+                self.beneficiary_type = 'DIGILAND'
+                self.payment_type = 'PLATFORM_COLLECTION'
+            elif self.purpose == 'SURVEY_FEE':
+                self.beneficiary_type = 'SURVEYOR'
+                self.payment_type = 'PROFESSIONAL_PAYMENT'
+            elif self.purpose == 'LEGAL_FEE':
+                self.beneficiary_type = 'ADVOCATE'
+                self.payment_type = 'PROFESSIONAL_PAYMENT'
+            elif self.purpose == 'INSPECTION_FEE':
+                self.beneficiary_type = 'FIELD_AGENT'
+                self.payment_type = 'PROFESSIONAL_PAYMENT'
+            elif self.purpose == 'LAND_PURCHASE':
+                self.beneficiary_type = 'SELLER'
+                self.payment_type = 'DIRECT_SETTLEMENT'
+
+        # Ensure human-readable beneficiary_name
+        if not self.beneficiary_name:
+            if self.beneficiary_type == 'DIGILAND':
+                self.beneficiary_name = 'DigiLand Ltd'
+            elif self.beneficiary_user:
+                self.beneficiary_name = self.beneficiary_user.get_full_name() or self.beneficiary_user.email
+            elif self.recipient:
+                self.beneficiary_name = self.recipient.get_full_name() or self.recipient.email
+            elif self.transaction and self.transaction.seller:
+                self.beneficiary_name = self.transaction.seller.get_full_name() or self.transaction.seller.email
+            else:
+                self.beneficiary_name = 'Beneficiary'
+
+        # Auto-generate digiland_reference if not provided
+        if not self.digiland_reference:
+            from django.utils import timezone
+            import random
+            year = timezone.now().year
+            txn_part = self.transaction.transaction_reference if self.transaction and self.transaction.transaction_reference else f"TXN-{random.randint(100000, 999999)}"
+            self.digiland_reference = f"DL-PMT-{year}-{txn_part.split('-')[-1]}-{random.randint(10, 99)}"
+
+        super().save(*args, **kwargs)
+
+    @property
+    def beneficiary(self):
+        """Returns the explicit display name of the beneficiary."""
+        if self.beneficiary_name:
+            return self.beneficiary_name
+        if self.beneficiary_user:
+            return self.beneficiary_user.get_full_name() or self.beneficiary_user.email
+        if self.recipient:
+            return self.recipient.get_full_name() or self.recipient.email
+        if self.beneficiary_type == 'DIGILAND':
+            return 'DigiLand Ltd'
+        return 'Seller'
+
+    @property
+    def provider(self):
+        return self.payment_provider
+
+    @provider.setter
+    def provider(self, val):
+        self.payment_provider = val
+
+    def __str__(self):
+        return f"Payment {self.digiland_reference} [{self.purpose} -> {self.beneficiary}] - {self.status} KES {self.amount:,.2f}"
+
+
+# Clean alias
+Payment = PaymentRecord
+
+
+class RefundRecord(models.Model):
+    """Structured non-custodial refund record tracking provider reversal lifecycle."""
+    STATUS_CHOICES = [
+        ('REFUND_REQUESTED', 'Refund Requested'),
+        ('REFUND_REVIEW', 'Under Review'),
+        ('REFUND_APPROVED', 'Refund Approved'),
+        ('REFUND_INITIATED', 'Refund Initiated with Provider'),
+        ('REFUND_CONFIRMED', 'Refund Confirmed by Provider'),
+        ('REFUND_REJECTED', 'Refund Rejected'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    refund_reference = models.CharField(max_length=100, unique=True, db_index=True)
+    payment = models.ForeignKey(PaymentRecord, on_delete=models.CASCADE, related_name='refunds')
+    transaction = models.ForeignKey(Transaction, on_delete=models.CASCADE, related_name='refund_records')
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    currency = models.CharField(max_length=10, default='KES')
+    status = models.CharField(max_length=40, choices=STATUS_CHOICES, default='REFUND_REQUESTED', db_index=True)
+    reason = models.TextField(help_text="Reason for the refund request")
+    requested_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='refunds_requested')
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='refunds_reviewed')
+    provider_reversal_reference = models.CharField(max_length=100, blank=True, null=True, help_text="M-Pesa reversal receipt or bank reversal reference")
+    evidence_metadata = models.JSONField(default=dict, blank=True)
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['refund_reference'], name='idx_rfd_reference'),
+            models.Index(fields=['payment', 'status'], name='idx_rfd_pmt_status'),
+            models.Index(fields=['transaction', 'status'], name='idx_rfd_txn_status'),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self.refund_reference:
+            from django.utils import timezone
+            import random
+            year = timezone.now().year
+            self.refund_reference = f"DL-RFD-{year}-{random.randint(100000, 999999)}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Refund {self.refund_reference} ({self.status}) - KES {self.amount:,.2f}"
+
+
+class ParcelTrustProfile(models.Model):
+    """Aggregate multi-layer trust and verification status for a land parcel.
+    
+    Replaces the escrow model with transparent, independent verification layers
+    distinguishing between pre-interest checks and interest-triggered due diligence.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    parcel = models.OneToOneField(LandParcel, on_delete=models.CASCADE, related_name='trust_profile')
+    
+    # Layer statuses
+    seller_identity_verified = models.BooleanField(default=False)
+    title_document_reviewed = models.BooleanField(default=False)
+    land_records_submitted = models.BooleanField(default=False)
+    ai_screening_completed = models.BooleanField(default=False)
+    physical_assessment_completed = models.BooleanField(default=False)
+    surveyor_verification_completed = models.BooleanField(default=False)
+    advocate_review_completed = models.BooleanField(default=False)
+    buyer_interest_received = models.BooleanField(default=False)
+    payment_confirmation_recorded = models.BooleanField(default=False)
+
+    # Staged verification progress
+    stage_a_pre_interest_passed = models.BooleanField(default=False, help_text="Stage A: Pre-interest screening checks completed")
+    stage_b_due_diligence_passed = models.BooleanField(default=False, help_text="Stage B: Post-interest professional due diligence completed")
+    
+    risk_rating = models.CharField(max_length=20, default='STANDARD', choices=[
+        ('LOW_RISK', 'Low Risk - Verified Records'),
+        ('STANDARD', 'Standard - In Review'),
+        ('NEEDS_ATTENTION', 'Needs Attention - Discrepancies Found'),
+        ('HIGH_RISK', 'High Risk - Unverified / Inconsistent'),
+    ])
+    summary_notes = models.TextField(blank=True, default='')
+    disclaimer = models.TextField(
+        default="DigiLand performs structured verification and provides transaction records designed to reduce avoidable risks. "
+                "Verification reduces risk but does not constitute a state-guaranteed title or absolute guarantee against unrecorded encumbrances.",
+        help_text="Standard legal disclaimer"
+    )
+    last_evaluated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Trust Profile for {self.parcel.parcel_number} ({self.risk_rating})"
+
+    def recalculate_stages(self):
+        """Evaluate verification layers and update stage completion flags."""
+        self.stage_a_pre_interest_passed = bool(
+            self.seller_identity_verified and
+            self.title_document_reviewed and
+            self.land_records_submitted and
+            self.ai_screening_completed
+        )
+        self.stage_b_due_diligence_passed = bool(
+            self.physical_assessment_completed and
+            self.surveyor_verification_completed and
+            self.advocate_review_completed
+        )
+        self.save(update_fields=['stage_a_pre_interest_passed', 'stage_b_due_diligence_passed', 'last_evaluated_at'])
+
+
+class ParcelVerificationRecord(models.Model):
+    """Detailed audit record for a specific verification layer check on a parcel.
+    
+    Identifies what was checked, who checked it, when it was checked, the verification status,
+    evidence/reference, whether automated or human, and any specific limitations.
+    """
+    LAYER_CHOICES = [
+        ('IDENTITY', 'Seller Identity & KYC'),
+        ('OWNERSHIP_DOCS', 'Title / Ownership Documentation'),
+        ('LAND_RECORDS', 'Land Registry Documentation Completeness'),
+        ('AI_DOCUMENT_SCREENING', 'AI Document Screening & Discrepancy Detection'),
+        ('PHYSICAL_ASSESSMENT', 'Field Agent Physical Site Assessment'),
+        ('SURVEY_VERIFICATION', 'Licensed Land Surveyor Boundary & Beacon Check'),
+        ('LEGAL_REVIEW', 'LSK Advocate Conveyancing & Legal Due Diligence'),
+        ('TRANSACTION_STATUS', 'Buyer Interest & Transaction Agreement'),
+        ('PAYMENT_CONFIRMATION', 'Payment Provider Confirmation Evidence'),
+    ]
+    STAGE_CHOICES = [
+        ('STAGE_A_PRE_INTEREST', 'Stage A: Pre-Interest Verification'),
+        ('STAGE_B_INTEREST_TRIGGERED', 'Stage B: Transaction / Interest Due Diligence'),
+    ]
+    STATUS_CHOICES = [
+        ('NOT_STARTED', 'Not Started'),
+        ('IN_PROGRESS', 'In Progress'),
+        ('AI_VERIFIED', 'AI Verified'),
+        ('AI_FLAGGED', 'AI Flagged (Discrepancies Detected)'),
+        ('REQUIRES_HUMAN_REVIEW', 'Requires Human Professional Review'),
+        ('UNABLE_TO_VERIFY', 'Unable to Verify'),
+        ('SUSPICIOUS', 'Suspicious / High Risk'),
+        ('HUMAN_VERIFIED', 'Human Professional Verified'),
+        ('REJECTED', 'Rejected / Failed Verification'),
+    ]
+    EVALUATOR_ROLE_CHOICES = [
+        ('AUTOMATED_AI', 'Automated AI Verification Engine'),
+        ('STAFF_REVIEWER', 'DigiLand Staff Reviewer'),
+        ('FIELD_AGENT', 'Licensed Field Agent'),
+        ('LICENSED_SURVEYOR', 'ISLK Licensed Land Surveyor'),
+        ('ADVOCATE', 'High Court Advocate / Conveyancer'),
+        ('REGISTRY_OFFICE', 'Ministry of Lands / Ardhisasa Official Process'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    parcel = models.ForeignKey(LandParcel, on_delete=models.CASCADE, related_name='verification_records')
+    verification_layer = models.CharField(max_length=40, choices=LAYER_CHOICES, db_index=True)
+    stage = models.CharField(max_length=30, choices=STAGE_CHOICES, default='STAGE_A_PRE_INTEREST')
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='NOT_STARTED')
+    
+    what_checked = models.CharField(max_length=255, help_text="Specific check performed, e.g. National ID match, Beacon 14/A coordinates")
+    who_checked = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='performed_verifications')
+    evaluator_role = models.CharField(max_length=30, choices=EVALUATOR_ROLE_CHOICES, default='AUTOMATED_AI')
+    is_automated = models.BooleanField(default=True)
+    checked_at = models.DateTimeField(null=True, blank=True)
+    
+    evidence_reference = models.CharField(max_length=255, blank=True, default='', help_text="Document ID, survey report ID, or external verification hash")
+    findings = models.JSONField(default=dict, blank=True, help_text="Structured findings, measurements, or confidence metrics")
+    limitations_disclaimer = models.TextField(
+        default="This check is designed to reduce avoidable risk. It does not replace official government registry guarantees or statutory due diligence.",
+        help_text="Clear limitations of this specific check"
+    )
+    notes = models.TextField(blank=True, default='')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['stage', 'verification_layer']
+        indexes = [
+            models.Index(fields=['parcel', 'verification_layer'], name='idx_vrf_parcel_layer'),
+            models.Index(fields=['parcel', 'status'], name='idx_vrf_parcel_status'),
+        ]
+
+    def __str__(self):
+        return f"{self.parcel.parcel_number} - {self.get_verification_layer_display()}: {self.status}"
+
+
+class TransactionMilestone(models.Model):
+    """Ordered transaction milestone tracking for non-custodial land sales.
+    
+    Replaces escrow balance stages with 15 granular transaction and legal milestones.
+    """
+    MILESTONE_CODES = [
+        ('PARCEL_LISTED', '1. Parcel Listed'),
+        ('SELLER_IDENTITY_VERIFIED', '2. Seller Identity Verified'),
+        ('PARCEL_DOCS_SUBMITTED', '3. Parcel Documents Submitted'),
+        ('INITIAL_SCREENING_COMPLETED', '4. Initial Document Screening Completed'),
+        ('PARCEL_LISTED_FOR_BUYERS', '5. Parcel Listed for Buyers'),
+        ('BUYER_EXPRESSES_INTEREST', '6. Buyer Expresses Interest'),
+        ('PROFESSIONAL_VERIFICATION_INITIATED', '7. Professional Verification Initiated'),
+        ('SURVEY_VERIFICATION', '8. Survey Verification'),
+        ('PHYSICAL_SITE_ASSESSMENT', '9. Physical Site Assessment'),
+        ('LEGAL_DUE_DILIGENCE', '10. Legal Due Diligence'),
+        ('TRANSACTION_AGREEMENT', '11. Buyer/Seller Transaction Agreement'),
+        ('PAYMENT_INITIATED', '12. Payment Initiated'),
+        ('PAYMENT_CONFIRMED', '13. Payment Confirmed by Provider'),
+        ('OWNERSHIP_TRANSFER_PROCESS', '14. Ownership Transfer Process'),
+        ('TRANSACTION_COMPLETED', '15. Transaction Completed'),
+    ]
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('IN_PROGRESS', 'In Progress'),
+        ('COMPLETED', 'Completed'),
+        ('SKIPPED', 'Skipped'),
+        ('FLAGGED', 'Flagged with Conditions'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    transaction = models.ForeignKey(Transaction, on_delete=models.CASCADE, related_name='milestones')
+    milestone_code = models.CharField(max_length=50, choices=MILESTONE_CODES, db_index=True)
+    sequence_order = models.PositiveIntegerField(default=1)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    
+    completed_at = models.DateTimeField(null=True, blank=True)
+    responsible_party = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='responsible_milestones')
+    responsible_role = models.CharField(max_length=50, blank=True, default='')
+    
+    evidence_data = models.JSONField(default=dict, blank=True, help_text="Audit evidence, document links, or receipt references")
+    audit_note = models.TextField(blank=True, default='')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['sequence_order']
+        unique_together = ('transaction', 'milestone_code')
+        indexes = [
+            models.Index(fields=['transaction', 'sequence_order'], name='idx_mlstone_txn_order'),
+            models.Index(fields=['transaction', 'status'], name='idx_mlstone_txn_status'),
+        ]
+
+    def __str__(self):
+        return f"Milestone #{self.sequence_order} ({self.milestone_code}) - {self.status}"
+
+
+class DisputeCase(models.Model):
+    """Structured case and dispute tracking for transacting parties.
+    
+    DigiLand facilitates case documentation, evidence collection, and transparent staff review
+    without acting as a financial custodian, court, or judicial arbitrator.
+    """
+    STATUS_CHOICES = [
+        ('DISPUTE_OPENED', 'Dispute Opened'),
+        ('EVIDENCE_REQUESTED', 'Evidence Requested'),
+        ('PARTIES_NOTIFIED', 'Parties Notified'),
+        ('DOCUMENTS_REVIEWED', 'Documents Under Review'),
+        ('STAFF_ASSESSMENT', 'Staff Assessment in Progress'),
+        ('RESOLUTION_PENDING', 'Resolution / Referral Pending'),
+        ('CASE_CLOSED', 'Case Closed'),
+    ]
+    OUTCOME_CHOICES = [
+        ('PENDING', 'Investigation In Progress'),
+        ('RESOLVED_BETWEEN_PARTIES', 'Resolved Directly Between Parties'),
+        ('SELLER_ACTION_REQUIRED', 'Seller Action Required'),
+        ('BUYER_ACTION_REQUIRED', 'Buyer Action Required'),
+        ('ADDITIONAL_VERIFICATION_REQUIRED', 'Additional Verification Required'),
+        ('LEGAL_REVIEW_RECOMMENDED', 'Professional / Legal Review Recommended'),
+        ('TRANSACTION_CANCELLED', 'Transaction Cancelled by Mutual Agreement'),
+        ('REFERRED_TO_AUTHORITY', 'Referred to Relevant Authority / Legal Counsel'),
+        ('CLOSED_NO_ACTION', 'Closed Without Action'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    case_number = models.CharField(max_length=50, unique=True, db_index=True)
+    transaction = models.ForeignKey(Transaction, on_delete=models.CASCADE, related_name='dispute_cases')
+    parcel = models.ForeignKey(LandParcel, on_delete=models.SET_NULL, null=True, blank=True, related_name='dispute_cases')
+    
+    opened_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='opened_disputes')
+    respondent = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='respondent_disputes')
+    assigned_staff = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_disputes')
+    
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='DISPUTE_OPENED', db_index=True)
+    outcome = models.CharField(max_length=40, choices=OUTCOME_CHOICES, default='PENDING')
+    
+    claim_summary = models.TextField(help_text="Detailed statement of the issue or dispute")
+    evidence_requested = models.TextField(blank=True, default='', help_text="Documents or items requested from parties")
+    evidence_submitted = models.JSONField(default=list, blank=True, help_text="List of submitted evidence artifacts with timestamps")
+    staff_assessment_notes = models.TextField(blank=True, default='', help_text="Internal staff notes and observations")
+    resolution_summary = models.TextField(blank=True, default='', help_text="Final case resolution or referral notes")
+    
+    disclaimer = models.TextField(
+        default="DigiLand records dispute evidence and facilitates structured case review between parties. "
+                "DigiLand does not hold customer funds and does not act as a judicial court or financial regulator.",
+        help_text="Statutory non-custodial disclaimer"
+    )
+
+    opened_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-opened_at']
+        indexes = [
+            models.Index(fields=['case_number'], name='idx_dsp_case_num'),
+            models.Index(fields=['transaction', 'status'], name='idx_dsp_txn_status'),
+            models.Index(fields=['status', 'outcome'], name='idx_dsp_status_out'),
+        ]
+
+    def __str__(self):
+        return f"Case {self.case_number} - {self.get_status_display()} ({self.outcome})"
+
 

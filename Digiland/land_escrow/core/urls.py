@@ -61,6 +61,10 @@ urlpatterns = [
     path('mpesa/bonga-redeem', api_views.redeem_bonga_points_view, name='redeem-bonga-points'),
     path('mpesa/bonga-calculate', api_views.calculate_bonga_points_view, name='calculate-bonga-points'),
     path('mpesa/check-checkout-status/', api_views.check_checkout_status_view, name='check-checkout-status'),
+    path('payments/<uuid:payment_id>/status/', api_views.payment_status_api_view, name='payment-status-api'),
+    path('transactions/<str:transaction_ref>/payment-status/', api_views.transaction_payment_status_api_view, name='transaction-payment-status-api'),
+    path('payments/reconciliation/', api_views.payment_reconciliation_api_view, name='payment-reconciliation-api'),
+    path('payments/reconciliation/summary/', api_views.payment_reconciliation_summary_api_view, name='payment-reconciliation-summary-api'),
 
     # ==================== PROMOTION TIERS & PLANS ====================
     path('promotion-tiers/', api_views.PromotionTierListView.as_view(), name='promotion-tiers'),

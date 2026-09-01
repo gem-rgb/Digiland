@@ -1,33 +1,34 @@
 Digiland
 
-A secure land escrow web application built with Django that facilitates safe land transactions between buyers, sellers, agents, and land officials.
+A structured land verification and safe transaction platform built with Django that reduces avoidable transaction risks through transparent multi-layer verification, documentation auditing, and payment provider confirmation tracking between buyers, sellers, surveyors, advocates, and verified field agents.
 
 ---
 
 🏠 Overview
 
-Digiland is a comprehensive land escrow platform that provides a secure environment for land transactions. The system ensures that all parties involved in land deals are protected through a structured escrow process with identity verification, document management, and payment processing.
+Digiland is a comprehensive land verification and transaction coordination platform designed to make land transactions safer by improving verification, transparency, accountability, and access to trustworthy transaction information. DigiLand does not hold customer funds or maintain custodial escrow balances; payments are processed directly through regulated providers (e.g. M-Pesa, Commercial Banks) while DigiLand maintains immutable audit records, multi-layer verification checks, and milestone progression.
 
 ---
 
 🚀 Features
 
 User Roles
-- Buyers: Browse available land parcels, make offers, and manage transactions
-- Sellers: List land parcels, review offers, and manage sales
-- Agents: Facilitate transactions, earn commissions, and maintain ratings
-- Land Officials: Verify land documents and approve transactions
-- Admins: Oversee platform operations and user management
+- Buyers: Browse pre-screened land parcels, initiate interest-triggered due diligence, track verification milestones
+- Sellers: List land parcels, submit ownership documents, manage deals
+- Agents & Surveyors: Conduct on-site inspections, boundary & beacon verification, submit field reports
+- Advocates & Legal Counsel: Review title deeds, encumbrances, and conveyancing instruments
+- Admins: Oversee platform operations, verification reviews, and dispute documentation
 
 Core Functionality
 - User Authentication: Email-based authentication with role-based access control
-- Identity Verification: Integration with Gavakonect for KYC verification
-- Land Parcel Management: Comprehensive listing and management of land properties
-- Document Upload: Secure storage of land titles and related documents via Cloudinary
-- Escrow Process: Multi-step transaction workflow with approval stages
-- Payment Processing: Paystack integration for secure payment handling
+- Identity Verification: KYC verification and multi-factor compliance
+- Land Parcel Management: Structured listing, trust profiles, and Controlled Disclosure
+- Multi-Layer Verification: 15-milestone transaction tracking across survey, legal, and registry stages
+- Payment Records: Audit logs of provider-confirmed transactions (M-Pesa STK, Bank RTGS) without custodial holding
+- Dispute Documentation: Structured case tracking and transparent evidence management
 - Rating System: Agent performance tracking and user reviews
-- Email Notifications: Automated email updates throughout the transaction process
+- Notifications: Automated updates throughout verification and transfer milestones
+
 
 ---
 

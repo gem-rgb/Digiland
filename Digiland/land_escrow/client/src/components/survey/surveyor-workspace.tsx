@@ -237,7 +237,7 @@ export function SurveyorWorkspaceView({
         <div className="mt-4 pt-3 border-t border-emerald-200/60 flex items-start gap-2.5 text-[11px] text-slate-600">
           <Info className="h-4 w-4 text-emerald-700 shrink-0 mt-0.5" />
           <span>
-            <strong>Statutory Protocol Notice:</strong> Digiland survey entries constitute internal due-diligence and escrow verification records. Statutory title registration and official deed plans remain under the jurisdiction of the Ministry of Lands & Physical Planning and the Survey of Kenya.
+            <strong>Statutory Protocol Notice:</strong> Digiland survey entries constitute internal due-diligence and direct settlement verification records. Statutory title registration and official deed plans remain under the jurisdiction of the Ministry of Lands & Physical Planning and the Survey of Kenya.
           </span>
         </div>
       </div>
@@ -492,7 +492,7 @@ export function SurveyorWorkspaceView({
                 <option value="NORMAL">Normal</option>
                 <option value="HIGH">High Priority</option>
                 <option value="URGENT">Urgent</option>
-                <option value="CRITICAL">Critical Escrow Block</option>
+                <option value="CRITICAL">Critical Clearance Block</option>
               </select>
             </div>
           </div>
@@ -1499,7 +1499,7 @@ export function SurveyorWorkspaceView({
                           <option value="LOW">Low</option>
                           <option value="MEDIUM">Medium</option>
                           <option value="HIGH">High</option>
-                          <option value="CRITICAL">Critical (Blocks Escrow)</option>
+                          <option value="CRITICAL">Critical (Blocks Verification Clearance)</option>
                         </select>
                       </div>
                       <div>
@@ -1540,7 +1540,7 @@ export function SurveyorWorkspaceView({
                       Formal Survey Report Builder & ISLK Sign-off
                     </CardTitle>
                     <CardDescription>
-                      Compile verified field findings into a versioned legal report for Lawyer conveyancing and Escrow settlement.
+                      Compile verified field findings into a versioned legal report for Lawyer conveyancing and ownership transfer clearance.
                     </CardDescription>
                   </div>
                   <div className="text-right">

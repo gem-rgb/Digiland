@@ -180,7 +180,7 @@
                 <form action="{% url 'frontend:initiate_escrow' parcel.parcel_number %}" method="POST">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-dark w-100">
-                        <i class="bi bi-lock-fill"></i>Initiate Escrow
+                        <i class="bi bi-shield-check"></i>Initiate Purchase
                     </button>
                 </form>
                 {% else %}
@@ -420,29 +420,29 @@
                     </div>
 
                     {% if not can_use_joint_purchase %}
-                    <div class="alert alert-warning py-2 small">
-                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                        Joint group purchases are available after you choose the joint buyer account setup.
-                        <a href="{% url 'frontend:buyer_account_choice' %}">Set up joint account</a>.
+                        <label class="form-label small text-muted">Purchase mode</label>
+                        <select name="purchase_mode" class="form-select form-select-sm" id="purchaseModeSelect">
+                            <option value="solo" selected>Individual purchase</option>
+                            <option value="joint">Joint purchase group</option>
+                        </select>
                     </div>
-                    {% endif %}
 
-                    <div class="mb-3" id="joint_group_wrap" style="display:none;">
-                        <label class="form-label fw-bold">Select joint group</label>
-                        <select class="form-select" name="joint_group_id">
-                            <option value="">— Select —</option>
-                            {% for g in joint_groups %}
-                                <option value="{{ g.id }}">{{ g.name }} ({{ g.members.count }} members)</option>
+                    <div class="mb-3 d-none" id="jointGroupPicker">
+                        <label class="form-label small text-muted">Select joint buyer group</label>
+                        <select name="joint_group_id" class="form-select form-select-sm">
+                            <option value="">Choose an existing group</option>
+                            {% for group in joint_groups %}
+                            <option value="{{ group.id }}">{{ group.name }} ({{ group.get_ownership_type_display }})</option>
                             {% endfor %}
                         </select>
                         <div class="form-text">
-                            Don’t have a group yet?
+                            Need a new group?
                             <a href="{% url 'frontend:create_joint_group' %}">Create one</a>.
                         </div>
                     </div>
 
                     <button type="submit" class="btn btn-dark btn-lg w-100">
-                        <i class="bi bi-lock-fill"></i>Initiate Secure Escrow
+                        <i class="bi bi-shield-check"></i>Initiate Purchase
                     </button>
                 </form>
                 {% else %}
@@ -456,7 +456,7 @@
             <div class="card-body text-center">
                 <i class="bi bi-person-lock fs-1 text-muted d-block mb-3"></i>
                 <h5 class="mb-2">Sign in required</h5>
-                <p class="text-muted small mb-4">You need a buyer account to initiate escrow on this property.</p>
+                <p class="text-muted small mb-4">You need a buyer account to purchase this property.</p>
                 <a href="{% url 'account_login' %}" class="btn btn-dark w-100">Sign In to Purchase</a>
             </div>
         </section>

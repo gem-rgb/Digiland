@@ -3,7 +3,14 @@ from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from .models import User, LandParcel, Transaction, PurchaseCommission, Document, AuditLog, SupportTicket, Message, PlatformLegalDocument, KYCProfile, JointMemberRemovalRequest, PopupAdCampaign, PopupAdEvent
+from .models import (
+    User, LandParcel, Transaction, PurchaseCommission, Document, AuditLog, 
+    SupportTicket, Message, PlatformLegalDocument, KYCProfile, 
+    JointMemberRemovalRequest, PopupAdCampaign, PopupAdEvent,
+    PaymentRecord, ParcelTrustProfile, ParcelVerificationRecord, 
+    TransactionMilestone, DisputeCase, RefundRecord
+)
+
 
 @admin.register(PlatformLegalDocument)
 class PlatformLegalDocumentAdmin(admin.ModelAdmin):
@@ -280,7 +287,7 @@ class TransactionAdmin(admin.ModelAdmin):
     )
     search_fields = (
         'buyer__email', 'seller__email', 'agent__email',
-        'land_parcel__parcel_number', 'escrow_reference', 'reversal_reference'
+        'land_parcel__parcel_number', 'payment_reference', 'escrow_reference', 'reversal_reference'
     )
     readonly_fields = (
         'id', 'created_at', 'updated_at', 'reversal_initiated_at',
@@ -291,9 +298,11 @@ class TransactionAdmin(admin.ModelAdmin):
         ('Transaction Details', {
             'fields': (
                 'buyer', 'seller', 'agent', 'land_parcel',
-                'agreed_price', 'status', 'escrow_reference'
+                'agreed_price', 'status', 'payment_reference', 'escrow_reference',
+                'coordination_fee', 'platform_service_fee', 'total_payable'
             )
         }),
+
         ('Contract Information', {
             'fields': (
                 'contract_agreed', 'buyer_signature', 'seller_signature'
@@ -588,5 +597,77 @@ class SecurityEventAdmin(admin.ModelAdmin):
     search_fields = ('email', 'user__email', 'ip_address', 'user_agent')
     readonly_fields = ('id', 'created_at', 'ip_address', 'user_agent', 'metadata')
     ordering = ('-created_at',)
+
+
+@admin.register(PaymentRecord)
+class PaymentRecordAdmin(admin.ModelAdmin):
+    list_display = ('digiland_reference', 'get_transaction_ref', 'purpose', 'amount', 'currency', 'status', 'payer', 'provider_reference', 'confirmed_at')
+    list_filter = ('purpose', 'status', 'payment_provider', 'currency', 'created_at', 'confirmed_at')
+    search_fields = (
+        'digiland_reference', 'provider_reference', 'checkout_request_reference',
+        'payer__email', 'recipient__email', 'transaction__transaction_reference',
+        'transaction__id', 'parcel__parcel_number'
+    )
+    readonly_fields = ('id', 'created_at', 'updated_at')
+    ordering = ('-created_at',)
+
+    def get_transaction_ref(self, obj):
+        return obj.transaction.transaction_reference if obj.transaction else "-"
+    get_transaction_ref.short_description = "Transaction Ref"
+
+
+@admin.register(RefundRecord)
+class RefundRecordAdmin(admin.ModelAdmin):
+    list_display = ('refund_reference', 'get_payment_ref', 'get_transaction_ref', 'amount', 'currency', 'status', 'requested_by', 'created_at')
+    list_filter = ('status', 'currency', 'created_at')
+    search_fields = (
+        'refund_reference', 'provider_reversal_reference', 'payment__digiland_reference',
+        'transaction__transaction_reference', 'requested_by__email'
+    )
+    readonly_fields = ('id', 'created_at', 'updated_at')
+    ordering = ('-created_at',)
+
+    def get_payment_ref(self, obj):
+        return obj.payment.digiland_reference if obj.payment else "-"
+    get_payment_ref.short_description = "Payment Ref"
+
+    def get_transaction_ref(self, obj):
+        return obj.transaction.transaction_reference if obj.transaction else "-"
+    get_transaction_ref.short_description = "Transaction Ref"
+
+
+@admin.register(ParcelTrustProfile)
+class ParcelTrustProfileAdmin(admin.ModelAdmin):
+    list_display = ('parcel', 'risk_rating', 'stage_a_pre_interest_passed', 'stage_b_due_diligence_passed', 'last_evaluated_at')
+    list_filter = ('risk_rating', 'stage_a_pre_interest_passed', 'stage_b_due_diligence_passed')
+    search_fields = ('parcel__parcel_number', 'summary_notes')
+    readonly_fields = ('id', 'last_evaluated_at')
+
+
+@admin.register(ParcelVerificationRecord)
+class ParcelVerificationRecordAdmin(admin.ModelAdmin):
+    list_display = ('parcel', 'verification_layer', 'stage', 'status', 'evaluator_role', 'is_automated', 'checked_at')
+    list_filter = ('verification_layer', 'stage', 'status', 'evaluator_role', 'is_automated')
+    search_fields = ('parcel__parcel_number', 'what_checked', 'evidence_reference')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+
+
+@admin.register(TransactionMilestone)
+class TransactionMilestoneAdmin(admin.ModelAdmin):
+    list_display = ('sequence_order', 'milestone_code', 'transaction', 'status', 'responsible_role', 'completed_at')
+    list_filter = ('status', 'milestone_code')
+    search_fields = ('transaction__id', 'transaction__land_parcel__parcel_number', 'responsible_party__email')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+    ordering = ('transaction', 'sequence_order')
+
+
+@admin.register(DisputeCase)
+class DisputeCaseAdmin(admin.ModelAdmin):
+    list_display = ('case_number', 'transaction', 'opened_by', 'status', 'outcome', 'assigned_staff', 'opened_at')
+    list_filter = ('status', 'outcome', 'opened_at')
+    search_fields = ('case_number', 'transaction__id', 'opened_by__email', 'claim_summary')
+    readonly_fields = ('id', 'opened_at', 'created_at', 'updated_at')
+    ordering = ('-opened_at',)
+
 
 

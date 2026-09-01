@@ -10,41 +10,107 @@ class ServiceFeeService:
 
     FEES = {
         'platform_service': Decimal('0.04'),        # 4% of land price
-        'escrow_holding': Decimal('0.02'),          # 2% of land price
+        'transaction_coordination': Decimal('0.02'), # 2% of land price
         'payment_processing': Decimal('50'),        # Flat KES 50
-        'verification': Decimal('10000'),           # Optional, KES 10K
-        'due_diligence': Decimal('20000'),          # Optional, KES 20K
+        'verification': Decimal('15000'),           # Surveyor boundary & beacon verification, KES 15K
+        'due_diligence': Decimal('20000'),          # Advocate legal conveyance, KES 20K
     }
 
     @staticmethod
     def calculate_fees(transaction, include_verification=True, include_due_diligence=False):
+        """Calculate separate financial obligations for a transaction.
+        
+        Strictly separates:
+        1. LAND PURCHASE (Buyer -> Seller)
+        2. DIGILAND PLATFORM FEE (Buyer/Seller -> DigiLand)
+        3. SURVEYOR FEE (Buyer -> Surveyor)
+        4. LEGAL CONVEYANCING FEE (Buyer -> Advocate)
+        
+        NEVER combines these into a single balance payable to DigiLand.
         """
-        Calculate all fees for a transaction.
-        Returns dict with breakdown and totals.
-        """
-        land_price = transaction.agreed_price
+        land_price = transaction.agreed_price or Decimal('0.00')
         quantize = Decimal('0.01')
+
+        coordination_fee = (land_price * ServiceFeeService.FEES['transaction_coordination']).quantize(quantize)
+        survey_fee = (ServiceFeeService.FEES['verification'] if include_verification else Decimal('0')).quantize(quantize)
+        legal_fee = (ServiceFeeService.FEES['due_diligence'] if include_due_diligence else Decimal('0')).quantize(quantize)
+        processing_fee = ServiceFeeService.FEES['payment_processing'].quantize(quantize)
+
+        seller_name = (
+            transaction.seller.get_full_name() or transaction.seller.email
+            if transaction and transaction.seller else 'Land Seller'
+        )
+
+        obligations_schedule = [
+            {
+                'purpose': 'LAND_PURCHASE',
+                'label': 'Land Purchase Consideration',
+                'beneficiary': seller_name,
+                'beneficiary_type': 'SELLER',
+                'amount': float(land_price),
+                'currency': 'KES',
+                'is_digiland_revenue': False,
+                'payee_note': 'Paid directly to seller upon agreed terms',
+            },
+            {
+                'purpose': 'DIGILAND_SERVICE_FEE',
+                'label': 'DigiLand Platform Facilitation Fee',
+                'beneficiary': 'DigiLand Ltd',
+                'beneficiary_type': 'DIGILAND',
+                'amount': float(coordination_fee),
+                'currency': 'KES',
+                'is_digiland_revenue': True,
+                'payee_note': 'Paid to DigiLand for platform facilitation and verified audit records',
+            },
+        ]
+
+        if include_verification:
+            obligations_schedule.append({
+                'purpose': 'SURVEY_FEE',
+                'label': 'Cadastral Boundary & Beacon Survey',
+                'beneficiary': 'Licensed Land Surveyor',
+                'beneficiary_type': 'SURVEYOR',
+                'amount': float(survey_fee),
+                'currency': 'KES',
+                'is_digiland_revenue': False,
+                'payee_note': 'Paid directly to assigned licensed surveyor',
+            })
+
+        if include_due_diligence:
+            obligations_schedule.append({
+                'purpose': 'LEGAL_FEE',
+                'label': 'Advocate Conveyancing & Legal Signoff',
+                'beneficiary': 'Conveyancing Advocate',
+                'beneficiary_type': 'ADVOCATE',
+                'amount': float(legal_fee),
+                'currency': 'KES',
+                'is_digiland_revenue': False,
+                'payee_note': 'Paid directly to conveyancing advocate',
+            })
+
+        total_third_party_fees = survey_fee + legal_fee + processing_fee
+        total_fees = coordination_fee + total_third_party_fees
+        total_buyer_obligations = land_price + total_fees
 
         fees = {
             'land_price': land_price,
             'platform_service_fee': (land_price * ServiceFeeService.FEES['platform_service']).quantize(quantize),
-            'escrow_holding_fee': (land_price * ServiceFeeService.FEES['escrow_holding']).quantize(quantize),
-            'payment_processing_fee': ServiceFeeService.FEES['payment_processing'].quantize(quantize),
-            'verification_fee': (ServiceFeeService.FEES['verification'] if include_verification else Decimal('0')).quantize(quantize),
-            'due_diligence_fee': (ServiceFeeService.FEES['due_diligence'] if include_due_diligence else Decimal('0')).quantize(quantize),
+            'coordination_fee': coordination_fee,
+            'escrow_holding_fee': coordination_fee, # Backward-compat key
+            'escrow_fee': coordination_fee,         # Backward-compat key
+            'payment_processing_fee': processing_fee,
+            'verification_fee': survey_fee,
+            'survey_fee': survey_fee,
+            'due_diligence_fee': legal_fee,
+            'legal_fee': legal_fee,
+            'total_fees': total_fees,
+            'digiland_platform_fee_total': coordination_fee,
+            'total_buyer_obligations': total_buyer_obligations,
+            'grand_total': total_buyer_obligations, # Backward-compat alias for total obligations
+            'total_payable': total_buyer_obligations,
+            'obligations_schedule': obligations_schedule,
+            'non_custodial_notice': 'These represent distinct financial obligations to distinct beneficiaries. DigiLand does not hold land purchase funds in escrow.',
         }
-        fees['escrow_fee'] = fees['escrow_holding_fee']
-
-        fees['total_fees'] = (
-            fees['platform_service_fee'] +
-            fees['escrow_holding_fee'] +
-            fees['payment_processing_fee'] +
-            fees['verification_fee'] +
-            fees['due_diligence_fee']
-        )
-
-        fees['grand_total'] = (land_price + fees['total_fees']).quantize(quantize)
-        fees['total_payable'] = fees['grand_total']
 
         return fees
 
@@ -54,18 +120,18 @@ class ServiceFeeService:
         Get user-friendly explanations for each fee type.
         Used in UI for education.
         """
-        return {
+        explanations = {
             'platform_service': {
                 'label': 'Platform Service Fee',
                 'percent': '4%',
                 'what': 'Covers platform operations, AI recommendations, buyer discovery features',
                 'why': 'Ensures continuous improvement of the marketplace and seller visibility',
             },
-            'escrow_holding': {
-                'label': 'Escrow Holding Fee',
+            'transaction_coordination': {
+                'label': 'Transaction & Verification Coordination Fee',
                 'percent': '2%',
-                'what': 'Secure fund holding, 7-day buyer validation protection, escrow account management',
-                'why': 'Protects both buyer and seller during transaction, prevents fraud',
+                'what': 'Multi-layer parcel verification, document screening, and transaction record management',
+                'why': 'Coordinates independent verification checkpoints and traceable transaction records between parties',
             },
             'payment_processing': {
                 'label': 'Payment Processing Fee',
@@ -86,6 +152,10 @@ class ServiceFeeService:
                 'why': 'Provides additional legal and compliance assurance',
             },
         }
+        # Backward-compatibility alias
+        explanations['escrow_holding'] = explanations['transaction_coordination']
+        return explanations
+
 
     @staticmethod
     def record_fees_on_transaction(transaction, include_verification=True, include_due_diligence=False, fees_data=None):
@@ -99,7 +169,8 @@ class ServiceFeeService:
             include_due_diligence=include_due_diligence
         )
         platform_fee = fees_data.get('platform_service_fee') or fees_data.get('platform_fee', Decimal('0'))
-        escrow_fee = fees_data.get('escrow_fee') or fees_data.get('escrow_holding_fee', Decimal('0'))
+        coordination_fee = fees_data.get('coordination_fee') or fees_data.get('escrow_fee') or fees_data.get('escrow_holding_fee', Decimal('0'))
+        escrow_fee = coordination_fee
         processing_fee = fees_data.get('payment_processing_fee') or fees_data.get('processing_fee', Decimal('0'))
         verification_fee = fees_data.get('verification_fee') or fees_data.get('legal_verification_fee', Decimal('0'))
         due_diligence_fee = fees_data.get('due_diligence_fee', Decimal('0'))
@@ -109,6 +180,7 @@ class ServiceFeeService:
             transaction=transaction,
             defaults={
                 'platform_fee': platform_fee,
+                'coordination_fee': coordination_fee,
                 'escrow_fee': escrow_fee,
                 'processing_fee': processing_fee,
                 'verification_fee': verification_fee,
@@ -121,6 +193,7 @@ class ServiceFeeService:
         if not created:
             # Update existing fees
             service_fee.platform_fee = platform_fee
+            service_fee.coordination_fee = coordination_fee
             service_fee.escrow_fee = escrow_fee
             service_fee.processing_fee = processing_fee
             service_fee.verification_fee = verification_fee
@@ -129,7 +202,17 @@ class ServiceFeeService:
             service_fee.breakdown = fees_data
             service_fee.save()
 
+        # Sync coordination_fee back to transaction record
+        try:
+            transaction.coordination_fee = coordination_fee
+            transaction.platform_service_fee = platform_fee
+            transaction.total_payable = fees_data.get('total_payable', transaction.total_payable)
+            transaction.save(update_fields=['coordination_fee', 'platform_service_fee', 'total_payable'])
+        except Exception:
+            pass
+
         return service_fee
+
 
     @staticmethod
     def get_platform_revenue(days=30):

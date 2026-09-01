@@ -16,8 +16,9 @@ def build_nav(user, active=None):
             {'label': 'Marketplace', 'href': reverse('frontend:parcel_list'), 'icon': 'parcels', 'active': active == 'parcel-list'},
             {'label': 'Features', 'href': '/features/', 'icon': 'security', 'active': active == 'features'},
             {'label': 'About Us', 'href': '/about/', 'icon': 'documents', 'active': active in {'about', 'content'}},
-            {'label': 'Legal & Escrow', 'href': reverse('frontend:escrow_acts'), 'icon': 'legal', 'active': active in {'legal', 'joint-laws'}},
+            {'label': 'Legal & Compliance', 'href': reverse('frontend:escrow_acts'), 'icon': 'legal', 'active': active in {'legal', 'joint-laws'}},
         ]
+
 
     if role == 'Buyer':
         is_joint_buyer_account = getattr(user, 'buyer_account_type', None) == 'Joint'
@@ -210,15 +211,31 @@ def serialize_transaction(tx, user=None):
 
     buyer_email = tx.buyer.email if getattr(tx, 'buyer', None) else 'N/A'
     seller_email = tx.seller.email if getattr(tx, 'seller', None) else 'N/A'
-    escrow_fee = float(tx.escrow_fee or (tx.agreed_price * Decimal('0.02') if tx.agreed_price else 0))
+    coordination_fee = float(getattr(tx, 'coordination_fee', None) or getattr(tx, 'escrow_fee', None) or (tx.agreed_price * Decimal('0.02') if tx.agreed_price else 0))
+    escrow_fee = coordination_fee
     total_payable = float(tx.total_payable or tx.agreed_price or 0)
-    seller_payout = float((tx.agreed_price or 0) - Decimal(escrow_fee))
+    # Seller payout is the agreed purchase consideration directly settled
+    seller_payout = float(tx.agreed_price or 0)
+    payment_ref = getattr(tx, 'payment_reference_safe', '')
+
+    try:
+        complete_url = reverse('frontend:admin_complete_transfer', args=[tx.id])
+    except Exception:
+        complete_url = reverse('frontend:admin_release_escrow', args=[tx.id])
+
+    try:
+        refund_url = reverse('frontend:admin_reverse_payment', args=[tx.id])
+    except Exception:
+        refund_url = reverse('frontend:admin_refund_escrow', args=[tx.id])
 
     return {
         'id': str(tx.id),
+        'transaction_reference': getattr(tx, 'transaction_reference', f"DL-TXN-{tx.id}"),
         'parcel_number': tx.land_parcel.parcel_number if tx.land_parcel else 'N/A',
         'role_label': role_label,
         'amount': str(tx.agreed_price),
+        'payment_reference': payment_ref,
+        'coordination_fee': coordination_fee,
         'escrow_fee': escrow_fee,
         'total_payable': total_payable,
         'seller_payout': seller_payout,
@@ -230,13 +247,16 @@ def serialize_transaction(tx, user=None):
         'created_at': tx.created_at.strftime('%b %d, %Y') if getattr(tx, 'created_at', None) else 'N/A',
         'action_label': action_label,
         'action_url': action_url,
-        'release_url': reverse('frontend:admin_release_escrow', args=[tx.id]),
-        'refund_url': reverse('frontend:admin_refund_escrow', args=[tx.id]),
+        'complete_url': complete_url,
+        'release_url': complete_url,
+        'refund_url': refund_url,
+        'reverse_url': refund_url,
         'freeze_url': reverse('frontend:admin_freeze_transaction', args=[tx.id]),
         'unfreeze_url': reverse('frontend:admin_unfreeze_transaction', args=[tx.id]),
         'is_joint_purchase': bool(getattr(tx, 'is_joint_purchase', False)),
         'joint_label': 'Joint' if getattr(tx, 'is_joint_purchase', False) else '',
     }
+
 
 
 COMMISSION_STEP_DEFINITIONS = [
@@ -504,72 +524,55 @@ def serialize_checkout(
         })
 
     group = transaction.joint_group if transaction.is_joint_purchase and transaction.joint_group else None
+    fees_data = ServiceFeeService.calculate_fees(
+        transaction,
+        include_verification=bool(transaction.include_legal_verification),
+        include_due_diligence=bool(transaction.include_due_diligence)
+    )
     fee_explanations = ServiceFeeService.get_fee_explanations()
     fee_breakdown = [
         {
             'key': 'land_price',
-            'label': 'Land Price',
+            'label': 'Land Purchase Consideration',
+            'payee': transaction.seller.get_full_name() or 'Seller',
             'amount': str(transaction.agreed_price),
-            'description': 'The negotiated purchase price for the parcel.',
+            'description': 'Direct payment to seller for land acquisition. DigiLand does not hold these funds.',
             'included': True,
             'tone': 'default',
         },
         {
-            'key': 'platform_service_fee',
-            'label': fee_explanations['platform_service']['label'],
-            'amount': str(transaction.platform_service_fee),
-            'description': fee_explanations['platform_service']['what'],
-            'note': fee_explanations['platform_service']['why'],
+            'key': 'coordination_fee',
+            'label': 'DigiLand Platform Facilitation Fee',
+            'payee': 'DigiLand Ltd',
+            'amount': str(fees_data.get('coordination_fee', transaction.platform_service_fee or '25000.00')),
+            'description': 'Technology coordination, GIS mapping, and immutable audit logging fee.',
+            'note': 'Earned revenue paid to DigiLand.',
             'included': True,
             'tone': 'warning',
         },
         {
-            'key': 'escrow_fee',
-            'label': fee_explanations['escrow_holding']['label'],
-            'amount': str(transaction.escrow_fee),
-            'description': fee_explanations['escrow_holding']['what'],
-            'note': fee_explanations['escrow_holding']['why'],
-            'included': True,
-            'tone': 'warning',
-        },
-        {
-            'key': 'processing_fee',
-            'label': fee_explanations['payment_processing']['label'],
-            'amount': str(transaction.processing_fee),
-            'description': fee_explanations['payment_processing']['what'],
-            'note': fee_explanations['payment_processing']['why'],
-            'included': True,
-            'tone': 'default',
-        },
-        {
-            'key': 'legal_verification_fee',
-            'label': fee_explanations['verification']['label'],
-            'amount': str(transaction.legal_verification_fee),
-            'description': fee_explanations['verification']['what'],
-            'note': 'Selected' if transaction.include_legal_verification else 'Optional',
+            'key': 'survey_fee',
+            'label': 'Cadastral Boundary & Beacon Survey',
+            'payee': 'Assigned Licensed Surveyor',
+            'amount': str(fees_data.get('survey_fee', '15000.00')),
+            'description': 'Physical boundary verification and beacon audit by registered surveyor.',
             'included': bool(transaction.include_legal_verification),
             'tone': 'default',
         },
         {
-            'key': 'due_diligence_fee',
-            'label': fee_explanations['due_diligence']['label'],
-            'amount': str(transaction.due_diligence_fee),
-            'description': fee_explanations['due_diligence']['what'],
-            'note': 'Selected' if transaction.include_due_diligence else 'Optional',
+            'key': 'legal_fee',
+            'label': 'Legal Conveyancing & Title Signoff',
+            'payee': 'Assigned Conveyancing Advocate',
+            'amount': str(fees_data.get('legal_fee', '20000.00')),
+            'description': 'Title search clearance, transfer document preparation, and LCB consent signoff.',
             'included': bool(transaction.include_due_diligence),
             'tone': 'default',
         },
-        {
-            'key': 'total_payable',
-            'label': 'TOTAL PAYABLE',
-            'amount': str(transaction.total_payable),
-            'description': 'Land price plus all selected service fees.',
-            'included': True,
-            'tone': 'success',
-        },
     ]
+
     return {
-        'transaction_id': str(transaction.id),
+        'id': str(transaction.id),
+        'transaction_reference': getattr(transaction, 'transaction_reference', f"DL-TXN-{transaction.id}"),
         'parcel_number': transaction.land_parcel.parcel_number,
         'seller_email': transaction.seller.email,
         'buyer_email': transaction.buyer.email,
@@ -594,21 +597,30 @@ def serialize_checkout(
         'bank_account_name': group.bank_account_name if group else None,
         'bank_account_number': group.bank_account_number if group else None,
         'bank_branch': group.bank_branch if group else None,
+        'direct_settlement_bank_name': escrow_bank_name,
+        'direct_settlement_account_name': escrow_bank_account_name,
+        'direct_settlement_account_number': escrow_bank_account_number,
         'escrow_bank_name': escrow_bank_name,
         'escrow_bank_account_name': escrow_bank_account_name,
         'escrow_bank_account_number': escrow_bank_account_number,
         'escrow_bank_branch': escrow_bank_branch,
-        'platform_service_fee': str(transaction.platform_service_fee),
-        'escrow_fee': str(transaction.escrow_fee),
+        'platform_service_fee': str(fees_data.get('coordination_fee', '25000.00')),
+        'coordination_fee': str(fees_data.get('coordination_fee', '25000.00')),
+        'escrow_fee': str(fees_data.get('coordination_fee', '25000.00')),
         'processing_fee': str(transaction.processing_fee),
-        'legal_verification_fee': str(transaction.legal_verification_fee),
-        'due_diligence_fee': str(transaction.due_diligence_fee),
+        'survey_fee': str(fees_data.get('survey_fee', '15000.00')),
+        'legal_fee': str(fees_data.get('legal_fee', '20000.00')),
+        'legal_verification_fee': str(fees_data.get('survey_fee', '15000.00')),
+        'due_diligence_fee': str(fees_data.get('legal_fee', '20000.00')),
         'include_legal_verification': bool(transaction.include_legal_verification),
         'include_due_diligence': bool(transaction.include_due_diligence),
         'fee_breakdown': fee_breakdown,
         'fee_explanations': fee_explanations,
-        'grand_total': str(transaction.total_payable),
-        'total_payable': str(transaction.total_payable),
+        'obligations_schedule': fees_data.get('obligations_schedule', []),
+        'total_buyer_obligations': str(fees_data.get('total_buyer_obligations', transaction.total_payable)),
+        'grand_total': str(fees_data.get('total_buyer_obligations', transaction.total_payable)),
+        'total_payable': str(fees_data.get('total_buyer_obligations', transaction.total_payable)),
+        'non_custodial_notice': "DigiLand does not operate an escrow service or hold customer funds. Payments are made directly to the respective beneficiaries.",
     }
 
 

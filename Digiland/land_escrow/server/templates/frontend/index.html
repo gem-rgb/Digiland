@@ -8,8 +8,9 @@
     {% elif user.role == 'Seller' %}Seller Hub - Digiland
     {% else %}Digiland{% endif %}
   {% else %}
-    Digiland - Secure Land Escrow
+    Digiland - Land Verification & Safe Transactions
   {% endif %}
+
 {% endblock %}
 
 {% block content_wrapper_open %}
@@ -643,8 +644,9 @@
           <ul class="lp-role-list">
             <li>List properties for free</li>
             <li>Agent-assisted verification</li>
-            <li>Guaranteed payment release</li>
+            <li>Structured payment confirmation</li>
             <li>Portfolio management</li>
+
           </ul>
           <a href="{% url 'account_signup' %}" class="btn lp-btn-primary btn-sm w-100">Register as Seller</a>
         </div>
@@ -761,7 +763,8 @@
     <!-- Bottom Bar -->
     <div class="footer-bottom">
       <span class="text-muted small">&copy; 2026 Digiland. All rights reserved.</span>
-      <span class="text-muted small">Secure Land Escrow Platform · Built in Kenya</span>
+      <span class="text-muted small">Land Verification & Safe Transaction Platform · Built in Kenya</span>
+
     </div>
   </div>
 </footer>

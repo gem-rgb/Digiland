@@ -7,10 +7,11 @@
 <table class="info-table">
   <tr><td>Property</td><td>{{ parcel_title|default:"Listed Parcel" }}</td></tr>
   <tr><td>Accepted Price</td><td><strong>KES {{ agreed_amount|default:"0.00" }}</strong></td></tr>
-  <tr><td>Next Step</td><td>Proceed to Escrow Deposit & Due Diligence</td></tr>
+  <tr><td>Next Step</td><td>Proceed to Transaction Verification & Settlement</td></tr>
 </table>
 <p style="text-align: center;">
-  <a href="{{ action_url|default:'https://digiland.co.ke/buyer/dashboard/' }}" class="btn">Proceed to Escrow</a>
+  <a href="{{ action_url|default:'https://digiland.co.ke/buyer/dashboard/' }}" class="btn">View Transaction Details</a>
 </p>
-<p>Your funds will be held in Digiland's secure dual-signoff escrow until title verification and legal checks are complete.</p>
+<p>DigiLand conducts structured multi-party verification and maintains traceable audit evidence. DigiLand is not an escrow custodian and does not hold customer funds.</p>
+
 {% endblock %}

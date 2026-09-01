@@ -62,15 +62,15 @@ export function HeroShowcase({
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold text-emerald-800 shadow-sm">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>{notice || "Kenya's #1 Land Escrow & Verification Platform"}</span>
+            <span>{notice || "Kenya's #1 Land Verification & Safe Transaction Platform"}</span>
             <span className="ml-1 inline-flex items-center gap-1 text-[10px] bg-emerald-600 text-white font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              <Sparkles className="w-3 h-3" /> Land Registry Integrated
+              <Sparkles className="w-3 h-3" /> Multi-Layer Verified
             </span>
           </div>
 
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>100% Fraud Protection & Escrow Guarantee</span>
+            <span>Multi-Layer Verification & Audit Tracking</span>
           </div>
         </div>
 
@@ -82,7 +82,7 @@ export function HeroShowcase({
             
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-xl bg-purple-50 border border-purple-200/80 text-purple-800 text-xs font-black tracking-wide uppercase">
               <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-              <span>Smart Escrow Protocol</span>
+              <span>Structured Verification Protocol</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-950 leading-[1.1]">
@@ -93,7 +93,7 @@ export function HeroShowcase({
             </h1>
 
             <p className="text-lg sm:text-xl text-slate-600 max-w-2xl font-medium leading-relaxed">
-              Buy verified land parcels across Kenya with complete peace of mind. Instant title deed validation, secure M-Pesa & bank escrow holding, and seamless digital closing.
+              Buy verified land parcels across Kenya with transparency and accountability. Multi-layer title deed screening, licensed surveyor checks, advocate due diligence, and verified settlement records.
             </p>
 
             {/* Fiverr-Style Hero Search Bar */}
@@ -153,7 +153,7 @@ export function HeroShowcase({
                 className="inline-flex items-center gap-2 px-6 py-4 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-sm shadow-sm transition"
               >
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>How Escrow Works</span>
+                <span>How Verification Works</span>
               </a>
             </div>
 
@@ -165,13 +165,14 @@ export function HeroShowcase({
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>M-Pesa & Bank Escrow</span>
+                <span>Verified Payment Records</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>Instant Documents</span>
+                <span>Transparent Audit Trail</span>
               </div>
             </div>
+
 
           </div>
 
@@ -202,8 +203,9 @@ export function HeroShowcase({
                   <span className="text-xs font-bold text-slate-800">Ministry of Lands Sync</span>
                 </div>
                 <span className="text-[11px] font-black text-emerald-700 uppercase tracking-wider">
-                  Guaranteed
+                  Audited
                 </span>
+
               </div>
 
             </div>

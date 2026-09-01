@@ -301,14 +301,15 @@ function FeeBreakdownPanel({ checkout }: { checkout: CheckoutData }) {
           tone: 'warning' as const,
         },
         {
-          key: 'escrow_fee',
-          label: checkout.fee_explanations?.['escrow_holding']?.label || 'Escrow Fee',
-          amount: checkout.escrow_fee || '0',
-          description: checkout.fee_explanations?.['escrow_holding']?.what || 'Secure fund holding and settlement management.',
-          note: checkout.fee_explanations?.['escrow_holding']?.why || 'Protects both buyer and seller during settlement.',
+          key: 'coordination_fee',
+          label: checkout.fee_explanations?.['transaction_coordination']?.label || checkout.fee_explanations?.['escrow_holding']?.label || 'Transaction Coordination Fee',
+          amount: checkout.coordination_fee || checkout.escrow_fee || '0',
+          description: checkout.fee_explanations?.['transaction_coordination']?.what || 'Milestone tracking, verification coordination, and audit records.',
+          note: checkout.fee_explanations?.['transaction_coordination']?.why || 'Facilitates structured verification and transparent settlement milestones.',
           included: true,
           tone: 'warning' as const,
         },
+
         {
           key: 'processing_fee',
           label: checkout.fee_explanations?.['payment_processing']?.label || 'Payment Processing Fee',
@@ -338,9 +339,9 @@ function FeeBreakdownPanel({ checkout }: { checkout: CheckoutData }) {
         },
         {
           key: 'total_payable',
-          label: 'TOTAL PAYABLE',
+          label: 'TOTAL BUYER OBLIGATIONS (SEPARATE BENEFICIARIES)',
           amount: checkout.total_payable || checkout.grand_total || checkout.agreed_price,
-          description: 'Land price plus all selected service fees.',
+          description: 'Itemized separate obligations. DigiLand does not pool, hold, or escrow these funds.',
           included: true,
           tone: 'success' as const,
         },
@@ -3559,7 +3560,7 @@ function FeaturesPage() {
     <div className="features-page-wrapper">
       <PublicShell
         title="Protocol Features"
-        subtitle="Explore the 10 core capabilities powering autonomous land escrow in Kenya."
+        subtitle="Explore the core capabilities powering multi-layer land verification and safe transactions in Kenya."
         nav={bootstrap.nav}
         user={bootstrap.user}
         actions={bootstrap.actions}
@@ -3568,9 +3569,9 @@ function FeaturesPage() {
         <div className="space-y-8 max-w-6xl mx-auto py-6">
           <div className="text-left space-y-2">
             <div className="text-xs font-black uppercase tracking-[0.24em] text-emerald-700">Platform Capabilities</div>
-            <h1 className="text-3xl font-black text-slate-900 sm:text-4xl">Digiland Buyer Protection & Escrow Features</h1>
+            <h1 className="text-3xl font-black text-slate-900 sm:text-4xl">Digiland Land Verification & Transaction Features</h1>
             <p className="text-sm text-slate-600 max-w-2xl font-medium">
-              From acquisition to legal conveyancing, Digiland connects identity, escrow vaulting, and government registry validation into a seamless protocol.
+              From parcel discovery to legal conveyancing, Digiland connects verified identity, multi-party due diligence, and government registry validation into a transparent transaction protocol.
             </p>
           </div>
 
@@ -3586,7 +3587,7 @@ function FeaturesPage() {
                 <CardTitle className="text-base font-bold text-slate-900 font-mono">Land Registry Title Validation</CardTitle>
               </CardHeader>
               <CardContent className="p-0 text-xs leading-relaxed text-slate-600">
-                Direct integration with Ministry of Lands land registry to confirm title deed ownership, encumbrances, and parcel boundaries before contract signing.
+                Direct cross-referencing with official land registry records to confirm title deed ownership, encumbrances, and parcel boundaries before contract signing.
               </CardContent>
             </Card>
 
@@ -3595,12 +3596,13 @@ function FeaturesPage() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-700 font-bold mb-2">
                   <WalletCards className="h-5 w-5" />
                 </div>
-                <CardTitle className="text-base font-bold text-slate-900">M-Pesa STK & KCB Escrow Vault</CardTitle>
+                <CardTitle className="text-base font-bold text-slate-900">M-Pesa & Bank Payment Confirmation</CardTitle>
               </CardHeader>
               <CardContent className="p-0 text-xs leading-relaxed text-slate-600">
-                Buyer deposits are held securely in escrow via M-Pesa B2C & KCB Bank until all legal conditions and advocate signatures are satisfied.
+                Payment receipts from M-Pesa STK push and bank settlement rails are verified by provider callbacks and logged as immutable evidence in the transaction record.
               </CardContent>
             </Card>
+
 
             <Card className="bg-white/95 border-slate-200/80 p-6 rounded-[1.75rem] shadow-sm">
               <CardHeader className="p-0 pb-3">
@@ -3869,9 +3871,71 @@ function ParcelDetailPage() {
               <Card className="border-emerald-200 bg-emerald-50/70"><CardHeader><CardTitle className="flex items-center gap-2 text-base"><ShieldCheck className="h-4 w-4 text-emerald-700" />Authorize document access</CardTitle><CardDescription>Set or enter your 6-digit seller PIN to authorize the assigned reviewer.</CardDescription></CardHeader><CardContent><form method="post" action={detail.request_access_url} className="flex gap-2"><input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} /><Input name="pin" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} placeholder="6-digit PIN" required /><Button type="submit" className="rounded-full">Authorize reviewer</Button></form></CardContent></Card>
             ) : null}
 
+            {detail.trust_profile ? (
+              <Card className="bg-white/95 border-emerald-200/80 shadow-xs text-left">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                      Verification Trust Profile
+                    </CardTitle>
+                    <Badge tone={detail.trust_profile.risk_rating === 'LOW' ? 'success' : detail.trust_profile.risk_rating === 'MEDIUM' ? 'warning' : 'danger'}>
+                      {detail.trust_profile.risk_rating} Risk Rating
+                    </Badge>
+                  </div>
+                  <CardDescription className="text-xs">
+                    Multi-layer independent verification layers completed for parcel {detail.parcel_number}.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                    <div className={`p-2.5 rounded-xl border flex items-center gap-2 ${detail.trust_profile.seller_identity_verified ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+                      <CheckCircle2 className={`h-4 w-4 shrink-0 ${detail.trust_profile.seller_identity_verified ? 'text-emerald-600' : 'text-slate-300'}`} />
+                      <span>Seller ID Verified</span>
+                    </div>
+                    <div className={`p-2.5 rounded-xl border flex items-center gap-2 ${detail.trust_profile.title_document_reviewed ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+                      <CheckCircle2 className={`h-4 w-4 shrink-0 ${detail.trust_profile.title_document_reviewed ? 'text-emerald-600' : 'text-slate-300'}`} />
+                      <span>Title Deed Screened</span>
+                    </div>
+                    <div className={`p-2.5 rounded-xl border flex items-center gap-2 ${detail.trust_profile.ai_screening_completed ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+                      <CheckCircle2 className={`h-4 w-4 shrink-0 ${detail.trust_profile.ai_screening_completed ? 'text-emerald-600' : 'text-slate-300'}`} />
+                      <span>Registry Records Checked</span>
+                    </div>
+                    <div className={`p-2.5 rounded-xl border flex items-center gap-2 ${detail.trust_profile.physical_assessment_completed ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+                      <CheckCircle2 className={`h-4 w-4 shrink-0 ${detail.trust_profile.physical_assessment_completed ? 'text-emerald-600' : 'text-slate-300'}`} />
+                      <span>Field Assessment</span>
+                    </div>
+                    <div className={`p-2.5 rounded-xl border flex items-center gap-2 ${detail.trust_profile.surveyor_verification_completed ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+                      <CheckCircle2 className={`h-4 w-4 shrink-0 ${detail.trust_profile.surveyor_verification_completed ? 'text-emerald-600' : 'text-slate-300'}`} />
+                      <span>Surveyor Beacon Check</span>
+                    </div>
+                    <div className={`p-2.5 rounded-xl border flex items-center gap-2 ${detail.trust_profile.advocate_review_completed ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+                      <CheckCircle2 className={`h-4 w-4 shrink-0 ${detail.trust_profile.advocate_review_completed ? 'text-emerald-600' : 'text-slate-300'}`} />
+                      <span>Advocate Legal Review</span>
+                    </div>
+                  </div>
+
+                  {detail.controlled_disclosure ? (
+                    <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3 text-xs text-blue-900 flex items-start gap-2">
+                      <Info className="h-4 w-4 shrink-0 mt-0.5 text-blue-600" />
+                      <div>
+                        <strong>Controlled Disclosure ({detail.controlled_disclosure.stage === 'STAGE_B_INTEREST_VERIFICATION' ? 'Stage B: Due Diligence Unlocked' : 'Stage A: Pre-Interest Overview'}):</strong>{' '}
+                        {detail.controlled_disclosure.notice}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <p className="text-[11px] text-slate-500 italic">
+                    DigiLand performs structured verification and provides traceable records designed to reduce avoidable risks. DigiLand is not an escrow custodian of buyer or seller funds.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : null}
+
             <Card className="bg-white/92">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="flex items-center gap-2 text-base"><FileText className="h-4 w-4 text-emerald-700" />Compliance documents</CardTitle>
+
                 {detail.upload_document_url ? (
                   <a href={detail.upload_document_url} className="inline-flex h-9 items-center justify-center rounded-full border border-border bg-white px-4 text-xs font-semibold text-foreground hover:bg-muted">
                     <Upload className="mr-2 h-4 w-4" /> Upload Document
@@ -3931,14 +3995,15 @@ function ParcelDetailPage() {
               </Card>
             ) : null}
 
-            {detail.can_initiate_escrow ? (
+            {(detail.can_initiate_transaction || detail.can_initiate_escrow) ? (
               <Card className="bg-white/92">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base"><WalletCards className="h-4 w-4 text-emerald-700" />Commission request</CardTitle>
-                  <CardDescription>Choose the purchase mode before creating a commission.</CardDescription>
+                  <CardTitle className="flex items-center gap-2 text-base"><WalletCards className="h-4 w-4 text-emerald-700" />Purchase & Commission Request</CardTitle>
+                  <CardDescription>Choose the purchase mode to begin transaction verification milestones.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <form method="post" action={detail.initiate_escrow_url} className="space-y-4">
+                  <form method="post" action={detail.initiate_transaction_url || detail.initiate_escrow_url} className="space-y-4">
+
                     <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
                     <div className="space-y-2">
                       <label className="text-sm font-semibold text-foreground">Purchase mode</label>
@@ -5988,8 +6053,8 @@ function ApprovalsPage() {
           title={isLawyer ? "Advocate Conveyancing & Legal Approvals" : "Central Approvals & Identity Verification"} 
           subtitle={
             isLawyer 
-              ? "Review land transfer agreements, execute advocate cryptographic sign-offs, verify title deeds, and clear escrow legal conditions."
-              : "Manage pending user KYC applications, parcel verification listings, escrow transfers, and joint member exits."
+              ? "Review land transfer agreements, execute advocate cryptographic sign-offs, verify title deeds, and clear conveyancing legal conditions."
+              : "Manage pending user KYC applications, parcel verification listings, transaction monitoring, and joint member exits."
           } 
         />
 
@@ -6054,7 +6119,7 @@ function ApprovalsPage() {
               </span>
             </button>
 
-            {/* Escrow Clearance / Deals */}
+            {/* Transactions & Milestones */}
             <button
               type="button"
               onClick={() => setActiveTab('transactions')}
@@ -6066,11 +6131,12 @@ function ApprovalsPage() {
               )}
             >
               <WalletCards className="h-4 w-4" />
-              <span>{isLawyer ? 'Escrow Legal Clearance' : 'Active Escrow'}</span>
+              <span>{isLawyer ? 'Conveyance Sign-Offs' : 'Active Deals'}</span>
               <span className={cn("px-2 py-0.5 rounded-full text-xs font-black", activeTab === 'transactions' ? (isLawyer ? "bg-purple-800 text-purple-100" : "bg-emerald-800 text-emerald-100") : "bg-slate-100 text-slate-700")}>
                 {pendingTransactions.length}
               </span>
             </button>
+
 
             {/* Agent / Admin specific tab: Joint Removals (Lawyer does NOT do joint removals) */}
             {!isLawyer && (
@@ -6312,7 +6378,7 @@ function ApprovalsPage() {
         {activeTab === 'transactions' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-black text-slate-900">Active Escrow Transactions</h3>
+              <h3 className="text-lg font-black text-slate-900">Active Transactions & Milestones</h3>
               <span className="text-xs text-muted-foreground">Showing {filteredTransactions.length} active transaction(s)</span>
             </div>
 
@@ -6320,8 +6386,8 @@ function ApprovalsPage() {
               <Card className="bg-white/95">
                 <CardContent className="p-12 text-center text-muted-foreground">
                   <WalletCards className="mx-auto mb-3 h-10 w-10 text-slate-300" />
-                  <div className="text-base font-bold text-slate-700">No Active Escrow Transactions Requiring Action</div>
-                  <p className="text-xs mt-1">Escrow transactions will appear here when deposits are made.</p>
+                  <div className="text-base font-bold text-slate-700">No Active Transactions Requiring Action</div>
+                  <p className="text-xs mt-1">Transactions will appear here when purchase interest is initiated.</p>
                 </CardContent>
               </Card>
             ) : (
@@ -6331,7 +6397,7 @@ function ApprovalsPage() {
                     <CardContent className="p-6 text-left space-y-4">
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <div className="text-xs font-bold uppercase tracking-wider text-emerald-700">Escrow Transaction</div>
+                          <div className="text-xs font-bold uppercase tracking-wider text-emerald-700">Verified Transaction</div>
                           <div className="font-black text-xl text-slate-900 mt-0.5">{tx.parcel_number}</div>
                           <div className="text-xs text-slate-500 mt-1">ID: {tx.id.slice(0, 8).toUpperCase()}</div>
                         </div>
@@ -6340,7 +6406,7 @@ function ApprovalsPage() {
 
                       <div className="grid grid-cols-2 gap-3 pt-2 text-xs border-t border-slate-100">
                         <div className="rounded-xl bg-slate-50 p-2.5">
-                          <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Escrow Amount</span>
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Agreed Price</span>
                           <strong className="text-emerald-700 font-bold text-sm">{money(tx.amount)}</strong>
                         </div>
                         <div className="rounded-xl bg-slate-50 p-2.5">
@@ -6348,6 +6414,7 @@ function ApprovalsPage() {
                           <strong className={tx.contract_signed ? 'text-emerald-700 font-bold' : 'text-amber-600 font-bold'}>{tx.contract_signed ? '✓ Signed' : 'Pending'}</strong>
                         </div>
                       </div>
+
 
                       <div className="text-xs text-slate-600 space-y-1 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
                         <div>Buyer: <strong className="text-slate-800">{tx.buyer_email}</strong></div>
@@ -6896,9 +6963,9 @@ function CheckoutFullPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
             <div className="text-xs font-black uppercase tracking-[0.32em] text-emerald-700">Breakout checkout sheet</div>
-            <h1 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl">Escrow checkout</h1>
+            <h1 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl">Transaction Checkout & Payment Confirmation</h1>
             <p className="max-w-3xl text-sm leading-7 text-muted-foreground">
-              Complete the deposit in a clean full-page workflow with the invoice, payment vector, and status shown together without dashboard clutter.
+              Complete the payment confirmation in a clean full-page workflow with the invoice, payment vector, and status shown together without dashboard clutter.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -6924,7 +6991,7 @@ function CheckoutFullPage() {
           <div className="border-b border-stone-200 px-8 py-8 sm:px-10">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <div className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-700">Escrow payment record</div>
+                <div className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-700">Transaction payment record</div>
                 <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900">{checkout.parcel_number}</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
                   Seller {checkout.seller_email}
@@ -6945,9 +7012,9 @@ function CheckoutFullPage() {
             </div>
           </div>
 
-          <div className="grid gap-8 px-8 py-8 lg:grid-cols-[0.95fr_1.05fr] sm:px-10">
+          <div className="grid gap-8 px-8 py-8 sm:px-10 lg:grid-cols-[1.1fr_0.9fr]">
             <section className="rounded-[1.75rem] border border-stone-200 bg-stone-50/80 p-6 shadow-sm">
-              <div className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-700">Escrow invoice</div>
+              <div className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-700">Transaction invoice</div>
               <div className="mt-4 grid gap-3 text-sm">
                 <div className="rounded-2xl bg-white p-4 shadow-sm">
                   <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Parcel</div>
@@ -6988,7 +7055,7 @@ function CheckoutFullPage() {
                 </div>
               ) : (
                 <div className="mt-6 rounded-3xl border border-emerald-200 bg-emerald-50/70 p-4 text-sm leading-7 text-emerald-900">
-                  Your payment will be deposited into escrow and released only after the legal and transfer steps are completed.
+                  Your payment confirmation will be recorded directly into the verified transaction ledger and tracked against legal and transfer milestones.
                 </div>
               )}
 
@@ -7097,15 +7164,15 @@ function CheckoutFullPage() {
 
                     {paymentMode === 'kcb_bank' ? (
                       <div className="space-y-4 rounded-3xl border border-stone-200 bg-stone-50/80 p-4">
-                        <div className="text-sm font-semibold text-foreground">KCB escrow transfer</div>
+                        <div className="text-sm font-semibold text-foreground">KCB direct settlement transfer</div>
                         <div className="grid gap-2 text-sm text-muted-foreground">
                           <div>Bank: {checkout.escrow_bank_name || 'KCB Bank Kenya'}</div>
-                          <div>Account name: {checkout.escrow_bank_account_name || 'Digiland Escrow'}</div>
-                          <div>Account number: {checkout.escrow_bank_account_number || 'DIGILAND-ESCROW-001'}</div>
+                          <div>Account name: {checkout.escrow_bank_account_name || 'Digiland Settlement Operations'}</div>
+                          <div>Account number: {checkout.escrow_bank_account_number || 'DIGILAND-TRANS-001'}</div>
                           <div>Branch: {checkout.escrow_bank_branch || 'Nairobi'}</div>
                         </div>
                         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-                          Make the bank transfer from your KCB account, then enter the transfer reference below.
+                          Make the direct transfer from your bank account, then enter the provider confirmation reference below.
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-semibold text-foreground">Depositor name</label>
@@ -7143,8 +7210,9 @@ function CheckoutFullPage() {
                     ) : null}
 
                     <div className="rounded-3xl border border-stone-200 bg-stone-50/80 p-4 text-sm leading-7 text-slate-700">
-                      Funds remain in escrow until the transaction is fully authorised and processed.
+                      DigiLand records provider payment confirmation receipts into the transaction audit trail. DigiLand is not a custodian of customer funds.
                     </div>
+
 
                     <Button type="submit" className="w-full rounded-full" disabled={loading || (paymentMode === 'paystack' && !paystackEnabled)}>
                       {loading
@@ -7267,7 +7335,7 @@ function SellerWithdrawPage() {
           </Card>
           <Card className="bg-white/92">
             <CardContent className="p-6">
-              <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Held in escrow</div>
+              <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Pending settlement</div>
               <div className="mt-2 text-3xl font-black tracking-tight text-amber-600">{money(data.in_escrow)}</div>
             </CardContent>
           </Card>
@@ -7342,11 +7410,11 @@ function EscrowReleasePage() {
   return (
     <AppShell {...shellProps}>
       <div className="space-y-6">
-        <PageHeader kicker="Escrow" title={bootstrap.title} subtitle={bootstrap.subtitle} actions={bootstrap.actions} />
+        <PageHeader kicker="Transactions" title={bootstrap.title} subtitle={bootstrap.subtitle} actions={bootstrap.actions} />
 
         {isAdmin ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            <strong>Admin override active.</strong> You can release payments at any time regardless of the verification deadline. Agents can only release after the escrow period ends.
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+            <strong>Admin review active.</strong> You can review transaction milestones and conclude transactions once verification criteria and advocate sign-offs are confirmed.
           </div>
         ) : null}
 
@@ -7354,7 +7422,7 @@ function EscrowReleasePage() {
           <Card className="bg-white/92">
             <CardContent className="flex flex-col items-center justify-center p-12 text-center">
               <ShieldCheck className="h-12 w-12 text-muted-foreground/40 mb-4" />
-              <div className="text-lg font-bold text-foreground">No pending escrow releases</div>
+              <div className="text-lg font-bold text-foreground">No pending transaction reviews</div>
               <p className="mt-2 text-sm text-muted-foreground">All eligible transactions have been processed or none are currently assigned to you.</p>
             </CardContent>
           </Card>
@@ -7381,19 +7449,20 @@ function EscrowReleasePage() {
                       </div>
 
                       {tx.can_release ? (
-                        <form method="post" action={tx.release_url}>
+                        <form method="post" action={tx.complete_url || tx.release_url}>
                           <input type="hidden" name="csrfmiddlewaretoken" value={bootstrap.csrf_token || ''} />
-                          <Button type="submit" className="rounded-full whitespace-nowrap">
-                            Release Payment
+                          <Button type="submit" className="rounded-full whitespace-nowrap bg-emerald-700 hover:bg-emerald-800">
+                            Complete Transaction
                           </Button>
                         </form>
                       ) : (
                         <div className="rounded-2xl border border-border bg-muted/50 px-4 py-2 text-xs font-semibold text-muted-foreground">
-                          {!tx.contract_signed ? 'Awaiting signatures' : 'Escrow period active'}
+                          {!tx.contract_signed ? 'Awaiting signatures' : 'Verification underway'}
                         </div>
                       )}
                     </div>
                   </div>
+
 
                   <div className="mt-4 grid gap-2 sm:grid-cols-4">
                     <div className="rounded-2xl bg-muted/50 p-3 text-center">
@@ -8418,11 +8487,12 @@ function ReactAppInner() {
       <AppShell {...shellProps}>
         <div className="space-y-6">
           <PageHeader
-            kicker="Digiland Escrow Vault"
+            kicker="Disbursement Desk"
             title={bootstrap.title || 'Funds Withdrawal Desk'}
             subtitle={bootstrap.subtitle || 'Direct automated disbursement to M-Pesa or Bank.'}
             badge={{ text: 'M-Pesa B2C & Bank Regulated', tone: 'accent' }}
           />
+
           <WithdrawalDeskView role={bootstrap.user?.role || 'Seller'} withdrawData={bootstrap.withdraw_data} />
         </div>
       </AppShell>
@@ -8584,7 +8654,7 @@ function AdminFinancePage() {
         </Card>
         <Card className="bg-white/92">
           <CardContent className="p-6">
-            <div className="text-sm font-semibold text-muted-foreground">Reversed / Escrow Refunded</div>
+            <div className="text-sm font-semibold text-muted-foreground">Reversed / Refunded Volume</div>
             <div className="mt-2 text-3xl font-bold text-rose-600">KES {finance.reversed_volume.toLocaleString()}</div>
           </CardContent>
         </Card>
@@ -8594,8 +8664,9 @@ function AdminFinancePage() {
         <Card className="lg:col-span-2 bg-white/92">
           <CardHeader>
             <CardTitle>Recent Transactions</CardTitle>
-            <CardDescription>Latest completed escrow settlements.</CardDescription>
+            <CardDescription>Latest completed transaction settlements.</CardDescription>
           </CardHeader>
+
           <CardContent>
             {finance.recent_transactions.length ? (
               <div className="space-y-4">

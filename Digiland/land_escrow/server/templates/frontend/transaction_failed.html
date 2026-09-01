@@ -28,12 +28,13 @@
                     {% elif transaction.status == 'Refunded' %}
                         <i class="bi bi-cash-stack text-warning" style="font-size: 4rem;"></i>
                         <h3 class="fw-bold text-warning mt-3">Payment Refunded</h3>
-                        <p class="text-muted lead mb-0">The escrow deposit for this transaction has been fully refunded to the buyer's M-PESA account.</p>
+                        <p class="text-muted lead mb-0">The payment for this transaction has been refunded or reversed via the payment provider.</p>
                     {% elif transaction.status == 'Disputed' %}
                         <i class="bi bi-shield-exclamation text-info" style="font-size: 4rem;"></i>
                         <h3 class="fw-bold text-info mt-3">Transaction Disputed</h3>
-                        <p class="text-muted lead mb-0">A formal dispute has been raised on this transaction. It is now under investigation by our escrow mediation team.</p>
+                        <p class="text-muted lead mb-0">A formal dispute case has been recorded on this transaction. It is currently under investigation by our compliance team.</p>
                     {% else %}
+
                         <i class="bi bi-x-octagon text-secondary" style="font-size: 4rem;"></i>
                         <h3 class="fw-bold text-secondary mt-3">Transaction Failed</h3>
                         <p class="text-muted lead mb-0">This transaction could not be completed. Please review the details below.</p>
@@ -72,9 +73,10 @@
                                 <strong class="text-success">KES {{ transaction.agreed_price }}</strong>
                             </li>
                             <li class="list-group-item d-flex justify-content-between">
-                                <span class="text-muted">Escrow Reference</span>
-                                <strong>{{ transaction.escrow_reference|default:"N/A" }}</strong>
+                                <span class="text-muted">Payment Reference</span>
+                                <strong>{{ transaction.payment_reference_safe|default:"N/A" }}</strong>
                             </li>
+
                             <li class="list-group-item d-flex justify-content-between">
                                 <span class="text-muted">Current Status</span>
                                 <span class="badge
@@ -132,9 +134,9 @@
                             <div class="legacy-subtle-panel mb-3">
                                 <h6 class="fw-bold"><i class="bi bi-question-circle"></i> What happens next?</h6>
                                 <ul class="mb-0 small">
-                                    <li>The escrow deposit has been released back to the buyer.</li>
+                                    <li>The payment reversal has been logged with the payment provider.</li>
                                     <li>The land parcel is now available for new transactions.</li>
-                                    <li>Both parties may initiate a new escrow if they wish to renegotiate.</li>
+                                    <li>Both parties may initiate a new transaction if they wish to renegotiate.</li>
                                 </ul>
                             </div>
 
@@ -142,13 +144,13 @@
                             <div class="alert alert-info border-info">
                                 <h6 class="fw-bold mb-2"><i class="bi bi-shield-exclamation"></i> Dispute Details</h6>
                                 <p class="mb-1"><strong>Reason:</strong> {{ reason|default:"One or both parties have raised concerns about the legitimacy of this transaction." }}</p>
-                                <p class="mb-0"><strong>Status:</strong> Under investigation by the Digiland mediation team.</p>
+                                <p class="mb-0"><strong>Status:</strong> Under investigation by the Digiland compliance team.</p>
                             </div>
                             <div class="legacy-subtle-panel mb-3">
                                 <h6 class="fw-bold"><i class="bi bi-question-circle"></i> What happens next?</h6>
                                 <ul class="mb-0 small">
-                                    <li>Escrow funds remain frozen until the dispute is resolved.</li>
-                                    <li>A Digiland agent will review all documentation and contact both parties.</li>
+                                    <li>Transaction milestones remain paused while the dispute case is reviewed.</li>
+                                    <li>A Digiland verification officer will review all documentation and contact both parties.</li>
                                     <li>Resolution typically takes 5-10 business days.</li>
                                     <li>You may submit additional evidence via the support portal.</li>
                                 </ul>
@@ -176,8 +178,9 @@
                             <div class="d-flex flex-column gap-2 small">
                                 <div class="d-flex align-items-center">
                                     <i class="bi bi-circle-fill text-success me-2" style="font-size: 0.5rem;"></i>
-                                    <span>Escrow initiated — {{ transaction.created_at|date:"M d, Y H:i" }}</span>
+                                    <span>Transaction initiated — {{ transaction.created_at|date:"M d, Y H:i" }}</span>
                                 </div>
+
                                 {% if transaction.buyer_signature %}
                                 <div class="d-flex align-items-center">
                                     <i class="bi bi-circle-fill text-success me-2" style="font-size: 0.5rem;"></i>

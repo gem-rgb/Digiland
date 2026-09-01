@@ -99,11 +99,11 @@ class MpesaCallbackView(View):
     """
 
     def _verify_callback_secret(self, request):
-        """Verify the M-PESA callback secret header.
+        """Verify the M-PESA callback secret header or query parameter.
 
-        Safaricom Daraja API does not natively sign callbacks, but you can
-        configure a callback URL with a query-parameter secret that gets
-        echoed back. This method checks for a custom X-Mpesa-Secret header
+        Safaricom Daraja API does not natively sign callbacks, but allows
+        specifying a query-parameter secret on CallBackURL. This method checks
+        for a custom X-Mpesa-Secret header or a ?secret= query parameter
         when MPESA_CALLBACK_SECRET is configured.
 
         Returns True if verification passes or is not configured.
@@ -112,7 +112,6 @@ class MpesaCallbackView(View):
         from django.conf import settings
         expected = getattr(settings, 'MPESA_CALLBACK_SECRET', '')
         if not expected:
-            # No secret configured — log warning in production
             if not getattr(settings, 'DEBUG', True):
                 logger.warning(
                     "MPESA_CALLBACK_SECRET not set — M-PESA callbacks are "
@@ -120,17 +119,19 @@ class MpesaCallbackView(View):
                 )
             return True
 
-        provided = request.META.get('HTTP_X_MPESA_SECRET', '')
-        if not provided:
-            logger.warning("M-PESA callback missing X-Mpesa-Secret header")
-            return False
-
+        # Check HTTP Header
+        provided_header = request.META.get('HTTP_X_MPESA_SECRET', '')
         import hmac
-        if not hmac.compare_digest(provided, expected):
-            logger.warning("M-PESA callback secret mismatch — possible spoofed callback")
-            return False
+        if provided_header and hmac.compare_digest(provided_header, expected):
+            return True
 
-        return True
+        # Check Query Parameter
+        provided_query = request.GET.get('secret') or request.GET.get('token', '')
+        if provided_query and hmac.compare_digest(provided_query, expected):
+            return True
+
+        logger.warning("M-PESA callback secret mismatch or missing header/param")
+        return False
 
     def post(self, request, *args, **kwargs):
         # SECURITY: Verify callback secret if configured
@@ -159,50 +160,15 @@ class MpesaCallbackView(View):
 
     def handle_stk_callback(self, callback_data):
         try:
-            result_code = callback_data.get('ResultCode')
-            checkout_request_id = callback_data.get('CheckoutRequestID')
-
-            transaction = None
-            if checkout_request_id:
-                try:
-                    transaction = Transaction.objects.get(
-                        escrow_reference=f"MPESA-{checkout_request_id}"
-                    )
-                except Transaction.DoesNotExist:
-                    logger.warning(f"No transaction found for CheckoutRequestID: {checkout_request_id}")
-
-            if result_code == 0:
-                metadata = callback_data.get('CallbackMetadata', {}).get('Item', [])
-                amount = phone = mpesa_receipt = None
-                for item in metadata:
-                    name = item.get('Name')
-                    value = item.get('Value')
-                    if name == 'Amount':
-                        amount = value
-                    elif name == 'PhoneNumber':
-                        phone = value
-                    elif name == 'MpesaReceiptNumber':
-                        mpesa_receipt = value
-
-                logger.info(f"STK Push successful: {mpesa_receipt}, Amount: {amount}, Phone: {phone}")
-                if transaction:
-                    transaction.status = 'Deposit_Paid'
-                    transaction.escrow_reference = f"MPESA-{mpesa_receipt or checkout_request_id}"
-                    transaction.save(update_fields=['status', 'escrow_reference'])
-                    logger.info(f"Transaction {transaction.id} marked as Deposit_Paid")
-
-                return JsonResponse({"status": "success", "message": "Payment processed successfully"})
+            from core.services.payment import process_mpesa_callback
+            res = process_mpesa_callback(callback_data)
+            if res.get("status") in ["success", "duplicate_ignored"]:
+                return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
             else:
-                result_desc = callback_data.get('ResultDesc', 'Transaction failed')
-                logger.warning(f"STK Push failed: {result_desc}")
-                if transaction:
-                    transaction.escrow_reference = f"FAILED-{checkout_request_id}"
-                    transaction.save(update_fields=['escrow_reference'])
-                return JsonResponse({"status": "failed", "message": result_desc})
-
+                return JsonResponse({"ResultCode": 1, "ResultDesc": res.get("message", "Processing failed")})
         except Exception as e:
             logger.error(f"Error handling STK callback: {str(e)}")
-            return JsonResponse({"status": "error", "message": "Callback processing error"})
+            return JsonResponse({"ResultCode": 1, "ResultDesc": "Callback processing error"})
 
     def handle_b2c_callback(self, result_data):
         try:
@@ -467,6 +433,7 @@ def _require_admin(request):
 @require_http_methods(["POST"])
 def initiate_mpesa_payment_view(request):
     """API endpoint to initiate M-PESA STK Push payment.
+    Creates a dedicated PaymentRecord and records initiation without custodial money holding.
 
     SECURITY: Requires authentication.
     """
@@ -478,39 +445,81 @@ def initiate_mpesa_payment_view(request):
         phone_number = data.get('phone_number')
         amount = data.get('amount')
         transaction_id = data.get('transaction_id')
+        purpose = data.get('purpose', 'LAND_PURCHASE')
 
         if not all([phone_number, amount, transaction_id]):
             return JsonResponse({"status": "error", "message": "Phone number, amount, and transaction ID are required"})
 
-        result = DarajaAPI.stk_push(
-            phone_number=phone_number,
+        from core.models import Transaction
+        import uuid
+        transaction = None
+        try:
+            uid = uuid.UUID(str(transaction_id))
+            transaction = Transaction.objects.filter(id=uid).first()
+        except Exception:
+            transaction = Transaction.objects.filter(transaction_reference=str(transaction_id)).first()
+
+        if not transaction:
+            return JsonResponse({"status": "error", "message": "Transaction not found"}, status=404)
+
+        # SECURITY: Payer Authorization
+        if purpose == 'LAND_PURCHASE' and request.user != transaction.buyer and not request.user.is_superuser:
+            return JsonResponse(
+                {"status": "error", "message": "Unauthorized: Only the designated buyer can initiate the land purchase payment."},
+                status=403
+            )
+
+        from core.services.payment import create_payment_intent, initiate_mpesa_stk_push
+        from core.services.payment_router import PaymentRouter
+
+        # Amount is backend authoritative for land purchase
+        if purpose == 'LAND_PURCHASE':
+            amount = transaction.agreed_price
+
+        payment = create_payment_intent(
+            transaction=transaction,
+            payer=request.user,
             amount=amount,
-            account_reference=f"ESCROW-{transaction_id}",
-            transaction_desc=f"Land escrow payment for transaction {transaction_id}"
+            purpose=purpose,
+            recipient=transaction.seller if purpose == 'LAND_PURCHASE' else None,
+            parcel=transaction.land_parcel,
+            provider='MPESA'
         )
 
+        result = initiate_mpesa_stk_push(payment, phone_number)
+
         if result.get("status") == "success":
+            instructions = PaymentRouter.get_route_settlement_instructions(payment)
             return JsonResponse({
                 "status": "success",
-                "message": "M-PESA payment initiated successfully",
+                "message": result.get("message", "M-PESA payment initiated successfully"),
+                "digiland_transaction_reference": transaction.transaction_reference,
+                "digiland_payment_reference": payment.digiland_reference,
+                "payment_id": str(payment.id),
+                "payment_type": payment.payment_type,
+                "payment_purpose": payment.payment_purpose,
+                "beneficiary_name": payment.beneficiary,
+                "beneficiary_type": payment.beneficiary_type,
+                "amount": float(payment.amount),
                 "payment_details": {
                     "checkout_request_id": result.get("checkout_request_id"),
                     "merchant_request_id": result.get("merchant_request_id"),
-                    "customer_message": result.get("customer_message"),
+                    "customer_message": result.get("message"),
+                    "instructions": instructions,
                 }
             })
         else:
             return JsonResponse({"status": "error", "message": result.get("message", "M-PESA payment initiation failed")})
 
     except json.JSONDecodeError:
-        return JsonResponse({"status": "error", "message": "Invalid JSON"})
+        return JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
     except Exception as e:
         logger.error(f"Error initiating M-PESA payment: {str(e)}")
-        return JsonResponse({"status": "error", "message": "Internal payment error"})
+        return JsonResponse({"status": "error", "message": str(e)}, status=400)
 
 
 @csrf_exempt
-@require_http_methods(["POST"])
+@require_http_methods(["POST", "GET"])
 def query_mpesa_status_view(request):
     """API endpoint to query M-PESA STK Push transaction status.
 
@@ -520,17 +529,119 @@ def query_mpesa_status_view(request):
     if auth_err:
         return auth_err
     try:
-        data = json.loads(request.body)
-        checkout_request_id = data.get('checkout_request_id')
+        checkout_request_id = request.GET.get('checkout_request_id')
+        if not checkout_request_id and request.method == 'POST':
+            data = json.loads(request.body or '{}')
+            checkout_request_id = data.get('checkout_request_id')
+
         if not checkout_request_id:
             return JsonResponse({"status": "error", "message": "Checkout request ID is required"})
-        result = DarajaAPI.query_stk_status(checkout_request_id)
+
+        from core.services.payment import query_payment_status
+        result = query_payment_status(checkout_request_id)
         return JsonResponse(result)
     except json.JSONDecodeError:
         return JsonResponse({"status": "error", "message": "Invalid JSON"})
     except Exception as e:
         logger.error(f"Error querying M-PESA status: {str(e)}")
         return JsonResponse({"status": "error", "message": "Internal status query error"})
+
+
+@require_http_methods(["GET"])
+def payment_status_api_view(request, payment_id):
+    """Authoritative status polling endpoint for a specific PaymentRecord.
+    Enables resilient state recovery if buyer closes browser during payment authorization.
+    """
+    if not request.user or not request.user.is_authenticated:
+        return JsonResponse({"status": "error", "message": "Authentication required"}, status=401)
+
+    from core.services.payment import query_payment_status
+    result = query_payment_status(str(payment_id))
+    return JsonResponse(result)
+
+
+@require_http_methods(["GET"])
+def transaction_payment_status_api_view(request, transaction_ref):
+    """Authoritative payment reconciliation breakdown for a transaction."""
+    if not request.user or not request.user.is_authenticated:
+        return JsonResponse({"status": "error", "message": "Authentication required"}, status=401)
+
+    from core.models import Transaction
+    import uuid
+    transaction = None
+    try:
+        uid = uuid.UUID(str(transaction_ref))
+        transaction = Transaction.objects.filter(id=uid).first()
+    except Exception:
+        transaction = Transaction.objects.filter(transaction_reference=str(transaction_ref)).first()
+
+    if not transaction:
+        return JsonResponse({"status": "error", "message": "Transaction not found"}, status=404)
+
+    # Verify authorization
+    user = request.user
+    if user != transaction.buyer and user != transaction.seller and user != transaction.agent and user.role != 'Admin':
+        return JsonResponse({"status": "error", "message": "Access denied"}, status=403)
+
+    from core.services.payment_reconciliation import PaymentReconciliationService
+    recon = PaymentReconciliationService.get_transaction_reconciliation(transaction)
+    return JsonResponse({"status": "success", "reconciliation": recon})
+
+
+@require_http_methods(["GET"])
+def payment_reconciliation_api_view(request):
+    """Admin/Staff payment search and reconciliation audit endpoint."""
+    if not request.user or not request.user.is_authenticated or request.user.role not in ['Admin', 'Staff']:
+        return JsonResponse({"status": "error", "message": "Staff or Admin access required"}, status=403)
+
+    from core.services.payment_reconciliation import PaymentReconciliationService
+    payments_qs = PaymentReconciliationService.search_payments(
+        transaction_ref=request.GET.get('transaction_ref'),
+        provider_receipt=request.GET.get('receipt'),
+        buyer_email=request.GET.get('buyer'),
+        seller_email=request.GET.get('seller'),
+        parcel_number=request.GET.get('parcel'),
+        amount_min=request.GET.get('amount_min'),
+        amount_max=request.GET.get('amount_max'),
+        status=request.GET.get('status'),
+        purpose=request.GET.get('purpose'),
+    )
+
+    results = [
+        {
+            'id': str(p.id),
+            'digiland_reference': p.digiland_reference,
+            'transaction_reference': p.transaction.transaction_reference if p.transaction else None,
+            'parcel_number': p.parcel.parcel_number if p.parcel else None,
+            'payer': p.payer.email,
+            'recipient': p.recipient.email if p.recipient else None,
+            'amount': float(p.amount),
+            'currency': p.currency,
+            'purpose': p.purpose,
+            'purpose_label': p.get_purpose_display(),
+            'status': p.status,
+            'status_label': p.get_status_display(),
+            'provider': p.payment_provider,
+            'provider_reference': p.provider_reference,
+            'checkout_request_reference': p.checkout_request_reference,
+            'confirmed_at': p.confirmed_at.isoformat() if p.confirmed_at else None,
+            'created_at': p.created_at.isoformat(),
+        }
+        for p in payments_qs
+    ]
+
+    return JsonResponse({"status": "success", "count": len(results), "payments": results})
+
+
+@require_http_methods(["GET"])
+def payment_reconciliation_summary_api_view(request):
+    """Executive metrics summary for payment reconciliation."""
+    if not request.user or not request.user.is_authenticated or request.user.role not in ['Admin', 'Staff']:
+        return JsonResponse({"status": "error", "message": "Staff or Admin access required"}, status=403)
+
+    from core.services.payment_reconciliation import PaymentReconciliationService
+    summary = PaymentReconciliationService.get_reconciliation_summary()
+    return JsonResponse({"status": "success", "summary": summary})
 
 
 @csrf_exempt
@@ -757,31 +868,39 @@ def check_checkout_status_view(request):
             user != transaction.agent and getattr(user, 'role', None) != 'Admin'):
         return JsonResponse({"payment_status": "error", "message": "Not authorized"})
 
-    if transaction.status == 'Deposit_Paid':
-        return JsonResponse({
-            "payment_status": "completed",
-            "message": "Payment confirmed!",
-            "escrow_reference": transaction.escrow_reference,
-            "mpesa_receipt": transaction.escrow_reference.replace("MPESA-", "") if transaction.escrow_reference else "",
-        })
-
-    if transaction.escrow_reference and transaction.escrow_reference.startswith("FAILED-"):
-        return JsonResponse({"payment_status": "failed", "message": "Payment was declined or cancelled."})
+    from core.services.payment import query_payment_status
 
     if checkout_request_id:
-        try:
-            result = DarajaAPI.query_stk_status(checkout_request_id)
-            if result.get('status') == 'success' and result.get('result_code') == '0':
-                transaction.status = 'Deposit_Paid'
-                transaction.escrow_reference = f"MPESA-{checkout_request_id}"
-                transaction.save(update_fields=['status', 'escrow_reference'])
-                return JsonResponse({"payment_status": "completed", "message": "Payment confirmed via status query!", "escrow_reference": transaction.escrow_reference})
-            elif result.get('status') == 'error' and 'cancelled' in str(result.get('message', '')).lower():
-                transaction.escrow_reference = f"FAILED-{checkout_request_id}"
-                transaction.save(update_fields=['escrow_reference'])
-                return JsonResponse({"payment_status": "failed", "message": result.get('message', 'Payment was cancelled.')})
-        except Exception as e:
-            logger.error(f"Error querying STK status: {str(e)}")
+        status_res = query_payment_status(checkout_request_id)
+        if status_res.get("is_confirmed"):
+            return JsonResponse({
+                "payment_status": "completed",
+                "status": "success",
+                "message": "Payment confirmed and recorded!",
+                "payment_reference": status_res.get("provider_reference"),
+                "mpesa_receipt": status_res.get("provider_reference"),
+                "digiland_reference": status_res.get("digiland_reference"),
+            })
+        elif status_res.get("is_failed"):
+            return JsonResponse({
+                "payment_status": "failed",
+                "status": "failed",
+                "message": status_res.get("failure_reason") or "Payment was unsuccessful or cancelled.",
+            })
+
+    if transaction.status in ['Payment_Confirmed', 'Completed', 'Under_Verification']:
+        ref = transaction.payment_reference_safe or getattr(transaction, 'payment_reference', '')
+        return JsonResponse({
+            "payment_status": "completed",
+            "status": "success",
+            "message": "Payment confirmed and recorded into verified transaction ledger.",
+            "payment_reference": ref,
+            "mpesa_receipt": ref.replace("MPESA-", "") if ref else "",
+            "digiland_transaction_reference": transaction.transaction_reference,
+        })
+
+    if transaction.status == 'Failed':
+        return JsonResponse({"payment_status": "failed", "status": "failed", "message": "Transaction payment failed."})
 
     return JsonResponse({"payment_status": "pending", "message": "Waiting for payment confirmation..."})
 
@@ -1480,16 +1599,18 @@ def calculate_service_fees(request):
 
     # Fee calculations
     platform_fee = amount * Decimal('0.04')       # 4% platform fee
-    escrow_fee = amount * Decimal('0.02')          # 2% escrow holding fee
-    processing_fee = Decimal('500.00')              # Flat KES 500 processing fee
+    coordination_fee = amount * Decimal('0.02')   # 2% transaction & verification coordination fee
+    escrow_fee = coordination_fee                 # Backward compatibility alias
+    processing_fee = Decimal('500.00')            # Flat KES 500 processing fee
     verification_fee = Decimal('5000.00') if include_legal else Decimal('0.00')
     due_diligence_fee = Decimal('3000.00') if include_dd else Decimal('0.00')
 
-    total_fees = platform_fee + escrow_fee + processing_fee + verification_fee + due_diligence_fee
+    total_fees = platform_fee + coordination_fee + processing_fee + verification_fee + due_diligence_fee
 
     breakdown = {
         'platform_fee': {'amount': str(platform_fee), 'rate': '4%', 'description': 'Platform service fee'},
-        'escrow_fee': {'amount': str(escrow_fee), 'rate': '2%', 'description': 'Escrow holding fee'},
+        'coordination_fee': {'amount': str(coordination_fee), 'rate': '2%', 'description': 'Transaction & verification coordination fee'},
+        'escrow_fee': {'amount': str(coordination_fee), 'rate': '2%', 'description': 'Transaction & verification coordination fee'},
         'processing_fee': {'amount': str(processing_fee), 'rate': 'flat', 'description': 'Payment processing fee'},
         'verification_fee': {'amount': str(verification_fee), 'description': 'Legal verification fee (optional)'},
         'due_diligence_fee': {'amount': str(due_diligence_fee), 'description': 'Due diligence fee (optional)'},
@@ -1498,6 +1619,7 @@ def calculate_service_fees(request):
     return Response({
         'principal': str(amount),
         'platform_fee': str(platform_fee),
+        'coordination_fee': str(coordination_fee),
         'escrow_fee': str(escrow_fee),
         'processing_fee': str(processing_fee),
         'verification_fee': str(verification_fee),
@@ -1515,13 +1637,15 @@ def fee_explanations(request):
     return Response({
         'fees': [
             {'name': 'Platform Service Fee', 'rate': '4%', 'description': 'Charged on every transaction for platform maintenance and support.'},
-            {'name': 'Escrow Holding Fee', 'rate': '2%', 'description': 'Covers the cost of securely holding funds in escrow during the transaction.'},
+            {'name': 'Transaction & Verification Coordination Fee', 'rate': '2%', 'description': 'Coordinates independent verification checkpoints, document screening, and traceable transaction records between parties.'},
             {'name': 'Payment Processing Fee', 'rate': 'Flat KES 500', 'description': 'Covers M-Pesa/Paystack processing costs.'},
             {'name': 'Legal Verification Fee', 'rate': 'KES 5,000', 'description': 'Optional. Covers legal verification of land documents by a qualified advocate.'},
+
             {'name': 'Due Diligence Fee', 'rate': 'KES 3,000', 'description': 'Optional. Covers comprehensive background checks and land search verification.'},
         ],
-        'disclaimer': 'All fees are inclusive of VAT where applicable. Fees are deducted before disbursement to seller.',
+        'disclaimer': 'All fees are inclusive of VAT where applicable. Platform coordination fees support independent verification, document review, and transaction audit records.',
     })
+
 
 
 @api_view(['GET'])

@@ -86,7 +86,7 @@ export function TransactionsChapter({
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
           <div className="text-[10px] font-black uppercase tracking-wider text-slate-500">Total Settled GMV</div>
           <div className="mt-1 text-2xl font-black text-slate-900">KES {(totalGmv / 1000000).toFixed(1)}M</div>
-          <div className="text-[10px] text-emerald-700 font-bold mt-0.5">100% Guaranteed</div>
+          <div className="text-[10px] text-emerald-700 font-bold mt-0.5">Multi-layer Verified</div>
         </div>
 
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
@@ -98,8 +98,9 @@ export function TransactionsChapter({
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
           <div className="text-[10px] font-black uppercase tracking-wider text-slate-500">Settlement Success</div>
           <div className="mt-1 text-2xl font-black text-blue-700">99.4%</div>
-          <div className="text-[10px] text-slate-500 mt-0.5">Zero escrow defaults</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Zero settlement defaults</div>
         </div>
+
 
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
           <div className="text-[10px] font-black uppercase tracking-wider text-slate-500">Active Deals</div>
@@ -127,7 +128,7 @@ export function TransactionsChapter({
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
               <h4 className="text-sm font-black text-slate-900">Deal Execution Stages & Milestone Velocity</h4>
-              <div className="text-[11px] text-slate-500">Milestone completion times across escrow deals</div>
+              <div className="text-[11px] text-slate-500">Milestone completion times across verified transactions</div>
             </div>
             <Clock className="h-4 w-4 text-blue-600" />
           </div>
@@ -186,7 +187,7 @@ export function TransactionsChapter({
                 <Badge tone="accent" className="font-black text-[10px]">Same-Day (&lt; 3.5 hrs)</Badge>
               </div>
               <p className="text-[11px] text-slate-600">
-                Direct trust account transfer for high-value title purchases (&gt; KES 1M) directly to seller &amp; advocate client accounts.
+                Direct settlement transfer for high-value title purchases (&gt; KES 1M) directly to seller &amp; advocate client accounts.
               </p>
               <div className="flex justify-between text-[11px] font-bold text-blue-800 pt-1 border-t border-blue-200/60">
                 <span>Success Rate: 100%</span>
@@ -202,8 +203,9 @@ export function TransactionsChapter({
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
             <h4 className="text-sm font-black text-slate-900">Recent High-Value Settlement Audit Trail</h4>
-            <div className="text-[11px] text-slate-500">Verified transactions released under dual cryptographic authorization</div>
+            <div className="text-[11px] text-slate-500">Verified transactions settled under multi-party sign-off</div>
           </div>
+
           <ShieldCheck className="h-4 w-4 text-emerald-600" />
         </div>
 

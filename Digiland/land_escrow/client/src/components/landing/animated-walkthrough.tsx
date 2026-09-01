@@ -89,29 +89,29 @@ export const SCENES: WalkthroughScene[] = [
     kickerBg: 'bg-blue-500/20 border-blue-400/30',
     title: 'Verify Your Identity',
     description:
-      'Complete KYC verification to build trust and unlock escrow. Both buyer and seller must verify before any transaction proceeds.',
-    caption: 'KYC verification is required for both parties before escrow.',
+      'Complete KYC verification to build trust and accountability. Both buyer and seller verify credentials before transaction milestones begin.',
+    caption: 'KYC identity verification is required for all participating parties.',
     steps: [
       { icon: ShieldCheck, color: 'text-blue-300', bg: 'bg-blue-500/15', heading: 'ID Verification', paragraph: 'National ID or passport upload and check.' },
-      { icon: Lock, color: 'text-blue-300', bg: 'bg-blue-500/15', heading: 'Secure Storage', paragraph: 'Documents encrypted and never shared.' },
+      { icon: Lock, color: 'text-blue-300', bg: 'bg-blue-500/15', heading: 'Secure Storage', paragraph: 'Documents encrypted and securely audited.' },
       { icon: CircleCheckBig, color: 'text-blue-300', bg: 'bg-blue-500/15', heading: 'Trust Badge', paragraph: 'Verified badge appears on your profile.' },
     ],
   },
   {
     id: 4,
-    label: 'Fund Escrow',
+    label: 'Confirm Payment',
     roles: 'buyer',
     kicker: 'Buyer · Step 3',
     kickerColor: 'text-emerald-200',
     kickerBg: 'bg-emerald-500/20 border-emerald-400/30',
-    title: 'Fund the Escrow',
+    title: 'Confirm Payment Details',
     description:
-      'Securely deposit the purchase amount into an escrow account. Funds are held safely until all conditions are met.',
-    caption: 'Funds are held in escrow until all contract conditions are satisfied.',
+      'Initiate direct settlement or payment via M-Pesa or bank transfer. Immutable provider confirmation receipts are logged in the transaction ledger.',
+    caption: 'Provider payment receipts recorded with timestamped audit evidence.',
     steps: [
-      { icon: Lock, color: 'text-emerald-300', bg: 'bg-emerald-500/15', heading: 'Secure Deposit', paragraph: 'M-Pesa or bank transfer into escrow.' },
-      { icon: ShieldCheck, color: 'text-emerald-300', bg: 'bg-emerald-500/15', heading: 'Held Safely', paragraph: 'Funds locked until contract conditions met.' },
-      { icon: Gauge, color: 'text-emerald-300', bg: 'bg-emerald-500/15', heading: 'Full Transparency', paragraph: 'Track deposit status in real time.' },
+      { icon: Lock, color: 'text-emerald-300', bg: 'bg-emerald-500/15', heading: 'Provider Confirmation', paragraph: 'M-Pesa or bank transfer receipt confirmed.' },
+      { icon: ShieldCheck, color: 'text-emerald-300', bg: 'bg-emerald-500/15', heading: 'Traceable Evidence', paragraph: 'Immutable payment reference logged.' },
+      { icon: Gauge, color: 'text-emerald-300', bg: 'bg-emerald-500/15', heading: 'Full Transparency', paragraph: 'Track milestone progress in real time.' },
     ],
   },
   {
@@ -138,16 +138,17 @@ export const SCENES: WalkthroughScene[] = [
     kicker: 'Final Step',
     kickerColor: 'text-emerald-200',
     kickerBg: 'bg-emerald-500/20 border-emerald-400/30',
-    title: 'Transfer Complete',
+    title: 'Transfer & Completion',
     description:
-      'Escrow releases funds to the seller, the title is transferred, and both parties receive confirmation. The land is officially yours.',
-    caption: 'Funds released and title transferred — the deal is done.',
+      'Conveyancing is concluded, ownership is officially updated at the land registry, and both parties receive complete verified audit packages.',
+    caption: 'Title transferred and transaction verified — the deal is complete.',
     steps: [
-      { icon: CircleCheckBig, color: 'text-emerald-300', bg: 'bg-emerald-500/15', heading: 'Funds Released', paragraph: 'Seller receives payment automatically.' },
-      { icon: ShieldCheck, color: 'text-emerald-300', bg: 'bg-emerald-500/15', heading: 'Title Transferred', paragraph: 'Ownership officially recorded and updated.' },
+      { icon: CircleCheckBig, color: 'text-emerald-300', bg: 'bg-emerald-500/15', heading: 'Title Transferred', paragraph: 'Ownership officially updated in registry.' },
+      { icon: ShieldCheck, color: 'text-emerald-300', bg: 'bg-emerald-500/15', heading: 'Audit Package', paragraph: 'Complete compliance and verification archive.' },
       { icon: CircleCheckBig, color: 'text-emerald-300', bg: 'bg-emerald-500/15', heading: 'Deal Closed', paragraph: 'Both parties receive final confirmation.' },
     ],
   },
+
 ];
 
 const SPEED_OPTIONS = [0.5, 1, 1.5, 2] as const;
@@ -294,15 +295,15 @@ export function MockEscrow() {
     <div className="flex h-full flex-col gap-3 p-3">
       {/* Amount card */}
       <div className="flex flex-col items-center gap-1 rounded-xl bg-emerald-500/10 py-4">
-        <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-300/70">Escrow Amount</span>
+        <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-300/70">Agreed Price</span>
         <span className="text-2xl font-black text-white">KSh 4,200,000</span>
         <span className="text-[10px] text-slate-400">Karen · 0.5 acres · Residential</span>
       </div>
       {/* Payment method */}
-      <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Payment Method</span>
+      <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Payment Settlement</span>
       {[
-        { name: 'M-Pesa', detail: 'Paybill · Instant', selected: true },
-        { name: 'Bank Transfer', detail: 'EFT · 1-2 business days', selected: false },
+        { name: 'M-Pesa STK', detail: 'Direct Settlement · Instant Receipt', selected: true },
+        { name: 'Bank Transfer', detail: 'EFT · Provider Confirmation', selected: false },
       ].map((method) => (
         <div key={method.name} className={cn(
           'flex items-center gap-3 rounded-xl px-3 py-2.5',
@@ -321,8 +322,9 @@ export function MockEscrow() {
         </div>
       ))}
       <button className="mt-auto rounded-xl bg-emerald-600/30 py-2 text-[11px] font-bold text-emerald-200 transition hover:bg-emerald-600/40">
-        Deposit to Escrow
+        Confirm Payment Details
       </button>
+
     </div>
   );
 }
@@ -897,8 +899,9 @@ export function AnimatedWalkthrough() {
               </div>
               <h3 className="text-3xl font-black text-white">Walkthrough Complete</h3>
               <p className="max-w-md text-sm leading-7 text-slate-300">
-                You&apos;ve seen every step of the Digiland escrow journey — from discovery to transfer. Ready to get started?
+                You&apos;ve seen every step of the Digiland verification & transaction journey — from discovery to transfer. Ready to get started?
               </p>
+
               <div className="flex gap-3">
                 <Button variant="outline" size="sm" onClick={restart} className="border-white/10 text-white hover:bg-white/10">
                   <ChevronLeft className="mr-1 h-4 w-4" /> Replay

@@ -4,8 +4,8 @@
 <section class="page-header">
     <div>
         <span class="page-kicker"><i class="bi bi-shield-lock"></i>Payment Checkout</span>
-        <h2 class="page-title">Regulated escrow deposit</h2>
-        <p class="page-subtitle">Funds remain held in escrow until deed transfer and final agent authorization are complete.</p>
+        <h2 class="page-title">Direct Settlement & Verification Checkout</h2>
+        <p class="page-subtitle">DigiLand does not hold land purchase money in escrow. Payments route directly to the designated seller and professionals.</p>
     </div>
 </section>
 
@@ -14,13 +14,13 @@
             <div class="col-md-6">
                 <div class="card h-100">
                     <div class="card-header bg-dark">
-                        <h5 class="mb-0"><i class="bi bi-receipt"></i> Escrow Invoice Summary</h5>
+                        <h5 class="mb-0"><i class="bi bi-receipt"></i> Payment Obligations Summary</h5>
                     </div>
                     <div class="card-body">
                         <ul class="list-group list-group-flush mb-3">
                             <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span class="text-muted">Transaction ID</span>
-                                <strong>{{ transaction.id|stringformat:"s"|slice:":8"|upper }}</strong>
+                                <span class="text-muted">Transaction Reference</span>
+                                <strong>{{ transaction.transaction_reference|default:transaction.id|stringformat:"s"|slice:":12"|upper }}</strong>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <span class="text-muted">Land Parcel</span>
@@ -28,7 +28,7 @@
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <span class="text-muted">Beneficiary (Seller)</span>
-                                <strong>{{ transaction.seller.email }}</strong>
+                                <strong>{{ transaction.seller.get_full_name|default:transaction.seller.email }}</strong>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <span class="text-muted">Area Size</span>
@@ -37,7 +37,7 @@
                         </ul>
                         
                         <div class="legacy-subtle-panel text-center mt-4">
-                            <h6 class="text-muted text-uppercase mb-1">Total Agreed Escrow Deposit</h6>
+                            <h6 class="text-muted text-uppercase mb-1">Land Purchase Consideration</h6>
                             <h2 class="mb-0 text-success fw-bold">KES {{ transaction.agreed_price }}</h2>
                         </div>
 

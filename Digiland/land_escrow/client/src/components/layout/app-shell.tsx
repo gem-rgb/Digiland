@@ -121,10 +121,10 @@ export function AppShell({
         ]
       : []),
     {
-      label: 'Escrow',
+      label: 'Transactions',
       href: '/transactions/',
       icon: ReceiptText,
-      active: safeTitle.includes('transaction') || safeTitle.includes('escrow'),
+      active: safeTitle.includes('transaction') || safeTitle.includes('escrow') || safeTitle.includes('settlement'),
     },
     {
       label: 'Messages',

@@ -3,9 +3,9 @@
 {% block content %}
 <section class="page-section form-shell">
     <div class="content-hero">
-        <span class="page-kicker justify-content-center"><i class="bi bi-exclamation-triangle"></i>Escrow Confirmation</span>
-        <h2 class="page-title">Financial escrow confirmation</h2>
-        <p class="page-subtitle mx-auto">You are about to move from legal agreement into the payment phase of the escrow workflow.</p>
+        <span class="page-kicker justify-content-center"><i class="bi bi-shield-check"></i>Transaction Confirmation</span>
+        <h2 class="page-title">Payment & Settlement Confirmation</h2>
+        <p class="page-subtitle mx-auto">You are about to record the payment confirmation for this verified land transaction.</p>
     </div>
 
         <div class="card">
@@ -24,46 +24,47 @@
                     </div>
                 </div>
                 {% endif %}
-                <h4 class="fw-bold mb-4 text-info border-bottom pb-2"><i class="bi bi-info-circle-fill"></i> How your funds are protected</h4>
+                <h4 class="fw-bold mb-4 text-info border-bottom pb-2"><i class="bi bi-info-circle-fill"></i> Multi-Layer Transaction Assurance</h4>
                 
                 <div class="d-flex align-items-start mb-4">
                     <i class="bi bi-1-circle-fill fs-3 text-secondary me-3"></i>
                     <div>
-                        <h6 class="fw-bold mb-1">We Do Not Pay The Seller Yet</h6>
-                        <p class="text-muted small mb-0">Your funds are deposited directly into our Regulated Government Trust Account, completely walled off from the Seller.</p>
+                        <h6 class="fw-bold mb-1">Structured Due Diligence Completed</h6>
+                        <p class="text-muted small mb-0">Title deed cross-checks, boundary beacon inspection, and advocate conveyancing checks are recorded in your immutable audit record.</p>
                     </div>
                 </div>
 
                 <div class="d-flex align-items-start mb-4">
                     <i class="bi bi-2-circle-fill fs-3 text-secondary me-3"></i>
                     <div>
-                        <h6 class="fw-bold mb-1">Final Authorization is Required</h6>
-                        <p class="text-muted small mb-0">Our sworn Escrow Moderation Agents must formally execute the Title Deed transfer with the Land Registry before those funds are physically released.</p>
+                        <h6 class="fw-bold mb-1">Direct Settlement Confirmation</h6>
+                        <p class="text-muted small mb-0">Payment is initiated through regulated provider channels (M-Pesa / Bank). DigiLand records provider confirmation evidence without acting as a custodian holding customer funds.</p>
                     </div>
                 </div>
 
                 <div class="d-flex align-items-start mb-4">
-                    <i class="bi bi-3-circle-fill fs-3 text-danger me-3"></i>
+                    <i class="bi bi-3-circle-fill fs-3 text-primary me-3"></i>
                     <div>
-                        <h6 class="fw-bold mb-1">Irreversible Financial Commitment</h6>
-                        <p class="text-muted small mb-0">Warning: Once you inject capital into Escrow, the transaction is locked. If backed out maliciously, your funds may be vulnerable to contractual arbitration penalties under the signed agreement.</p>
+                        <h6 class="fw-bold mb-1">Transparent Closing & Milestone Tracking</h6>
+                        <p class="text-muted small mb-0">Both parties track title transfer instruments, tax clearances, and registry completion with end-to-end evidence logs.</p>
                     </div>
                 </div>
             </div>
             <div class="card-footer p-4 text-center">
-                <h5 class="fw-bold mb-3">Are you absolutely certain you wish to proceed?</h5>
+                <h5 class="fw-bold mb-3">Are you ready to proceed to checkout?</h5>
                 <form action="{% url 'frontend:payment_checkout' transaction.id %}" method="POST" class="d-grid gap-3">
                     {% csrf_token %}
                     <div class="form-check text-start mx-auto mb-3 onboarding-consent">
                         <input class="form-check-input" type="checkbox" id="consentCheck" required>
                         <label class="form-check-label text-muted small" for="consentCheck">
-                            I acknowledge the physical locking of these funds and certify my absolute certainty to complete this land purchase.
+                            I acknowledge that DigiLand performs structured verification and maintains audit records to reduce transaction risks, and does not operate as an escrow custodian of funds.
                         </label>
                     </div>
                     
-                    <button type="submit" class="btn btn-success btn-lg fw-bold shadow"><i class="bi bi-lock-fill"></i> Continue to Checkout</button>
-                    <a href="{% url 'frontend:sign_contract' transaction.id %}" class="btn btn-outline-secondary">Abort and Return to Contract</a>
+                    <button type="submit" class="btn btn-success btn-lg fw-bold shadow"><i class="bi bi-credit-card-2-front"></i> Continue to Checkout</button>
+                    <a href="{% url 'frontend:sign_contract' transaction.id %}" class="btn btn-outline-secondary">Return to Agreement</a>
                 </form>
+
             </div>
         </div>
 </section>

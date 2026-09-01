@@ -43,7 +43,7 @@ const FOOTER_NAV_COLUMNS: NavColumn[] = [
     links: [
       { label: 'Sell With Digiland', href: `${getPortalUrl('app')}/accounts/signup/?role=seller` },
       { label: 'List Your Property', href: `${getPortalUrl('app')}/parcels/upload/` },
-      { label: 'Escrow Verification', href: '/escrow-acts/' },
+      { label: 'Structured Verification', href: '/escrow-acts/' },
     ],
   },
   {
@@ -76,7 +76,7 @@ type StatCounter = {
 const CTA_COUNTERS: StatCounter[] = [
   { target: 2500, prefix: '', suffix: '+', label: 'Verified Parcels' },
   { target: 47, prefix: '', suffix: '', label: 'Counties Covered' },
-  { target: 3.2, prefix: 'KES ', suffix: 'B+', label: 'Escrowed', decimals: 1 },
+  { target: 3.2, prefix: 'KES ', suffix: 'B+', label: 'Verified Volume', decimals: 1 },
   { target: 10000, prefix: '', suffix: '+', label: 'Active Users' },
 ];
 
@@ -85,14 +85,15 @@ type TrustItem = { icon: React.ElementType; label: string; description: string }
 const TRUST_ITEMS: TrustItem[] = [
   {
     icon: Lock,
-    label: 'Bank-Grade Vault Security',
-    description: 'AES-256 encrypted escrow deposits & SOC 2 compliant security protocol.',
+    label: 'Bank-Grade Data Security',
+    description: 'AES-256 encrypted transaction records & SOC 2 compliant security protocol.',
   },
   {
     icon: Landmark,
     label: 'CBK & M-Pesa Regulated',
     description: 'Automated settlement via Central Bank & Safaricom M-Pesa STK.',
   },
+
   {
     icon: FileCheck2,
     label: 'Land Registry Direct Sync',
@@ -333,7 +334,7 @@ export function PremiumFooter() {
           </h2>
 
           <p className="mx-auto max-w-2xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8 font-medium">
-            Join thousands of buyers and property owners across Kenya using Digiland for verified title deeds, M-Pesa escrow protection, and legal closing.
+            Join thousands of buyers and property owners across Kenya using Digiland for verified title deeds, secure settlement records, and legal closing.
           </p>
 
           {/* Action Buttons */}
@@ -390,12 +391,13 @@ export function PremiumFooter() {
               </div>
 
               <p className="text-sm font-bold text-slate-800">
-                Kenya's Land Escrow & Verification Protocol
+                Kenya's Land Verification & Safe Transaction Protocol
               </p>
 
               <p className="text-xs leading-relaxed text-slate-500 max-w-sm">
-                Digiland protects land buyers with automated title deed checks, M-Pesa deposit vaulting, and legal oversight to make Kenya land commerce 100% transparent and safe.
+                Digiland empowers land buyers and sellers with structured title deed checks, independent surveyor and advocate diligence, and verified settlement records to systematically reduce avoidable risks in land commerce.
               </p>
+
 
               <div className="flex items-center gap-2 pt-2">
                 {SOCIAL_LINKS.map((link) => (

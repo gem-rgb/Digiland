@@ -144,12 +144,12 @@
                         step applies.
                     </p>
 
-                    <h5 class="fw-bold">3. Escrow terms and finality</h5>
+                    <h5 class="fw-bold">3. Direct settlement and verification finality</h5>
                     <p>
                         By signing this document, the Buyer and Seller consent that the mutually agreed sum of
-                        <strong>KSH {{ transaction.agreed_price }}</strong> held in escrow will be released according
-                        to the platform workflow once the contract is signed, any required consents are in place, and
-                        the transaction is ready for payment processing.
+                        <strong>KSH {{ transaction.agreed_price }}</strong> is settled directly between buyer and seller
+                        according to the platform verification milestones once the contract is signed, boundary beacons are verified,
+                        and title transfer documentation is executed. DigiLand does not hold customer funds in escrow.
                     </p>
 
                     <h5 class="fw-bold">4. Matrimonial property check</h5>
@@ -281,7 +281,7 @@
                             <div class="card shadow border-0 bg-success text-white mt-5">
                                 <div class="card-body p-4 text-center">
                                     <h3 class="fw-bold"><i class="bi bi-shield-lock-fill"></i> Master Authorization Required</h3>
-                                    <p class="lead mb-4">Both primary parties have cryptographically sealed this legal contract. You can now finalize the escrow workflow.</p>
+                                    <p class="lead mb-4">Both primary parties have cryptographically sealed this legal contract. You can now finalize the verification and transfer workflow.</p>
                                     <form method="POST" action="{% url 'frontend:agent_finalize_transaction' transaction.id %}">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-light btn-lg fw-bold text-success px-5"><i class="bi bi-check-circle-fill"></i> Execute Final Contract and Disburse</button>

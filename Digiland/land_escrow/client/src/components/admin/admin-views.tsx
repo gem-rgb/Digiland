@@ -2123,9 +2123,14 @@ export function AdminTransactionsManagementView() {
         const q = searchQuery.toLowerCase();
         return (
           (tx.id && tx.id.toLowerCase().includes(q)) ||
+          (tx.transaction_reference && tx.transaction_reference.toLowerCase().includes(q)) ||
           (tx.parcel_title && tx.parcel_title.toLowerCase().includes(q)) ||
+          (tx.parcel_number && tx.parcel_number.toLowerCase().includes(q)) ||
           (tx.buyer_name && tx.buyer_name.toLowerCase().includes(q)) ||
-          (tx.seller_name && tx.seller_name.toLowerCase().includes(q))
+          (tx.buyer_email && tx.buyer_email.toLowerCase().includes(q)) ||
+          (tx.seller_name && tx.seller_name.toLowerCase().includes(q)) ||
+          (tx.seller_email && tx.seller_email.toLowerCase().includes(q)) ||
+          (tx.payment_reference && tx.payment_reference.toLowerCase().includes(q))
         );
       }
       return true;
@@ -2133,7 +2138,10 @@ export function AdminTransactionsManagementView() {
   }, [transactions, statusFilter, searchQuery]);
 
   const handleAction = async (txId: string, action: 'release' | 'refund') => {
-    if (!confirm(`Are you sure you want to ${action.toUpperCase()} escrow for Transaction #${txId}?`)) {
+    const promptMsg = action === 'release'
+      ? `Confirm and mark Transaction #${txId} ownership transfer completed?`
+      : `Record payment reversal / refund for Transaction #${txId}?`;
+    if (!confirm(promptMsg)) {
       return;
     }
     setLoadingTxId(txId);
@@ -2149,33 +2157,82 @@ export function AdminTransactionsManagementView() {
       const data = await resp.json();
       if (resp.ok) {
         setTransactions((prev) =>
-          prev.map((t) => (t.id === txId ? { ...t, status: action === 'release' ? 'Completed' : 'Refunded' } : t))
+          prev.map((t) => (t.id === txId ? { ...t, status: action === 'release' ? 'Completed' : 'Reversed' } : t))
         );
-        alert(data.message || `Escrow ${action} completed successfully.`);
+        alert(data.message || `Transaction ${action === 'release' ? 'completed' : 'reversed'} successfully.`);
       } else {
-        alert(data.error || `Failed to ${action} escrow.`);
+        alert(data.error || `Action failed.`);
       }
     } catch {
-      alert('Network error executing escrow action.');
+      alert('Network error executing transaction action.');
     } finally {
       setLoadingTxId(null);
     }
   };
 
+  const metrics = useMemo(() => {
+    let landValue = 0;
+    let digilandRev = 0;
+    let profServices = 0;
+    let totalVol = 0;
+
+    transactions.forEach((tx) => {
+      const price = Number(tx.agreed_price || tx.amount || 0);
+      const fee = Number(tx.coordination_fee || tx.platform_service_fee || (price * 0.02) || 0);
+      const prof = Number(tx.professional_fees || ((tx.include_legal_verification ? 15000 : 0) + (tx.include_due_diligence ? 20000 : 0)));
+
+      if (tx.status === 'Completed' || tx.status === 'Payment_Confirmed' || tx.payment_reference) {
+        landValue += price;
+        digilandRev += fee;
+        profServices += prof;
+        totalVol += (price + fee + prof);
+      }
+    });
+
+    return { landValue, digilandRev, profServices, totalVol };
+  }, [transactions]);
+
   return (
     <div className="space-y-6 text-left">
       <div className="border-b border-slate-200 pb-4">
-        <h3 className="text-xl font-black text-slate-900">Escrow Settlements Desk</h3>
+        <h3 className="text-xl font-black text-slate-900">Payment Reconciliation & Transaction Audit Desk</h3>
         <p className="text-xs text-slate-500 font-medium">
-          Dual-signature escrow custody, settlement approvals, and statutory buyer refunds.
+          Non-custodial payment verification, M-Pesa reconciliation, and statutory ownership transfer audit. DigiLand does not hold customer funds.
         </p>
+      </div>
+
+      {/* 4 Distinct Financial Metrics (Section 14 Mandate) */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-xs">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">1. Land Transaction Value</div>
+          <div className="mt-1 text-2xl font-black text-emerald-950">KES {metrics.landValue.toLocaleString()}</div>
+          <div className="mt-1 text-[11px] text-emerald-700 font-medium">Buyer → Seller (Direct Settlement)</div>
+        </div>
+
+        <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-4 shadow-xs">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-blue-800">2. DigiLand Revenue</div>
+          <div className="mt-1 text-2xl font-black text-blue-950">KES {metrics.digilandRev.toLocaleString()}</div>
+          <div className="mt-1 text-[11px] text-blue-700 font-medium">Platform Facilitation Fees Earned</div>
+        </div>
+
+        <div className="rounded-2xl border border-purple-200 bg-purple-50/50 p-4 shadow-xs">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-purple-800">3. Professional Services Value</div>
+          <div className="mt-1 text-2xl font-black text-purple-950">KES {metrics.profServices.toLocaleString()}</div>
+          <div className="mt-1 text-[11px] text-purple-700 font-medium">Surveyor & Legal Verification Fees</div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-xs">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-600">4. Total Payment Volume</div>
+          <div className="mt-1 text-2xl font-black text-slate-900">KES {metrics.totalVol.toLocaleString()}</div>
+          <div className="mt-1 text-[11px] text-slate-500 font-medium">Gross Throughput Across All Flows</div>
+        </div>
       </div>
 
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
         {/* Controls */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-2">
-            {['All', 'Deposit_Paid', 'Under_Verification', 'Completed', 'Refunded'].map((s) => (
+            {['All', 'Payment_Confirmed', 'Under_Verification', 'Completed', 'Reversed', 'Disputed'].map((s) => (
               <button
                 key={s}
                 type="button"
@@ -2186,7 +2243,7 @@ export function AdminTransactionsManagementView() {
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {s === 'All' ? 'All Settlements' : s.replace('_', ' ')}
+                {s === 'All' ? 'All Transactions' : s.replace('_', ' ')}
               </button>
             ))}
           </div>
@@ -2197,8 +2254,8 @@ export function AdminTransactionsManagementView() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search transaction ID, parcel..."
-              className="h-9 w-64 rounded-xl border border-slate-300 bg-slate-50 pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:bg-white transition"
+              placeholder="Search reference DL-TXN-..., receipt, parcel..."
+              className="h-9 w-72 rounded-xl border border-slate-300 bg-slate-50 pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:bg-white transition"
             />
           </div>
         </div>
@@ -2206,72 +2263,90 @@ export function AdminTransactionsManagementView() {
         {/* Table */}
         {filteredTransactions.length === 0 ? (
           <div className="py-12 text-center text-xs text-slate-500">
-            No escrow transactions found matching your criteria.
+            No transactions found matching your criteria.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-slate-50/50">
-                  <th className="py-3 px-3">Transaction ID & Date</th>
+                  <th className="py-3 px-3">Transaction Reference & Date</th>
                   <th className="py-3 px-3">Parcel Reference</th>
                   <th className="py-3 px-3">Buyer & Seller</th>
-                  <th className="py-3 px-3">Agreed Escrow Price</th>
+                  <th className="py-3 px-3">Land Funds & Fees</th>
+                  <th className="py-3 px-3">Payment Evidence</th>
                   <th className="py-3 px-3">Status</th>
-                  <th className="py-3 px-3 text-right">Escrow Custody Action</th>
+                  <th className="py-3 px-3 text-right">Audit & Transfer Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredTransactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-slate-50/80 transition">
-                    <td className="py-3.5 px-3">
-                      <div className="font-mono font-bold text-slate-900">#{tx.id ? tx.id.substring(0, 8) : 'TX'}</div>
-                      <div className="text-[10px] text-slate-500">{tx.created_at || 'Recent'}</div>
-                    </td>
-                    <td className="py-3.5 px-3 font-bold text-emerald-800">{tx.parcel_title}</td>
-                    <td className="py-3.5 px-3">
-                      <div className="text-slate-900 font-bold">{tx.buyer_name}</div>
-                      <div className="text-[10px] text-slate-500">Seller: {tx.seller_name}</div>
-                    </td>
-                    <td className="py-3.5 px-3 font-black text-slate-900">
-                      KES {Number(tx.agreed_price || 0).toLocaleString()}
-                    </td>
-                    <td className="py-3.5 px-3">
-                      <Badge
-                        tone={
-                          tx.status === 'Completed'
-                            ? 'success'
-                            : tx.status === 'Refunded'
-                            ? 'danger'
-                            : 'warning'
-                        }
-                      >
-                        {tx.status}
-                      </Badge>
-                    </td>
-                    <td className="py-3.5 px-3 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Button
-                          type="button"
-                          disabled={loadingTxId === tx.id || tx.status === 'Completed'}
-                          onClick={() => handleAction(tx.id, 'release')}
-                          className="h-7 text-[10px] font-bold px-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white"
+                {filteredTransactions.map((tx) => {
+                  const txnRef = tx.transaction_reference || (tx.id ? `DL-TXN-${tx.id.substring(0, 8).toUpperCase()}` : 'DL-TXN');
+                  return (
+                    <tr key={tx.id} className="hover:bg-slate-50/80 transition">
+                      <td className="py-3.5 px-3">
+                        <div className="font-mono font-bold text-slate-900">{txnRef}</div>
+                        <div className="text-[10px] text-slate-500">{tx.created_at || 'Recent'}</div>
+                      </td>
+                      <td className="py-3.5 px-3 font-bold text-emerald-800">{tx.parcel_title || tx.parcel_number || 'Parcel'}</td>
+                      <td className="py-3.5 px-3">
+                        <div className="text-slate-900 font-bold">{tx.buyer_name || tx.buyer_email || 'Buyer'}</div>
+                        <div className="text-[10px] text-slate-500">Seller: {tx.seller_name || tx.seller_email || 'Seller'}</div>
+                      </td>
+                      <td className="py-3.5 px-3 font-black text-slate-900">
+                        KES {Number(tx.agreed_price || tx.amount || 0).toLocaleString()}
+                        {tx.coordination_fee ? (
+                          <div className="text-[10px] font-normal text-slate-500">+ Fee KES {Number(tx.coordination_fee).toLocaleString()}</div>
+                        ) : null}
+                      </td>
+                      <td className="py-3.5 px-3 font-mono text-[11px] text-slate-700">
+                        {tx.payment_reference ? (
+                          <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-700 font-bold border border-emerald-200">
+                            {tx.payment_reference}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic">Pending</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-3">
+                        <Badge
+                          tone={
+                            tx.status === 'Completed'
+                              ? 'success'
+                              : tx.status === 'Reversed' || tx.status === 'Refunded'
+                              ? 'danger'
+                              : tx.status === 'Payment_Confirmed'
+                              ? 'accent'
+                              : 'warning'
+                          }
                         >
-                          Release Payout
-                        </Button>
-                        <Button
-                          type="button"
-                          disabled={loadingTxId === tx.id || tx.status === 'Refunded'}
-                          onClick={() => handleAction(tx.id, 'refund')}
-                          variant="outline"
-                          className="h-7 text-[10px] font-bold px-2 rounded-lg border-rose-300 text-rose-800 hover:bg-rose-50"
-                        >
-                          Refund Buyer
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {tx.status}
+                        </Badge>
+                      </td>
+                      <td className="py-3.5 px-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            type="button"
+                            disabled={loadingTxId === tx.id || tx.status === 'Completed'}
+                            onClick={() => handleAction(tx.id, 'release')}
+                            className="h-7 text-[10px] font-bold px-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white"
+                          >
+                            Complete Transfer
+                          </Button>
+                          <Button
+                            type="button"
+                            disabled={loadingTxId === tx.id || tx.status === 'Reversed'}
+                            onClick={() => handleAction(tx.id, 'refund')}
+                            variant="outline"
+                            className="h-7 text-[10px] font-bold px-2 rounded-lg border-rose-300 text-rose-800 hover:bg-rose-50"
+                          >
+                            Reversal
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
