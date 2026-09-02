@@ -554,3 +554,42 @@ class WebAuthnAuthenticationSerializer(serializers.Serializer):
     credential = serializers.JSONField(
         required=False, help_text="WebAuthn assertion response from the browser",
     )
+
+
+# ── Multi-Method MFA & Session Serializers ──────────────────────────────────
+
+
+class MFAVerifyChallengeSerializer(serializers.Serializer):
+    """Unified multi-method MFA challenge verification serializer."""
+
+    method = serializers.ChoiceField(
+        choices=['authenticator', 'passkey', 'otp', 'recovery_code'],
+        default='authenticator',
+        help_text="The selected MFA verification method",
+    )
+    code = serializers.CharField(
+        max_length=64,
+        required=False,
+        allow_blank=True,
+        help_text="Verification code (6-digit TOTP, OTP, or recovery code)",
+    )
+    challenge_token = serializers.CharField(
+        max_length=500,
+        required=False,
+        allow_blank=True,
+        help_text="Temporary password-authenticated stage 1 token",
+    )
+    credential = serializers.JSONField(
+        required=False,
+        help_text="WebAuthn credential assertion for passkey verification",
+    )
+
+
+class SessionHeartbeatSerializer(serializers.Serializer):
+    """Serializer for updating session activity and extending session lifetime."""
+
+    extend_session = serializers.BooleanField(
+        default=True,
+        help_text="If true, extends the user session activity timer",
+    )
+

@@ -19,6 +19,9 @@ from .auth_views import (
     mfa_regenerate_recovery_view,
     mfa_login_verify_view,
     mfa_status_view,
+    mfa_available_methods_view,
+    mfa_send_otp_view,
+    mfa_verify_challenge_view,
     # Password
     change_password_view,
     reset_password_request_view,
@@ -38,6 +41,12 @@ from .auth_views import (
     webauthn_registration_finish_view,
     webauthn_authentication_begin_view,
     webauthn_authentication_finish_view,
+    # Security Methods & Passkey Lifecycle
+    security_methods_summary_view,
+    passkey_register_start_view,
+    passkey_register_finish_view,
+    passkey_remove_view,
+    stepup_challenge_verify_view,
     # Devices
     trusted_device_list_view,
     trusted_device_revoke_view,
@@ -45,6 +54,8 @@ from .auth_views import (
     # Sessions
     active_sessions_view,
     active_session_revoke_view,
+    session_heartbeat_view,
+    session_revoke_all_view,
     # Email verification
     account_verification_pending_view,
     email_verify_view,
@@ -77,6 +88,9 @@ urlpatterns = [
     path("mfa/recovery-codes/", mfa_regenerate_recovery_view, name="auth-mfa-regenerate-recovery"),
     path("mfa/login-verify/", mfa_login_verify_view, name="auth-mfa-login-verify"),
     path("mfa/status/", mfa_status_view, name="auth-mfa-status"),
+    path("mfa/available-methods/", mfa_available_methods_view, name="auth-mfa-available-methods"),
+    path("mfa/send-otp/", mfa_send_otp_view, name="auth-mfa-send-otp"),
+    path("mfa/verify-challenge/", mfa_verify_challenge_view, name="auth-mfa-verify-challenge"),
 
     # Password
     path("password/change/", change_password_view, name="auth-password-change"),
@@ -101,6 +115,13 @@ urlpatterns = [
     path("webauthn/auth/begin/", webauthn_authentication_begin_view, name="auth-webauthn-auth-begin"),
     path("webauthn/auth/finish/", webauthn_authentication_finish_view, name="auth-webauthn-auth-finish"),
 
+    # Security Methods & Passkey Lifecycle
+    path("security/methods/", security_methods_summary_view, name="auth-security-methods-summary"),
+    path("security/passkey/register/start/", passkey_register_start_view, name="auth-security-passkey-register-start"),
+    path("security/passkey/register/finish/", passkey_register_finish_view, name="auth-security-passkey-register-finish"),
+    path("security/passkey/remove/", passkey_remove_view, name="auth-security-passkey-remove"),
+    path("security/step-up/", stepup_challenge_verify_view, name="auth-security-stepup-verify"),
+
     # Devices
     path("devices/", trusted_device_list_view, name="auth-devices-list"),
     path("devices/trust/", device_trust_view, name="auth-device-trust"),
@@ -109,6 +130,8 @@ urlpatterns = [
     # Sessions
     path("sessions/", active_sessions_view, name="auth-sessions-list"),
     path("sessions/<uuid:pk>/revoke/", active_session_revoke_view, name="auth-session-revoke"),
+    path("session/heartbeat/", session_heartbeat_view, name="auth-session-heartbeat"),
+    path("session/revoke-all/", session_revoke_all_view, name="auth-session-revoke-all"),
 
     # Email verification
     path("verification/pending/", account_verification_pending_view, name="account_verification_pending"),

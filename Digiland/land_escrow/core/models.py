@@ -1933,6 +1933,12 @@ class UserMFA(models.Model):
     setup_started_at = models.DateTimeField(null=True, blank=True)
     verified_at = models.DateTimeField(null=True, blank=True)
     
+    # Dynamic MFA Methods
+    totp_enabled = models.BooleanField(default=False)
+    passkey_enabled = models.BooleanField(default=False)
+    otp_enabled = models.BooleanField(default=True)
+    preferred_method = models.CharField(max_length=20, default='authenticator')
+    
     # Recovery codes (hashed)
     recovery_codes = models.JSONField(default=list, blank=True)
     
@@ -1947,6 +1953,50 @@ class UserMFA(models.Model):
     def __str__(self):
         status = "enabled" if self.is_enabled else "disabled"
         return f"MFA for {self.user.email} ({status})"
+
+    def active_method_count(self):
+        count = 0
+        if self.totp_enabled and self.totp_secret:
+            count += 1
+        if self.passkey_enabled or self.user.passkeys.exists():
+            count += 1
+        if self.otp_enabled:
+            count += 1
+        return count
+
+    def can_disable_method(self, method_type):
+        """Disallow removing the last active authentication method."""
+        current_count = self.active_method_count()
+        if current_count <= 1:
+            if method_type == 'totp' and self.totp_enabled:
+                return False
+            if method_type == 'passkey' and (self.passkey_enabled or self.user.passkeys.exists()):
+                return False
+            if method_type == 'otp' and self.otp_enabled:
+                return False
+        return True
+
+
+class UserPasskey(models.Model):
+    """Registered WebAuthn Passkeys for users."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='passkeys')
+    name = models.CharField(max_length=200, default='Security Key / Passkey')
+    credential_id = models.CharField(max_length=512, unique=True, db_index=True)
+    public_key = models.TextField()
+    sign_count = models.IntegerField(default=0)
+    aaguid = models.CharField(max_length=64, blank=True, default='')
+    transports = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', 'credential_id'], name='idx_passkey_user_cred'),
+        ]
+
+    def __str__(self):
+        return f"Passkey '{self.name}' for {self.user.email}"
 
 
 class TrustedDevice(models.Model):
@@ -1983,6 +2033,9 @@ class UserSession(models.Model):
     device_type = models.CharField(max_length=50, blank=True, default='')
     location = models.CharField(max_length=200, blank=True, default='')
     is_active = models.BooleanField(default=True, db_index=True)
+    mfa_verified = models.BooleanField(default=False, db_index=True)
+    auth_method = models.CharField(max_length=30, blank=True, default='')
+    inactivity_timeout_seconds = models.IntegerField(default=1800)
     created_at = models.DateTimeField(auto_now_add=True)
     last_activity = models.DateTimeField(auto_now=True)
     expires_at = models.DateTimeField(db_index=True)

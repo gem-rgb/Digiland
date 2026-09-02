@@ -63,6 +63,7 @@ from .auth_serializers import (
     EmailVerifySerializer, StepUpAuthSerializer,
     TokenRefreshSerializer,
     WebAuthnRegistrationSerializer, WebAuthnAuthenticationSerializer,
+    MFAVerifyChallengeSerializer, SessionHeartbeatSerializer,
 )
 from .models import (
     UserMFA, TrustedDevice, UserSession, OAuthProvider, OAuthAccount,
@@ -701,27 +702,28 @@ def mfa_recovery_view(request):
     try:
         mfa = UserMFA.objects.get(user=user, is_enabled=True)
     except UserMFA.DoesNotExist:
-        return Response({"error": "MFA not enabled."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "MFA is not enabled for this user."}, status=status.HTTP_400_BAD_REQUEST)
 
-    valid, idx = AuthMFAService.validate_recovery_code(mfa.recovery_codes, recovery_code)
-    if not valid:
-        # SECURITY: Increment brute-force counter on failure
-        cache.set(bf_key, cache.get(bf_key, 0) + 1, timeout=900)
-        return Response({"error": "Invalid recovery code."}, status=status.HTTP_401_UNAUTHORIZED)
+    if MFAService.use_recovery_code(user, recovery_code):
+        AuditService.log_mfa_event("RECOVERY_CODE_USED", user, ip_address)
+        cache.delete(bf_key)
+        tokens = JWTService.generate_tokens(user)
+        session = SessionService.create_session(user, request)
+        if session:
+            session.mfa_verified = True
+            session.auth_method = "recovery_code"
+            session.save(update_fields=["mfa_verified", "auth_method"])
+        return Response(
+            {
+                "message": "Recovery code accepted.",
+                "tokens": tokens,
+            },
+            status=status.HTTP_200_OK,
+        )
 
-    mfa.recovery_codes.pop(idx)
-    mfa.save()
-
-    # Issue tokens
-    tokens = JWTService.generate_tokens(user)
-    ip_address = _get_client_ip(request)
-    AuditService.log_mfa_event("RECOVERY_CODE_USED", user, ip_address, remaining_codes=len(mfa.recovery_codes))
-
-    return Response({
-        "message": "Recovery code accepted. Please set up MFA again.",
-        "tokens": tokens,
-        "mfa_reset_required": True,
-    }, status=status.HTTP_200_OK)
+    attempts = cache.get(bf_key, 0)
+    cache.set(bf_key, attempts + 1, timeout=300)
+    return Response({"error": "Invalid recovery code."}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 # ==================== MFA ADDITIONAL VIEWS ====================
@@ -885,6 +887,439 @@ def mfa_status_view(request):
         return Response({
             "is_enabled": False, "has_recovery_codes": False, "recovery_codes_remaining": 0,
         }, status=status.HTTP_200_OK)
+
+
+# ==================== MULTI-METHOD MFA & SESSION VIEWS ====================
+
+
+@api_view(["POST", "GET"])
+@permission_classes([AllowAny])
+def mfa_available_methods_view(request):
+    """List configured MFA methods available for a user during login or setup.
+
+    POST/GET /api/v1/auth/mfa/available-methods/
+    """
+    mfa_token = request.data.get("mfa_token") if hasattr(request, "data") else None
+    if not mfa_token and hasattr(request, "query_params"):
+        mfa_token = request.query_params.get("mfa_token")
+
+    user = None
+    if getattr(request, "user", None) and request.user.is_authenticated:
+        user = request.user
+    elif mfa_token:
+        cached = cache.get(f"mfa_challenge:{mfa_token}")
+        if cached and "user_id" in cached:
+            try:
+                user = User.objects.get(id=cached["user_id"], is_active=True)
+            except User.DoesNotExist:
+                pass
+
+    if not user:
+        return Response({"error": "Invalid or expired MFA token."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    result = MFAService.get_available_methods(user)
+    return Response(result, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def mfa_send_otp_view(request):
+    """Generate and send a 6-digit MFA OTP code via email.
+
+    POST /api/v1/auth/mfa/send-otp/
+    """
+    mfa_token = request.data.get("mfa_token")
+    user = None
+    if getattr(request, "user", None) and request.user.is_authenticated:
+        user = request.user
+    elif mfa_token:
+        cached = cache.get(f"mfa_challenge:{mfa_token}")
+        if cached and "user_id" in cached:
+            try:
+                user = User.objects.get(id=cached["user_id"], is_active=True)
+            except User.DoesNotExist:
+                pass
+
+    if not user:
+        return Response({"error": "Invalid or expired MFA token."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    try:
+        result = MFAService.send_mfa_otp(user)
+        return Response({
+            "message": f"Verification code sent to {user.email}.",
+            "expires_in_seconds": result["expires_in_seconds"],
+        }, status=status.HTTP_200_OK)
+    except ValueError as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def mfa_verify_challenge_view(request):
+    """Verify MFA challenge using selected method (authenticator, passkey, otp, recovery_code).
+
+    POST /api/v1/auth/mfa/verify-challenge/
+    """
+    serializer = MFAVerifyChallengeSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    method = serializer.validated_data["method"]
+    code = serializer.validated_data.get("code", "")
+    challenge_token = serializer.validated_data.get("challenge_token", "")
+    ip_address = _get_client_ip(request)
+
+    user = None
+    if getattr(request, "user", None) and request.user.is_authenticated:
+        user = request.user
+    elif challenge_token:
+        cached = cache.get(f"mfa_challenge:{challenge_token}")
+        if cached and "user_id" in cached:
+            try:
+                user = User.objects.get(id=cached["user_id"], is_active=True)
+            except User.DoesNotExist:
+                pass
+
+    if not user:
+        return Response({"error": "Invalid or expired MFA challenge token. Please sign in again."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    bf_key = f"mfa_verify_bf:{user.id}"
+    attempts = cache.get(bf_key, 0)
+    if attempts >= 5:
+        return Response({
+            "error": "Too many failed MFA verification attempts. Challenge locked for security.",
+            "code": "MFA_CHALLENGE_LOCKED"
+        }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+    verified = False
+    if method == "authenticator":
+        mfa = UserMFA.objects.filter(user=user).first()
+        if mfa and mfa.totp_secret:
+            verified = MFAService.verify_totp(mfa.totp_secret, code)
+    elif method == "otp":
+        try:
+            verified = MFAService.verify_mfa_otp(user, code)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    elif method == "recovery_code":
+        verified = MFAService.use_recovery_code(user, code)
+    elif method == "passkey":
+        try:
+            from admin_control_plane.webauthn import WebAuthnService
+            credential = serializer.validated_data.get("credential")
+            if credential:
+                res = WebAuthnService.verify_authentication_response(user, credential)
+                verified = res.get("verified", False)
+        except Exception as e:
+            logger.error("Passkey verification error: %s", str(e))
+            verified = False
+
+    if not verified:
+        cache.set(bf_key, attempts + 1, timeout=300)
+        AuditService.log_event("MFA_VERIFY_FAILURE", user=user, ip_address=ip_address, metadata={"method": method})
+        return Response({"error": "Invalid verification code or passkey assertion."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    # Success! Clear challenge & brute force cache
+    cache.delete(bf_key)
+    if challenge_token:
+        cache.delete(f"mfa_challenge:{challenge_token}")
+
+    tokens = JWTService.generate_tokens(user)
+    session = SessionService.create_session(user, request)
+    if session:
+        session.mfa_verified = True
+        session.auth_method = method
+        session.save(update_fields=["mfa_verified", "auth_method"])
+
+    AuditService.log_event("MFA_VERIFY_SUCCESS", user=user, ip_address=ip_address, metadata={"method": method})
+
+    return Response({
+        "message": "Identity verified successfully.",
+        "user": {
+            "id": str(user.id),
+            "email": user.email,
+            "role": user.role,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+        },
+        "tokens": tokens,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(["POST", "GET"])
+@permission_classes([IsAuthenticated])
+def session_heartbeat_view(request):
+    """Extend session activity timer and return remaining inactivity timeout seconds.
+
+    POST/GET /api/v1/auth/session/heartbeat/
+    """
+    user = request.user
+    is_admin = getattr(user, "role", "") == "Admin" or getattr(user, "is_superuser", False)
+    max_timeout = 1200 if is_admin else 1800
+
+    session_key = request.META.get("HTTP_X_SESSION_KEY") or request.COOKIES.get("digiland_session")
+    session = None
+    if session_key:
+        session = UserSession.objects.filter(user=user, session_key=session_key, is_active=True).first()
+    if not session:
+        session = UserSession.objects.filter(user=user, is_active=True).order_by("-last_activity").first()
+
+    if session:
+        session.last_activity = timezone.now()
+        session.save(update_fields=["last_activity"])
+
+    return Response({
+        "status": "active",
+        "user_id": str(user.id),
+        "email": user.email,
+        "inactivity_timeout_seconds": max_timeout,
+        "warning_threshold_seconds": 300,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def session_revoke_all_view(request):
+    """Revoke all active sessions for the authenticated user.
+
+    POST /api/v1/auth/session/revoke-all/
+    """
+    user = request.user
+    count = UserSession.objects.filter(user=user, is_active=True).update(is_active=False)
+    ip_address = _get_client_ip(request)
+    AuditService.log_event("SESSIONS_REVOKED_ALL", user=user, ip_address=ip_address, metadata={"count": count})
+    MFAService.trigger_security_alert(user, 'SESSION_REVOKED', {'revoked_count': count, 'ip_address': ip_address})
+    return Response({"message": f"Successfully revoked {count} active session(s).", "revoked_count": count}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def security_methods_summary_view(request):
+    """Return enrolled security methods and active sessions summary for the Security Settings page.
+
+    GET /api/v1/auth/security/methods/
+    """
+    user = request.user
+    from .models import UserMFA, UserPasskey, UserSession
+
+    mfa, _ = UserMFA.objects.get_or_create(user=user)
+    passkeys = UserPasskey.objects.filter(user=user).order_by('-created_at')
+
+    sessions_qs = UserSession.objects.filter(user=user, is_active=True).order_by('-last_activity')
+    sessions_data = []
+    current_key = request.META.get("HTTP_X_SESSION_KEY") or request.COOKIES.get("digiland_session")
+    for s in sessions_qs[:10]:
+        sessions_data.append({
+            'id': str(s.id),
+            'device_name': s.device_name or 'Web Session',
+            'ip_address': s.ip_address or 'Unknown IP',
+            'last_activity': s.last_activity,
+            'is_current': bool(current_key and s.session_key == current_key),
+        })
+
+    passkeys_data = [{
+        'id': str(pk.id),
+        'name': pk.name,
+        'credential_id': pk.credential_id[:16] + '...',
+        'created_at': pk.created_at,
+        'last_used_at': pk.last_used_at,
+    } for pk in passkeys]
+
+    return Response({
+        'user_id': str(user.id),
+        'email': user.email,
+        'role': user.role,
+        'methods': {
+            'authenticator': {
+                'enabled': bool(mfa.totp_enabled and mfa.totp_secret),
+                'verified_at': mfa.verified_at,
+            },
+            'passkey': {
+                'enabled': bool(mfa.passkey_enabled or passkeys.exists()),
+                'count': passkeys.count(),
+            },
+            'otp': {
+                'enabled': bool(mfa.otp_enabled),
+                'delivery_channel': user.email,
+            },
+        },
+        'passkeys': passkeys_data,
+        'active_sessions': sessions_data,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def passkey_register_start_view(request):
+    """Generate WebAuthn challenge options for registering a new passkey.
+
+    POST /api/v1/auth/security/passkey/register/start/
+    """
+    user = request.user
+    challenge = secrets.token_hex(32)
+    cache.set(f"webauthn_reg_challenge:{user.id}", challenge, timeout=300)
+
+    options = {
+        'challenge': challenge,
+        'rp': {'name': 'DigiLand Platform', 'id': getattr(settings, 'RP_ID', 'digiland.co.ke')},
+        'user': {
+            'id': str(user.id),
+            'name': user.email,
+            'displayName': user.get_full_name() or user.email,
+        },
+        'pubKeyCredParams': [
+            {'type': 'public-key', 'alg': -7},   # ES256
+            {'type': 'public-key', 'alg': -257}, # RS256
+        ],
+        'timeout': 60000,
+        'attestation': 'none',
+        'authenticatorSelection': {
+            'userVerification': 'preferred',
+            'residentKey': 'preferred',
+        },
+    }
+    return Response(options, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def passkey_register_finish_view(request):
+    """Verify registration assertion and save new passkey.
+
+    POST /api/v1/auth/security/passkey/register/finish/
+    """
+    user = request.user
+    from .models import UserMFA, UserPasskey
+
+    name = request.data.get('name', 'Security Key / Passkey').strip()
+    credential_id = request.data.get('credential_id') or request.data.get('id')
+    raw_id = request.data.get('rawId') or credential_id
+    pub_key = request.data.get('public_key', 'registered_webauthn_pubkey')
+
+    if not credential_id:
+        return Response({"error": "Credential ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Save passkey credential
+    passkey, created = UserPasskey.objects.update_or_create(
+        credential_id=credential_id,
+        defaults={
+            'user': user,
+            'name': name or 'Security Key / Passkey',
+            'public_key': str(pub_key),
+            'last_used_at': timezone.now(),
+        }
+    )
+
+    # Update UserMFA flags
+    mfa, _ = UserMFA.objects.get_or_create(user=user)
+    mfa.passkey_enabled = True
+    mfa.is_enabled = True
+    mfa.save(update_fields=['passkey_enabled', 'is_enabled'])
+
+    ip_address = _get_client_ip(request)
+    AuditService.log_event("PASSKEY_ADDED", user=user, ip_address=ip_address, metadata={"passkey_id": str(passkey.id), "name": passkey.name})
+    MFAService.trigger_security_alert(user, 'PASSKEY_ADDED', {'passkey_name': passkey.name, 'ip_address': ip_address})
+
+    return Response({
+        "message": f"Passkey '{passkey.name}' successfully registered.",
+        "passkey": {
+            "id": str(passkey.id),
+            "name": passkey.name,
+            "created_at": passkey.created_at,
+        }
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def passkey_remove_view(request):
+    """Remove a registered passkey while enforcing last-method protection.
+
+    POST /api/v1/auth/security/passkey/remove/
+    """
+    user = request.user
+    from .models import UserMFA, UserPasskey
+
+    passkey_id = request.data.get("passkey_id")
+    if not passkey_id:
+        return Response({"error": "Passkey ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        passkey = UserPasskey.objects.get(id=passkey_id, user=user)
+    except UserPasskey.DoesNotExist:
+        return Response({"error": "Passkey not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    mfa, _ = UserMFA.objects.get_or_create(user=user)
+    remaining_passkeys = UserPasskey.objects.filter(user=user).exclude(id=passkey_id).count()
+
+    # Check if removing this passkey leaves user with 0 hardware/authenticator methods
+    if remaining_passkeys == 0 and not (mfa.totp_enabled and mfa.totp_secret):
+        return Response({
+            "error": "Configure another authentication method before removing your last active security passkey.",
+            "code": "LAST_METHOD_PROTECTION"
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    passkey_name = passkey.name
+    passkey.delete()
+
+    if remaining_passkeys == 0:
+        mfa.passkey_enabled = False
+        mfa.save(update_fields=['passkey_enabled'])
+
+    ip_address = _get_client_ip(request)
+    AuditService.log_event("PASSKEY_REMOVED", user=user, ip_address=ip_address, metadata={"name": passkey_name})
+    MFAService.trigger_security_alert(user, 'PASSKEY_REMOVED', {'passkey_name': passkey_name, 'ip_address': ip_address})
+
+    return Response({"message": f"Passkey '{passkey_name}' removed successfully."}, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def stepup_challenge_verify_view(request):
+    """Perform step-up verification for sensitive administrative actions.
+
+    POST /api/v1/auth/security/step-up/
+    """
+    user = request.user
+    method = request.data.get("method", "authenticator")
+    code = request.data.get("code", "").strip()
+
+    from .models import UserMFA
+    mfa = UserMFA.objects.filter(user=user).first()
+    verified = False
+
+    if method == "authenticator" and mfa and mfa.totp_secret:
+        verified = MFAService.verify_totp(mfa.totp_secret, code)
+    elif method == "passkey":
+        credential = request.data.get("credential")
+        if credential:
+            try:
+                from admin_control_plane.webauthn import WebAuthnService
+                res = WebAuthnService.verify_authentication_response(user, credential)
+                verified = res.get("verified", False)
+            except Exception:
+                verified = False
+    elif method == "otp":
+        try:
+            verified = MFAService.verify_mfa_otp(user, code)
+        except ValueError:
+            verified = False
+
+    if not verified:
+        return Response({"error": "Step-up verification failed. Invalid code or passkey assertion."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    # Generate short-lived (10-minute) step-up token
+    stepup_token = secrets.token_hex(24)
+    cache.set(f"stepup_verified:{user.id}:{stepup_token}", True, timeout=600)
+
+    ip_address = _get_client_ip(request)
+    AuditService.log_event("STEPUP_VERIFY_SUCCESS", user=user, ip_address=ip_address, metadata={"method": method})
+
+    return Response({
+        "message": "Step-up verification successful.",
+        "stepup_token": stepup_token,
+        "expires_in_seconds": 600
+    }, status=status.HTTP_200_OK)
 
 
 # ==================== PASSWORD VIEWS ====================

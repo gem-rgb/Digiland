@@ -126,6 +126,7 @@ class MFAService:
         hashed_codes = [MFAService.hash_recovery_code(code) for code in recovery_codes]
         
         mfa.is_enabled = True
+        mfa.totp_enabled = True
         mfa.verified_at = timezone.now()
         mfa.recovery_codes = hashed_codes
         mfa.save()
@@ -141,6 +142,159 @@ class MFAService:
             'enabled': True,
             'recovery_codes': recovery_codes,  # Only shown once!
         }
+    
+    @staticmethod
+    def get_available_methods(user):
+        """Return configured MFA methods available for a user."""
+        from .models import UserMFA
+        from django.core.cache import cache
+
+        mfa = UserMFA.objects.filter(user=user).first()
+        methods = []
+
+        has_totp = bool(mfa and mfa.totp_secret and (mfa.is_enabled or mfa.totp_enabled))
+        if has_totp:
+            methods.append({
+                'id': 'authenticator',
+                'name': 'Authenticator App',
+                'description': 'Use 6-digit code from Google Authenticator, Authy, etc.',
+                'icon': 'lock',
+                'configured': True,
+            })
+
+        # Check WebAuthn / Passkeys
+        has_passkey = False
+        try:
+            from admin_control_plane.models import AdminWebAuthnCredential
+            has_passkey = AdminWebAuthnCredential.objects.filter(user=user, is_active=True).exists()
+        except Exception:
+            has_passkey = bool(mfa and mfa.passkey_enabled)
+
+        if has_passkey or (mfa and mfa.passkey_enabled):
+            methods.append({
+                'id': 'passkey',
+                'name': 'Passkey / Hardware Key',
+                'description': 'Use fingerprint, Face ID, or security key.',
+                'icon': 'key',
+                'configured': True,
+            })
+
+        # Email / SMS OTP as recovery / access channel
+        if user.email:
+            # Mask email e.g. a***b@domain.com
+            parts = user.email.split('@')
+            masked_name = parts[0][0] + '***' + parts[0][-1] if len(parts[0]) > 2 else parts[0][0] + '***'
+            masked_email = f"{masked_name}@{parts[1]}" if len(parts) > 1 else user.email
+            methods.append({
+                'id': 'otp',
+                'name': 'One-Time Password (OTP)',
+                'description': f'Send temporary code to {masked_email}',
+                'icon': 'mail',
+                'configured': True,
+            })
+
+        default_method = 'authenticator' if has_totp else ('passkey' if has_passkey else 'otp')
+
+        return {
+            'methods': methods,
+            'default_method': default_method,
+            'requires_mfa': bool(has_totp or has_passkey or user.is_staff or user.role in [
+                'Admin', 'Agent', 'Lawyer', 'Surveyor', 'Land_Official'
+            ]),
+        }
+
+    @staticmethod
+    def send_mfa_otp(user):
+        """Generate and dispatch a short-lived 6-digit OTP code to the user's email."""
+        from django.core.cache import cache
+        from django.core.mail import send_mail
+        from .models import AuditLog
+
+        cache_key = f"mfa_otp_{user.id}"
+        attempts_key = f"mfa_otp_attempts_{user.id}"
+
+        # Rate-limiting check: max 5 requests per 10 mins
+        rate_key = f"mfa_otp_rate_{user.id}"
+        req_count = cache.get(rate_key, 0)
+        if req_count >= 5:
+            raise ValueError("Too many OTP requests. Please wait a few minutes before trying again.")
+        cache.set(rate_key, req_count + 1, timeout=600)
+
+        # Generate cryptographically secure 6-digit OTP
+        otp_code = f"{secrets.randbelow(1000000):06d}"
+        cache.set(cache_key, otp_code, timeout=300)  # 5 minutes
+        cache.set(attempts_key, 0, timeout=300)
+
+        # Send via Email
+        subject = "DigiLand Security Verification Code"
+        message = (
+            f"Hello,\n\nYour temporary DigiLand verification code is: {otp_code}\n\n"
+            f"This code will expire in 5 minutes. If you did not request this, please contact DigiLand Security immediately."
+        )
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'security@digiland.co.ke'),
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            logger.error("Failed to send MFA OTP email to %s: %s", user.email, str(e))
+            raise ValueError("Failed to deliver verification code. Please try again.")
+
+        AuditLog.objects.create(
+            user=user,
+            action='MFA_OTP_SENT',
+            metadata={'delivery_channel': 'email'},
+        )
+
+        return {'sent': True, 'expires_in_seconds': 300}
+
+    @staticmethod
+    def verify_mfa_otp(user, code):
+        """Verify an OTP code submitted by the user."""
+        from django.core.cache import cache
+        from .models import AuditLog
+
+        cache_key = f"mfa_otp_{user.id}"
+        attempts_key = f"mfa_otp_attempts_{user.id}"
+
+        stored_otp = cache.get(cache_key)
+        attempts = cache.get(attempts_key, 0)
+
+        if not stored_otp:
+            raise ValueError("Verification code expired or not requested. Please request a new code.")
+
+        if attempts >= 5:
+            cache.delete(cache_key)
+            cache.delete(attempts_key)
+            AuditLog.objects.create(
+                user=user,
+                action='MFA_OTP_LOCKED',
+                metadata={'reason': 'exceeded_attempts'},
+            )
+            raise ValueError("Too many invalid attempts. This code is now invalid. Request a new code.")
+
+        if code.strip() != stored_otp:
+            cache.set(attempts_key, attempts + 1, timeout=300)
+            AuditLog.objects.create(
+                user=user,
+                action='MFA_OTP_FAILURE',
+                metadata={'attempt': attempts + 1},
+            )
+            return False
+
+        # Success - consume code
+        cache.delete(cache_key)
+        cache.delete(attempts_key)
+
+        AuditLog.objects.create(
+            user=user,
+            action='MFA_OTP_SUCCESS',
+            metadata={'delivery_channel': 'email'},
+        )
+        return True
     
     @staticmethod
     def disable_mfa(user, totp_code=None, recovery_code=None):
@@ -170,22 +324,66 @@ class MFAService:
         if not verified:
             raise ValueError("Verification failed. Provide valid TOTP code or recovery code.")
         
+        # Check last-method protection
+        if not mfa.can_disable_method('totp'):
+            raise ValueError("Configure another authentication method before removing your last active security method.")
+
         mfa.is_enabled = False
+        mfa.totp_enabled = False
         mfa.totp_secret = ''
         mfa.recovery_codes = []
         mfa.save()
-        
+
         # Invalidate all trusted devices
         from .models import TrustedDevice
         TrustedDevice.objects.filter(user=user).delete()
-        
+
         AuditLog.objects.create(
             user=user,
             action='MFA_DISABLED',
             metadata={'method': 'totp_code' if totp_code else 'recovery_code'},
         )
-        
+
+        MFAService.trigger_security_alert(user, 'MFA_REMOVED', {'method': 'totp'})
+
         return {'disabled': True}
+
+    @staticmethod
+    def trigger_security_alert(user, alert_type, metadata=None):
+        """Dispatch email security alert via Resend integration for authentication events."""
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        metadata = metadata or {}
+        subject_map = {
+            'NEW_LOGIN': "New DigiLand Staff Sign-In Alert",
+            'PASSKEY_ADDED': "New Security Passkey Registered",
+            'PASSKEY_REMOVED': "DigiLand Security Alert — Passkey Removed",
+            'MFA_ADDED': "New Security Method Added",
+            'MFA_REMOVED': "Security Method Removed",
+            'SESSION_REVOKED': "DigiLand Session Terminated",
+        }
+        subject = subject_map.get(alert_type, "DigiLand Account Security Notification")
+
+        body = f"Hello {user.get_full_name() or user.email},\n\n"
+        body += f"Security Notification: {subject}\n"
+        body += f"Event: {alert_type}\n"
+        if metadata.get('ip_address'):
+            body += f"IP Address: {metadata.get('ip_address')}\n"
+        if metadata.get('user_agent'):
+            body += f"Device: {metadata.get('user_agent')[:100]}\n"
+        body += "\nIf you did not initiate this action, please log into DigiLand immediately and revoke active sessions or contact DigiLand Security."
+
+        try:
+            send_mail(
+                subject=subject,
+                message=body,
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'security@digiland.co.ke'),
+                recipient_list=[user.email],
+                fail_silently=True,
+            )
+        except Exception as e:
+            logger.warning("Failed sending security alert email to %s: %s", user.email, str(e))
     
     @staticmethod
     def verify_mfa(user, totp_code):

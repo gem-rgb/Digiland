@@ -501,6 +501,137 @@ class RBACMiddleware:
 
     @staticmethod
     def _match_roles(path, rbac_rules):
+        """Find the most specific matching path rule."""
+        matched_prefix = None
+        matched_roles = None
+        for prefix, roles in rbac_rules.items():
+            if path.startswith(prefix):
+                if matched_prefix is None or len(prefix) > len(matched_prefix):
+                    matched_prefix = prefix
+                    matched_roles = roles
+        return matched_roles
+
+
+class PrivilegedSessionMiddleware:
+    """
+    Zero Trust Privileged Session & MFA Verification Middleware.
+
+    Enforces:
+    1. Independent endpoint-level authentication & MFA verification for /api/staff/* and /api/admin/*
+    2. Server-side session inactivity timeout enforcement (Staff: 30m, Admin: 20m)
+    3. Rejection of client-controlled headers (X-Admin-Role, X-Staff-Override, etc.)
+    4. Auto session invalidation on inactivity timeout
+    """
+
+    PRIVILEGED_PATHS = (
+        '/api/v1/admin/',
+        '/api/admin/',
+        '/api/v1/auth/oauth/admin/',
+        '/api/v1/staff/',
+        '/api/staff/',
+        '/api/v1/agent/',
+        '/api/v1/lawyer/',
+        '/api/v1/surveyor/',
+    )
+
+    HEADER_BLACKLIST = (
+        'HTTP_X_ADMIN_ROLE',
+        'HTTP_X_STAFF_OVERRIDE',
+        'HTTP_X_BYPASS_MFA',
+        'HTTP_X_USER_ROLE',
+    )
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # 1. Sanitize forbidden headers
+        for header in self.HEADER_BLACKLIST:
+            if header in request.META:
+                logger.warning("Sanitizing forbidden security header %s from %s", header, request.META.get('REMOTE_ADDR'))
+                del request.META[header]
+
+        path = request.path
+        is_privileged = any(path.startswith(prefix) for prefix in self.PRIVILEGED_PATHS)
+
+        if not is_privileged:
+            return self.get_response(request)
+
+        user = getattr(request, 'user', None)
+
+        if not getattr(user, 'is_authenticated', False):
+            auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+            if auth_header.startswith('Bearer '):
+                try:
+                    from rest_framework_simplejwt.authentication import JWTAuthentication
+                    jwt_auth = JWTAuthentication()
+                    raw_token = auth_header.split()[1]
+                    validated_token = jwt_auth.get_validated_token(raw_token)
+                    user = jwt_auth.get_user(validated_token)
+                    request.user = user
+                except Exception:
+                    pass
+
+        if not getattr(user, 'is_authenticated', False):
+            return JsonResponse({'detail': 'Authentication required for privileged access.', 'code': 'UNAUTHENTICATED'}, status=401)
+
+        # Check MFA requirement for privileged roles / paths
+        if getattr(user, 'is_staff', False) or getattr(user, 'is_superuser', False) or user.role in [
+            'Admin', 'Agent', 'Lawyer', 'Surveyor', 'Land_Official'
+        ]:
+            if getattr(request, 'is_mfa_pending', False) or getattr(request, 'auth_stage', '') == 'STAGE1_PASSWORD_ONLY':
+                return JsonResponse({
+                    'detail': 'MFA verification required before accessing privileged resources.',
+                    'code': 'MFA_REQUIRED'
+                }, status=403)
+
+        # 2. Check Session Inactivity Timeout
+        from .models import UserSession, AuditLog
+        from django.utils import timezone
+
+        session_key = request.META.get('HTTP_X_SESSION_KEY') or request.COOKIES.get('digiland_session')
+
+        # Determine timeout based on role / path
+        is_admin_path = path.startswith('/api/v1/admin/') or path.startswith('/api/admin/') or getattr(user, 'role', '') == 'Admin'
+        max_inactivity_seconds = 1200 if is_admin_path else 1800  # 20 mins for Admin, 30 mins for Staff
+
+        if user.is_authenticated:
+            session_qs = UserSession.objects.filter(user=user, is_active=True)
+            if session_key:
+                session = session_qs.filter(session_key=session_key).first()
+            else:
+                session = session_qs.order_by('-last_activity').first()
+
+            if session:
+                now = timezone.now()
+                inactive_duration = (now - session.last_activity).total_seconds()
+
+                if inactive_duration > max_inactivity_seconds:
+                    session.is_active = False
+                    session.save(update_fields=['is_active'])
+
+                    AuditLog.objects.create(
+                        user=user,
+                        action='SESSION_EXPIRED_INACTIVITY',
+                        metadata={
+                            'inactive_seconds': inactive_duration,
+                            'max_allowed_seconds': max_inactivity_seconds,
+                            'path': path,
+                        }
+                    )
+
+                    return JsonResponse({
+                        'detail': 'Your session has expired due to inactivity. Please sign in again.',
+                        'code': 'SESSION_EXPIRED'
+                    }, status=401)
+
+                session.last_activity = now
+                session.save(update_fields=['last_activity'])
+
+        return self.get_response(request)
+
+    @staticmethod
+    def _match_roles(path, rbac_rules):
         """
         Find the first matching rule prefix and return its required roles.
         Returns None if no rule matches (meaning the path is unrestricted).

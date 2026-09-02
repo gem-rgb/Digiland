@@ -1,0 +1,66 @@
+{% extends "account/base_auth.html" %}
+{% load i18n %}
+{% load widget_tweaks %}
+
+{% block title %}Staff Workspace Sign In - Digiland{% endblock %}
+
+{% block content %}
+<div class="text-center mb-6">
+  <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 border border-emerald-200">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      <path d="m9 12 2 2 4-4"/>
+    </svg>
+  </div>
+  <div class="text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-700 mb-1">Privileged Access</div>
+  <h1 class="text-2xl font-black tracking-tight text-slate-900">Staff Workspace</h1>
+  <p class="text-xs text-slate-600 mt-1">Dedicated portal for EARB Agents, Advocates, Surveyors & Land Officials.</p>
+</div>
+
+<div class="rounded-3xl border border-emerald-100 bg-white p-6 shadow-xl shadow-emerald-950/5">
+  {% if error %}
+  <div class="rounded-2xl border border-rose-200 bg-rose-50 p-3.5 text-xs text-rose-800 flex items-start gap-2 mb-4">
+    <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-4 w-4 shrink-0 text-rose-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+    <span>{{ error }}</span>
+  </div>
+  {% endif %}
+
+  {% if info_message %}
+  <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs text-emerald-800 flex items-start gap-2 mb-4">
+    <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+    <span>{{ info_message }}</span>
+  </div>
+  {% endif %}
+
+  <form method="POST" action="{% url 'frontend:staff_login' %}" class="space-y-4">
+    {% csrf_token %}
+
+    <div class="space-y-1.5">
+      <label for="id_email" class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Official Email or Phone</label>
+      <input type="text" name="email" id="id_email" required class="flex h-11 w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-900 shadow-xs transition-colors focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 placeholder:text-slate-400" placeholder="agent@company.co.ke or advocate@firm.co.ke">
+    </div>
+
+    <div class="space-y-1.5">
+      <div class="flex justify-between items-center">
+        <label for="id_password" class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Password</label>
+        <a href="{% url 'account_reset_password' %}" class="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline">Forgot password?</a>
+      </div>
+      <input type="password" name="password" id="id_password" required class="flex h-11 w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-3.5 py-2 text-sm text-slate-900 shadow-xs transition-colors focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 placeholder:text-slate-400" placeholder="••••••••••••">
+    </div>
+
+    {% if next %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% endif %}
+
+    <button type="submit" class="inline-flex h-11 w-full items-center justify-center rounded-2xl bg-emerald-600 px-5 text-sm font-bold text-white shadow-md shadow-emerald-600/20 transition-all hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 mt-2 gap-2">
+      <span>Sign In to Staff Workspace</span>
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    </button>
+  </form>
+
+  <div class="text-center border-t border-slate-100 pt-4 mt-5">
+    <span class="text-xs text-slate-500">Need a licensed staff account?</span>
+    <a href="{% url 'frontend:agent_onboarding' %}" class="ml-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline">Apply as EARB Agent / Advocate</a>
+  </div>
+</div>
+{% endblock %}

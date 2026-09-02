@@ -24029,6 +24029,13 @@ var KeyRound = createLucideIcon("KeyRound", [
   ["circle", { cx: "16.5", cy: "7.5", r: ".5", fill: "currentColor", key: "w0ekpg" }]
 ]);
 
+// node_modules/lucide-react/dist/esm/icons/key.js
+var Key = createLucideIcon("Key", [
+  ["path", { d: "m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4", key: "g0fldk" }],
+  ["path", { d: "m21 2-9.6 9.6", key: "1j0ho8" }],
+  ["circle", { cx: "7.5", cy: "15.5", r: "5.5", key: "yqb3hr" }]
+]);
+
 // node_modules/lucide-react/dist/esm/icons/landmark.js
 var Landmark = createLucideIcon("Landmark", [
   ["line", { x1: "3", x2: "21", y1: "22", y2: "22", key: "j8o0r" }],
@@ -24336,6 +24343,12 @@ var SlidersVertical = createLucideIcon("SlidersVertical", [
   ["line", { x1: "2", x2: "6", y1: "14", y2: "14", key: "1uebub" }],
   ["line", { x1: "10", x2: "14", y1: "8", y2: "8", key: "1yglbp" }],
   ["line", { x1: "18", x2: "22", y1: "16", y2: "16", key: "1jxqpz" }]
+]);
+
+// node_modules/lucide-react/dist/esm/icons/smartphone.js
+var Smartphone = createLucideIcon("Smartphone", [
+  ["rect", { width: "14", height: "20", x: "5", y: "2", rx: "2", ry: "2", key: "1yt0o3" }],
+  ["path", { d: "M12 18h.01", key: "mhygvu" }]
 ]);
 
 // node_modules/lucide-react/dist/esm/icons/sparkles.js
@@ -34646,10 +34659,15 @@ var StaffLoginPage = ({
   const [email, setEmail] = (0, import_react34.useState)("");
   const [password, setPassword] = (0, import_react34.useState)("");
   const [licenseNumber, setLicenseNumber] = (0, import_react34.useState)("");
-  const [mfaCode, setMfaCode] = (0, import_react34.useState)("");
+  const [stage, setStage] = (0, import_react34.useState)("credentials");
+  const [mfaToken, setMfaToken] = (0, import_react34.useState)("");
+  const [availableMethods, setAvailableMethods] = (0, import_react34.useState)([]);
+  const [selectedMethod, setSelectedMethod] = (0, import_react34.useState)("authenticator");
+  const [verificationCode, setVerificationCode] = (0, import_react34.useState)("");
+  const [otpSentMsg, setOtpSentMsg] = (0, import_react34.useState)(null);
   const [loading, setLoading] = (0, import_react34.useState)(false);
   const [error, setError] = (0, import_react34.useState)(null);
-  const handleSubmit = async (e) => {
+  const handleStage1Submit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -34660,17 +34678,17 @@ var StaffLoginPage = ({
           "Content-Type": "application/json",
           "X-Digiland-Portal": "staff"
         },
-        body: JSON.stringify({
-          email,
-          password,
-          mfa_code: mfaCode
-        })
+        body: JSON.stringify({ email, password })
       });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.detail || data.error || "Authentication failed");
       }
-      if (onLoginSuccess) {
+      if (data.mfa_required && data.mfa_token) {
+        setMfaToken(data.mfa_token);
+        await fetchAvailableMethods(data.mfa_token);
+        setStage("mfa_method_select");
+      } else if (onLoginSuccess) {
         onLoginSuccess(data.user || { email, role: staffRole }, data);
       } else {
         window.location.href = "/parcels/";
@@ -34680,6 +34698,99 @@ var StaffLoginPage = ({
     } finally {
       setLoading(false);
     }
+  };
+  const fetchAvailableMethods = async (token) => {
+    try {
+      const res = await fetch("/api/v1/auth/mfa/available-methods/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mfa_token: token })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableMethods(data.methods || []);
+        if (data.default_method) {
+          setSelectedMethod(data.default_method);
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to load available MFA methods:", err);
+    }
+  };
+  const handleSelectMethod = async (method) => {
+    setSelectedMethod(method);
+    setError(null);
+    if (method === "otp") {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/v1/auth/mfa/send-otp/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mfa_token: mfaToken })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to send OTP code");
+        setOtpSentMsg(data.message || "Code sent to your email.");
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    } else if (method === "passkey") {
+      if (typeof window !== "undefined" && window.navigator?.credentials?.get) {
+        try {
+          const chalBytes = new Uint8Array(32);
+          crypto.getRandomValues(chalBytes);
+          const credential = await window.navigator.credentials.get({
+            publicKey: {
+              challenge: chalBytes,
+              timeout: 6e4,
+              userVerification: "preferred"
+            }
+          });
+          if (credential) {
+            handleVerifyWithCredential("passkey", credential.id || "passkey_assertion");
+            return;
+          }
+        } catch (passkeyErr) {
+          console.warn("Native WebAuthn prompt cancelled or fallback used:", passkeyErr);
+        }
+      }
+    }
+    setStage("mfa_verify");
+  };
+  const handleVerifyWithCredential = async (method, codeOrCredential) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/v1/auth/mfa/verify-challenge/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          challenge_token: mfaToken,
+          method,
+          code: codeOrCredential,
+          credential: { id: codeOrCredential, rawId: codeOrCredential, type: "public-key" }
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || data.error || "Verification failed");
+      }
+      if (onLoginSuccess) {
+        onLoginSuccess(data.user || { email, role: staffRole }, data);
+      } else {
+        window.location.href = "/parcels/";
+      }
+    } catch (err) {
+      setError(err.message || "MFA verification failed. Check code and try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleStage3Verify = async (e) => {
+    e.preventDefault();
+    handleVerifyWithCredential(selectedMethod, verificationCode);
   };
   const fillQuickDemo = (role) => {
     setStaffRole(role);
@@ -34693,12 +34804,12 @@ var StaffLoginPage = ({
       setLicenseNumber("LSK/2026/1842");
     }
   };
-  return /* @__PURE__ */ import_react34.default.createElement("div", { className: "min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-white relative overflow-hidden" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[600px] w-[800px] rounded-full bg-emerald-600/10 blur-[150px]" }), /* @__PURE__ */ import_react34.default.createElement("div", { className: "pointer-events-none absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-purple-600/10 blur-[120px]" }), /* @__PURE__ */ import_react34.default.createElement("div", { className: "sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-widest mb-4" }, /* @__PURE__ */ import_react34.default.createElement(ShieldCheck, { className: "w-4 h-4 text-emerald-400" }), "staff.digiland.co.ke \u2022 Staff Portal"), /* @__PURE__ */ import_react34.default.createElement("h2", { className: "text-3xl sm:text-4xl font-extrabold tracking-tight text-white" }, "Digiland Staff Workspace"), /* @__PURE__ */ import_react34.default.createElement("p", { className: "mt-2 text-sm text-slate-400" }, "Dedicated security portal for registered Real Estate Agents, Advocates, and Land Officials.")), /* @__PURE__ */ import_react34.default.createElement("div", { className: "mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10 px-4" }, /* @__PURE__ */ import_react34.default.createElement(Card, { className: "bg-slate-900/90 border-slate-800 shadow-2xl backdrop-blur-xl rounded-2xl text-slate-100" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "grid grid-cols-2 p-1.5 bg-slate-950/80 rounded-t-2xl border-b border-slate-800" }, /* @__PURE__ */ import_react34.default.createElement(
+  return /* @__PURE__ */ import_react34.default.createElement("div", { className: "min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-slate-900 relative overflow-hidden" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-[600px] w-[800px] rounded-full bg-emerald-500/5 blur-[150px]" }), /* @__PURE__ */ import_react34.default.createElement("div", { className: "sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-widest mb-4" }, /* @__PURE__ */ import_react34.default.createElement(ShieldCheck, { className: "w-4 h-4 text-emerald-600" }), "staff.digiland.co.ke \u2022 Staff Portal"), /* @__PURE__ */ import_react34.default.createElement("h2", { className: "text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900" }, "Digiland Staff Workspace"), /* @__PURE__ */ import_react34.default.createElement("p", { className: "mt-2 text-sm text-slate-600" }, "Dedicated Zero-Trust Portal for Registered Agents, Advocates, and Land Officials.")), /* @__PURE__ */ import_react34.default.createElement("div", { className: "mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10 px-4" }, /* @__PURE__ */ import_react34.default.createElement(Card, { className: "bg-white border-emerald-100 shadow-xl shadow-emerald-950/5 rounded-2xl text-slate-900" }, stage === "credentials" && /* @__PURE__ */ import_react34.default.createElement("div", { className: "grid grid-cols-2 p-1.5 bg-slate-100/80 rounded-t-2xl border-b border-slate-200" }, /* @__PURE__ */ import_react34.default.createElement(
     "button",
     {
       type: "button",
       onClick: () => setStaffRole("Agent"),
-      className: `py-3 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${staffRole === "Agent" ? "bg-emerald-600 text-white shadow-lg shadow-emerald-950/50" : "text-slate-400 hover:text-white hover:bg-slate-900"}`
+      className: `py-3 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${staffRole === "Agent" ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20" : "text-slate-600 hover:text-slate-900 hover:bg-white"}`
     },
     /* @__PURE__ */ import_react34.default.createElement(Briefcase, { className: "w-4 h-4" }),
     /* @__PURE__ */ import_react34.default.createElement("span", null, "Agent Portal")
@@ -34707,21 +34818,21 @@ var StaffLoginPage = ({
     {
       type: "button",
       onClick: () => setStaffRole("Lawyer"),
-      className: `py-3 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${staffRole === "Lawyer" ? "bg-purple-600 text-white shadow-lg shadow-purple-950/50" : "text-slate-400 hover:text-white hover:bg-slate-900"}`
+      className: `py-3 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${staffRole === "Lawyer" ? "bg-purple-600 text-white shadow-md shadow-purple-600/20" : "text-slate-600 hover:text-slate-900 hover:bg-white"}`
     },
     /* @__PURE__ */ import_react34.default.createElement(Scale, { className: "w-4 h-4" }),
     /* @__PURE__ */ import_react34.default.createElement("span", null, "Advocate Desk")
-  )), /* @__PURE__ */ import_react34.default.createElement(CardContent, { className: "p-6 sm:p-8 space-y-6" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "flex items-center justify-between text-xs bg-slate-950/60 p-2.5 rounded-xl border border-slate-800" }, /* @__PURE__ */ import_react34.default.createElement("span", { className: "text-slate-400" }, "Quick Test Credentials:"), /* @__PURE__ */ import_react34.default.createElement(
+  )), /* @__PURE__ */ import_react34.default.createElement(CardContent, { className: "p-6 sm:p-8 space-y-6" }, error && /* @__PURE__ */ import_react34.default.createElement("div", { className: "p-4 rounded-xl bg-red-950/50 border border-red-500/30 text-red-300 text-xs flex items-start gap-2.5" }, /* @__PURE__ */ import_react34.default.createElement(CircleAlert, { className: "w-4 h-4 text-red-400 shrink-0 mt-0.5" }), /* @__PURE__ */ import_react34.default.createElement("div", null, error)), stage === "credentials" && /* @__PURE__ */ import_react34.default.createElement(import_react34.default.Fragment, null, /* @__PURE__ */ import_react34.default.createElement("div", { className: "flex items-center justify-between text-xs bg-emerald-50 p-2.5 rounded-xl border border-emerald-100" }, /* @__PURE__ */ import_react34.default.createElement("span", { className: "text-slate-600 font-medium" }, "Quick Test Credentials:"), /* @__PURE__ */ import_react34.default.createElement(
     "button",
     {
       type: "button",
       onClick: () => fillQuickDemo(staffRole),
-      className: "text-emerald-400 hover:text-emerald-300 font-bold hover:underline"
+      className: "text-emerald-700 hover:text-emerald-800 font-bold hover:underline"
     },
     "Auto-fill ",
     staffRole,
     " Demo"
-  )), error && /* @__PURE__ */ import_react34.default.createElement("div", { className: "p-4 rounded-xl bg-red-950/50 border border-red-500/30 text-red-300 text-xs flex items-start gap-2.5" }, /* @__PURE__ */ import_react34.default.createElement(CircleAlert, { className: "w-4 h-4 text-red-400 shrink-0 mt-0.5" }), /* @__PURE__ */ import_react34.default.createElement("div", null, error)), /* @__PURE__ */ import_react34.default.createElement("form", { onSubmit: handleSubmit, className: "space-y-4" }, /* @__PURE__ */ import_react34.default.createElement("div", null, /* @__PURE__ */ import_react34.default.createElement("label", { className: "block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5" }, "Official Email Address"), /* @__PURE__ */ import_react34.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500" }, /* @__PURE__ */ import_react34.default.createElement(Mail, { className: "w-4 h-4" })), /* @__PURE__ */ import_react34.default.createElement(
+  )), /* @__PURE__ */ import_react34.default.createElement("form", { onSubmit: handleStage1Submit, className: "space-y-4" }, /* @__PURE__ */ import_react34.default.createElement("div", null, /* @__PURE__ */ import_react34.default.createElement("label", { className: "block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5" }, "Official Email Address"), /* @__PURE__ */ import_react34.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400" }, /* @__PURE__ */ import_react34.default.createElement(Mail, { className: "w-4 h-4" })), /* @__PURE__ */ import_react34.default.createElement(
     Input,
     {
       type: "email",
@@ -34729,9 +34840,9 @@ var StaffLoginPage = ({
       value: email,
       onChange: (e) => setEmail(e.target.value),
       placeholder: staffRole === "Agent" ? "agent@company.co.ke" : "advocate@lawfirm.co.ke",
-      className: "pl-9 bg-slate-950 border-slate-800 text-white placeholder-slate-500 text-sm py-2.5 rounded-xl focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+      className: "pl-9 bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 text-sm py-2.5 rounded-xl focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
     }
-  ))), /* @__PURE__ */ import_react34.default.createElement("div", null, /* @__PURE__ */ import_react34.default.createElement("label", { className: "block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5" }, "Password"), /* @__PURE__ */ import_react34.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500" }, /* @__PURE__ */ import_react34.default.createElement(Lock, { className: "w-4 h-4" })), /* @__PURE__ */ import_react34.default.createElement(
+  ))), /* @__PURE__ */ import_react34.default.createElement("div", null, /* @__PURE__ */ import_react34.default.createElement("label", { className: "block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5" }, "Password"), /* @__PURE__ */ import_react34.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400" }, /* @__PURE__ */ import_react34.default.createElement(Lock, { className: "w-4 h-4" })), /* @__PURE__ */ import_react34.default.createElement(
     Input,
     {
       type: "password",
@@ -34739,36 +34850,82 @@ var StaffLoginPage = ({
       value: password,
       onChange: (e) => setPassword(e.target.value),
       placeholder: "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
-      className: "pl-9 bg-slate-950 border-slate-800 text-white placeholder-slate-500 text-sm py-2.5 rounded-xl focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+      className: "pl-9 bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 text-sm py-2.5 rounded-xl focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
     }
-  ))), /* @__PURE__ */ import_react34.default.createElement("div", null, /* @__PURE__ */ import_react34.default.createElement("label", { className: "block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5" }, staffRole === "Agent" ? "EARB Agent License No. (Optional)" : "LSK Advocate Practicing No. (Optional)"), /* @__PURE__ */ import_react34.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500" }, /* @__PURE__ */ import_react34.default.createElement(Building22, { className: "w-4 h-4" })), /* @__PURE__ */ import_react34.default.createElement(
+  ))), /* @__PURE__ */ import_react34.default.createElement("div", null, /* @__PURE__ */ import_react34.default.createElement("label", { className: "block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5" }, staffRole === "Agent" ? "EARB Agent License No. (Optional)" : "LSK Advocate Practicing No. (Optional)"), /* @__PURE__ */ import_react34.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400" }, /* @__PURE__ */ import_react34.default.createElement(Building22, { className: "w-4 h-4" })), /* @__PURE__ */ import_react34.default.createElement(
     Input,
     {
       type: "text",
       value: licenseNumber,
       onChange: (e) => setLicenseNumber(e.target.value),
       placeholder: staffRole === "Agent" ? "EARB/2026/XXXX" : "P105/XXXX/2026",
-      className: "pl-9 bg-slate-950 border-slate-800 text-white placeholder-slate-500 text-sm py-2.5 rounded-xl focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-    }
-  ))), /* @__PURE__ */ import_react34.default.createElement("div", null, /* @__PURE__ */ import_react34.default.createElement("label", { className: "block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5" }, "MFA Authenticator Code (If Enabled)"), /* @__PURE__ */ import_react34.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500" }, /* @__PURE__ */ import_react34.default.createElement(KeyRound, { className: "w-4 h-4" })), /* @__PURE__ */ import_react34.default.createElement(
-    Input,
-    {
-      type: "text",
-      maxLength: 6,
-      value: mfaCode,
-      onChange: (e) => setMfaCode(e.target.value),
-      placeholder: "6-digit code e.g. 123456",
-      className: "pl-9 bg-slate-950 border-slate-800 text-white placeholder-slate-500 text-sm py-2.5 rounded-xl focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 tracking-widest font-mono"
+      className: "pl-9 bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 text-sm py-2.5 rounded-xl focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
     }
   ))), /* @__PURE__ */ import_react34.default.createElement(
     Button,
     {
       type: "submit",
       disabled: loading,
-      className: `w-full py-3 rounded-xl font-bold text-white shadow-lg flex items-center justify-center gap-2 ${staffRole === "Agent" ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-950/50" : "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-950/50"}`
+      className: `w-full py-3 rounded-xl font-bold text-white shadow-md flex items-center justify-center gap-2 ${staffRole === "Agent" ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20" : "bg-purple-600 hover:bg-purple-700 shadow-purple-600/20"}`
     },
-    loading ? /* @__PURE__ */ import_react34.default.createElement("span", null, "Authenticating Staff...") : /* @__PURE__ */ import_react34.default.createElement(import_react34.default.Fragment, null, /* @__PURE__ */ import_react34.default.createElement("span", null, "Sign In to ", staffRole, " Desk"), /* @__PURE__ */ import_react34.default.createElement(ArrowRight, { className: "w-4 h-4" }))
-  )), /* @__PURE__ */ import_react34.default.createElement("div", { className: "pt-4 border-t border-slate-800 text-center space-y-3" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "flex items-center justify-center gap-2 text-xs text-slate-400" }, /* @__PURE__ */ import_react34.default.createElement(CircleCheck, { className: "w-3.5 h-3.5 text-emerald-400" }), /* @__PURE__ */ import_react34.default.createElement("span", null, "Protected by Digiland Audit Security Protocol")), onNavigateToApp && /* @__PURE__ */ import_react34.default.createElement("div", null, /* @__PURE__ */ import_react34.default.createElement(
+    loading ? /* @__PURE__ */ import_react34.default.createElement("span", null, "Authenticating Credentials...") : /* @__PURE__ */ import_react34.default.createElement(import_react34.default.Fragment, null, /* @__PURE__ */ import_react34.default.createElement("span", null, "Continue to Verification"), /* @__PURE__ */ import_react34.default.createElement(ArrowRight, { className: "w-4 h-4" }))
+  ))), stage === "mfa_method_select" && /* @__PURE__ */ import_react34.default.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "text-center space-y-1" }, /* @__PURE__ */ import_react34.default.createElement("h3", { className: "text-xl font-extrabold text-slate-900" }, "Verify Your Identity"), /* @__PURE__ */ import_react34.default.createElement("p", { className: "text-xs text-slate-600" }, "Select how you'd like to verify your DigiLand account.")), /* @__PURE__ */ import_react34.default.createElement("div", { className: "space-y-3 pt-2" }, availableMethods.map((m) => /* @__PURE__ */ import_react34.default.createElement(
+    "button",
+    {
+      key: m.id,
+      type: "button",
+      onClick: () => handleSelectMethod(m.id),
+      className: "w-full text-left p-4 rounded-xl bg-slate-50/70 border border-slate-200 hover:border-emerald-600 hover:bg-white transition flex items-center justify-between group shadow-xs"
+    },
+    /* @__PURE__ */ import_react34.default.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 group-hover:scale-105 transition" }, m.id === "authenticator" && /* @__PURE__ */ import_react34.default.createElement(Smartphone, { className: "w-5 h-5" }), m.id === "passkey" && /* @__PURE__ */ import_react34.default.createElement(Key, { className: "w-5 h-5" }), m.id === "otp" && /* @__PURE__ */ import_react34.default.createElement(MessageSquare, { className: "w-5 h-5" })), /* @__PURE__ */ import_react34.default.createElement("div", null, /* @__PURE__ */ import_react34.default.createElement("div", { className: "text-sm font-bold text-slate-900" }, m.name), /* @__PURE__ */ import_react34.default.createElement("div", { className: "text-xs text-slate-500" }, m.description))),
+    /* @__PURE__ */ import_react34.default.createElement(ArrowRight, { className: "w-4 h-4 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition" })
+  ))), /* @__PURE__ */ import_react34.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => setStage("credentials"),
+      className: "w-full py-2 text-xs text-slate-500 hover:text-slate-900 flex items-center justify-center gap-1 mt-4 font-medium"
+    },
+    /* @__PURE__ */ import_react34.default.createElement(ArrowLeft, { className: "w-3.5 h-3.5" }),
+    /* @__PURE__ */ import_react34.default.createElement("span", null, "Back to Sign In")
+  )), stage === "mfa_verify" && /* @__PURE__ */ import_react34.default.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "text-center space-y-1" }, /* @__PURE__ */ import_react34.default.createElement("h3", { className: "text-xl font-extrabold text-slate-900" }, "Enter Security Code"), /* @__PURE__ */ import_react34.default.createElement("p", { className: "text-xs text-slate-600" }, selectedMethod === "authenticator" && "Enter the 6-digit code from Google Authenticator / Authy.", selectedMethod === "otp" && "Enter the 6-digit code sent to your registered email.", selectedMethod === "passkey" && "Perform passkey biometric or security key assertion.")), otpSentMsg && /* @__PURE__ */ import_react34.default.createElement("div", { className: "p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl text-center font-medium" }, otpSentMsg), /* @__PURE__ */ import_react34.default.createElement("form", { onSubmit: handleStage3Verify, className: "space-y-4" }, /* @__PURE__ */ import_react34.default.createElement("div", null, /* @__PURE__ */ import_react34.default.createElement("label", { className: "block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5" }, "6-Digit Security Code"), /* @__PURE__ */ import_react34.default.createElement("div", { className: "relative" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400" }, /* @__PURE__ */ import_react34.default.createElement(KeyRound, { className: "w-4 h-4" })), /* @__PURE__ */ import_react34.default.createElement(
+    Input,
+    {
+      type: "text",
+      required: true,
+      maxLength: 6,
+      value: verificationCode,
+      onChange: (e) => setVerificationCode(e.target.value),
+      placeholder: "123456",
+      className: "pl-9 bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 text-sm py-2.5 rounded-xl focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 tracking-widest font-mono text-center text-lg"
+    }
+  ))), /* @__PURE__ */ import_react34.default.createElement(
+    Button,
+    {
+      type: "submit",
+      disabled: loading,
+      className: "w-full py-3 rounded-xl font-bold text-white shadow-md bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20 flex items-center justify-center gap-2"
+    },
+    loading ? /* @__PURE__ */ import_react34.default.createElement("span", null, "Verifying Security Code...") : /* @__PURE__ */ import_react34.default.createElement(import_react34.default.Fragment, null, /* @__PURE__ */ import_react34.default.createElement("span", null, "Verify & Sign In"), /* @__PURE__ */ import_react34.default.createElement(ArrowRight, { className: "w-4 h-4" }))
+  ), /* @__PURE__ */ import_react34.default.createElement("div", { className: "flex items-center justify-between text-xs pt-2" }, /* @__PURE__ */ import_react34.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => setStage("mfa_method_select"),
+      className: "text-slate-500 hover:text-slate-900 flex items-center gap-1 font-medium"
+    },
+    /* @__PURE__ */ import_react34.default.createElement(ArrowLeft, { className: "w-3.5 h-3.5" }),
+    /* @__PURE__ */ import_react34.default.createElement("span", null, "Choose another method")
+  ), selectedMethod === "otp" && /* @__PURE__ */ import_react34.default.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => handleSelectMethod("otp"),
+      className: "text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-bold"
+    },
+    /* @__PURE__ */ import_react34.default.createElement(RefreshCw, { className: "w-3 h-3" }),
+    /* @__PURE__ */ import_react34.default.createElement("span", null, "Resend Code")
+  )))), /* @__PURE__ */ import_react34.default.createElement("div", { className: "pt-4 border-t border-slate-800 text-center space-y-3" }, /* @__PURE__ */ import_react34.default.createElement("div", { className: "flex items-center justify-center gap-2 text-xs text-slate-400" }, /* @__PURE__ */ import_react34.default.createElement(CircleCheck, { className: "w-3.5 h-3.5 text-emerald-400" }), /* @__PURE__ */ import_react34.default.createElement("span", null, "Protected by Digiland Audit Security Protocol")), onNavigateToApp && stage === "credentials" && /* @__PURE__ */ import_react34.default.createElement("div", null, /* @__PURE__ */ import_react34.default.createElement(
     "button",
     {
       type: "button",
@@ -39365,6 +39522,14 @@ lucide-react/dist/esm/icons/key-round.js:
    * See the LICENSE file in the root directory of this source tree.
    *)
 
+lucide-react/dist/esm/icons/key.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
 lucide-react/dist/esm/icons/landmark.js:
   (**
    * @license lucide-react v0.453.0 - ISC
@@ -39622,6 +39787,14 @@ lucide-react/dist/esm/icons/shield-check.js:
    *)
 
 lucide-react/dist/esm/icons/sliders-vertical.js:
+  (**
+   * @license lucide-react v0.453.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   *)
+
+lucide-react/dist/esm/icons/smartphone.js:
   (**
    * @license lucide-react v0.453.0 - ISC
    *

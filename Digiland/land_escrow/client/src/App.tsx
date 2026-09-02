@@ -34,6 +34,8 @@ import { OnboardingFlowWizard } from './components/onboarding/onboarding-flow-wi
 import { JointTeamHub } from './components/dashboard/joint-team-hub.js';
 import { OrganizationHub } from './components/dashboard/organization-hub.js';
 import { DigitalCrownAvatar } from './components/ui/digital-crown-avatar.js';
+import { SessionTimeoutModal } from './components/ui/SessionTimeoutModal.js';
+import { useSessionTimeout } from './hooks/useSessionTimeout.js';
 
 function PortalBar() {
 
