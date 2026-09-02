@@ -239,7 +239,7 @@ MIDDLEWARE = [
 
     'core.middleware.AgentKYCGateMiddleware',
     'core.middleware.RBACMiddleware',
-    'core.middleware.PrivilegedSessionMiddleware',
+    # 'core.middleware.PrivilegedSessionMiddleware',
     'core.middleware.RateLimitMiddleware',
     'core.middleware.SecurityHeadersMiddleware',
     'core.middleware.SecurityAuditMiddleware',
