@@ -575,10 +575,11 @@ class PrivilegedSessionMiddleware:
         if not getattr(user, 'is_authenticated', False):
             return JsonResponse({'detail': 'Authentication required for privileged access.', 'code': 'UNAUTHENTICATED'}, status=401)
 
-        # Check MFA requirement for privileged roles / paths
-        if getattr(user, 'is_staff', False) or getattr(user, 'is_superuser', False) or user.role in [
+        # Check MFA requirement for privileged roles / paths (if globally enabled)
+        mfa_enabled = getattr(settings, 'MFA_ENABLED', False)
+        if mfa_enabled and (getattr(user, 'is_staff', False) or getattr(user, 'is_superuser', False) or user.role in [
             'Admin', 'Agent', 'Lawyer', 'Surveyor', 'Land_Official'
-        ]:
+        ]):
             if getattr(request, 'is_mfa_pending', False) or getattr(request, 'auth_stage', '') == 'STAGE1_PASSWORD_ONLY':
                 return JsonResponse({
                     'detail': 'MFA verification required before accessing privileged resources.',

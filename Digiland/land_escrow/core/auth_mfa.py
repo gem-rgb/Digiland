@@ -195,10 +195,11 @@ class MFAService:
 
         default_method = 'authenticator' if has_totp else ('passkey' if has_passkey else 'otp')
 
+        mfa_enabled = getattr(settings, 'MFA_ENABLED', False)
         return {
             'methods': methods,
             'default_method': default_method,
-            'requires_mfa': bool(has_totp or has_passkey or user.is_staff or user.role in [
+            'requires_mfa': mfa_enabled and bool(has_totp or has_passkey or user.is_staff or user.role in [
                 'Admin', 'Agent', 'Lawyer', 'Surveyor', 'Land_Official'
             ]),
         }

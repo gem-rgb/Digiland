@@ -517,35 +517,36 @@ def login_view(request):
             status=status.HTTP_403_FORBIDDEN,
         )
 
-    # Check MFA
-    try:
-        mfa = UserMFA.objects.get(user=user, is_enabled=True)
-        if not mfa_code:
-            # SECURITY: Return opaque MFA challenge token instead of user_id
-            # to prevent user_id leakage and brute-force attacks
-            mfa_token = secrets.token_urlsafe(32)
-            cache.set(f"mfa_challenge:{mfa_token}", {"user_id": str(user.id)}, timeout=300)
-            return Response({
-                "mfa_required": True,
-                "mfa_token": mfa_token,
-                "message": "MFA code required. Provide mfa_token and mfa_code to complete login.",
-            }, status=status.HTTP_200_OK)
+    # Check MFA (only if MFA is globally enabled)
+    if getattr(settings, 'MFA_ENABLED', False):
+        try:
+            mfa = UserMFA.objects.get(user=user, is_enabled=True)
+            if not mfa_code:
+                # SECURITY: Return opaque MFA challenge token instead of user_id
+                # to prevent user_id leakage and brute-force attacks
+                mfa_token = secrets.token_urlsafe(32)
+                cache.set(f"mfa_challenge:{mfa_token}", {"user_id": str(user.id)}, timeout=300)
+                return Response({
+                    "mfa_required": True,
+                    "mfa_token": mfa_token,
+                    "message": "MFA code required. Provide mfa_token and mfa_code to complete login.",
+                }, status=status.HTTP_200_OK)
 
-        # Verify MFA code
-        if len(mfa_code) == 6 and mfa_code.isdigit():
-            if not AuthMFAService.verify_totp_code(mfa.totp_secret, mfa_code):
-                _record_failed_attempt(email, ip_address)
-                return Response({"error": "Invalid MFA code."}, status=status.HTTP_401_UNAUTHORIZED)
-        else:
-            valid, idx = AuthMFAService.validate_recovery_code(mfa.recovery_codes, mfa_code)
-            if not valid:
-                _record_failed_attempt(email, ip_address)
-                return Response({"error": "Invalid recovery code."}, status=status.HTTP_401_UNAUTHORIZED)
-            mfa.recovery_codes.pop(idx)
-            mfa.save()
+            # Verify MFA code
+            if len(mfa_code) == 6 and mfa_code.isdigit():
+                if not AuthMFAService.verify_totp_code(mfa.totp_secret, mfa_code):
+                    _record_failed_attempt(email, ip_address)
+                    return Response({"error": "Invalid MFA code."}, status=status.HTTP_401_UNAUTHORIZED)
+            else:
+                valid, idx = AuthMFAService.validate_recovery_code(mfa.recovery_codes, mfa_code)
+                if not valid:
+                    _record_failed_attempt(email, ip_address)
+                    return Response({"error": "Invalid recovery code."}, status=status.HTTP_401_UNAUTHORIZED)
+                mfa.recovery_codes.pop(idx)
+                mfa.save()
 
-    except UserMFA.DoesNotExist:
-        pass  # MFA not enabled, proceed
+        except UserMFA.DoesNotExist:
+            pass  # MFA not enabled, proceed
 
     # Generate tokens — use single token generation to avoid orphaned tokens
     tokens = JWTService.generate_tokens(user)

@@ -832,6 +832,7 @@ BRUTE_FORCE_MAX_ATTEMPTS = config('BRUTE_FORCE_MAX_ATTEMPTS', default=5, cast=in
 BRUTE_FORCE_WINDOW_MINUTES = config('BRUTE_FORCE_WINDOW_MINUTES', default=15, cast=int)
 
 # ── MFA Configuration ─────────────────────────────────────────────────────────
+MFA_ENABLED = config('MFA_ENABLED', default=False, cast=bool)
 MFA_TOTP_ISSUER = 'Digiland'
 MFA_RECOVERY_CODE_COUNT = 8
 MFA_TRUST_DURATION_DAYS = 30

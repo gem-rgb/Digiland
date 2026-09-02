@@ -34691,7 +34691,8 @@ var StaffLoginPage = ({
       } else if (onLoginSuccess) {
         onLoginSuccess(data.user || { email, role: staffRole }, data);
       } else {
-        window.location.href = "/parcels/";
+        const dest = staffRole === "Agent" ? "/agent/dashboard/" : staffRole === "Surveyor" ? "/surveyor/dashboard/" : "/staff/dashboard/";
+        window.location.href = dest;
       }
     } catch (err) {
       setError(err.message || "Invalid credentials or staff partition access denied.");
@@ -34780,7 +34781,8 @@ var StaffLoginPage = ({
       if (onLoginSuccess) {
         onLoginSuccess(data.user || { email, role: staffRole }, data);
       } else {
-        window.location.href = "/parcels/";
+        const dest = staffRole === "Agent" ? "/agent/dashboard/" : staffRole === "Surveyor" ? "/surveyor/dashboard/" : "/staff/dashboard/";
+        window.location.href = dest;
       }
     } catch (err) {
       setError(err.message || "MFA verification failed. Check code and try again.");
