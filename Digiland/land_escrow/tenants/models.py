@@ -53,10 +53,6 @@ class Organization(models.Model):
     class Meta:
         ordering = ['name']
         indexes = [
-            models.Index(fields=['slug'], name='idx_org_slug'),
-            models.Index(fields=['domain'], name='idx_org_domain'),
-            models.Index(fields=['is_active'], name='idx_org_active'),
-            models.Index(fields=['schema_name'], name='idx_org_schema'),
             models.Index(fields=['subscription_tier'], name='idx_org_sub_tier'),
         ]
 

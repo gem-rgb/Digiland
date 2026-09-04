@@ -529,7 +529,6 @@ class VerificationDocument(models.Model):
         indexes = [
             models.Index(fields=['case', 'document_type'], name='idx_vdoc_case_type'),
             models.Index(fields=['verification_status'], name='idx_vdoc_ver_status'),
-            models.Index(fields=['file_hash'], name='idx_vdoc_file_hash'),
         ]
 
     def __str__(self):

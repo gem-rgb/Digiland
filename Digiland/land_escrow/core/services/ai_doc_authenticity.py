@@ -178,8 +178,8 @@ class AIDocumentAuthenticityVerifier:
         except Exception as exc:
             logger.warning("Error running analyze_document_file on doc %s: %s", doc.id, exc)
 
-        # Cross-reference with Authentic Reference Corpus if LLM enabled
-        if self.enabled and ref_corpus:
+        # Cross-reference with Authentic Reference Corpus if LLM enabled and local check didn't disqualify
+        if self.enabled and ref_corpus and not any("blurry or unreadable" in f for f in flags):
             llm_score, llm_flags = self._llm_corpus_cross_reference(doc, ref_corpus)
             base_score = (base_score * 0.5) + (llm_score * 0.5)
             flags.extend(llm_flags)
@@ -187,10 +187,34 @@ class AIDocumentAuthenticityVerifier:
         final_score = max(0.0, min(100.0, base_score))
         return final_score, flags
 
+    def _get_doc_hash(self, doc: Document) -> str:
+        """Compute SHA-256 hash for document file to enable deterministic verification caching."""
+        try:
+            if hasattr(doc.file_url, "open"):
+                pos = doc.file_url.tell() if hasattr(doc.file_url, "tell") else 0
+                doc.file_url.seek(0)
+                h = hashlib.sha256()
+                for chunk in doc.file_url.chunks():
+                    h.update(chunk)
+                doc.file_url.seek(pos)
+                return h.hexdigest()
+        except Exception:
+            pass
+        return hashlib.sha256(f"{doc.id}:{getattr(doc.file_url, 'name', '')}".encode()).hexdigest()
+
     def _llm_corpus_cross_reference(
         self, doc: Document, ref_corpus: AuthenticDocumentReference
     ) -> Tuple[float, List[str]]:
-        """Use LLM adapter to check document structure against authentic corpus specs."""
+        """Use LLM adapter to check document structure against authentic corpus specs with caching."""
+        from django.core.cache import cache
+
+        doc_hash = self._get_doc_hash(doc)
+        cache_key = f"ai_doc_ver:{doc_hash}:{ref_corpus.id}:{ref_corpus.version_label}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            logger.info("Using cached AI document verification result for doc %s", doc.id)
+            return float(cached.get("score", 80.0)), cached.get("discrepancies", [])
+
         prompt = (
             f"Compare document metadata for type '{doc.document_type}' against authentic reference specs:\n"
             f"- Issuing Authority: {ref_corpus.issuing_authority}\n"
@@ -213,7 +237,10 @@ class AIDocumentAuthenticityVerifier:
             if resp.success and resp.data:
                 content = resp.data.get("content", "")
                 parsed = json.loads(content)
-                return float(parsed.get("score", 80.0)), parsed.get("discrepancies", [])
+                score = float(parsed.get("score", 80.0))
+                discrepancies = parsed.get("discrepancies", [])
+                cache.set(cache_key, {"score": score, "discrepancies": discrepancies}, timeout=86400 * 30)
+                return score, discrepancies
         except Exception:
             pass
 

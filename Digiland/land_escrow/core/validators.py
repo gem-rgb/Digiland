@@ -186,3 +186,95 @@ def _validate_magic_bytes(file_obj, allowed_mimes):
             )
     except Exception:
         file_obj.seek(pos)
+
+
+def calculate_file_sha256(file_obj) -> str:
+    """
+    Calculate the SHA-256 hex digest of a file object safely.
+    Streams in 64KB chunks to prevent high memory usage.
+    Preserves and restores the original file pointer position.
+    """
+    import hashlib
+
+    pos = file_obj.tell() if hasattr(file_obj, 'tell') else 0
+    sha256 = hashlib.sha256()
+    try:
+        if hasattr(file_obj, 'seek'):
+            file_obj.seek(0)
+        
+        if hasattr(file_obj, 'chunks'):
+            for chunk in file_obj.chunks(chunk_size=65536):
+                sha256.update(chunk)
+        else:
+            while True:
+                chunk = file_obj.read(65536)
+                if not chunk:
+                    break
+                sha256.update(chunk if isinstance(chunk, bytes) else chunk.encode('utf-8'))
+        return sha256.hexdigest()
+    finally:
+        if hasattr(file_obj, 'seek'):
+            file_obj.seek(pos)
+
+
+def validate_image_dimensions(image_file, max_width=4096, max_height=4096):
+    """
+    Validate that an uploaded image does not exceed safe dimensions
+    to prevent image decompression bombs and excessive storage usage.
+    """
+    from PIL import Image
+
+    pos = image_file.tell() if hasattr(image_file, 'tell') else 0
+    try:
+        if hasattr(image_file, 'seek'):
+            image_file.seek(0)
+        with Image.open(image_file) as img:
+            width, height = img.size
+            if width > max_width or height > max_height:
+                raise ValidationError(
+                    f"Image dimensions ({width}x{height}) exceed maximum allowed ({max_width}x{max_height})."
+                )
+    except ValidationError:
+        raise
+    except Exception as exc:
+        raise ValidationError(f"Invalid or corrupted image file: {exc}")
+    finally:
+        if hasattr(image_file, 'seek'):
+            image_file.seek(pos)
+
+
+def check_parcel_document_quota(parcel, max_documents=15):
+    """
+    Ensure a land parcel does not exceed the allowed document count.
+    """
+    if parcel and hasattr(parcel, 'documents'):
+        count = parcel.documents.filter(deleted_at__isnull=True).count()
+        if count >= max_documents:
+            raise ValidationError(
+                f"Document upload limit reached for this parcel ({max_documents} max documents). "
+                f"Please remove outdated files before uploading new ones."
+            )
+
+
+def check_user_storage_quota(user, new_file_size_bytes=0, max_mb=50):
+    """
+    Server-side storage quota check per user (default 50MB).
+    """
+    from core.models import Document
+    max_bytes = max_mb * 1024 * 1024
+
+    existing_docs = Document.objects.filter(uploaded_by=user, deleted_at__isnull=True)
+    total_existing = 0
+    for doc in existing_docs:
+        try:
+            if doc.file_url and hasattr(doc.file_url, 'size'):
+                total_existing += doc.file_url.size
+        except Exception:
+            pass
+
+    if (total_existing + new_file_size_bytes) > max_bytes:
+        current_mb = total_existing / (1024 * 1024)
+        raise ValidationError(
+            f"User storage quota exceeded ({current_mb:.1f} MB used of {max_mb} MB limit). "
+            f"Please delete older or superseded documents."
+        )

@@ -46,7 +46,9 @@ def database_config_from_url(database_url, conn_max_age=60, ssl_require=False):
             default=database_url,
             conn_max_age=conn_max_age,
             ssl_require=ssl_require,
+            conn_health_checks=True,
         )
+        db_conf["CONN_HEALTH_CHECKS"] = True
         if disable_cursors:
             db_conf["DISABLE_SERVER_SIDE_CURSORS"] = True
         return db_conf
@@ -84,6 +86,7 @@ def database_config_from_url(database_url, conn_max_age=60, ssl_require=False):
             "HOST": parsed.hostname or "localhost",
             "PORT": str(parsed.port or 5432),
             "CONN_MAX_AGE": conn_max_age,
+            "CONN_HEALTH_CHECKS": True,
         }
         if ssl_require or "sslmode=require" in database_url:
             config_dict["OPTIONS"] = {"sslmode": "require"}

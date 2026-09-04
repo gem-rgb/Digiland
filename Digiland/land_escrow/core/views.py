@@ -12,7 +12,12 @@ from .serializers import (
     LandParcelSerializer, TransactionSerializer, DocumentSerializer
 )
 from .services import identity, land, document as document_service, risk, payment
-from .validators import validate_file_upload
+from .validators import (
+    validate_file_upload,
+    calculate_file_sha256,
+    check_parcel_document_quota,
+    check_user_storage_quota,
+)
 from django.db import models
 
 
@@ -312,8 +317,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         ).distinct()
 
     def perform_create(self, serializer):
-        """Set uploaded_by to current user and validate file."""
-        # SECURITY: Validate file upload
+        """Set uploaded_by to current user, enforce quotas, and validate file."""
         uploaded_file = self.request.FILES.get('file_url')
         if uploaded_file:
             validate_file_upload(
@@ -325,6 +329,14 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 ],
                 max_size_mb=10,
             )
+            # Enforce parcel and user quotas
+            parcel = serializer.validated_data.get('land_parcel')
+            check_parcel_document_quota(parcel)
+            check_user_storage_quota(self.request.user, new_file_size_bytes=uploaded_file.size)
+
+            # Compute SHA-256 digest to verify integrity
+            calculate_file_sha256(uploaded_file)
+
         serializer.save(uploaded_by=self.request.user)
 
     @action(detail=True, methods=['post'], url_path='validate')

@@ -24,7 +24,6 @@ ADAPTER_REGISTRY = {
         'stripe': 'external_services.adapters.payment.StripeAdapter',
         'mpesa': 'external_services.adapters.payment.MPesaAdapter',
         'kcb': 'external_services.adapters.payment.KCBAdapter',
-        'escrow_wallet': 'external_services.adapters.payment.EscrowWalletAdapter',
     },
     'email': {
         'smtp': 'external_services.adapters.email.SMTPAdapter',

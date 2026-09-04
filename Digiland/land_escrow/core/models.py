@@ -455,7 +455,6 @@ class Transaction(models.Model):
             models.Index(fields=['tenant_id', 'buyer', 'status'], name='idx_txn_tenant_buyer_sts'),
             models.Index(fields=['tenant_id', 'seller', 'status'], name='idx_txn_tenant_seller_sts'),
             models.Index(fields=['tenant_id', 'status'], name='idx_txn_tenant_status'),
-            models.Index(fields=['transaction_reference'], name='idx_txn_reference'),
         ]
 
     def save(self, *args, **kwargs):
@@ -864,8 +863,6 @@ class Conversation(models.Model):
         ordering = ['-last_message_at', '-created_at']
         indexes = [
             models.Index(fields=['tenant_id', 'conversation_type', 'is_active'], name='idx_conv_tenant_type_active'),
-            models.Index(fields=['transaction'], name='idx_conv_transaction'),
-            models.Index(fields=['parcel'], name='idx_conv_parcel'),
         ]
 
     def __str__(self):
@@ -944,7 +941,6 @@ class Message(models.Model):
         indexes = [
             models.Index(fields=['conversation', 'timestamp'], name='idx_msg_conv_time'),
             models.Index(fields=['sender', 'receiver', 'timestamp'], name='idx_msg_sender_recv_time'),
-            models.Index(fields=['client_message_id'], name='idx_msg_client_id'),
         ]
 
     def __str__(self):
@@ -2043,8 +2039,6 @@ class UserSession(models.Model):
     class Meta:
         ordering = ['-last_activity']
         indexes = [
-            models.Index(fields=['user', 'is_active'], name='idx_session_user_active'),
-            models.Index(fields=['refresh_token_jti'], name='idx_session_jti'),
             models.Index(fields=['user', 'is_active', 'last_activity'], name='idx_session_user_activity'),
         ]
     
@@ -2141,9 +2135,6 @@ class RolePermission(models.Model):
     
     class Meta:
         unique_together = ('role', 'permission')
-        indexes = [
-            models.Index(fields=['role'], name='idx_roleperm_role'),
-        ]
     
     def __str__(self):
         return f"{self.role} -> {self.permission.codename}"
@@ -3114,8 +3105,6 @@ class Notification(models.Model):
         indexes = [
             models.Index(fields=['user', 'channel', 'status'], name='idx_notif_user_ch_status'),
             models.Index(fields=['notification_type', 'created_at'], name='idx_notif_type_created'),
-            models.Index(fields=['provider_message_id'], name='idx_notif_provider_msg_id'),
-            models.Index(fields=['idempotency_key'], name='idx_notif_idemp_key'),
             models.Index(fields=['user', 'read_at'], name='idx_notif_user_read'),
         ]
 
@@ -3282,9 +3271,6 @@ class PaymentRecord(models.Model):
     class Meta:
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['digiland_reference'], name='idx_pmt_dgl_ref'),
-            models.Index(fields=['provider_reference'], name='idx_pmt_prov_ref'),
-            models.Index(fields=['checkout_request_reference'], name='idx_pmt_chk_ref'),
             models.Index(fields=['transaction', 'status'], name='idx_pmt_txn_status_v2'),
             models.Index(fields=['payer', 'status'], name='idx_pmt_pyr_status_v2'),
             models.Index(fields=['purpose', 'status'], name='idx_pmt_purp_status'),
@@ -3293,10 +3279,14 @@ class PaymentRecord(models.Model):
         ]
 
     def save(self, *args, **kwargs):
-        # Synchronize payment_status and status
-        if self.status:
+        # Synchronize payment_status and status without default value collisions
+        if self.payment_status and self.payment_status != 'CREATED' and (not self.status or self.status == 'CREATED'):
+            self.status = self.payment_status
+        elif self.status and self.status != 'CREATED' and (not self.payment_status or self.payment_status == 'CREATED'):
             self.payment_status = self.status
-        elif self.payment_status:
+        elif self.status and not self.payment_status:
+            self.payment_status = self.status
+        elif self.payment_status and not self.status:
             self.status = self.payment_status
 
         # Synchronize purpose and payment_purpose
@@ -3413,7 +3403,6 @@ class RefundRecord(models.Model):
     class Meta:
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['refund_reference'], name='idx_rfd_reference'),
             models.Index(fields=['payment', 'status'], name='idx_rfd_pmt_status'),
             models.Index(fields=['transaction', 'status'], name='idx_rfd_txn_status'),
         ]
@@ -3679,7 +3668,6 @@ class DisputeCase(models.Model):
     class Meta:
         ordering = ['-opened_at']
         indexes = [
-            models.Index(fields=['case_number'], name='idx_dsp_case_num'),
             models.Index(fields=['transaction', 'status'], name='idx_dsp_txn_status'),
             models.Index(fields=['status', 'outcome'], name='idx_dsp_status_out'),
         ]

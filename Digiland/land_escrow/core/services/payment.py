@@ -51,6 +51,7 @@ def record_payment_confirmation(transaction, provider_reference=None, provider='
                 'provider_reference': ref,
                 'amount': amt,
                 'currency': 'KES',
+                'status': 'CONFIRMED',
                 'payment_status': 'CONFIRMED',
                 'confirmed_at': timezone.now(),
                 'evidence_metadata': metadata or raw_payload or {'source': 'provider_webhook'},
@@ -1542,7 +1543,7 @@ def reverse_payment(transaction, reason="Payment reversal", admin_user=None, rev
 
     payment_record = PaymentRecord.objects.filter(transaction=transaction).first()
     if payment_record:
-        payment_record.status = 'PAYMENT_REVERSED'
+        payment_record.status = 'REVERSED'
         payment_record.payment_status = 'REVERSED'
         payment_record.notes = f"{payment_record.notes or ''} [Reversal Ref: {ref} - Reason: {reason}]".strip()
         payment_record.save(update_fields=['status', 'payment_status', 'notes', 'updated_at'])

@@ -270,14 +270,6 @@ class AdminSession(models.Model):
                 fields=["user", "is_active"],
                 name="idx_admsess_user_active",
             ),
-            models.Index(
-                fields=["session_token"],
-                name="idx_admsess_token",
-            ),
-            models.Index(
-                fields=["expires_at"],
-                name="idx_admsess_expires",
-            ),
         ]
 
     def __str__(self):
@@ -450,10 +442,6 @@ class AdminActionLog(models.Model):
             models.Index(
                 fields=["resource_type", "resource_id"],
                 name="idx_actlog_res_type_id",
-            ),
-            models.Index(
-                fields=["timestamp"],
-                name="idx_actlog_timestamp",
             ),
             models.Index(
                 fields=["tenant_id", "timestamp"],
@@ -662,10 +650,6 @@ class DualApprovalRequest(models.Model):
             models.Index(
                 fields=["status", "created_at"],
                 name="idx_dual_status_created",
-            ),
-            models.Index(
-                fields=["requester"],
-                name="idx_dual_requester",
             ),
             models.Index(
                 fields=["request_type", "status"],

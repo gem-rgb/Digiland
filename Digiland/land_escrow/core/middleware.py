@@ -353,10 +353,10 @@ class RateLimitMiddleware:
         if not getattr(settings, "RATE_LIMIT_ENABLED", not settings.DEBUG):
             return self.get_response(request)
 
-        rate_str = self._get_rate_limit(path)
+        rate_str, prefix = self._get_rate_limit(path)
         limit, window_seconds = self._parse_rate(rate_str)
 
-        key = self._cache_key(request)
+        key = self._cache_key(request, prefix)
         now = time.time()
 
         try:
@@ -408,9 +408,9 @@ class RateLimitMiddleware:
         return get_client_ip(request)
 
     @staticmethod
-    def _cache_key(request):
+    def _cache_key(request, prefix="default"):
         ip = RateLimitMiddleware._client_ip(request)
-        return f"rl:{ip}"
+        return f"rl:{ip}:{prefix}"
 
     @staticmethod
     def _parse_rate(rate_str):
@@ -420,14 +420,16 @@ class RateLimitMiddleware:
 
     @staticmethod
     def _get_rate_limit(path):
-        """Resolve the rate limit for a given request path."""
+        """Resolve the rate limit and route prefix for a given request path."""
         from django.conf import settings
 
         per_path = getattr(settings, "RATE_LIMIT_PER_PATH", {})
         for prefix, rate in per_path.items():
             if path.startswith(prefix):
-                return rate
-        return getattr(settings, "RATE_LIMIT_DEFAULT", RateLimitMiddleware.DEFAULT_RATE)
+                sanitized_prefix = prefix.strip("/").replace("/", "_") or "root"
+                return rate, sanitized_prefix
+        default_rate = getattr(settings, "RATE_LIMIT_DEFAULT", RateLimitMiddleware.DEFAULT_RATE)
+        return default_rate, "default"
 
 
 # ── Role-Based Access Control Middleware ──────────────────────────────────────
@@ -806,6 +808,16 @@ class SecurityAuditMiddleware:
         # For critical events, also create an AuditLog entry
         if category in ('AUTH_FAILURE', 'ACCESS_DENIED', 'PAYMENT_OPERATION', 'ADMIN_OPERATION'):
             try:
+                from django.core.cache import cache
+                # Rate limit anonymous failure DB writes to prevent brute-force write amplification
+                if category in ('AUTH_FAILURE', 'ACCESS_DENIED') and (not hasattr(user, 'pk') or not user.is_authenticated):
+                    throttle_key = f"audit_throttle:{client_ip}:{category}"
+                    fail_count = cache.get(throttle_key, 0)
+                    if fail_count >= 5:
+                        # Emitted to log stream already; suppress DB write explosion
+                        return
+                    cache.set(throttle_key, fail_count + 1, timeout=60)
+
                 from core.models import AuditLog
                 AuditLog.objects.create(
                     user=user if hasattr(user, 'pk') and user.is_authenticated else None,

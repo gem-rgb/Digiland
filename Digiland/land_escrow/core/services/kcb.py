@@ -39,9 +39,10 @@ def _get_access_token():
         return None
 
 
-def initiate_fund_transfer(*, source_account, destination_account, amount, reference, narration='Digiland Escrow Transfer'):
+def initiate_fund_transfer(*, source_account, destination_account, amount, reference, narration='Digiland Direct Settlement'):
     """
-    Initiate a fund transfer from a KCB joint bank account to the platform escrow account.
+    Initiate a fund transfer between transaction parties (direct settlement).
+    DigiLand does NOT take custody of land purchase funds or maintain an escrow balance.
 
     Returns dict with keys: status, reference, message
     """
@@ -168,11 +169,12 @@ def check_transaction_status(transaction_reference):
         return {'status': 'error', 'message': str(exc)}
 
 
-def initiate_b2c_payout(*, destination_account, amount, reference, beneficiary_name='', narration='Digiland Payout'):
+def initiate_b2c_payout(*, destination_account, amount, reference, beneficiary_name='', narration='Digiland Fee Settlement'):
     """
-    Admin withdrawal: transfer from platform KCB holding account to a destination account.
+    Platform operational settlement (service fee disbursement to surveyors/advocates).
+    DigiLand does NOT disburse seller land purchase balances from platform custody.
     """
-    platform_account = getattr(settings, 'KCB_PLATFORM_ACCOUNT', 'DIGILAND-ESCROW-001')
+    platform_account = getattr(settings, 'KCB_PLATFORM_ACCOUNT', 'DIGILAND-OPS-001')
     return initiate_fund_transfer(
         source_account=platform_account,
         destination_account=destination_account,
