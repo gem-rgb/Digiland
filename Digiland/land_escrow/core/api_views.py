@@ -998,9 +998,10 @@ def stripe_webhook_view(request):
             if transaction_id:
                 try:
                     transaction = Transaction.objects.get(id=transaction_id)
-                    transaction.status = 'Deposit_Paid'
-                    transaction.escrow_reference = f"STRIPE-{payment_intent['id']}"
-                    transaction.save(update_fields=['status', 'escrow_reference'])
+                    transaction.status = 'Payment_Confirmed'
+                    transaction.payment_reference = f"STRIPE-{payment_intent['id']}"
+                    transaction.escrow_reference = transaction.payment_reference
+                    transaction.save(update_fields=['status', 'payment_reference', 'escrow_reference'])
                     logger.info(f"Stripe payment succeeded for transaction {transaction_id}")
 
                     AuditLog.objects.create(
@@ -2168,8 +2169,8 @@ def admin_global_search_api(request):
             for p in parcel_items
         ]
 
-    # 4. Search Escrow Transactions
-    if category in ['all', 'transactions', 'escrow']:
+    # 4. Search Transactions
+    if category in ['all', 'transactions']:
         tx_qs = Transaction.objects.all()
         if status_filter:
             tx_qs = tx_qs.filter(status__iexact=status_filter)
@@ -2459,9 +2460,10 @@ def stripe_webhook_view(request):
             if transaction_id:
                 try:
                     transaction = Transaction.objects.get(id=transaction_id)
-                    transaction.status = 'Deposit_Paid'
-                    transaction.escrow_reference = f"STRIPE-{intent.get('id', '')}"
-                    transaction.save(update_fields=['status', 'escrow_reference'])
+                    transaction.status = 'Payment_Confirmed'
+                    transaction.payment_reference = f"STRIPE-{intent.get('id', '')}"
+                    transaction.escrow_reference = transaction.payment_reference
+                    transaction.save(update_fields=['status', 'payment_reference', 'escrow_reference'])
 
                     AuditLog.objects.create(
                         user=transaction.buyer,
@@ -2481,8 +2483,9 @@ def stripe_webhook_view(request):
             if transaction_id:
                 try:
                     transaction = Transaction.objects.get(id=transaction_id)
-                    transaction.escrow_reference = f"FAILED-STRIPE-{intent.get('id', '')}"
-                    transaction.save(update_fields=['escrow_reference'])
+                    transaction.payment_reference = f"FAILED-STRIPE-{intent.get('id', '')}"
+                    transaction.escrow_reference = transaction.payment_reference
+                    transaction.save(update_fields=['payment_reference', 'escrow_reference'])
                 except Transaction.DoesNotExist:
                     pass
 

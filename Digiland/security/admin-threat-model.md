@@ -23,7 +23,7 @@
 
 ### Architecture Description
 
-The Digiland Admin Control Plane is a segregated management layer that provides authorized administrators with oversight and control over the Digiland land escrow platform. It manages critical operations including user KYC verification, financial transaction approval, escrow management, dispute resolution, platform configuration, and audit logging.
+The Digiland Admin Control Plane is a segregated management layer that provides authorized administrators with oversight and control over the Digiland land platform. It manages critical operations including user KYC verification, direct settlement milestone approval, payout monitoring, dispute resolution, platform configuration, and audit logging. Digiland operates strictly non-custodial direct settlement where purchase funds flow directly between buyer and seller accounts.
 
 The control plane operates as a separate deployment from the public-facing application, with its own authentication pipeline, session management, authorization rules, and monitoring infrastructure. It interfaces with the same backend data stores as the public application but through restricted service accounts with elevated privileges.
 
@@ -131,7 +131,7 @@ The control plane operates as a separate deployment from the public-facing appli
 | User PII (names, emails, phone) | Confidential | All admins (read) | PostgreSQL (RLS) | AES-256 at rest |
 | KYC Documents (ID scans, selfies) | Highly Confidential | KYC reviewers only | S3 + CloudFront | AES-256 at rest, TLS in transit |
 | Financial records (transactions, balances) | Highly Confidential | Finance admins | PostgreSQL (RLS) | AES-256 at rest |
-| Escrow account details | Critical | Finance + Super admins | PostgreSQL (RLS) | AES-256 at rest |
+| Settlement banking details | Critical | Finance + Super admins | PostgreSQL (RLS) | AES-256 at rest |
 | Admin credentials (passwords, MFA secrets) | Critical | System only (hashed) | PostgreSQL | Argon2id + AES-256 |
 | Audit logs | Highly Confidential | Auditors (read-only) | PostgreSQL (append-only) | AES-256 at rest |
 | Platform configuration | Internal | Super admins | PostgreSQL | TLS in transit |
@@ -331,8 +331,8 @@ The control plane operates as a separate deployment from the public-facing appli
 |-------|-------|
 | **Threat ID** | ADM-005 |
 | **Category** | Tampering |
-| **Description** | A compromised or malicious admin approves fraudulent withdrawal requests, releasing funds from escrow accounts to attacker-controlled destinations. |
-| **Affected Component** | Financial Approval Service, Escrow Management |
+| **Description** | A compromised or malicious admin approves fraudulent withdrawal/disbursement requests, releasing platform fees or unauthorized payout approvals to attacker-controlled destinations. Note that non-custodial direct settlement inherently prevents platform-wide escrow pool drainage. |
+| **Affected Component** | Financial Approval Service, Settlement Management |
 | **Attack Vector** | Single-admin approval of high-value withdrawals; social engineering of second approver; creating fake transactions then approving them; modifying withdrawal destination after approval (TOCTOU); bypassing amount thresholds for dual approval |
 | **Likelihood** | 4 |
 | **Impact** | 5 |
@@ -348,7 +348,7 @@ The control plane operates as a separate deployment from the public-facing appli
 | **Threat ID** | ADM-006 |
 | **Category** | Tampering |
 | **Description** | A trusted admin with legitimate financial access intentionally processes unauthorized transfers, potentially colluding with external parties or creating fictitious transactions. |
-| **Affected Component** | Financial Approval Service, Escrow Management |
+| **Affected Component** | Financial Approval Service, Settlement Management |
 | **Attack Vector** | Collusion between two admins for dual-approval bypass; creating shell user accounts with KYC bypass; modifying transaction records post-execution; exploiting emergency override controls; gradual small-amount theft below alerting thresholds (salami attack) |
 | **Likelihood** | 3 |
 | **Impact** | 5 |
@@ -663,10 +663,10 @@ The control plane operates as a separate deployment from the public-facing appli
 
 ## Attack Trees
 
-### Attack Tree 1: Steal Funds from Escrow
+### Attack Tree 1: Steal Platform Funds or Manipulate Settlement
 
 ```
-GOAL: Steal funds from escrow
+GOAL: Steal platform funds or manipulate settlement
 │
 ├── 1. Gain admin access with financial approval rights
 │   ├── 1.1 Steal admin credentials
@@ -708,7 +708,7 @@ GOAL: Steal funds from escrow
 │   │   └── 3.1.3 Use stolen identities for KYC [L:3, I:4]
 │   │
 │   └── 3.2 Manipulate existing transactions
-│       ├── 3.2.1 Modify escrow release conditions [L:2, I:5]
+│       ├── 3.2.1 Modify settlement release conditions [L:2, I:5]
 │       ├── 3.2.2 Change beneficiary after approval [L:2, I:5]
 │       └── 3.2.3 Create fictitious refund transactions [L:2, I:5]
 │

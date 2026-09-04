@@ -156,7 +156,7 @@
                             <div class="mb-3">
                                 <label for="bank_reference" class="form-label fw-bold">Bank transfer reference</label>
                                 <input type="text" class="form-control form-control-lg" id="bank_reference" name="bank_reference" placeholder="Enter the transfer reference or slip number">
-                                <div class="form-text">Use the reference from the bank transfer so the escrow team can match the deposit.</div>
+                                <div class="form-text">Use the reference from the bank transfer so the verification team can match the payment.</div>
                             </div>
                         </div>
                         {% endif %}
@@ -220,7 +220,7 @@
                             <div class="text-center py-4">
                                 <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
                                 <h5 class="fw-bold text-success mt-3 mb-2">Payment Confirmed!</h5>
-                                <p class="text-muted mb-3">Your escrow deposit has been securely received.</p>
+                                <p class="text-muted mb-3">Your direct settlement payment has been securely confirmed.</p>
                                 <div id="paymentDetails" class="mb-3"></div>
                                 <a href="{% url 'frontend:transactions' %}" class="btn btn-primary btn-lg fw-bold">
                                     <i class="bi bi-list-check"></i> View My Transactions
@@ -369,7 +369,7 @@ document.getElementById('stkPushForm').addEventListener('submit', function(e) {
                 document.getElementById('bankPaymentDetails').innerHTML = `
                     <div class="alert alert-success py-2 small">
                         <strong>Reference:</strong> ${data.bank_reference || 'N/A'}<br>
-                        <strong>Escrow Reference:</strong> ${data.escrow_reference || 'N/A'}<br>
+                        <strong>Payment Reference:</strong> ${data.payment_reference || data.escrow_reference || 'N/A'}<br>
                         <strong>Bank:</strong> ${data.bank_name || 'N/A'}<br>
                         <strong>Account:</strong> ${data.bank_account_name || 'N/A'} (${data.bank_account_number || 'N/A'})
                     </div>
@@ -435,10 +435,11 @@ function showSuccess(data) {
     document.getElementById('stkWaitingSection').classList.add('d-none');
     document.getElementById('stkSuccessSection').classList.remove('d-none');
     
-    if (data.escrow_reference) {
+    const ref = data.payment_reference || data.escrow_reference;
+    if (ref) {
         document.getElementById('paymentDetails').innerHTML = `
             <div class="alert alert-success py-2 small">
-                <strong>Escrow Reference:</strong> ${data.escrow_reference}<br>
+                <strong>Payment Reference:</strong> ${ref}<br>
                 <strong>M-PESA Receipt:</strong> ${data.mpesa_receipt || 'N/A'}
             </div>
         `;

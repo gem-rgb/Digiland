@@ -3337,10 +3337,10 @@ class PaymentRecord(models.Model):
         # Auto-generate digiland_reference if not provided
         if not self.digiland_reference:
             from django.utils import timezone
-            import random
+            import uuid
             year = timezone.now().year
-            txn_part = self.transaction.transaction_reference if self.transaction and self.transaction.transaction_reference else f"TXN-{random.randint(100000, 999999)}"
-            self.digiland_reference = f"DL-PMT-{year}-{txn_part.split('-')[-1]}-{random.randint(10, 99)}"
+            txn_part = self.transaction.transaction_reference if self.transaction and self.transaction.transaction_reference else f"TXN-{uuid.uuid4().hex[:6].upper()}"
+            self.digiland_reference = f"DL-PMT-{year}-{txn_part.split('-')[-1]}-{uuid.uuid4().hex[:6].upper()}"
 
         super().save(*args, **kwargs)
 

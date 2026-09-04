@@ -54,7 +54,7 @@ PUBLIC_PAGES = {
     'about': _page(
         'about',
         'Built for secure land transfers in Kenya',
-        'Digiland combines verified parcel workflows, escrow settlement, and joint ownership support in one platform.',
+        'Digiland combines verified parcel workflows, direct settlement coordination, and joint ownership support in one platform.',
         kicker='About Digiland',
         badge='Public overview',
         content_key='about',
@@ -70,7 +70,7 @@ PUBLIC_PAGES = {
     'investors': _page(
         'investors',
         'A focused land transaction product',
-        'Digiland targets a narrow workflow with high trust requirements: parcel verification, contract signing, and escrow payment.',
+        'Digiland targets a narrow workflow with high trust requirements: parcel verification, contract signing, and direct settlement.',
         kicker='Investors',
         badge='Growth story',
         content_key='investors',
@@ -86,7 +86,7 @@ PUBLIC_PAGES = {
     'privacy': _page(
         'privacy',
         'Privacy and data handling',
-        'The platform stores only what it needs to manage escrow, verification, and support workflows.',
+        'The platform stores only what it needs to manage transactions, verification, and support workflows.',
         kicker='Privacy',
         badge='Data policy',
         content_key='privacy',
@@ -94,7 +94,7 @@ PUBLIC_PAGES = {
     'sell': _page(
         'sell',
         'Sell with confidence',
-        'List verified land, price it accurately, and move into escrow when a buyer is ready.',
+        'List verified land, price it accurately, and move into direct closing when a buyer is ready.',
         kicker='Seller tools',
         badge='Marketplace',
         sections=[
@@ -109,10 +109,10 @@ PUBLIC_PAGES = {
             ),
             _section(
                 'Protect the transaction',
-                'Once the buyer is ready, the platform moves the deal into signed contract and escrow steps so both sides have a traceable workflow.',
+                'Once the buyer is ready, the platform moves the deal into signed contracts and verified direct settlement so both sides have a traceable workflow.',
                 bullets=[
                     'Digital contract signing',
-                    'Escrow-backed settlement',
+                    'Verified direct settlement',
                     'Audit trail for each status change',
                 ],
             ),
@@ -128,23 +128,23 @@ PUBLIC_PAGES = {
     ),
     'escrow': _page(
         'escrow',
-        'Escrow protection',
-        'Funds stay protected until documents, signatures, and transfer checks are complete.',
+        'Direct Settlement Protection',
+        'Funds settle directly between verified parties with full cryptographic confirmation and zero middleman custody.',
         kicker='Trust layer',
-        badge='Protected settlement',
+        badge='Non-Custodial Settlement',
         sections=[
             _section(
                 'How it works',
-                'Buyer funds are held safely while the contract, verification, and settlement steps are checked in order.',
+                'DigiLand is non-custodial: payments settle directly between buyer and seller accounts via verified banking and mobile rails.',
                 bullets=[
-                    'Deposit funds into a controlled escrow flow',
-                    'Complete contract and verification checks',
-                    'Release only after the agreed conditions are met',
+                    'Direct settlement between buyer and seller',
+                    'Complete contract and conveyancing verification checks',
+                    'Cryptographic audit trail for every status change',
                 ],
             ),
             _section(
                 'Why it matters',
-                'A structured escrow path reduces payment risk and gives both parties a clear status trail during the sale.',
+                'Direct settlement removes third-party funds custody risk while preserving an authoritative verification trail during the sale.',
             ),
         ],
         actions=[
@@ -269,7 +269,7 @@ PUBLIC_PAGES = {
             ),
             _section(
                 'Future readiness',
-                'The current platform keeps the legal and workflow layer separate so tokenized experiences can be added later without disrupting escrow.',
+                'The current platform keeps the legal and workflow layer separate so tokenized experiences can be added later without disrupting direct settlements.',
             ),
         ],
         actions=[
@@ -286,11 +286,11 @@ PUBLIC_PAGES = {
         sections=[
             _section(
                 'Getting started',
-                'Learn the core user journeys: browse parcels, estimate value, sign the contract, and complete escrow.',
+                'Learn the core user journeys: browse parcels, estimate value, sign the contract, and complete direct settlement.',
                 bullets=[
                     'Marketplace discovery',
                     'Land value estimation',
-                    'Escrow and settlement flow',
+                    'Direct settlement and verification flow',
                 ],
             ),
             _section(
@@ -338,7 +338,7 @@ PUBLIC_PAGES = {
         sections=[
             _section(
                 'Release notes',
-                'Track changes to the marketplace, estimator, and escrow flow as the platform evolves.',
+                'Track changes to the marketplace, estimator, and direct settlement flow as the platform evolves.',
             ),
             _section(
                 'Market commentary',
@@ -385,7 +385,7 @@ PUBLIC_PAGES = {
         sections=[
             _section(
                 'Buyer community',
-                'Buyers can compare notes on location trends, escrow flow, and due diligence habits.',
+                'Buyers can compare notes on location trends, direct settlement flow, and due diligence habits.',
             ),
             _section(
                 'Seller and agent network',
@@ -427,7 +427,7 @@ PUBLIC_PAGES = {
         sections=[
             _section(
                 'Company facts',
-                'Digiland combines verified land listings, escrow discipline, and pricing intelligence in one workflow.',
+                'Digiland combines verified land listings, direct settlement integrity, and pricing intelligence in one workflow.',
             ),
             _section(
                 'Press inquiries',
@@ -503,3 +503,7 @@ PUBLIC_PAGES = {
         ],
     ),
 }
+
+# Non-custodial settlement route alias
+PUBLIC_PAGES['settlement'] = PUBLIC_PAGES['escrow']
+

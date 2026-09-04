@@ -193,10 +193,10 @@
                                     <span>Seller signed contract</span>
                                 </div>
                                 {% endif %}
-                                {% if transaction.escrow_reference %}
+                                {% if transaction.payment_reference or transaction.escrow_reference %}
                                 <div class="d-flex align-items-center">
                                     <i class="bi bi-circle-fill text-primary me-2" style="font-size: 0.5rem;"></i>
-                                    <span>Payment attempted — Ref: {{ transaction.escrow_reference }}</span>
+                                    <span>Payment attempted — Ref: {{ transaction.payment_reference|default:transaction.escrow_reference }}</span>
                                 </div>
                                 {% endif %}
                                 <div class="d-flex align-items-center">

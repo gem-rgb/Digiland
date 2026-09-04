@@ -32,7 +32,7 @@ route:
 
     # Payment/financial alerts - high priority
     - match_re:
-        alertname: PaymentProcessingFailures|EscrowFailure|PaymentGatewayDown
+        alertname: PaymentProcessingFailures|SettlementFailure|PaymentGatewayDown
       receiver: 'financial-alerts'
       group_wait: 30s
       repeat_interval: 30m

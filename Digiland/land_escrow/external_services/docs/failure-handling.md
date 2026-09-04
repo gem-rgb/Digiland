@@ -34,7 +34,7 @@ Fallback chains are the ESL's primary mechanism for maintaining service availabi
 
 **Fallback chain construction** — Fallback chains are constructed automatically based on provider priority. When providers are registered, they are assigned a priority value (lower = tried first). The registry sorts providers by priority to build the chain. Chains can also be set explicitly using `registry.set_fallback_chain`, which is useful for complex fallback scenarios where priority alone is insufficient.
 
-**Provider-specific fallback behaviour** — Some service types have specialised fallback logic. For example, the payment fallback chain may include the internal `EscrowWalletAdapter` as a last resort, which holds funds in the internal ledger when no external payment processor is available. The CRM fallback chain may include a "no-op" adapter that queues operations for later batch sync when no CRM provider is available.
+**Provider-specific fallback behaviour** — Some service types have specialised fallback logic. For example, the payment fallback chain may include manual direct settlement queueing as a last resort when no external payment processor is available. The CRM fallback chain may include a "no-op" adapter that queues operations for later batch sync when no CRM provider is available.
 
 **Fallback metrics** — The ESL emits Prometheus metrics for fallback events: `esl_fallback_total{service_type, from_provider, to_provider}` counts the number of times a fallback was activated, and `esl_fallback_duration_seconds` tracks the additional latency introduced by falling back. These metrics are visualised on the ESL dashboard and trigger alerts when fallback rates exceed 5% of total traffic.
 

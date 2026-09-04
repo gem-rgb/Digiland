@@ -10,7 +10,7 @@ When an external service provider experiences an outage, the ESL's automated res
 
 **Step 3: Fallback Verification** — If the fallback chain has activated, the engineer verifies that the fallback provider is healthy and performing within acceptable latency bounds. The `esl_fallback_total` and `esl_fallback_duration_seconds` metrics on Grafana show the current fallback rate and latency impact. If the fallback provider is also degraded, the engineer should consider enabling the next provider in the chain or activating the feature toggle to disable the service type entirely.
 
-**Step 4: Communication** — The engineer posts an update to the `#incidents` Slack channel with: (a) the affected service type and provider, (b) the current fallback status, (c) the estimated user impact, and (d) the next check-in time. If the outage affects payment processing or escrow operations, the product team and customer support team must be notified immediately.
+**Step 4: Communication** — The engineer posts an update to the `#incidents` Slack channel with: (a) the affected service type and provider, (b) the current fallback status, (c) the estimated user impact, and (d) the next check-in time. If the outage affects payment processing or direct settlement operations, the product team and customer support team must be notified immediately.
 
 **Step 5: Monitoring** — The engineer monitors the outage at regular intervals (every 15 minutes for critical services, every 30 minutes for non-critical services) until the provider recovers or the outage is escalated. Key metrics to watch: `esl_circuit_breaker_state`, `esl_error_rate`, `esl_fallback_total`, `esl_dlq_entries_pending`, and the provider's status page.
 
@@ -69,7 +69,7 @@ When an ESL-related incident cannot be resolved by the on-call engineer, it shou
 3. The engineering lead reviews and assigns a senior engineer for investigation.
 4. If the issue requires a code fix, follow the hotfix deployment process.
 
-**Business Escalation** — If the incident has a significant business impact (e.g. payments cannot be processed, escrow operations are blocked):
+**Business Escalation** — If the incident has a significant business impact (e.g. payments cannot be processed, direct settlement operations are blocked):
 1. Notify the product manager and customer support lead immediately.
 2. If the outage affects > 100 active transactions, the VP Engineering and COO must be notified.
 3. Customer support should proactively communicate with affected users using the approved messaging templates.

@@ -152,7 +152,7 @@
                 <span><i class="bi bi-sliders me-2"></i>Admin record control</span>
             </div>
             <div class="card-body">
-                <p class="text-muted small mb-3">Administrative access to parcel editing, deletion, and escrow overrides.</p>
+                <p class="text-muted small mb-3">Administrative access to parcel editing, deletion, and transaction overrides.</p>
                 <div class="d-grid gap-2 mb-4">
                     <span class="badge fs-6 p-2 {% if parcel.verification_status == 'Verified' %}bg-success{% elif parcel.verification_status == 'Fraudulent' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
                         {{ parcel.verification_status|title }}
@@ -177,7 +177,7 @@
                 </div>
 
                 {% if parcel.verification_status == 'Verified' %}
-                <form action="{% url 'frontend:initiate_escrow' parcel.parcel_number %}" method="POST">
+                <form action="{% url 'frontend:initiate_transaction' parcel.parcel_number %}" method="POST">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-dark w-100">
                         <i class="bi bi-shield-check"></i>Initiate Purchase
@@ -352,7 +352,7 @@
                             <i class="bi bi-shield-fill-check"></i>
                         </div>
                         <h5 class="mb-2 text-success">Verified property</h5>
-                        <p class="text-muted small mb-0">This parcel has completed the Digiland verification flow and is ready for escrow.</p>
+                        <p class="text-muted small mb-0">This parcel has completed the Digiland verification flow and is ready for secure direct settlement.</p>
                     {% else %}
                         <div class="icon-chip icon-chip-lg tone-warning mx-auto mb-3">
                             <i class="bi bi-shield-fill-exclamation"></i>
@@ -401,12 +401,12 @@
                 </div>
 
                 <div class="mb-3">
-                    <a class="btn btn-outline-primary btn-sm" href="{% url 'frontend:escrow_acts' %}">
+                    <a class="btn btn-outline-primary btn-sm" href="{% url 'frontend:legal_acts' %}">
                         <i class="bi bi-journal-text me-1"></i>Read Kenyan land laws
                     </a>
                 </div>
 
-                <form action="{% url 'frontend:initiate_escrow' parcel.parcel_number %}" method="POST">
+                <form action="{% url 'frontend:initiate_transaction' parcel.parcel_number %}" method="POST">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label class="form-label fw-bold">Purchase mode</label>

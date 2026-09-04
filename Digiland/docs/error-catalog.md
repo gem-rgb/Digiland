@@ -54,7 +54,7 @@ This document defines every error code in the Digiland platform. Each error is c
 |----------|-------------|-------------|
 | Authentication | `AUTH_` | Login, tokens, MFA, OAuth, sessions |
 | Authorization | `AUTHZ_` | Permissions, roles, tenant access |
-| Payments | `PAY_` | Payment processing, escrow, refunds |
+| Payments | `PAY_` | Payment processing, direct settlement, refunds |
 | Withdrawals | `WD_` | Withdrawals, disbursements |
 | Notifications | `NOTIF_` | SMS, email, push notifications |
 | Messaging | `MSG_` | Chat, real-time messaging |
@@ -242,31 +242,31 @@ This document defines every error code in the Digiland platform. Each error is c
 | **Log Category** | `pay.provider.unavailable` |
 | **Internal Details** | All configured payment providers are unavailable (circuit breakers open). Payment has been queued in the local database for retry. The failover chain (primary → secondary → tertiary) has been exhausted. Manual settlement may be required. |
 
-### PAY_ESCROW_HOLD_FAILED
+### PAY_TRANSACTION_FAILED
 
 | Field | Value |
 |-------|-------|
-| **Error Code** | `PAY_ESCROW_HOLD_FAILED` |
+| **Error Code** | `PAY_TRANSACTION_FAILED` |
 | **Category** | Payments |
 | **Severity** | critical |
 | **User-Facing Message** | "We couldn't complete this transaction right now. Your money has not been deducted. Please try again." |
-| **Recovery Action** | User retries; transaction is in a safe state (no funds held) |
-| **Support Action** | Verify escrow state machine; check for partial holds; ensure no funds are stuck; review transaction log |
-| **Log Category** | `pay.escrow.hold_failed` |
-| **Internal Details** | Escrow hold operation failed during the two-phase commit. The payment was not captured, or the hold could not be created in the escrow ledger. Transaction is in a safe "not started" state. Compensating transaction may be needed if partial state detected. |
+| **Recovery Action** | User retries; transaction is in a safe state (no funds transferred) |
+| **Support Action** | Verify transaction state machine; check direct settlement provider status; ensure transaction log is consistent |
+| **Log Category** | `pay.transaction.failed` |
+| **Internal Details** | Direct settlement operation failed during processing. The payment was not captured by the settlement provider. Transaction is in a safe "not started" state. Compensating action may be needed if partial provider callback received. |
 
-### PAY_ESCROW_RELEASE_FAILED
+### PAY_SETTLEMENT_RELEASE_FAILED
 
 | Field | Value |
 |-------|-------|
-| **Error Code** | `PAY_ESCROW_RELEASE_FAILED` |
+| **Error Code** | `PAY_SETTLEMENT_RELEASE_FAILED` |
 | **Category** | Payments |
 | **Severity** | critical |
 | **User-Facing Message** | "This transaction is being securely processed. We'll notify you once it's confirmed." |
 | **Recovery Action** | No user action needed; release queued for retry |
-| **Support Action** | IMMEDIATE ESCALATION. Funds are in escrow and must be released. Check disbursement queue; verify bank connectivity; consider manual release with dual approval |
-| **Log Category** | `pay.escrow.release_failed` |
-| **Internal Details** | Escrow release operation failed. Funds are still held in escrow. The release has been queued for retry with exponential backoff. This is a financial-critical error — funds must be disbursed to the seller. Admin dual-approval may be required for manual override. |
+| **Support Action** | IMMEDIATE ESCALATION. Direct settlement disbursement confirmation failed. Check disbursement queue; verify bank connectivity; consider manual verification with dual approval |
+| **Log Category** | `pay.settlement.release_failed` |
+| **Internal Details** | Direct settlement payout confirmation failed. The payout verification has been queued for retry with exponential backoff. Admin dual-approval may be required for manual verification. |
 
 ### PAY_WEBHOOK_VERIFICATION_FAILED
 
@@ -292,7 +292,7 @@ This document defines every error code in the Digiland platform. Each error is c
 | **Recovery Action** | User retries with correct amount; transaction voided |
 | **Support Action** | IMMEDIATE ESCALATION. Investigate potential fraud or system error. Compare expected vs actual amounts. Review transaction audit log. |
 | **Log Category** | `pay.amount.mismatch` |
-| **Internal Details** | The amount confirmed by the payment provider does not match the expected escrow amount. Possible causes: currency conversion error, partial payment, or fraud. Transaction has been placed in "disputed" state pending investigation. |
+| **Internal Details** | The amount confirmed by the payment provider does not match the expected settlement amount. Possible causes: currency conversion error, partial payment, or fraud. Transaction has been placed in "disputed" state pending investigation. |
 
 ---
 
@@ -307,22 +307,22 @@ This document defines every error code in the Digiland platform. Each error is c
 | **Severity** | critical |
 | **User-Facing Message** | "Your withdrawal is being processed. You'll receive a notification once it's complete." |
 | **Recovery Action** | No user action needed; disbursement queued for retry |
-| **Support Action** | Check bank disbursement queue; verify bank API circuit breaker; check escrow balance reconciliation |
+| **Support Action** | Check bank disbursement queue; verify bank API circuit breaker; check settlement reconciliation |
 | **Log Category** | `wd.disbursement.failed` |
-| **Internal Details** | Bank disbursement API returned an error or timed out. Funds remain in escrow. The disbursement has been queued for retry with exponential backoff (5m, 15m, 60m). Manual settlement may be required after 3 failed retries. |
+| **Internal Details** | Bank disbursement API returned an error or timed out. Direct settlement disbursement has been queued for retry with exponential backoff (5m, 15m, 60m). Manual settlement may be required after 3 failed retries. |
 
-### WD_INSUFFICIENT_ESCROW
+### WD_INSUFFICIENT_BALANCE
 
 | Field | Value |
 |-------|-------|
-| **Error Code** | `WD_INSUFFICIENT_ESCROW` |
+| **Error Code** | `WD_INSUFFICIENT_BALANCE` |
 | **Category** | Withdrawals |
 | **Severity** | critical |
 | **User-Facing Message** | "We're unable to process this withdrawal right now. Please try again later or contact support." |
 | **Recovery Action** | User contacts support; withdrawal blocked |
-| **Support Action** | IMMEDIATE ESCALATION. Reconcile escrow ledger. Check for double-spend or accounting errors. Verify service fee calculations. |
-| **Log Category** | `wd.escrow.insufficient` |
-| **Internal Details** | Escrow balance is insufficient to cover the withdrawal amount plus fees. Possible causes: service fee deduction, concurrent withdrawals, or ledger inconsistency. This may indicate a serious accounting error requiring manual reconciliation. |
+| **Support Action** | IMMEDIATE ESCALATION. Reconcile transaction ledger. Check for double-spend or accounting errors. Verify service fee calculations. |
+| **Log Category** | `wd.balance.insufficient` |
+| **Internal Details** | Verified settlement balance is insufficient to cover the withdrawal amount plus fees. Possible causes: service fee deduction, concurrent withdrawals, or ledger inconsistency. This may indicate an accounting error requiring manual reconciliation. |
 
 ### WD_FRAUD_SERVICE_DOWN
 
@@ -691,7 +691,7 @@ This document defines every error code in the Digiland platform. Each error is c
 | **Recovery Action** | No user action needed; data auto-refreshes when replica catches up |
 | **Support Action** | Monitor replication lag; redirect critical reads to primary if lag > 30s; alert DBA if lag persists |
 | **Log Category** | `db.replica.lag` |
-| **Internal Details** | Read replica lag exceeds the 10-second threshold. Users may see slightly stale data for up to 60 seconds. Critical reads (payment status, escrow balance) are redirected to the primary. The replica is catching up. |
+| **Internal Details** | Read replica lag exceeds the 10-second threshold. Users may see slightly stale data for up to 60 seconds. Critical reads (payment status, settlement status) are redirected to the primary. The replica is catching up. |
 
 ### DB_POOL_EXHAUSTED
 
@@ -704,7 +704,7 @@ This document defines every error code in the Digiland platform. Each error is c
 | **Recovery Action** | User retries after a short delay; connection pool recycles |
 | **Support Action** | Check connection pool utilization; kill long-running queries; increase pool size; scale read replicas |
 | **Log Category** | `db.pool.exhausted` |
-| **Internal Details** | Database connection pool is at > 80% utilization. Non-critical requests are being rejected with 503 status. Critical operations (payments, escrow) are prioritized. Long-running queries (> 10s) are being terminated. Pool auto-scaling may be triggered. |
+| **Internal Details** | Database connection pool is at > 80% utilization. Non-critical requests are being rejected with 503 status. Critical operations (payments, direct settlements) are prioritized. Long-running queries (> 10s) are being terminated. Pool auto-scaling may be triggered. |
 
 ---
 
@@ -781,7 +781,7 @@ This document defines every error code in the Digiland platform. Each error is c
 | **Recovery Action** | No user action needed; task queued; priority processing for critical tasks |
 | **Support Action** | Scale Celery workers; terminate stuck tasks (> 30 min); check task queue depth; verify broker health |
 | **Log Category** | `job.worker.exhausted` |
-| **Internal Details** | Celery worker pool utilization exceeds 80%. Low-priority tasks (analytics, reports, CRM sync) have been paused. Critical tasks (payments, escrow, notifications) are processed with priority. Auto-scaling may increase worker count. Stuck tasks (> 30 min execution) are terminated. |
+| **Internal Details** | Celery worker pool utilization exceeds 80%. Low-priority tasks (analytics, reports, CRM sync) have been paused. Critical tasks (payments, direct settlements, notifications) are processed with priority. Auto-scaling may increase worker count. Stuck tasks (> 30 min execution) are terminated. |
 
 ### JOB_TASK_DEAD_LETTERED
 
@@ -807,7 +807,7 @@ This document defines every error code in the Digiland platform. Each error is c
 | **Recovery Action** | Critical tasks processed synchronously; non-critical tasks queued locally |
 | **Support Action** | IMMEDIATE ESCALATION. Check broker (Redis/RabbitMQ) health; trigger HA failover; verify synchronous fallback is working |
 | **Log Category** | `job.broker.unreachable` |
-| **Internal Details** | The Celery message broker is unreachable. Critical tasks (payments, escrow) are being processed synchronously within the web request. Non-critical tasks are buffered locally. Broker HA failover should occur within 30 seconds. All task states are tracked in the database as a fallback. |
+| **Internal Details** | The Celery message broker is unreachable. Critical tasks (payments, direct settlements) are being processed synchronously within the web request. Non-critical tasks are buffered locally. Broker HA failover should occur within 30 seconds. All task states are tracked in the database as a fallback. |
 
 ---
 

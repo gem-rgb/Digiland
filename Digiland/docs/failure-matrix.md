@@ -11,7 +11,7 @@ This document maps every foreseeable failure scenario across all Digiland platfo
 
 | Level | Definition | SLA Target | Example |
 |-------|-----------|------------|---------|
-| **Critical** | Revenue loss, data corruption, or safety risk; platform unusable for core flows | < 5 min detection, < 30 min resolution | Payment processing down, escrow lockout |
+| **Critical** | Revenue loss, data corruption, or safety risk; platform unusable for core flows | < 5 min detection, < 30 min resolution | Payment processing down, direct settlement lockout |
 | **High** | Major feature unavailable; users cannot complete key workflows | < 15 min detection, < 2 hr resolution | Search down, notifications failed |
 | **Medium** | Degraded experience; workarounds exist | < 30 min detection, < 8 hr resolution | Analytics delayed, ads not loading |
 | **Low** | Minor inconvenience; cosmetic or non-essential feature | < 1 hr detection, < 24 hr resolution | Price prediction stale, avatar upload slow |
@@ -53,23 +53,23 @@ All user-facing messages in this matrix follow these principles:
 
 | Attribute | Failure 1 | Failure 2 | Failure 3 | Failure 4 |
 |-----------|-----------|-----------|-----------|-----------|
-| **Failure Type** | M-Pesa STK push timeout | Stripe API unreachable | Paystack webhook delivery failure | Escrow hold/release failure |
+| **Failure Type** | M-Pesa STK push timeout | Stripe API unreachable | Paystack webhook delivery failure | Direct settlement confirmation failure |
 | **Impact** | Critical | Critical | Critical | Critical |
-| **Fallback Behavior** | Queue payment for async processing; show "processing" status; send SMS confirmation when complete | Fall back to Paystack as alternate provider; if both down, queue and notify | Store webhook events in local buffer; replay on recovery; mark transactions as "pending verification" | Lock escrow state; prevent double-spend; queue release for retry; manual admin override with dual approval |
+| **Fallback Behavior** | Queue payment for async processing; show "processing" status; send SMS confirmation when complete | Fall back to Paystack as alternate provider; if both down, queue and notify | Store webhook events in local buffer; replay on recovery; mark transactions as "pending verification" | Lock transaction state; prevent double-confirmation; queue verification for retry; manual admin override with dual approval |
 | **Recovery Strategy** | Circuit breaker (failure_threshold=3, recovery_timeout=30s); poll M-Pesa callback endpoint for up to 10 min; mark failed after 3 async retries | Circuit breaker per provider; automatic failover to alternate provider; manual reconciliation queue | Dead-letter queue for failed webhooks; hourly retry batch; manual reconciliation dashboard for finance team | Database-level transaction lock; compensating transaction pattern; admin dual-approval for manual override |
 | **User Message** | "Your request is being processed. We'll update you as soon as it's completed." | "Your request is being processed. We'll update you as soon as it's completed." | "Your payment is being verified. This may take a few minutes." | "This transaction is being securely processed. We'll notify you once it's confirmed." |
-| **Monitoring Strategy** | Track STK push success rate; alert on < 95% within 30s; track callback latency; Grafana panel `payments_mpesa_stk_success` | Track per-provider circuit state and error rates; PagerDuty on circuit open; Grafana panel `payments_provider_circuits` | Track webhook delivery success rate; alert on > 5% delivery failure; Grafana panel `payments_webhook_health` | Track escrow state machine violations; immediate PagerDuty on anomaly; Grafana panel `payments_escrow_integrity` |
+| **Monitoring Strategy** | Track STK push success rate; alert on < 95% within 30s; track callback latency; Grafana panel `payments_mpesa_stk_success` | Track per-provider circuit state and error rates; PagerDuty on circuit open; Grafana panel `payments_provider_circuits` | Track webhook delivery success rate; alert on > 5% delivery failure; Grafana panel `payments_webhook_health` | Track settlement state machine violations; immediate PagerDuty on anomaly; Grafana panel `payments_settlement_integrity` |
 
 ## 4. Withdrawals
 
 | Attribute | Failure 1 | Failure 2 | Failure 3 |
 |-----------|-----------|-----------|-----------|
-| **Failure Type** | Bank disbursement timeout | Insufficient escrow balance for withdrawal | Fraud detection service down during withdrawal |
+| **Failure Type** | Bank disbursement timeout | Insufficient settlement balance for withdrawal | Fraud detection service down during withdrawal |
 | **Impact** | Critical | Critical | High |
-| **Fallback Behavior** | Queue withdrawal for retry; hold funds in escrow; send "pending" notification | Block withdrawal; show clear balance discrepancy message; alert finance team | Allow withdrawal with manual fraud review flag; queue for post-hoc screening |
-| **Recovery Strategy** | Circuit breaker (failure_threshold=3, recovery_timeout=60s); retry up to 3 times with exponential backoff (5m, 15m, 60m); manual settlement queue | Reconcile escrow ledger; admin dual-approval override; automated balance check before release | Circuit breaker with 120s recovery; flag all withdrawals during outage for manual review within 4 hours |
+| **Fallback Behavior** | Queue withdrawal for retry; hold payout in pending state; send "pending" notification | Block withdrawal; show clear balance discrepancy message; alert finance team | Allow withdrawal with manual fraud review flag; queue for post-hoc screening |
+| **Recovery Strategy** | Circuit breaker (failure_threshold=3, recovery_timeout=60s); retry up to 3 times with exponential backoff (5m, 15m, 60m); manual settlement queue | Reconcile settlement ledger; admin dual-approval override; automated balance check before release | Circuit breaker with 120s recovery; flag all withdrawals during outage for manual review within 4 hours |
 | **User Message** | "Your withdrawal is being processed. You'll receive a notification once it's complete." | "We're unable to process this withdrawal right now. Please try again later or contact support." | "Your withdrawal request has been received and is being reviewed. We'll update you shortly." |
-| **Monitoring Strategy** | Track disbursement success rate and latency; alert on > 2% failure; Grafana panel `withdrawals_disbursement_health` | Track escrow balance discrepancies; alert on any negative balance; Grafana panel `withdrawals_escrow_balance` | Track fraud service availability; alert on circuit open; track flagged review queue depth; Grafana panel `withdrawals_fraud_service` |
+| **Monitoring Strategy** | Track disbursement success rate and latency; alert on > 2% failure; Grafana panel `withdrawals_disbursement_health` | Track settlement balance discrepancies; alert on any negative balance; Grafana panel `withdrawals_settlement_balance` | Track fraud service availability; alert on circuit open; track flagged review queue depth; Grafana panel `withdrawals_fraud_service` |
 
 ## 5. Notifications
 
@@ -198,7 +198,7 @@ All user-facing messages in this matrix follow these principles:
 |-----------|-----------|-----------|-----------|
 | **Failure Type** | Primary database unreachable | Read replica lag/stale reads | Connection pool exhaustion |
 | **Impact** | Critical | Medium | High |
-| **Fallback Behavior** | Switch to read replica for read operations; block all writes; show "read-only mode" banner; queue writes in application buffer | Serve slightly stale data with "Data as of [timestamp]" banner; redirect critical reads to primary; alert on significant lag | Queue requests; apply connection throttle; reject non-critical requests with 503; prioritize payment and escrow operations |
+| **Fallback Behavior** | Switch to read replica for read operations; block all writes; show "read-only mode" banner; queue writes in application buffer | Serve slightly stale data with "Data as of [timestamp]" banner; redirect critical reads to primary; alert on significant lag | Queue requests; apply connection throttle; reject non-critical requests with 503; prioritize payment and direct settlement operations |
 | **Recovery Strategy** | HA failover to standby (automatic within 30s); application-level reconnection; write replay from buffer; manual promotion if auto-failover fails | Monitor replication lag; redirect reads to primary if lag > 30s; catch-up replication; alert DBA for manual intervention | Increase pool size dynamically; kill long-running queries; restart connection pool; scale read replicas |
 | **User Message** | "We're experiencing a temporary issue. You can browse listings, but some actions may be unavailable right now." | "Some information may be slightly out of date. It will refresh shortly." | "We're experiencing high demand. Please try again in a moment." |
 | **Monitoring Strategy** | Track DB connection health; alert on primary unreachable > 10s; track failover events; Grafana panel `db_primary_health` | Track replication lag in seconds; alert on > 10s lag; Grafana panel `db_replication_lag` | Track connection pool utilization; alert on > 80% pool usage; track query queue depth; Grafana panel `db_pool_utilization` |
@@ -231,7 +231,7 @@ All user-facing messages in this matrix follow these principles:
 |-----------|-----------|-----------|-----------|
 | **Failure Type** | Celery worker pool exhausted | Task execution failure (retries exhausted) | Celery broker (Redis/RabbitMQ) unreachable |
 | **Impact** | High | Medium | Critical |
-| **Fallback Behavior** | Queue tasks with priority; drop low-priority tasks (analytics, reports); process critical tasks first (payments, escrow); show "processing" for queued user actions | Move to dead-letter queue; notify admin dashboard; allow manual retry from admin panel; log detailed failure context | Fall back to synchronous processing for critical tasks (payments, escrow); queue non-critical tasks locally; show "processing" banners |
+| **Fallback Behavior** | Queue tasks with priority; drop low-priority tasks (analytics, reports); process critical tasks first (payments, direct settlements); show "processing" for queued user actions | Move to dead-letter queue; notify admin dashboard; allow manual retry from admin panel; log detailed failure context | Fall back to synchronous processing for critical tasks (payments, direct settlements); queue non-critical tasks locally; show "processing" banners |
 | **Recovery Strategy** | Auto-scale workers; terminate stuck tasks (> 30 min); priority queue rebalancing; alert ops team for manual intervention | Dead-letter queue with admin retry UI; automated retry after 24h for idempotent tasks; manual intervention for non-idempotent tasks | Broker HA failover; application-level task buffering; reconnect with exponential backoff; broker health check every 10s |
 | **User Message** | "Your request is being processed. It may take longer than usual due to high demand." | "We couldn't complete this action automatically. Our team has been notified and will handle it shortly." | "Your request is being processed. It may take longer than usual." |
 | **Monitoring Strategy** | Track worker utilization and task queue depth; alert on > 80% utilization or > 1000 queued tasks; Grafana panel `jobs_worker_pool` | Track task failure rate by type; alert on > 5% failure; track DLQ depth; Grafana panel `jobs_task_failures` | Track broker availability; immediate PagerDuty on broker unreachable; track broker latency; Grafana panel `jobs_broker_health` |
@@ -298,14 +298,14 @@ Given the Kenyan market, payment provider failover follows this priority order:
 1. **M-Pesa** (primary — ~80% of transactions)
 2. **Paystack** (secondary — card payments, bank transfers)
 3. **Stripe** (tertiary — international cards, USD/EUR transactions)
-4. **KCB Bank** (direct bank integration for large escrow transactions)
+4. **KCB Bank** (direct bank integration for large direct settlement transactions)
 5. **Manual queue** (last resort — admin processes with dual approval)
 
 ### Compliance & Regulatory Failure Handling
 
 | Regulation | Failure Scenario | Impact | Required Action |
 |-----------|-----------------|--------|-----------------|
-| **CBK (Central Bank of Kenya)** | Escrow reporting system down | Critical | Queue reports; manual submission within 24 hours |
+| **CBK (Central Bank of Kenya)** | Direct settlement reporting system down | Critical | Queue reports; manual submission within 24 hours |
 | **KRA (Kenya Revenue Authority)** | Tax computation service failure | High | Queue tax calculations; ensure reconciliation before any payouts |
 | **Data Protection Act 2019** | Audit logging pipeline failure | Critical | Block all operations requiring audit trail; buffer events locally |
 | **Anti-Money Laundering** | Fraud detection service unavailable | Critical | Block all transactions > KES 100,000; flag for manual review |

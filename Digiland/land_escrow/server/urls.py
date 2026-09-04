@@ -141,6 +141,7 @@ urlpatterns = [
     path('privacy/', views.public_marketing_page, {'page_key': 'privacy'}, name='privacy'),
     path('sell/', views.public_marketing_page, {'page_key': 'sell'}, name='sell'),
     path('escrow/', views.public_marketing_page, {'page_key': 'escrow'}, name='escrow'),
+    path('settlement/', views.public_marketing_page, {'page_key': 'settlement'}, name='settlement'),
     path('virtual-cities/', views.public_marketing_page, {'page_key': 'virtual-cities'}, name='virtual_cities'),
     path('ai-agents/', views.public_marketing_page, {'page_key': 'ai-agents'}, name='ai_agents'),
     path('analytics/', views.public_marketing_page, {'page_key': 'analytics'}, name='analytics'),
@@ -157,6 +158,8 @@ urlpatterns = [
     path('contact/', views.public_marketing_page, {'page_key': 'contact'}, name='contact'),
     path('cookies/', views.public_marketing_page, {'page_key': 'cookies'}, name='cookies'),
     path('escrow-acts/', views.legal_requirements, name='escrow_acts'),
+    path('legal-acts/', views.legal_requirements, name='legal_acts'),
+
     path('seller-laws/', views.seller_legal_requirements, name='seller_laws'),
     path('seller/laws/', views.seller_legal_requirements, name='seller_laws_slash'),
     path('dashboard/finance/', views.admin_finance, name='admin_finance'),

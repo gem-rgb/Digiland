@@ -228,6 +228,7 @@ class ServiceFeeService:
             created_at__gte=start_date
         ).aggregate(
             total_platform_fees=Sum('platform_fee'),
+            total_coordination_fees=Sum('coordination_fee'),
             total_escrow_fees=Sum('escrow_fee'),
             total_processing_fees=Sum('processing_fee'),
             total_verification_fees=Sum('verification_fee'),
@@ -235,18 +236,19 @@ class ServiceFeeService:
         )
 
         platform_fees = service_fees.get('total_platform_fees') or Decimal('0')
-        escrow_fees = service_fees.get('total_escrow_fees') or Decimal('0')
+        coordination_fees = service_fees.get('total_coordination_fees') or service_fees.get('total_escrow_fees') or Decimal('0')
         processing_fees = service_fees.get('total_processing_fees') or Decimal('0')
         verification_fees = service_fees.get('total_verification_fees') or Decimal('0')
         due_diligence_fees = service_fees.get('total_due_diligence_fees') or Decimal('0')
 
         return {
             'platform_fees': platform_fees,
-            'escrow_fees': escrow_fees,
+            'coordination_fees': coordination_fees,
+            'escrow_fees': coordination_fees,  # Backward compatibility alias
             'processing_fees': processing_fees,
             'verification_fees': verification_fees,
             'due_diligence_fees': due_diligence_fees,
-            'total': platform_fees + escrow_fees + processing_fees + verification_fees + due_diligence_fees,
+            'total': platform_fees + coordination_fees + processing_fees + verification_fees + due_diligence_fees,
         }
 
     @staticmethod
@@ -265,6 +267,7 @@ class ServiceFeeService:
         ).values('month').annotate(
             total=Sum('total_fees'),
             platform=Sum('platform_fee'),
+            coordination=Sum('coordination_fee'),
             escrow=Sum('escrow_fee'),
             processing=Sum('processing_fee'),
             verification=Sum('verification_fee'),
@@ -274,7 +277,8 @@ class ServiceFeeService:
         return [{
             'month': str(item['month'].strftime('%Y-%m')) if item['month'] else 'Unknown',
             'platform_fees': item['platform'] or Decimal('0'),
-            'escrow_fees': item['escrow'] or Decimal('0'),
+            'coordination_fees': item['coordination'] or item['escrow'] or Decimal('0'),
+            'escrow_fees': item['coordination'] or item['escrow'] or Decimal('0'),
             'processing_fees': item['processing'] or Decimal('0'),
             'verification_fees': item['verification'] or Decimal('0'),
             'due_diligence_fees': item['due_diligence'] or Decimal('0'),

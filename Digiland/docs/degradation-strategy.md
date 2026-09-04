@@ -40,7 +40,7 @@ Core workflows remain available but non-essential features are disabled or simpl
 
 **Characteristics:**
 - Read operations fully available
-- Write operations available for critical flows (payments, escrow, messaging)
+- Write operations available for critical flows (payments, direct settlement, messaging)
 - Search falls back to database queries with limited results
 - Real-time updates switch to polling (10s intervals)
 - Non-critical background jobs paused (reports, analytics pipelines, CRM sync)
@@ -165,7 +165,7 @@ To prevent tier oscillation (flapping between tiers):
 | From Tier → To Tier | Behavioral Change |
 |---------------------|-------------------|
 | Tier 1 → Tier 2 | Primary provider failover (M-Pesa → Paystack → Stripe); async processing with status polling; receipt generation delayed |
-| Tier 2 → Tier 3 | All payment initiation blocked; existing payments continue processing; escrow holds maintained |
+| Tier 2 → Tier 3 | All payment initiation blocked; existing payments continue processing; direct settlement states maintained |
 | Tier 3 → Tier 4 | No payment functionality; static page shows "Payments will resume shortly" |
 
 ### Withdrawals
@@ -173,7 +173,7 @@ To prevent tier oscillation (flapping between tiers):
 | From Tier → To Tier | Behavioral Change |
 |---------------------|-------------------|
 | Tier 1 → Tier 2 | Manual fraud review for all withdrawals; processing delays (up to 4 hours); bank disbursement queued |
-| Tier 2 → Tier 3 | Withdrawal requests blocked; existing withdrawals continue processing; escrow funds locked |
+| Tier 2 → Tier 3 | Withdrawal requests blocked; existing withdrawals continue processing; payout queue locked |
 | Tier 3 → Tier 4 | No withdrawal functionality; static status page |
 
 ### Notifications
@@ -292,7 +292,7 @@ To prevent tier oscillation (flapping between tiers):
 
 | From Tier → To Tier | Behavioral Change |
 |---------------------|-------------------|
-| Tier 1 → Tier 2 | Low-priority jobs paused (analytics, reports, CRM sync); critical jobs prioritized (payments, escrow, notifications) |
+| Tier 1 → Tier 2 | Low-priority jobs paused (analytics, reports, CRM sync); critical jobs prioritized (payments, direct settlements, notifications) |
 | Tier 2 → Tier 3 | All background jobs paused; critical operations processed synchronously if possible |
 | Tier 3 → Tier 4 | No background processing; all operations frozen |
 
@@ -306,7 +306,7 @@ To prevent tier oscillation (flapping between tiers):
 |-------|-------|--------------------|----------|
 | **Real-time** | "Live" | < 5 seconds | Chat messages, payment status, WebSocket events |
 | **Near Real-time** | "Updated just now" | < 60 seconds | Dashboard stats, notification counts, search index |
-| **Recent** | "Updated recently" | < 5 minutes | Listing details, user profiles, escrow balances |
+| **Recent** | "Updated recently" | < 5 minutes | Listing details, user profiles, transaction statuses |
 | **Cached** | "As of [time]" | < 30 minutes | Analytics, reports, price predictions, recommendations |
 | **Stale** | "May not reflect recent changes" | < 24 hours | Historical data, archived reports, AI model outputs |
 
@@ -315,7 +315,7 @@ To prevent tier oscillation (flapping between tiers):
 | Domain | Tier 1 | Tier 2 | Tier 3 | Tier 4 |
 |--------|--------|--------|--------|--------|
 | **Payments** | Real-time | Real-time (with delay) | Stale (last known state) | N/A |
-| **Escrow** | Real-time | Near Real-time | Stale (last known state) | N/A |
+| **Settlement** | Real-time | Near Real-time | Stale (last known state) | N/A |
 | **Search** | Near Real-time | Recent (< 15 min) | Cached (< 30 min) | N/A |
 | **Dashboard** | Near Real-time | Recent (< 5 min) | Cached (< 30 min) | N/A |
 | **Analytics** | Recent | Cached (< 30 min) | Stale (< 24 hr) | N/A |

@@ -422,7 +422,7 @@ def features(request):
         request,
         'features',
         'Digiland Features & Architecture',
-        'Explore the 10 core capabilities powering autonomous land escrow in Kenya.',
+        'Explore the 10 core capabilities powering verified land direct settlement in Kenya.',
     )
 
 def agent_signup_complete(request):
@@ -878,7 +878,7 @@ def social_auth_confirm(request):
         portal_icon = "layout-grid"
     else:  # Buyer
         target_url = "https://app.digiland.co.ke/buyer/dashboard/" if not is_local else reverse('frontend:buyer_dashboard')
-        portal_name = "Buyer Marketplace & Escrow"
+        portal_name = "Buyer Marketplace & Transactions"
         portal_icon = "home"
 
     # Immediate confirmation via button submit
@@ -953,9 +953,9 @@ def parcel_list(request):
     if request.user.is_authenticated and request.user.role == 'Seller':
         actions = [{'label': 'List new parcel', 'href': reverse('frontend:parcel_upload'), 'tone': 'default'}, {'label': 'Legal checklist', 'href': reverse('frontend:seller_laws'), 'tone': 'outline'}]
     elif request.user.is_authenticated and request.user.role == 'Buyer':
-        actions = [{'label': 'Legal checklist', 'href': reverse('frontend:escrow_acts'), 'tone': 'outline'}, {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'}]
+        actions = [{'label': 'Legal checklist', 'href': reverse('frontend:legal_acts'), 'tone': 'outline'}, {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'}]
     else:
-        actions = [{'label': 'Legal checklist', 'href': reverse('frontend:escrow_acts'), 'tone': 'outline'}, {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'}]
+        actions = [{'label': 'Legal checklist', 'href': reverse('frontend:legal_acts'), 'tone': 'outline'}, {'label': 'Joint laws', 'href': reverse('frontend:joint_laws'), 'tone': 'secondary'}]
     return render_react_shell(
         request, 'parcel-list', 'Marketplace',
         'Verified parcels available for purchase or management.',
@@ -1741,7 +1741,7 @@ def render_lawyer_dashboard(request, context):
         },
         actions=[
             {'label': 'Withdraw Fees', 'href': reverse('frontend:lawyer_withdraw'), 'tone': 'default'},
-            {'label': 'Legal Library', 'href': reverse('frontend:escrow_acts'), 'tone': 'outline'},
+            {'label': 'Legal Library', 'href': reverse('frontend:legal_acts'), 'tone': 'outline'},
             {'label': 'Messages', 'href': reverse('frontend:messages'), 'tone': 'secondary'},
         ],
     )
@@ -1917,7 +1917,7 @@ def lawyer_withdraw(request):
         },
         actions=[
             {'label': 'Lawyer Dashboard', 'href': reverse('frontend:agent_dashboard'), 'tone': 'outline'},
-            {'label': 'Legal Library', 'href': reverse('frontend:escrow_acts'), 'tone': 'secondary'},
+            {'label': 'Legal Library', 'href': reverse('frontend:legal_acts'), 'tone': 'secondary'},
         ],
     )
 
@@ -2009,12 +2009,16 @@ def build_admin_system_analytics():
         refunded_txs = Transaction.objects.filter(status='Refunded')
 
         total_gmv = completed_txs.aggregate(s=Sum('agreed_price'))['s'] or Decimal('0.00')
-        active_escrow_reserves = Decimal('0.00') # Non-custodial: DigiLand holds no customer funds
-        escrow_fee_revenue = completed_txs.aggregate(s=Sum('platform_service_fee'))['s'] or (total_gmv * Decimal('0.025'))
-        digiland_service_fee_revenue = escrow_fee_revenue
+        active_settlement_reserves = Decimal('0.00') # Non-custodial: DigiLand holds no customer funds
+        active_escrow_reserves = active_settlement_reserves
+        coordination_fee_revenue = completed_txs.aggregate(s=Sum('platform_service_fee'))['s'] or (total_gmv * Decimal('0.025'))
+        escrow_fee_revenue = coordination_fee_revenue
+        digiland_service_fee_revenue = coordination_fee_revenue
     except Exception:
         total_gmv = Decimal('0.00')
+        active_settlement_reserves = Decimal('0.00')
         active_escrow_reserves = Decimal('0.00')
+        coordination_fee_revenue = Decimal('0.00')
         escrow_fee_revenue = Decimal('0.00')
         digiland_service_fee_revenue = Decimal('0.00')
         completed_txs = Transaction.objects.none()
@@ -2151,9 +2155,9 @@ def build_admin_system_analytics():
 
     # Revenue, Taxes, Hires, and Expenses calculations
     ad_promotions_rev = Decimal('85000.00')
-    total_gross_rev = escrow_fee_revenue + ad_promotions_rev
+    total_gross_rev = coordination_fee_revenue + ad_promotions_rev
     wht_tax = (total_lawyer_payouts + total_agent_payouts) * Decimal('0.05')
-    vat_tax = escrow_fee_revenue * Decimal('0.16')
+    vat_tax = coordination_fee_revenue * Decimal('0.16')
     stamp_duty_est = total_gmv * Decimal('0.04')
 
     sms_expenses = Decimal('14500.00')
@@ -2170,10 +2174,12 @@ def build_admin_system_analytics():
             'professional_services_value_kes': float(total_lawyer_payouts + total_agent_payouts),
             'total_payment_volume_kes': float(total_gmv + digiland_service_fee_revenue + total_lawyer_payouts + total_agent_payouts),
             'total_gmv_kes': float(total_gmv),
+            'coordination_fee_revenue_kes': float(digiland_service_fee_revenue),
             'escrow_fee_revenue_kes': float(digiland_service_fee_revenue),
             'ad_promotions_revenue_kes': float(ad_promotions_rev),
             'total_gross_revenue_kes': float(total_gross_rev),
             'net_operating_income_kes': float(net_operating_income),
+            'active_settlement_reserves_kes': 0.0,
             'active_escrow_reserves_kes': 0.0,
             'total_lawyer_payouts_kes': float(total_lawyer_payouts),
             'total_agent_payouts_kes': float(total_agent_payouts),
@@ -2206,8 +2212,8 @@ def build_admin_system_analytics():
         },
         'failures': {
             'failed_payment_attempts': 4,
-            'disputed_escrow_cases': disputed_txs.count(),
             'disputed_transaction_cases': disputed_txs.count(),
+            'disputed_escrow_cases': disputed_txs.count(),
             'flagged_fraud_attempts': flagged_fraud_parcels,
             'open_support_escalations': SupportTicket.objects.filter(status='Open').count() if hasattr(SupportTicket, 'status') else 0,
             'ai_ocr_discrepancies': 1,
@@ -2222,7 +2228,8 @@ def build_admin_system_analytics():
             'flagged_fraud_parcels_count': flagged_fraud_parcels,
             'active_disputes_count': disputed_txs.count(),
             'uptime_percentage': '99.98%',
-            'escrow_status': 'Operational — Verification & Ledger Synchronized',
+            'settlement_status': 'Operational — Direct Verification & Ledger Synchronized',
+            'escrow_status': 'Operational — Direct Verification & Ledger Synchronized',
             'transfer_engine_status': 'Operational — Verification & Ledger Synchronized',
         },
         'tickets': tickets_data,
@@ -2407,9 +2414,10 @@ def admin_analytics_view(request, chapter=None):
         'taxes': 'revenue_taxes',
         'transactions': 'transactions',
         'velocity': 'transactions',
-        'escrow': 'escrow',
-        'dual-vault': 'escrow',
-        'vault': 'escrow',
+        'settlement': 'settlement',
+        'escrow': 'settlement',
+        'dual-vault': 'settlement',
+        'vault': 'settlement',
         'regional': 'regional',
         'density': 'regional',
         'properties': 'regional',
@@ -2427,11 +2435,11 @@ def admin_analytics_view(request, chapter=None):
         request,
         'analytics',
         'Executive Analytics Suite',
-        'Full operational oversight of users, escrow finances, professional hires, statutory taxes, and system reliability.',
+        'Full operational oversight of users, transaction finances, professional hires, statutory taxes, and system reliability.',
         analytics=analytics_data,
         active_chapter=active_chapter,
         stats=[
-            {'label': 'Escrow GMV', 'value': f"KES {analytics_data['financial']['total_gmv_kes']:,.0f}", 'tone': 'accent'},
+            {'label': 'Transaction GMV', 'value': f"KES {analytics_data['financial']['total_gmv_kes']:,.0f}", 'tone': 'accent'},
             {'label': 'Gross Revenue', 'value': f"KES {analytics_data['financial']['total_gross_revenue_kes']:,.0f}", 'tone': 'success'},
             {'label': 'Staff Hires', 'value': str(analytics_data['hires']['total_hires_count']), 'tone': 'accent'},
             {'label': 'System Uptime', 'value': f"{analytics_data['failures']['uptime_percentage']}%", 'tone': 'success'},
@@ -3329,7 +3337,7 @@ def render_agent_dashboard(request, context):
         request,
         'agent-dashboard',
         'Command Centre',
-        'Your assigned pipeline for parcel verification, commission routing, and escrow support.',
+        'Your assigned pipeline for parcel verification, commission routing, and transaction support.',
         parcels=recent_parcels,
         transactions=recent_transactions,
         commissions=recent_open_commissions,
@@ -3617,7 +3625,7 @@ def task_management(request):
             request,
             'task-management',
             'Command Centre',
-            'Your assigned pipeline for parcel verification and escrow support.',
+            'Your assigned pipeline for parcel verification and settlement support.',
             task_board={
                 'pending_parcels': [serialize_parcel(parcel, request.user) for parcel in pending_parcels],
                 'completed_parcels': [serialize_parcel(parcel, request.user) for parcel in completed_parcels],
@@ -3824,7 +3832,7 @@ def agent_verify_parcel(request, parcel_number):
                     f"Your listing for parcel {parcel_label} was reviewed by assigned agent {request.user.email} "
                     f"and failed Stage 4 manual verification.\n\n"
                     f"Status: ADMIN_ESCALATED. This parcel has been escalated directly to Digiland Platform Administrators for secondary review.\n\n"
-                    f"— Digiland Escrow Platform"
+                    f"— Digiland Land Platform"
                 )
                 Message.objects.create(
                     sender=request.user,
@@ -3985,7 +3993,7 @@ def reject_agent(request, user_id):
 @user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
 def agent_approvals(request):
     """Approvals and verification hub tailored by role:
-       - Lawyer: Legal review of conveyancing agreements, escrow transactions, and title deeds.
+       - Lawyer: Legal review of conveyancing agreements, land transactions, and title deeds.
        - Agent: User identity verification, parcel site checks, and deal tasks.
        - Admin: Global oversight of all queues.
     """
@@ -4007,7 +4015,7 @@ def agent_approvals(request):
         ).select_related('buyer', 'land_parcel', 'accepted_by', 'assigned_lawyer').order_by('-created_at')
         context['pending_commissions'] = commission_reviews_qs[:20]
 
-        # Lawyer: Active Escrow deals needing legal clearance / checklist sign-off
+        # Lawyer: Active land deals needing legal clearance / checklist sign-off
         context['pending_transactions'] = Transaction.objects.filter(
             status__in=['Deposit_Paid', 'Under_Verification', 'In_Escrow', 'Payment_Pending']
         ).select_related('buyer', 'seller', 'land_parcel').order_by('-created_at')[:20]
@@ -4021,7 +4029,7 @@ def agent_approvals(request):
             request,
             'approvals',
             'Legal Verification & Conveyancing Hub',
-            'Advocate workspace for title deed search, conveyancing agreements, and escrow legal clearance.',
+            'Advocate workspace for title deed search, conveyancing agreements, and transaction legal clearance.',
             approvals_page={
                 'pending_users': [],
                 'pending_parcels': [serialize_parcel(parcel, request.user) for parcel in context['pending_parcels']],
@@ -4222,17 +4230,17 @@ def agent_finalize_transaction(request, transaction_id):
         return redirect('frontend:home')
 
     if request.method != 'POST':
-        return redirect('frontend:escrow_release')
+        return redirect('frontend:transaction_monitoring')
 
     if not transaction.contract_agreed:
         django_messages.error(request, 'Contract has not been signed by both parties yet.')
-        return redirect('frontend:escrow_release')
+        return redirect('frontend:transaction_monitoring')
 
     # Only Admin can override the deadline check
     if request.user.role == 'Agent':
         if transaction.buyer_validation_deadline and transaction.buyer_validation_deadline > timezone.now():
             django_messages.error(request, f'Cannot finalize yet. The verification period ends on {transaction.buyer_validation_deadline.strftime("%b %d, %Y %H:%M")}.')
-            return redirect('frontend:escrow_release')
+            return redirect('frontend:transaction_monitoring')
 
     from core.services.payment import complete_transaction
     complete_transaction(transaction)
@@ -4250,13 +4258,13 @@ def agent_finalize_transaction(request, transaction_id):
     )
 
     django_messages.success(request, f'Transaction for parcel {transaction.land_parcel.parcel_number if transaction.land_parcel else ""} has been finalized and marked Completed.')
-    return redirect('frontend:escrow_release')
+    return redirect('frontend:transaction_monitoring')
 
 
 @login_required
 @user_passes_test(is_verified_agent_or_admin, login_url='/agent/onboarding/')
-def escrow_release(request):
-    """Dedicated page for agents/admins to monitor transaction milestones and completion."""
+def transaction_monitoring(request):
+    """Dedicated page for agents/admins to monitor transaction milestones and direct settlement completion."""
     from django.utils import timezone
 
     # Transactions eligible for milestone finalization
@@ -4309,6 +4317,7 @@ def escrow_release(request):
         'escrow-release',
         'Transaction Monitoring & Milestones',
         'Monitor transaction verification milestones, buyer confirmation, and conveyancing checklist sign-offs.',
+        transactions=transactions_data,
         escrow_transactions=transactions_data,
         is_admin=is_admin,
         actions=[
@@ -4316,7 +4325,8 @@ def escrow_release(request):
         ]
     )
 
-transaction_monitoring_view = escrow_release
+escrow_release = transaction_monitoring
+transaction_monitoring_view = transaction_monitoring
 
 
 @login_required
@@ -4501,7 +4511,7 @@ def parcel_delete(request, parcel_number):
     )
 
 @login_required
-def initiate_escrow(request, parcel_number):
+def initiate_transaction(request, parcel_number):
     parcel = get_object_or_404(LandParcel, parcel_number=parcel_number)
 
     from django.contrib import messages as django_messages
@@ -4559,7 +4569,7 @@ def initiate_escrow(request, parcel_number):
 
     return redirect('frontend:parcel_detail', parcel_number=parcel_number)
 
-initiate_transaction = initiate_escrow
+initiate_escrow = initiate_transaction
 
 
 def _active_document_grant(parcel, user):
@@ -4775,8 +4785,8 @@ def parcel_detail(request, parcel_number):
             {'value': 'individual', 'label': 'Individual purchase', 'selected': True},
             {'value': 'joint', 'label': 'Joint group purchase', 'selected': False},
         ],
-        'initiate_transaction_url': reverse('frontend:initiate_escrow', args=[parcel.parcel_number]),
-        'initiate_escrow_url': reverse('frontend:initiate_escrow', args=[parcel.parcel_number]),
+        'initiate_transaction_url': reverse('frontend:initiate_transaction', args=[parcel.parcel_number]),
+        'initiate_escrow_url': reverse('frontend:initiate_transaction', args=[parcel.parcel_number]),
 
         'upload_document_url': reverse('frontend:upload_document', args=[parcel.parcel_number]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) and parcel.verification_status != 'Verified' else None,
         'edit_url': reverse('frontend:parcel_edit', args=[parcel.parcel_number]) if request.user.is_authenticated and (request.user.role == 'Admin' or request.user.id == parcel.listed_by_id) else None,
@@ -4814,11 +4824,11 @@ def user_transactions(request):
         request,
         'transactions',
         'My transactions',
-        'Track every active and completed land purchase or sale in your escrow pipeline.',
+        'Track every active and completed land purchase or sale in your transaction pipeline.',
         transactions=[serialize_transaction(tx, request.user) for tx in transactions],
         actions=[
             {'label': 'Browse parcels', 'href': reverse('frontend:parcel_list'), 'tone': 'outline'},
-            {'label': 'Legal checklist', 'href': reverse('frontend:seller_laws') if request.user.role == 'Seller' else reverse('frontend:escrow_acts'), 'tone': 'secondary'},
+            {'label': 'Legal checklist', 'href': reverse('frontend:seller_laws') if request.user.role == 'Seller' else reverse('frontend:legal_acts'), 'tone': 'secondary'},
         ],
     )
 
@@ -5450,7 +5460,7 @@ def payment_onboarding(request, transaction_id):
         request,
         'status',
         'Contract signed',
-        'Review the next step and continue to the escrow checkout when you are ready.',
+        'Review the next step and continue to checkout when you are ready.',
         status=serialize_status_page(
             icon='wallet',
             tone='warning',
@@ -5489,8 +5499,8 @@ def payment_checkout(request, transaction_id):
     
     fees = calculate_checkout_fees(transaction.agreed_price, include_verification, include_due_diligence)
     
-    transaction.platform_service_fee = fees['platform_service_fee']
-    transaction.escrow_fee = fees['escrow_fee']
+    transaction.platform_service_fee = fees.get('coordination_fee', fees.get('platform_service_fee'))
+    transaction.escrow_fee = fees.get('escrow_fee', fees.get('coordination_fee'))
     transaction.processing_fee = fees['processing_fee']
     transaction.legal_verification_fee = fees['legal_verification_fee']
     transaction.due_diligence_fee = fees['due_diligence_fee']
@@ -5528,10 +5538,10 @@ def payment_checkout(request, transaction_id):
         )
 
     from django.conf import settings
-    escrow_bank_name = 'KCB Bank Kenya'
-    escrow_bank_account_name = 'Digiland Escrow'
-    escrow_bank_account_number = getattr(settings, 'KCB_PLATFORM_ACCOUNT', 'DIGILAND-ESCROW-001')
-    escrow_bank_branch = 'Nairobi'
+    settlement_bank_name = 'KCB Bank Kenya'
+    settlement_bank_account_name = 'Digiland Direct Settlement'
+    settlement_bank_account_number = getattr(settings, 'KCB_PLATFORM_ACCOUNT', 'DIGILAND-SETTLEMENT-001')
+    settlement_bank_branch = 'Nairobi'
     paystack_enabled = bool(getattr(settings, 'PAYSTACK_SECRET_KEY', ''))
 
     from django.middleware.csrf import get_token
@@ -5539,8 +5549,8 @@ def payment_checkout(request, transaction_id):
     return render_react_shell(
         request,
         'checkout-fullpage',
-        'Escrow checkout',
-        'Complete payment using M-Pesa, KCB bank transfer, Paystack, or the shared joint bank account.',
+        'Direct settlement checkout',
+        'Complete direct settlement using M-Pesa, KCB bank transfer, Paystack, or the shared joint bank account.',
         checkout=serialize_checkout(
             transaction,
             request.user,
@@ -5555,10 +5565,14 @@ def payment_checkout(request, transaction_id):
             csrf_token=get_token(request),
             phone_number=getattr(request.user, 'phone_number', '') or '',
             paystack_enabled=paystack_enabled,
-            escrow_bank_name=escrow_bank_name,
-            escrow_bank_account_name=escrow_bank_account_name,
-            escrow_bank_account_number=escrow_bank_account_number,
-            escrow_bank_branch=escrow_bank_branch,
+            direct_settlement_bank_name=settlement_bank_name,
+            direct_settlement_bank_account_name=settlement_bank_account_name,
+            direct_settlement_bank_account_number=settlement_bank_account_number,
+            direct_settlement_bank_branch=settlement_bank_branch,
+            escrow_bank_name=settlement_bank_name,
+            escrow_bank_account_name=settlement_bank_account_name,
+            escrow_bank_account_number=settlement_bank_account_number,
+            escrow_bank_branch=settlement_bank_branch,
         ),
         fullpage_mode=True,
         back_url=reverse('frontend:transactions'),
@@ -5635,8 +5649,10 @@ def _process_payment(request, transaction_id):
                 )
 
                 import uuid
-                transaction.escrow_reference = f"BANK-{bank_reference[:12].upper()}" if bank_reference else f"BANK-{str(uuid.uuid4())[:8].upper()}"
-                transaction.save(update_fields=['escrow_reference'])
+                ref = f"BANK-{bank_reference[:12].upper()}" if bank_reference else f"BANK-{str(uuid.uuid4())[:8].upper()}"
+                transaction.payment_reference = ref
+                transaction.escrow_reference = ref
+                transaction.save(update_fields=['payment_reference', 'escrow_reference'])
 
                 if is_ajax:
                     return JsonResponse({
@@ -5647,6 +5663,7 @@ def _process_payment(request, transaction_id):
                         'bank_account_name': contribution.bank_account_name,
                         'bank_account_number': contribution.bank_account_number,
                         'bank_branch': contribution.bank_branch,
+                        'payment_reference': transaction.payment_reference,
                         'escrow_reference': transaction.escrow_reference,
                     })
 
@@ -5715,10 +5732,11 @@ def _process_payment(request, transaction_id):
                         )
                     
                     # Store checkout_request_id in the transaction metadata
-                    # We use escrow_reference temporarily to track this
                     import uuid
-                    transaction.escrow_reference = f"MPESA-{checkout_request_id}" if checkout_request_id else f"ESC-{str(uuid.uuid4())[:8].upper()}"
-                    transaction.save(update_fields=['escrow_reference'])
+                    ref = f"MPESA-{checkout_request_id}" if checkout_request_id else f"DIR-{str(uuid.uuid4())[:8].upper()}"
+                    transaction.payment_reference = ref
+                    transaction.escrow_reference = ref
+                    transaction.save(update_fields=['payment_reference', 'escrow_reference'])
                     
                     if is_ajax:
                         return JsonResponse({
@@ -5829,8 +5847,10 @@ def _process_payment_v2(request, transaction_id):
                 bank_account_name=group.bank_account_name,
                 bank_branch=group.bank_branch,
             )
-            transaction.escrow_reference = f"BANK-{bank_reference[:12].upper()}"
-            transaction.save(update_fields=['escrow_reference'])
+            ref = f"BANK-{bank_reference[:12].upper()}"
+            transaction.payment_reference = ref
+            transaction.escrow_reference = ref
+            transaction.save(update_fields=['payment_reference', 'escrow_reference'])
 
             if is_ajax:
                 return JsonResponse({
@@ -5841,45 +5861,49 @@ def _process_payment_v2(request, transaction_id):
                     'bank_account_name': contribution.bank_account_name,
                     'bank_account_number': contribution.bank_account_number,
                     'bank_branch': contribution.bank_branch,
+                    'payment_reference': transaction.payment_reference,
                     'escrow_reference': transaction.escrow_reference,
                 })
 
             django_messages.success(request, 'Joint bank transfer recorded. Use the listed account details to complete the payment.')
             return redirect('frontend:payment_checkout', transaction_id=transaction.id)
 
-        escrow_bank_name = 'KCB Bank Kenya'
-        escrow_bank_account_name = 'Digiland Escrow'
-        escrow_bank_account_number = getattr(settings, 'KCB_PLATFORM_ACCOUNT', 'DIGILAND-ESCROW-001')
-        escrow_bank_branch = 'Nairobi'
-        transaction.escrow_reference = f"KCB-{bank_reference[:12].upper()}"
-        transaction.save(update_fields=['escrow_reference'])
+        settlement_bank_name = 'KCB Bank Kenya'
+        settlement_bank_account_name = 'Digiland Direct Settlement'
+        settlement_bank_account_number = getattr(settings, 'KCB_PLATFORM_ACCOUNT', 'DIGILAND-SETTLEMENT-001')
+        settlement_bank_branch = 'Nairobi'
+        ref = f"KCB-{bank_reference[:12].upper()}"
+        transaction.payment_reference = ref
+        transaction.escrow_reference = ref
+        transaction.save(update_fields=['payment_reference', 'escrow_reference'])
         AuditLog.objects.create(
             user=request.user,
-            action=f'Bank transfer checkout recorded for transaction {transaction.id}',
+            action=f'Direct settlement bank transfer checkout recorded for transaction {transaction.id}',
             metadata={
                 'transaction_id': str(transaction.id),
                 'bank_reference': bank_reference,
                 'depositor_name': depositor_name,
-                'bank_name': escrow_bank_name,
-                'bank_account_name': escrow_bank_account_name,
-                'bank_account_number': escrow_bank_account_number,
-                'bank_branch': escrow_bank_branch,
+                'bank_name': settlement_bank_name,
+                'bank_account_name': settlement_bank_account_name,
+                'bank_account_number': settlement_bank_account_number,
+                'bank_branch': settlement_bank_branch,
             },
         )
 
         if is_ajax:
             return JsonResponse({
                 'status': 'bank_pending',
-                'message': 'KCB bank transfer recorded. Complete the transfer using the escrow bank details on the page.',
+                'message': 'KCB bank transfer recorded. Complete the direct transfer using the bank details on the page.',
                 'bank_reference': bank_reference,
-                'bank_name': escrow_bank_name,
-                'bank_account_name': escrow_bank_account_name,
-                'bank_account_number': escrow_bank_account_number,
-                'bank_branch': escrow_bank_branch,
+                'bank_name': settlement_bank_name,
+                'bank_account_name': settlement_bank_account_name,
+                'bank_account_number': settlement_bank_account_number,
+                'bank_branch': settlement_bank_branch,
+                'payment_reference': transaction.payment_reference,
                 'escrow_reference': transaction.escrow_reference,
             })
 
-        django_messages.success(request, 'KCB bank transfer recorded. Use the escrow bank details on the checkout page.')
+        django_messages.success(request, 'KCB direct settlement transfer recorded. Use the bank details on the checkout page.')
         return redirect('frontend:payment_checkout', transaction_id=transaction.id)
 
     if payment_method == 'paystack':
@@ -5896,8 +5920,10 @@ def _process_payment_v2(request, transaction_id):
         if response.get('status') and response.get('data', {}).get('authorization_url'):
             authorization_url = response['data']['authorization_url']
             reference = response.get('data', {}).get('reference') or str(transaction.id)
-            transaction.escrow_reference = f"PAYSTACK-{reference}"
-            transaction.save(update_fields=['escrow_reference'])
+            ref = f"PAYSTACK-{reference}"
+            transaction.payment_reference = ref
+            transaction.escrow_reference = ref
+            transaction.save(update_fields=['payment_reference', 'escrow_reference'])
 
             AuditLog.objects.create(
                 user=request.user,
@@ -7109,9 +7135,10 @@ def seller_withdraw(request):
     from django.contrib import messages
 
     completed_tx = Transaction.objects.filter(seller=request.user, status='Completed')
-    escrow_tx = Transaction.objects.filter(seller=request.user, status__in=['Deposit_Paid', 'Under_Verification', 'Verification_Hiatus'])
+    pending_settlement_tx = Transaction.objects.filter(seller=request.user, status__in=['Deposit_Paid', 'Under_Verification', 'Verification_Hiatus'])
     total_received = completed_tx.aggregate(total=Sum('agreed_price'))['total'] or 0
-    in_escrow = escrow_tx.aggregate(total=Sum('agreed_price'))['total'] or 0
+    pending_settlement = pending_settlement_tx.aggregate(total=Sum('agreed_price'))['total'] or 0
+    in_escrow = pending_settlement
 
     # Available balance = completed payments (simplified; in production, track actual payouts)
     available_balance = total_received
@@ -7152,6 +7179,7 @@ def seller_withdraw(request):
         'Transfer your available balance directly to M-Pesa.',
         withdraw_data={
             'available_balance': str(available_balance),
+            'pending_settlement': str(pending_settlement),
             'in_escrow': str(in_escrow),
             'total_received': str(total_received),
             'phone_number': request.user.phone_number or '',

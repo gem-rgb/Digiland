@@ -162,6 +162,6 @@
 | Face Embedding | Biometric | Database (JSON) | TLS | Write-only, never exposed |
 | Bank Account | Financial | Database | TLS | Owner + Admin |
 | Transaction Amount | Financial | Database | TLS | Parties + Admin |
-| Escrow Reference | Financial | Database | TLS | Parties + Admin |
+| Payment / Settlement Reference | Financial | Database | TLS | Parties + Admin |
 | Land Coordinates | Operational | Database | TLS | Authenticated users |
 | Signatures | Legal | Base64 text | TLS | Parties + Admin |

@@ -37,7 +37,8 @@ class ErrorCategory(str, Enum):
     FILE_UPLOAD = "file_upload"
     SEARCH = "search"
     SYSTEM = "system"
-    ESCROW = "escrow"
+    TRANSACTION = "transaction"
+    ESCROW = "transaction"  # Backward compatibility alias
     NOTIFICATION = "notification"
     EXTERNAL_SERVICE = "external_service"
     VERIFICATION = "verification"
@@ -597,28 +598,32 @@ SYSTEM_CONFIGURATION_ERROR = register_error(ErrorDefinition(
 
 
 # ======================================================================
-# ESCROW / TRANSACTION Errors
+# TRANSACTION Errors
 # ======================================================================
 
-ESCROW_ERROR = register_error(ErrorDefinition(
-    error_code="ESCROW_ERROR",
-    category=ErrorCategory.ESCROW,
+TRANSACTION_PROCESSING_ERROR = register_error(ErrorDefinition(
+    error_code="TRANSACTION_PROCESSING_ERROR",
+    category=ErrorCategory.TRANSACTION,
     severity=ErrorSeverity.HIGH,
-    user_message="We couldn't complete the escrow operation. Your funds are safe. Please try again.",
-    internal_message="Escrow operation failed - funds remain in escrow",
+    user_message="We couldn't complete the transaction processing. Please verify and try again.",
+    internal_message="Transaction processing failed during direct settlement coordination",
     recovery_action="Try again later or contact support with your transaction reference.",
     http_status_code=500,
     is_retryable=True,
     log_level="ERROR",
 ))
 
+# Backward-compatibility alias
+ESCROW_ERROR = TRANSACTION_PROCESSING_ERROR
+ERROR_REGISTRY["ESCROW_ERROR"] = TRANSACTION_PROCESSING_ERROR
+
 REFUND_PENDING = register_error(ErrorDefinition(
     error_code="REFUND_PENDING",
-    category=ErrorCategory.ESCROW,
+    category=ErrorCategory.TRANSACTION,
     severity=ErrorSeverity.MEDIUM,
-    user_message="Your refund is being processed. You'll receive a notification once it's complete.",
-    internal_message="Refund initiated but not yet confirmed by provider",
-    recovery_action="Wait for the refund notification. Do not initiate another refund.",
+    user_message="Your refund or payment reversal is being processed. You'll receive a notification once it's complete.",
+    internal_message="Payment reversal initiated but not yet confirmed by provider",
+    recovery_action="Wait for the provider reversal notification. Do not initiate another reversal.",
     http_status_code=409,
     is_retryable=False,
     log_level="WARNING",
@@ -626,7 +631,7 @@ REFUND_PENDING = register_error(ErrorDefinition(
 
 TRANSACTION_NOT_FOUND = register_error(ErrorDefinition(
     error_code="TRANSACTION_NOT_FOUND",
-    category=ErrorCategory.ESCROW,
+    category=ErrorCategory.TRANSACTION,
     severity=ErrorSeverity.LOW,
     user_message="The transaction you're looking for could not be found.",
     internal_message="Transaction lookup returned no results",
@@ -638,7 +643,7 @@ TRANSACTION_NOT_FOUND = register_error(ErrorDefinition(
 
 TRANSACTION_ALREADY_PROCESSED = register_error(ErrorDefinition(
     error_code="TRANSACTION_ALREADY_PROCESSED",
-    category=ErrorCategory.ESCROW,
+    category=ErrorCategory.TRANSACTION,
     severity=ErrorSeverity.MEDIUM,
     user_message="This transaction has already been processed and cannot be modified.",
     internal_message="Attempted to modify a transaction in a terminal state",

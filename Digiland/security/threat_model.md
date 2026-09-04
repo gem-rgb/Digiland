@@ -9,7 +9,7 @@
 
 ## 1. System Overview
 
-Digiland is a Kenyan land escrow platform built with Django (DRF) backend, React/TypeScript frontend, PostgreSQL/PostGIS database, Redis cache, Celery task queue, and integrates with Paystack, M-Pesa Daraja, KCB Bank, and GavaConnect KRA APIs.
+Digiland is a Kenyan land platform providing secure verification and non-custodial direct settlement built with Django (DRF) backend, React/TypeScript frontend, PostgreSQL/PostGIS database, Redis cache, Celery task queue, and integrates with Paystack, M-Pesa Daraja, KCB Bank, and GavaConnect KRA APIs.
 
 ### 1.1 Architecture Components
 

@@ -73,7 +73,7 @@ Sensitive operations require re-authentication even if the user has a valid sess
 - Role changes
 - MFA disable
 - Organization settings changes
-- Escrow withdrawal
+- Settlement disbursement / withdrawal
 
 ## OAuth/SSO Integration
 

@@ -124,7 +124,7 @@ Risks are assessed using a **5×5 likelihood-impact matrix** aligned with ISO 31
 | **Risk ID** | RSK-ADM-003 |
 | **Risk Title** | Single-Admin Financial Approval |
 | **Category** | Financial |
-| **Description** | Financial transactions (withdrawals, refunds, escrow releases) can be approved by a single administrator without requiring a second approver. This enables a single compromised or malicious admin to authorize fraudulent transactions resulting in direct financial loss. |
+| **Description** | Financial transactions (withdrawals, refunds, settlement verifications) can be approved by a single administrator without requiring a second approver. This enables a single compromised or malicious admin to authorize fraudulent transactions resulting in direct financial loss. |
 | **Likelihood** | 4 |
 | **Impact** | 5 |
 | **Risk Score** | 20 (Critical) |
@@ -488,7 +488,7 @@ Risks are assessed using a **5×5 likelihood-impact matrix** aligned with ISO 31
 | **Risk Level** | High |
 | **Current Controls** | AWS KMS for some encryption keys; manual key rotation |
 | **Residual Risk** | 8 (Medium) — Some keys still managed manually; inconsistent rotation |
-| **Treatment Plan** | 1. Migrate all encryption keys to HashiCorp Vault with auto-unsealing<br>2. Implement automated key rotation policies (90 days for data keys, annually for master keys)<br>3. Separate keys per environment (dev/staging/production)<br>4. Key access auditing with alerting on unauthorized access attempts<br>5. Hardware Security Module (HSM) for master key protection<br>6. Key escrow with split knowledge (dual control for key recovery)<br>7. Emergency key rotation procedure documented and tested |
+| **Treatment Plan** | 1. Migrate all encryption keys to HashiCorp Vault with auto-unsealing<br>2. Implement automated key rotation policies (90 days for data keys, annually for master keys)<br>3. Separate keys per environment (dev/staging/production)<br>4. Key access auditing with alerting on unauthorized access attempts<br>5. Hardware Security Module (HSM) for master key protection<br>6. Cryptographic key backup with split knowledge (dual control for key recovery)<br>7. Emergency key rotation procedure documented and tested |
 | **Owner** | Head of Infrastructure |
 | **Status** | Open |
 | **Target Date** | 2025-03-31 |

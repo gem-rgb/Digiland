@@ -27,9 +27,9 @@ Usage::
     # Send an outbound webhook
     result = webhook_processor.send_webhook(
         url='https://partner.example.com/hooks',
-        payload={'event': 'escrow.released', 'transaction_id': 'abc123'},
+        payload={'event': 'settlement.released', 'transaction_id': 'abc123'},
         secret='whsec_...',
-        event_type='escrow.released',
+        event_type='settlement.released',
     )
 """
 

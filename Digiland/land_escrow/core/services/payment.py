@@ -194,7 +194,7 @@ def paystack_verify(reference):
         return response.json()
     return {"status": False, "message": "Transaction verification failed"}
 
-def paystack_transfer(recipient_code, amount, reason="Escrow Release"):
+def paystack_transfer(recipient_code, amount, reason="Direct Settlement Payout"):
     payload = {
         "source": "balance",
         "amount": int(float(amount) * 100),
@@ -524,9 +524,9 @@ class DarajaAPI:
             return {"status": "error", "message": str(e)}
     
     @classmethod
-    def b2c_payment(cls, phone_number, amount, command_id="BusinessPayment", remarks="Escrow Payout"):
+    def b2c_payment(cls, phone_number, amount, command_id="BusinessPayment", remarks="Direct Settlement Payout"):
         """
-        Initiate M-PESA B2C payment to seller
+        Initiate M-PESA B2C payment to seller or verified professional
         
         Args:
             phone_number: Recipient phone number
@@ -562,7 +562,7 @@ class DarajaAPI:
                 "Remarks": remarks,
                 "QueueTimeOutURL": f"{_get_callback_base()}/api/v1/mpesa/b2c/timeout",
                 "ResultURL": f"{_get_callback_base()}/api/v1/mpesa/b2c/result",
-                "Occasion": "Escrow Payout"
+                "Occasion": "Settlement Payout"
             }
             
             log_api_call("Daraja B2C Payment", payload)
@@ -1602,10 +1602,10 @@ def check_transaction_status(transaction_ref):
 
 def calculate_checkout_fees(agreed_price, include_verification=False, include_due_diligence=False, include_legal=None):
     """
-    Calculate the transparent checkout/escrow fees breakdown.
+    Calculate the transparent checkout / transaction coordination fees breakdown.
     The checkout page shares the same fee model as the service-fee engine:
     - Platform Service Fee: 4% of agreed price
-    - Escrow Holding Fee: 2% of agreed price
+    - Transaction & Verification Coordination Fee: 2% of agreed price
     - Processing Fee: Flat KES 50
     - Optional Verification Fee: KES 10,000
     - Optional Due Diligence Fee: KES 20,000
@@ -1628,8 +1628,9 @@ def calculate_checkout_fees(agreed_price, include_verification=False, include_du
         'land_price': fees['land_price'],
         'platform_service_fee': fees['platform_service_fee'],
         'platform_fee': fees['platform_service_fee'],
-        'escrow_fee': fees['escrow_fee'],
-        'escrow_holding_fee': fees['escrow_holding_fee'],
+        'coordination_fee': fees['coordination_fee'],
+        'escrow_fee': fees['coordination_fee'],  # Backward compatibility alias
+        'escrow_holding_fee': fees['coordination_fee'],  # Backward compatibility alias
         'processing_fee': fees['payment_processing_fee'],
         'payment_processing_fee': fees['payment_processing_fee'],
         'verification_fee': fees['verification_fee'],

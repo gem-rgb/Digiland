@@ -255,7 +255,7 @@ class ExternalProvider(ABC):
 
 
 class PaymentProvider(ExternalProvider):
-    """Interface for payment and escrow service providers.
+    """Interface for payment and transaction settlement service providers.
 
     Implementations: Paystack, Stripe, M-Pesa/Daraja, KCB Bank.
     """

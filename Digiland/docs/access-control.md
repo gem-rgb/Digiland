@@ -23,7 +23,7 @@ Admin (Superuser)
 | **Admin** | Platform superuser with full system access | All system operations, user management, platform configuration, financial oversight |
 | **Staff** | Internal team members with administrative privileges | Dashboard access, approval workflows, content management, user support |
 | **Agent** | Verified real estate agents | Parcel management, buyer assistance, KYC verification, commission tracking |
-| **Buyer** | Registered platform users | Parcel browsing, escrow transactions, joint purchases, messaging |
+| **Buyer** | Registered platform users | Parcel browsing, direct settlement transactions, joint purchases, messaging |
 | **Anonymous** | Unauthenticated visitors | Public parcel browsing, registration, password reset |
 
 ## Permission Matrix
@@ -41,7 +41,7 @@ Admin (Superuser)
 | Verify parcel | ✓ | ✓ | ✗ | ✗ | ✗ |
 | Assign agent | ✓ | ✓ | ✗ | ✗ | ✗ |
 
-### Transaction / Escrow
+### Transaction / Settlement
 
 | Action | Admin | Staff | Agent | Buyer | Anonymous |
 |--------|-------|-------|-------|-------|-----------|
@@ -50,7 +50,7 @@ Admin (Superuser)
 | View all transactions | ✓ | ✓ | ✗ | ✗ | ✗ |
 | Approve transaction | ✓ | ✓ | ✗ | ✓ | ✗ |
 | Process payment | ✓ | ✗ | ✗ | ✓ | ✗ |
-| Release escrow funds | ✓ | ✓ | ✗ | ✗ | ✗ |
+| Confirm settlement release | ✓ | ✓ | ✗ | ✗ | ✗ |
 | Cancel transaction | ✓ | ✓ | ✗ | ✓ | ✗ |
 | View financial reports | ✓ | ✓ | ✗ | ✗ | ✗ |
 

@@ -328,16 +328,15 @@ class FinancialErrorHandler:
             "verification_pending": True,
         }
 
-    def handle_escrow_error(
+    def handle_transaction_error(
         self,
         transaction: Any,
         error: Exception,
         request: Optional[HttpRequest] = None,
     ) -> Dict[str, Any]:
-        """Handle an escrow operation error.
+        """Handle a transaction processing operation error.
 
-        Escrow errors are critical — funds are held in escrow and must
-        not be lost or double-counted.
+        Ensures direct settlement evidence and audit trails are preserved.
 
         Args:
             transaction: The transaction object.
@@ -351,12 +350,12 @@ class FinancialErrorHandler:
         transaction_id = str(getattr(transaction, "id", "unknown"))
         error_code = map_exception_to_error_code(error)
 
-        # Default to ESCROW_ERROR for unmapped exceptions
-        if error_code in ("SYSTEM_UNKNOWN_ERROR", "EXTERNAL_SERVICE_UNAVAILABLE"):
-            error_code = "ESCROW_ERROR"
+        # Default to TRANSACTION_PROCESSING_ERROR for unmapped exceptions
+        if error_code in ("SYSTEM_UNKNOWN_ERROR", "EXTERNAL_SERVICE_UNAVAILABLE", "ESCROW_ERROR"):
+            error_code = "TRANSACTION_PROCESSING_ERROR"
 
         logger.critical(
-            "Escrow error: txn=%s ref=%s code=%s exc=%s",
+            "Transaction error: txn=%s ref=%s code=%s exc=%s",
             transaction_id,
             reference_id,
             error_code,
@@ -367,13 +366,13 @@ class FinancialErrorHandler:
                 "error_code": error_code,
                 "exception_type": type(error).__name__,
                 "exception_message": str(error)[:500],
-                "handler": "handle_escrow_error",
+                "handler": "handle_transaction_error",
             },
         )
 
         self._create_financial_audit_log(
             transaction=transaction,
-            event="ESCROW_ERROR",
+            event="TRANSACTION_PROCESSING_ERROR",
             reference_id=reference_id,
             details={
                 "error_code": error_code,
@@ -383,7 +382,7 @@ class FinancialErrorHandler:
 
         definition = get_error_definition(error_code)
         user_message = definition.user_message if definition else (
-            "We couldn't complete the escrow operation. Your funds are safe. "
+            "We couldn't complete the transaction operation. Please verify and try again. "
             f"Reference: {reference_id}"
         )
 
@@ -395,6 +394,9 @@ class FinancialErrorHandler:
             "transaction_id": transaction_id,
             "funds_moved": False,
         }
+
+    # Backward-compatibility alias
+    handle_escrow_error = handle_transaction_error
 
     def handle_refund_pending(
         self,

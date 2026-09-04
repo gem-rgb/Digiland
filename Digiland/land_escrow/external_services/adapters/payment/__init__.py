@@ -155,7 +155,7 @@ class PaystackAdapter(PaymentProvider):
     def transfer(self, recipient: str, amount: Decimal, **kwargs: Any) -> ProviderResponse:
         start = time.monotonic()
         try:
-            payload = {"source": "balance", "amount": int(amount * 100), "recipient": recipient, "reason": kwargs.get("reason", "Escrow release")}
+            payload = {"source": "balance", "amount": int(amount * 100), "recipient": recipient, "reason": kwargs.get("reason", "Settlement release")}
             resp = self._session.post(f"{self._base_url}/transfer", json=payload, timeout=30)
             elapsed = (time.monotonic() - start) * 1000
             data = resp.json()
@@ -405,7 +405,7 @@ class MPesaAdapter(PaymentProvider):
         start = time.monotonic()
         try:
             daraja = self._get_daraja()
-            result = daraja.b2c_payment(phone_number=recipient, amount=float(amount), remarks=kwargs.get("reason", "Escrow payout"))
+            result = daraja.b2c_payment(phone_number=recipient, amount=float(amount), remarks=kwargs.get("reason", "Settlement payout"))
             elapsed = (time.monotonic() - start) * 1000
             if result.get("status") == "success":
                 return ProviderResponse(success=True, data=result, provider=self.PROVIDER_NAME, latency_ms=elapsed)
@@ -521,7 +521,7 @@ class KCBAdapter(PaymentProvider):
                 destination_account=kwargs.get("destination_account", ""),
                 amount=float(amount),
                 reference=reference,
-                narration=kwargs.get("narration", "Digiland Escrow Transfer"),
+                narration=kwargs.get("narration", "Digiland Settlement Transfer"),
             )
             elapsed = (time.monotonic() - start) * 1000
             return ProviderResponse(success=result.get("status") == "success", data=result, provider=self.PROVIDER_NAME, latency_ms=elapsed)
@@ -546,7 +546,7 @@ class KCBAdapter(PaymentProvider):
                 destination_account=recipient, amount=float(amount),
                 reference=kwargs.get("reference", f"KCB-XFER-{uuid.uuid4().hex[:8]}"),
                 beneficiary_name=kwargs.get("beneficiary_name", ""),
-                narration=kwargs.get("reason", "Escrow payout"),
+                narration=kwargs.get("reason", "Settlement payout"),
             )
             elapsed = (time.monotonic() - start) * 1000
             return ProviderResponse(success=result.get("status") == "success", data=result, provider=self.PROVIDER_NAME, latency_ms=elapsed)

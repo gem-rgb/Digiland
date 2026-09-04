@@ -440,8 +440,8 @@ def authenticate_admin(email: str, password: str, mfa_code: str = None,
 │  │   withdrawals  │  │ - Approve/rej  │  │   logs           │ │
 │  │ - Process      │  │   KYC apps     │  │ - Manage alert   │ │
 │  │   refunds      │  │ - View user    │  │   rules          │ │
-│  │ - View escrow  │  │   PII          │  │ - Incident       │ │
-│  │   balances     │  │ - Compliance   │  │   response       │ │
+│  │ - View settle- │  │   PII          │  │ - Incident       │ │
+│  │   ments        │  │ - Compliance   │  │   response       │ │
 │  │ - Freeze       │  │   reporting    │  │ - Session mgmt   │ │
 │  │   accounts     │  │                │  │                  │ │
 │  └────────────────┘  └────────────────┘  └──────────────────┘ │
@@ -521,7 +521,7 @@ role_permissions := {
     "finance_admin": [
         {"action": "approve_withdrawal", "resource": "financial"},
         {"action": "process_refund", "resource": "financial"},
-        {"action": "view_escrow", "resource": "financial"},
+        {"action": "view_settlement", "resource": "financial"},
         {"action": "freeze_account", "resource": "financial"},
         {"action": "view_user_financial", "resource": "user"},
     ],
@@ -916,7 +916,7 @@ Requires: Super admin + compliance officer approval
 Effect:
   - Target account frozen (no login, no transactions)
   - All active sessions for target account terminated
-  - Escrow funds held in trust
+  - Pending settlement transactions paused
   - Regulatory notification if required
   - Compliance team alerted for review
 ```
@@ -961,7 +961,7 @@ monitored_events:
   - withdrawal_approved
   - withdrawal_executed
   - refund_processed
-  - escrow_released
+  - settlement_released
   - account_frozen
   - account_unfrozen
   
